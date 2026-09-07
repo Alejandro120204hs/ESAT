@@ -21,7 +21,7 @@
     <!-- ============ SPRITE DE ÍCONOS ============ -->
     <svg class="icon-sprite" aria-hidden="true" focusable="false">
         <defs>
-            <symbol id="ico-salud" viewBox="0 0 24 24"><path d="M12 3v7M8.5 6.5h7M6 21h12a2 2 0 0 0 2-2v-3.2c0-2.9-1.8-5.5-4.5-6.5L14 8.7V6a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v2.7l-1.5.6C5.8 10.3 4 12.9 4 15.8V19a2 2 0 0 0 2 2Z"/></symbol>
+            <symbol id="ico-salud" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></symbol>
             <symbol id="ico-cocina" viewBox="0 0 24 24"><path d="M6 3v6a3 3 0 0 0 3 3v9M9 3v9M12 3v6a3 3 0 0 0 3-3V3M18 3c-1.7 1.6-2 3.4-2 6s.9 4 2 4v8"/></symbol>
             <symbol id="ico-admin" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><rect x="3" y="4" width="18" height="16" rx="2"/></symbol>
             <symbol id="ico-deporte" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></symbol>
@@ -42,6 +42,9 @@
             <symbol id="ico-yt" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M11 10.2v3.6l3.2-1.8Z" fill="currentColor" stroke="none"/></symbol>
             <symbol id="ico-vet" viewBox="0 0 24 24"><ellipse cx="12" cy="15.5" rx="5" ry="4.2"/><circle cx="5.5" cy="8.5" r="1.8"/><circle cx="10" cy="5" r="1.8"/><circle cx="14" cy="5" r="1.8"/><circle cx="18.5" cy="8.5" r="1.8"/></symbol>
             <symbol id="ico-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/></symbol>
+            <symbol id="ico-ai" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></symbol>
+            <symbol id="ico-megaphone" viewBox="0 0 24 24"><path d="M3 10.5v3a1 1 0 0 0 1 1h1.7l4.5 3.8a.5.5 0 0 0 .8-.4V6.1a.5.5 0 0 0-.8-.4L5.7 9.5H4a1 1 0 0 0-1 1Z"/><path d="M14.5 8.2a4.2 4.2 0 0 1 0 7.6M17.3 5.3a8.2 8.2 0 0 1 0 13.4"/></symbol>
+            <symbol id="ico-heart" viewBox="0 0 24 24"><path d="M12 20.2s-7.3-4.4-9.6-9.1A5.4 5.4 0 0 1 12 6.4a5.4 5.4 0 0 1 9.6 4.7c-2.3 4.7-9.6 9.1-9.6 9.1Z"/></symbol>
         </defs>
     </svg>
 
@@ -154,7 +157,7 @@
                             <li><a href="{{ $wa('Producción Agropecuaria y Zootecnia') }}" target="_blank" rel="noopener">Producción Agropecuaria y Zootecnia</a></li>
                             <li><a href="{{ $wa('Asistente de Veterinaria y Zootecnia') }}" target="_blank" rel="noopener">Asistente de Veterinaria y Zootecnia</a></li>
                             <li><a href="{{ $wa('Obras Civiles y Arquitectura') }}" target="_blank" rel="noopener">Obras Civiles y Arquitectura</a></li>
-                            <li><a href="{{ $wa('Criminalística') }}" target="_blank" rel="noopener">Criminalística</a></li>
+                            <li><a href="{{ $wa('Criminalística, Investigación Judicial y Ciencias Forenses') }}" target="_blank" rel="noopener">Criminalística, Investigación Judicial y Ciencias Forenses</a></li>
                             <li><a href="{{ $wa('Energías Renovables') }}" target="_blank" rel="noopener">Energías Renovables</a></li>
                             <li><a href="{{ $wa('Asistente Lab. Clínico Veterinario') }}" target="_blank" rel="noopener">Asistente Lab. Clínico Veterinario</a></li>
                             <li><a href="{{ $wa('Electricista') }}" target="_blank" rel="noopener">Electricista</a></li>
@@ -166,8 +169,8 @@
                     <div class="mega-col">
                         <div class="mega-col-head"><svg viewBox="0 0 24 24"><use href="#ico-idiomas"/></svg><h3>Educación e Idiomas</h3></div>
                         <ul>
-                            <li><a href="{{ $wa('Inglés A1-B2') }}" target="_blank" rel="noopener">Inglés A1–B2</a></li>
-                            <li><a href="{{ $wa('Francés A1-B2') }}" target="_blank" rel="noopener">Francés A1–B2</a></li>
+                            <li><a href="{{ $wa('Inglés A1-A2-B1-B2') }}" target="_blank" rel="noopener">Inglés A1–A2–B1–B2</a></li>
+                            <li><a href="{{ $wa('Francés A1-A2-B1-B2') }}" target="_blank" rel="noopener">Francés A1–A2–B1–B2</a></li>
                             <li><a href="{{ $wa('Asistente de Preescolar') }}" target="_blank" rel="noopener">Asistente de Preescolar</a></li>
                         </ul>
                     </div>
@@ -208,8 +211,8 @@
                             ['Cocina y Turismo', 'ico-cocina', ['Servicios Hoteleros y Turísticos','Cocina Nacional e Internacional','Sommelier','Inspector de Calidad de Alimentos y Bebidas']],
                             ['Escuela Administrativa', 'ico-admin', ['Auditoría y Facturación de Cuentas Médicas','Agente de Tránsito','Auxiliar Contable y Administrativo']],
                             ['Deporte y Cultura', 'ico-deporte', ['Salvamento Acuático','Gestión y Promoción Artística','Servicios de Recreación y Deportes']],
-                            ['Escuela Ciencias', 'ico-ciencias', ['Producción Agropecuaria y Zootecnia','Asistente de Veterinaria y Zootecnia','Obras Civiles y Arquitectura','Criminalística','Energías Renovables','Asistente Lab. Clínico Veterinario','Electricista','Electromecánica','Mecánica y Electrónica de Motos']],
-                            ['Educación e Idiomas', 'ico-idiomas', ['Inglés A1–B2','Francés A1–B2','Asistente de Preescolar']],
+                            ['Escuela Ciencias', 'ico-ciencias', ['Producción Agropecuaria y Zootecnia','Asistente de Veterinaria y Zootecnia','Obras Civiles y Arquitectura','Criminalística, Investigación Judicial y Ciencias Forenses','Energías Renovables','Asistente Lab. Clínico Veterinario','Electricista','Electromecánica','Mecánica y Electrónica de Motos']],
+                            ['Educación e Idiomas', 'ico-idiomas', ['Inglés A1–A2–B1–B2','Francés A1–A2–B1–B2','Asistente de Preescolar']],
                             ['Escuela de Belleza', 'ico-belleza', ['Barbería']],
                         ];
                     @endphp
@@ -352,17 +355,25 @@
                     </article>
 
                     <article class="area-panel" data-aos="fade-up" data-aos-delay="100">
-                        <svg class="area-icon" viewBox="0 0 24 24"><use href="#ico-salud"/></svg>
-                        <h3>Cursos Obligatorios en Salud</h3>
-                        <p>Certificaciones exigidas por ley para operar en entornos de salud y seguridad laboral.</p>
-                        <a href="{{ $wa('Cursos Obligatorios en Salud') }}" target="_blank" rel="noopener" class="area-link">Ver cursos <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg></a>
+                        <img src="{{ asset('assets/img/cursos-salud.jpeg') }}" class="area-panel-photo" alt="" aria-hidden="true">
+                        <div class="area-panel-scrim" aria-hidden="true"></div>
+                        <div class="area-panel-content">
+                            <svg class="area-icon" viewBox="0 0 24 24"><use href="#ico-salud"/></svg>
+                            <h3>Cursos Obligatorios en Salud</h3>
+                            <p>Certificaciones exigidas por ley para operar en entornos de salud y seguridad laboral.</p>
+                            <a href="{{ $wa('Cursos Obligatorios en Salud') }}" target="_blank" rel="noopener" class="area-link">Ver cursos <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg></a>
+                        </div>
                     </article>
 
                     <article class="area-panel" data-aos="fade-up" data-aos-delay="200">
-                        <svg class="area-icon" viewBox="0 0 24 24"><use href="#ico-cert"/></svg>
-                        <h3>Educación Continuada</h3>
-                        <p>Actualización constante para quienes ya trabajan y necesitan mantenerse vigentes en su oficio.</p>
-                        <a href="{{ $wa('Educación Continuada') }}" target="_blank" rel="noopener" class="area-link">Ver programas <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg></a>
+                        <img src="{{ asset('assets/img/educacion.png') }}" class="area-panel-photo" alt="" aria-hidden="true">
+                        <div class="area-panel-scrim" aria-hidden="true"></div>
+                        <div class="area-panel-content">
+                            <svg class="area-icon" viewBox="0 0 24 24"><use href="#ico-cert"/></svg>
+                            <h3>Educación Continuada</h3>
+                            <p>Actualización constante para quienes ya trabajan y necesitan mantenerse vigentes en su oficio.</p>
+                            <a href="{{ $wa('Educación Continuada') }}" target="_blank" rel="noopener" class="area-link">Ver programas <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg></a>
+                        </div>
                     </article>
                 </div>
             </div>
@@ -376,30 +387,48 @@
                     <p>Doble titulación: un mismo esfuerzo, dos certificaciones.</p>
                 </div>
 
-                <div class="careers-grid">
-                    @php
-                        $careers = [
-                            ['Inteligencia Artificial (IA)', 'Desarrolla soluciones inteligentes para el mundo del mañana.', 'ico-ciencias', 'lg'],
-                            ['Marketing y Redes Sociales', 'Conecta marcas, crea contenido y genera impacto digital.', 'ico-idiomas', 'lg'],
-                            ['Podología y Estética de Pies', 'Cuida la salud y belleza desde la base.', 'ico-belleza', 'sm'],
-                            ['Enfermería Veterinaria', 'Brinda atención y bienestar a nuestros mejores amigos.', 'ico-vet', 'sm'],
-                            ['Operación y Mantenimiento de Maquinaria Pesada', 'Maneja tecnología de alto impacto y construye el futuro.', 'ico-tool', 'sm'],
-                            ['Servicio Social y Comunitario', 'Sé agente de cambio y transforma tu comunidad.', 'ico-deporte', 'sm'],
-                        ];
-                    @endphp
-                    @foreach ($careers as [$title, $desc, $icon, $size])
-                        <article class="career-card career-{{ $size }}" data-aos="fade-up" data-aos-delay="{{ $loop->index * 80 }}">
-                            <div class="career-top">
-                                <span class="badge badge-double">Doble Titulación</span>
+                @php
+                    $careers = [
+                        ['Inteligencia Artificial (IA)', 'Desarrolla soluciones inteligentes para el mundo del mañana.', 'ico-ai', 'ia.png'],
+                        ['Marketing y Redes Sociales', 'Conecta marcas, crea contenido y genera impacto digital.', 'ico-megaphone', 'marketing.jpeg'],
+                        ['Podología y Estética de Pies', 'Cuida la salud y belleza desde la base.', 'ico-belleza', 'pdologia.png'],
+                        ['Enfermería Veterinaria', 'Brinda atención y bienestar a nuestros mejores amigos.', 'ico-vet', 'veterinaria.png'],
+                        ['Operación y Mantenimiento de Maquinaria Pesada', 'Maneja tecnología de alto impacto y construye el futuro.', 'ico-tool', 'maquinaria.png'],
+                        ['Servicio Social y Comunitario', 'Sé agente de cambio y transforma tu comunidad.', 'ico-heart', 'servicio-social.png'],
+                    ];
+                @endphp
+
+                <!-- Carrusel: 3 tarjetas visibles en desktop, 2 en tablet, 1 en mobile;
+                     avanza de a una con las flechas. -->
+                <div class="careers-carousel" id="careersCarousel" data-aos="fade-up">
+                    <div class="careers-carousel-row">
+                        <button type="button" class="careers-carousel-control careers-carousel-prev" aria-label="Carrera anterior">
+                            <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+                        </button>
+                        <div class="careers-carousel-viewport">
+                            <div class="careers-carousel-track">
+                                @foreach ($careers as [$title, $desc, $icon, $photo])
+                                    <article class="career-card career-carousel-card">
+                                        <img src="{{ asset('assets/img/' . $photo) }}" class="career-card-photo" alt="" aria-hidden="true">
+                                        <div class="career-card-scrim" aria-hidden="true"></div>
+                                        <span class="badge badge-double career-badge">Doble Titulación</span>
+                                        <div class="career-content">
+                                            <svg class="career-icon" viewBox="0 0 24 24"><use href="#{{ $icon }}"/></svg>
+                                            <h3>{{ $title }}</h3>
+                                            <p>{{ $desc }}</p>
+                                            <a href="{{ $wa($title) }}" target="_blank" rel="noopener" class="career-link">
+                                                Más información <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg>
+                                            </a>
+                                        </div>
+                                    </article>
+                                @endforeach
                             </div>
-                            <svg class="career-icon" viewBox="0 0 24 24"><use href="#{{ $icon }}"/></svg>
-                            <h3>{{ $title }}</h3>
-                            <p>{{ $desc }}</p>
-                            <a href="{{ $wa($title) }}" target="_blank" rel="noopener" class="career-link">
-                                Más información <svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg>
-                            </a>
-                        </article>
-                    @endforeach
+                        </div>
+                        <button type="button" class="careers-carousel-control careers-carousel-next" aria-label="Siguiente carrera">
+                            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+                        </button>
+                    </div>
+                    <div class="careers-carousel-dots"></div>
                 </div>
             </div>
         </section>
