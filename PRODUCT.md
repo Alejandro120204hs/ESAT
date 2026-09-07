@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Laravel Blade views (server-rendered). Pure CSS in `public/assets/css/` and pure JS in `public/assets/js/` — no Bootstrap, no Tailwind, no JS framework. (The repo ships a default Laravel + Vite + Tailwind scaffold under `resources/`, but the ESAT site itself bypasses that pipeline and loads hand-written assets from `public/assets/` directly, per explicit user instruction.)
+Laravel Blade views (server-rendered). Hand-written CSS in `public/assets/css/` and hand-written JS in `public/assets/js/`, loaded directly (not through the Vite pipeline the default Laravel scaffold ships with, which sits unused under `resources/`). Two libraries are loaded via CDN on top of that hand-written base, added later at explicit user request: **Bootstrap 5** (`bootstrap.min.css` / `bootstrap.bundle.min.js` — used for the hero's auto-rotating photo carousel; the rest of the page still uses the site's own component CSS, not Bootstrap's) and **AOS** (Animate On Scroll, `aos.css` / `aos.js` — replaced an earlier hand-rolled IntersectionObserver reveal system; every scroll-reveal element carries `data-aos`). Because Bootstrap's Reboot resets (element-selector `h1-h6`, `p`, `ul/ol` margins) outrank a universal `*{margin/padding:0}` reset on specificity regardless of load order, `css_website.css` carries an explicit "Bootstrap Reboot hardening" block re-zeroing those — necessary context if either CDN dependency is ever swapped or upgraded.
 
 ## Users
 
@@ -32,14 +32,15 @@ A regionally-rooted, officially licensed institution (Licencia de Funcionamiento
 - Existing students look up certificates online ("ver mi certificado online").
 - Programs are grouped into a large catalog: 7 schools containing dozens of named programs, plus separate tracks for cursos obligatorios en salud and educación continuada, plus seasonal convocatorias (open intakes) that rotate.
 - Institutional convenios are a recurring credibility signal shown across alcaldías, government entities, and specialized-sector partners (clinics, farms, arts centers, universities).
+- Confirmed two-phase plan: Phase 1 (current) is a single-page site — everything lives in one Blade view with in-page anchor navigation, and every program/certificate CTA routes to a WhatsApp deep-link since no backend page exists for any of them yet. Phase 2 (future, not started) is real subpages — e.g. a page per school or program, a real contact page — so visitors can actually navigate the site instead of everything funneling through WhatsApp.
 
 ## Capabilities and Constraints
 
-- Rebuilding `resources/views/welcome.blade.php` as the ESAT homepage; currently holds only Laravel's default scaffold markup.
-- Navigation requires a mega-dropdown for "Programas Técnicos" listing all 7 schools and their programs, collapsing to a usable mobile pattern.
-- Hero requires a mouse-reactive animated 3D element; must stay performant on mid-range mobile (explicit constraint — cannot tank scroll/frame rate on low-end devices).
-- Scroll-triggered reveal/fade-in animation expected per section.
-- Real photography now exists at `public/assets/img/` (see Evidence on Hand) and is used in the hero. No standalone logo file exists yet — the brand mark stays a placeholder built from CSS/SVG until one is supplied. Beyond the 3 hero photos, other visuals remain CSS/SVG/iconography rather than fabricated stock photography.
+- `resources/views/welcome.blade.php` is the rebuilt ESAT homepage (was Laravel's default scaffold markup at project start).
+- Navigation has two dropdowns, both click-only (hover-to-open was tried and explicitly rejected — it opened just from the cursor passing over the trigger): "Programas Técnicos" is a full-width mega-panel (all 7 schools and their programs); "Educación Continuada" is a small single-column dropdown (7 categories: Salud Ocupacional, Áreas Sociales, Pedagogía, Administración y Gerencia, Edificios y Afines, Hotelería y Turismo, Salud). Both collapse to accordions in the mobile menu.
+- Hero background is an auto-rotating Bootstrap carousel of the 3 real photos (`data-bs-pause="false"` so it keeps advancing even though the cursor sits over the hero constantly). No dark tint sits over the photos themselves — legibility comes from a scrim confined to the text band, not a flat overlay across the image. An earlier hero treatment (floating mouse-reactive 3D icon badges over a flat navy gradient) was built, then explicitly removed once real photography replaced the flat background — it read as clutter over real photos.
+- Scroll-reveal animation per section, via AOS (see Stack).
+- Real photography and brand assets now exist at `public/assets/img/`: `logo.png` (color wordmark, transparent bg, used in the header where the background is always at least translucent-light) and `logo-negativo.png` (white wordmark, used on the dark footer — no glow/shadow trick needed, it's the real asset for dark grounds); `favicon.png` (icon mark only); `imagenhero1/2/3.png` (hero carousel); `programas-tecnicos.png` (a workshop/soldering photo used as the "Programas Técnicos" card's background, with a left-anchored navy scrim + text-shadow for legibility — keep the scrim's dark zone matched to the actual text column width, or it either washes out the photo (too dark/wide) or leaves the text illegible (too narrow/light); this was tuned back and forth once already). Areas of the site without a specific matching photo stay CSS/SVG/iconography rather than forcing a mismatched or fabricated photo.
 - All legal, contact, and address data given below is real and must be reproduced exactly — never invented, altered, or approximated.
 
 ## Brand Commitments
@@ -65,8 +66,8 @@ A regionally-rooted, officially licensed institution (Licencia de Funcionamiento
 2. Escuela de Cocina y Turismo — Servicios Hoteleros y Turísticos; Cocina Nacional e Internacional; Sommelier; Inspector de Calidad de Alimentos y Bebidas.
 3. Escuela Administrativa — Auditoría y Facturación de Cuentas Médicas; Agente de Tránsito; Auxiliar Contable y Administrativo.
 4. Escuela Deporte y Cultura — Salvamento Acuático; Gestión y Promoción Artística; Servicios de Recreación y Deportes.
-5. Escuela Ciencias — Producción Agropecuaria y Zootecnia; Asistente de Veterinaria y Zootecnia; Obras Civiles y Arquitectura; Criminalística; Energías Renovables; Asistente Lab. Clínico Veterinario; Electricista; Electromecánica; Mecánica y Electrónica de Motos.
-6. Escuela de Educación e Idiomas — Inglés A1-B2; Francés A1-B2; Asistente de Preescolar.
+5. Escuela Ciencias — Producción Agropecuaria y Zootecnia; Asistente de Veterinaria y Zootecnia; Obras Civiles y Arquitectura; Criminalística, Investigación Judicial y Ciencias Forenses; Energías Renovables; Asistente Lab. Clínico Veterinario; Electricista; Electromecánica; Mecánica y Electrónica de Motos.
+6. Escuela de Educación e Idiomas — Inglés A1-A2-B1-B2; Francés A1-A2-B1-B2; Asistente de Preescolar.
 7. Escuela de Belleza — Barbería.
 
 Plus: Cursos Obligatorios en Salud, Educación Continuada, Contacto (top-level nav items alongside the schools).
@@ -85,9 +86,11 @@ Plus: Cursos Obligatorios en Salud, Educación Continuada, Contacto (top-level n
 
 **Próximas convocatorias (examples given):** Curso de Actualización en Atención al Paciente; Curso Obligatorio Salud Ocupacional; Programa Técnico Laboral en el Área Administrativa; Educación Continuada en Normativa y Procedimientos.
 
-**Photography:** three real photos now live at `public/assets/img/` (`imagenhero1.png`, `imagenhero2.png`, `imagenhero3.png`) — students in uniform with the real ESAT logo visible, and a graduation photo. Used as the homepage hero's auto-rotating Bootstrap carousel background. The real ESAT logo mark (an abstract orange/green/navy swoosh) is visible embedded in these photos but no standalone logo file has been supplied — the header/footer brand mark is still a placeholder typographic lockup, not the real logo.
+**Photography and brand assets:** real files live at `public/assets/img/` — `imagenhero1.png`, `imagenhero2.png`, `imagenhero3.png` (hero carousel: students in uniform, a graduation photo), `programas-tecnicos.png` (workshop/soldering photo, ESAT logo visible on the uniform, used as the "Programas Técnicos" area card background), `logo.png` (real color wordmark lockup, transparent background), `logo-negativo.png` (real white wordmark for dark backgrounds), `favicon.png` (icon mark only, transparent background). The real logo — used as the actual header/footer brand mark now, not a placeholder — is a horizontal wordmark: "ESAT" in a serif face with a gold dot, "EDUCACIÓN, SALUD, ARTE Y TURISMO" tagline beneath a gold rule; there is also a separate abstract orange/green/navy swoosh icon mark (visible embedded on staff/student uniforms in the photos, and as the standalone favicon) that is a distinct asset from the wordmark, not a combined lockup.
 
-**Absent:** no standalone logo file, no testimonials, no pricing, no specific social-media URLs, no map/geo API key. Future work must not fabricate any of these.
+**Additional real facts confirmed against the live site (esat.edu.co) but not yet used anywhere on this rebuild by the user's choice:** the institution's formal classification is "Educación para el Trabajo y Desarrollo Humano" (ETDH); ESAT offers a free (≤1 hour) conference/talk for companies' staff on request. Neither is currently on the site — the user chose not to add the conference offer for now, and the ETDH classification was not requested to be added either; don't add either without being asked. A "servicios médicos" list (Consulta Externa, Ginecobstetricia, Pediatría, Urgencias, UCI, etc.) surfaced during that same check but doesn't fit the rest of ESAT's content and was never confirmed as genuinely theirs — treat it as unverified and do not use it.
+
+**Absent:** no testimonials, no pricing, no specific social-media URLs, no map/geo API key. Future work must not fabricate any of these.
 
 ## Product Principles
 

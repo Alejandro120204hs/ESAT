@@ -383,28 +383,34 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
    ========================================================= */
 .areas { padding: clamp(60px, 8vw, 100px) 0; background: var(--white); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .areas-grid { display: grid; grid-template-columns: 1.5fr 1fr; grid-template-rows: repeat(2, auto); gap: 22px; }
+/* Every card carries a real photo now, so the photo/scrim/white-text
+   treatment lives on the shared base rule — .area-panel-main only
+   adds size (it spans both rows, so it needs more height). */
 .area-panel {
-    position: relative; padding: 34px; border-radius: var(--radius-md);
-    background: var(--bg); border: 1px solid var(--line);
+    position: relative; padding: 0; border-radius: var(--radius-md);
+    background: var(--navy); color: var(--white);
+    display: flex; flex-direction: column; justify-content: flex-end; min-height: 240px;
     transition: transform 0.35s var(--ease-out), box-shadow 0.35s;
     overflow: hidden;
 }
 .area-panel::before {
-    content: ""; position: absolute; top: 14px; left: 14px; width: 16px; height: 16px;
-    border-top: 2px solid var(--line-strong); border-left: 2px solid var(--line-strong);
+    content: ""; position: absolute; top: 14px; left: 14px; width: 16px; height: 16px; z-index: 2;
+    border-top: 2px solid rgba(255,255,255,0.4); border-left: 2px solid rgba(255,255,255,0.4);
 }
 .area-panel::after {
-    content: ""; position: absolute; bottom: 14px; right: 14px; width: 16px; height: 16px;
-    border-bottom: 2px solid var(--line-strong); border-right: 2px solid var(--line-strong);
+    content: ""; position: absolute; bottom: 14px; right: 14px; width: 16px; height: 16px; z-index: 2;
+    border-bottom: 2px solid rgba(255,255,255,0.4); border-right: 2px solid rgba(255,255,255,0.4);
 }
-.area-panel:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: transparent; }
-.area-panel-main {
-    grid-row: span 2; background: var(--navy);
-    color: var(--white); display: flex; flex-direction: column; justify-content: flex-end; min-height: 380px;
-    padding: 0;
+.area-panel:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.area-panel-main { grid-row: span 2; min-height: 380px; }
+
+.area-panel-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;
+    transition: filter 0.4s var(--ease-out), transform 0.4s var(--ease-out);
 }
-.area-panel-main::before, .area-panel-main::after { border-color: rgba(255,255,255,0.4); z-index: 2; }
-.area-panel-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+/* Frosted-glass hover: blur needs the photo scaled up a touch so its
+   blurred edges never peek past the card's own border. */
+.area-panel:hover .area-panel-photo { filter: blur(5px); transform: scale(1.08); }
 .area-panel-scrim {
     position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(100deg,
@@ -413,14 +419,13 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
         rgba(8,21,39,0.3) 58%,
         rgba(8,21,39,0) 82%);
 }
-.area-panel-content { position: relative; z-index: 2; padding: 34px; max-width: 480px; margin-bottom: 30px; }
-.area-panel-main h3, .area-panel-main p { color: var(--white); text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
-.area-panel-main p { color: rgba(255,255,255,0.85); text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+.area-panel-content { position: relative; z-index: 2; padding: 34px; max-width: 480px; }
+.area-panel h3, .area-panel p { color: var(--white); text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+.area-panel p { color: rgba(255,255,255,0.85); text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
 .area-icon { width: 40px; height: 40px; color: var(--orange); margin-bottom: 18px; }
 .area-panel h3 { font-size: 1.4rem; margin-bottom: 10px; }
-.area-panel p {  margin-bottom: 20px; max-width: 48ch; }
-.area-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.94rem; color: var(--orange); }
-.area-panel-main .area-link { color: #F0A868; }
+.area-panel p { margin-bottom: 20px; max-width: 48ch; }
+.area-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.94rem; color: #F0A868; }
 .area-link svg { width: 17px; height: 17px; transition: transform 0.25s var(--ease-out); }
 .area-link:hover svg { transform: translateX(4px); }
 
@@ -428,23 +433,78 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
    NUEVAS CARRERAS TÉCNICAS
    ========================================================= */
 .new-careers { padding: clamp(72px, 9vw, 120px) 0; background: var(--bg); }
-.careers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .career-card {
-    position: relative; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
-    padding: 26px; display: flex; flex-direction: column;
-    transition: transform 0.35s var(--ease-out), box-shadow 0.35s, border-color 0.35s;
+    position: relative; overflow: hidden; border-radius: var(--radius-lg);
+    background: var(--navy); color: var(--white);
+    display: flex; flex-direction: column; justify-content: flex-end; min-height: 260px;
+    transition: transform 0.35s var(--ease-out), box-shadow 0.35s;
 }
-.career-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: transparent; }
-.career-lg { grid-column: span 2; grid-row: span 2; padding: 34px; }
-.career-sm { grid-column: span 2; }
-@media (min-width: 981px) { .career-sm { grid-column: span 1; } }
-.career-top { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 18px; }
-.career-icon { width: 32px; height: 32px; color: var(--green); margin-bottom: 16px; }
-.career-lg .career-icon { width: 42px; height: 42px; }
-.career-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
-.career-lg h3 { font-size: 1.5rem; }
-.career-card p { color: var(--muted); font-size: 0.92rem; margin-bottom: 18px; flex: 1; }
-.career-link { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.86rem; color: var(--navy); }
+.career-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 18px 28px -14px rgba(10,27,51,0.32), 0 4px 10px -2px rgba(10,27,51,0.16);
+}
+
+/* ---- Carousel: 3 visible on desktop, 2 tablet, 1 mobile; the track
+   shifts by exactly one card's width per click. ---- */
+.careers-carousel { position: relative; }
+/* Arrows sit beside the track with real gap between them and the
+   cards — not overlapping the photos, not clipped by an ancestor's
+   overflow. The dots get their own centered row underneath. */
+.careers-carousel-row { display: flex; align-items: center; gap: 22px; }
+/* overflow-x only: clips the sliding track horizontally, but leaves
+   the vertical axis open so a card's hover lift + shadow don't get
+   sliced off at the top. */
+.careers-carousel-viewport { flex: 1 1 auto; min-width: 0; overflow-x: hidden; overflow-y: visible; padding: 30px 0; margin: -30px 0; }
+.careers-carousel-track {
+    display: flex; gap: 20px;
+    transition: transform 0.5s var(--ease-out);
+}
+.career-carousel-card {
+    flex: 0 0 calc(100% - 0px); min-height: 380px;
+}
+@media (min-width: 640px) {
+    .career-carousel-card { flex-basis: calc(50% - 10px); }
+}
+@media (min-width: 981px) {
+    .career-carousel-card { flex-basis: calc(33.3333% - 14px); }
+}
+.careers-carousel-control {
+    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--orange); color: var(--white); box-shadow: var(--shadow-sm);
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+.careers-carousel-control svg { width: 19px; height: 19px; }
+.careers-carousel-control:hover { background: var(--orange-2); box-shadow: var(--shadow-md); }
+@media (max-width: 640px) {
+    .careers-carousel-row { gap: 10px; }
+    .careers-carousel-control { width: 38px; height: 38px; }
+    .careers-carousel-control svg { width: 16px; height: 16px; }
+}
+.careers-carousel-dots { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; }
+.careers-carousel-dots button {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong);
+    transition: background-color 0.2s, transform 0.2s;
+}
+.careers-carousel-dots button.is-active { background: var(--orange); transform: scale(1.25); }
+
+.career-card-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;
+}
+.career-card-scrim {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(100deg,
+        rgba(8,21,39,0.85) 0%,
+        rgba(8,21,39,0.68) 35%,
+        rgba(8,21,39,0.3) 58%,
+        rgba(8,21,39,0) 82%);
+}
+.career-badge { position: absolute; top: 16px; right: 16px; z-index: 3; box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+.career-content { position: relative; z-index: 2; padding: 26px; max-width: 90%; }
+.career-icon { width: 32px; height: 32px; color: var(--orange); margin-bottom: 14px; }
+.career-card h3 { font-size: 1.2rem; margin-bottom: 8px; color: var(--white); text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+.career-card p { color: rgba(255,255,255,0.85); font-size: 0.92rem; margin-bottom: 14px; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+.career-link { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.86rem; color: #F0A868; }
 .career-link svg { width: 15px; height: 15px; transition: transform 0.25s var(--ease-out); }
 .career-card:hover .career-link svg { transform: translateX(4px); }
 
@@ -587,9 +647,6 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
     .areas-grid { grid-template-columns: 1fr; }
     .area-panel-main { min-height: 260px; grid-row: auto; }
 
-    .careers-grid { grid-template-columns: repeat(2, 1fr); }
-    .career-lg { grid-column: span 2; grid-row: auto; }
-
     .convocatorias-row { grid-template-columns: repeat(2, 1fr); }
 
     .sedes-grid { grid-template-columns: 1fr; }
@@ -607,9 +664,6 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
     .hero-eyebrow-line .dot { display: none; }
     .hero-actions { flex-direction: column; align-items: stretch; }
     .hero-actions .btn { width: 100%; }
-
-    .careers-grid { grid-template-columns: 1fr; }
-    .career-lg, .career-sm { grid-column: span 1; }
 
     .convocatorias-row { grid-template-columns: 1fr; }
 
