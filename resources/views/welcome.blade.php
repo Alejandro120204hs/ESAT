@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="{{ asset('assets/css/css_website.css') }}">
 </head>
 <body>
@@ -518,71 +519,22 @@
             </div>
         </section>
 
-        <!-- ============ SEDES ============ -->
-        <section class="sedes" id="sedes">
-            <div class="section-inner sedes-grid">
-                <div class="sedes-map" data-aos="zoom-in" aria-hidden="true">
-                    <svg viewBox="0 0 420 460" class="map-svg">
-                        <path class="map-route" d="M120 90 L300 130 L340 300 L160 380 L120 90"/>
-                        <circle class="map-node" cx="120" cy="90" r="7"/>
-                        <circle class="map-node" cx="300" cy="130" r="7"/>
-                        <circle class="map-node" cx="340" cy="300" r="7"/>
-                        <circle class="map-node" cx="160" cy="380" r="7"/>
-                        <circle class="map-node-pulse" cx="120" cy="90" r="7"/>
-                        <circle class="map-node-pulse" cx="300" cy="130" r="7"/>
-                        <circle class="map-node-pulse" cx="340" cy="300" r="7"/>
-                        <circle class="map-node-pulse" cx="160" cy="380" r="7"/>
-                    </svg>
-                </div>
-
-                <div class="sedes-list">
-                    <div class="section-head section-head-light" data-aos="fade-up">
-                        <h2>Nuestras sedes</h2>
-                        <p>Cuatro puntos de encuentro en Cundinamarca y Caldas.</p>
-                    </div>
-
-                    <ul>
-                        <li data-aos="fade-up" data-aos-delay="0">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Bogotá</h3><p>Cra 52 #71-18</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="80">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Sasaima</h3><p>Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="160">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Guaduas</h3><p>Cra 2 No. 1-83, Calle de la Pola, Cundinamarca</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="240">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>La Dorada</h3><p>Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas</p></div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
         <!-- ============ NEWSLETTER + CERTIFICADOS ============ -->
-        <section class="cta-band" id="contacto">
-            <div class="section-inner cta-grid">
-                <div class="cta-card" data-aos="fade-up">
-                    <svg viewBox="0 0 24 24"><use href="#ico-mail"/></svg>
-                    <h3>Novedades académicas</h3>
+        <section class="newsletter-band" id="contacto">
+            <svg class="newsletter-band-deco" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-mail"/></svg>
+            <div class="section-inner newsletter-inner" data-aos="fade-up">
+                <div class="newsletter-copy">
+                    <span class="cta-card-icon"><svg viewBox="0 0 24 24"><use href="#ico-mail"/></svg></span>
+                    <h2>Novedades académicas</h2>
                     <p>Recibe convocatorias, fechas de apertura y noticias de las siete escuelas directamente en tu correo.</p>
+                </div>
+                <div class="newsletter-action">
                     <form class="newsletter-form" id="newsletterForm" novalidate>
                         <label for="newsletterEmail" class="sr-only">Correo electrónico</label>
                         <input type="email" id="newsletterEmail" name="email" placeholder="tucorreo@ejemplo.com" required autocomplete="email">
                         <button type="submit" class="btn btn-accent btn-sm">Suscribirme</button>
                     </form>
                     <p class="form-note" id="newsletterNote" role="status" aria-live="polite"></p>
-                </div>
-
-                <div class="cta-card cta-card-dark" data-aos="fade-up" data-aos-delay="100">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cert"/></svg>
-                    <h3>¿Ya eres egresado?</h3>
-                    <p>Consulta y verifica tu certificado técnico directamente con nuestro equipo de registro académico.</p>
-                    <a href="{{ $wa('consultar mi certificado') }}" target="_blank" rel="noopener" class="btn btn-outline-light btn-sm">Ver mi certificado online</a>
                 </div>
             </div>
         </section>
@@ -613,18 +565,28 @@
                     <li><a href="#areas-formacion">Programas técnicos</a></li>
                     <li><a href="#nuevas-carreras">Nuevas carreras</a></li>
                     <li><a href="#convocatorias">Convocatorias</a></li>
-                    <li><a href="#sedes">Sedes</a></li>
                     <li><a href="#contacto">Contacto</a></li>
                 </ul>
             </div>
 
             <div class="footer-col">
+                @php
+                    $sedes = [
+                        ['name' => 'Bogotá', 'address' => 'Cra 52 #71-18', 'lat' => 4.6682, 'lng' => -74.0817],
+                        ['name' => 'Sasaima', 'address' => 'Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca', 'lat' => 5.0128, 'lng' => -74.4361],
+                        ['name' => 'Guaduas', 'address' => 'Cra 2 No. 1-83, Calle de la Pola, Cundinamarca', 'lat' => 5.0700, 'lng' => -74.5928],
+                        ['name' => 'La Dorada', 'address' => 'Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas', 'lat' => 5.4544, 'lng' => -74.6379],
+                    ];
+                @endphp
                 <h4>Sedes</h4>
-                <ul>
-                    <li>Bogotá — Cra 52 #71-18</li>
-                    <li>Sasaima — Cundinamarca</li>
-                    <li>Guaduas — Cundinamarca</li>
-                    <li>La Dorada — Caldas</li>
+                <div class="footer-sedes-map-wrap">
+                    <div id="footerSedesMap" class="footer-sedes-map" data-points="{{ json_encode($sedes) }}" aria-label="Mapa de ubicación de las cuatro sedes de ESAT"></div>
+                    <div class="footer-sedes-scrim" aria-hidden="true"></div>
+                </div>
+                <ul class="sr-only">
+                    @foreach ($sedes as $sede)
+                        <li>{{ $sede['name'] }} — {{ $sede['address'] }}</li>
+                    @endforeach
                 </ul>
             </div>
 
@@ -633,6 +595,7 @@
                 <ul>
                     <li><a href="{{ $wa('información general sobre ESAT') }}" target="_blank" rel="noopener">315 295 75 88</a></li>
                     <li><a href="{{ $wa('información general sobre ESAT', '573123773144') }}" target="_blank" rel="noopener">312 377 31 44</a></li>
+                    <li><a href="{{ $wa('consultar mi certificado') }}" target="_blank" rel="noopener">¿Eres egresado? Verifica tu certificado</a></li>
                 </ul>
             </div>
         </div>
@@ -650,6 +613,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/js/js_website.js') }}" defer></script>
 </body>
 </html>
