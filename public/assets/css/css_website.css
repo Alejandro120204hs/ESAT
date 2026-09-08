@@ -701,6 +701,156 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .footer-bottom p { font-size: 0.82rem; color: rgba(255,255,255,0.6); text-align: center; }
 
 /* =========================================================
+   PÁGINAS DE PROGRAMA (subpáginas — ej. Servicios Geriátricos)
+   ========================================================= */
+.program-hero {
+    position: relative; overflow: hidden; display: flex; align-items: flex-end;
+    min-height: clamp(480px, 58vw, 640px); background: var(--navy-3);
+}
+.program-hero-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; z-index: 0; }
+.program-hero-scrim {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(0deg,
+        rgba(8,21,39,0.88) 0%,
+        rgba(8,21,39,0.6) 32%,
+        rgba(8,21,39,0.15) 58%,
+        rgba(8,21,39,0) 80%);
+}
+/* Sits behind the left-aligned hero copy, so the watermark anchors to
+   the bottom-right corner instead of the panel's dead center where
+   it would collide with the text. */
+.program-hero-placeholder {
+    position: absolute; inset: 0; z-index: 0;
+    display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: 8px;
+    padding: 24px; text-align: right;
+    background: linear-gradient(155deg, var(--navy-3) 0%, var(--navy) 100%);
+    color: rgba(255,255,255,0.25);
+}
+.program-hero-placeholder svg { width: 40px; height: 40px; }
+.program-hero-placeholder span { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em; }
+/* Top padding guarantees clearance from the fixed header even when
+   the content block itself is tall enough to fill the whole panel
+   (stacked buttons on mobile) — otherwise it starts flush at the
+   panel's top edge, right behind the nav. */
+.program-hero-content { position: relative; z-index: 2; max-width: 640px; padding: 90px 0 48px; }
+.program-hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--orange); margin-bottom: 20px;
+}
+.program-hero-badge svg { width: 16px; height: 16px; }
+.program-hero h1 { color: var(--white); font-size: clamp(2.1rem, 4vw, 3.1rem); margin-bottom: 10px; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+.program-hero-tagline { color: var(--orange-tint); font-weight: 700; font-size: 1.1rem; margin-bottom: 16px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+.program-hero-lead { color: rgba(255,255,255,0.9); font-size: 1.05rem; max-width: 56ch; margin-bottom: 30px; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+.program-hero-content .hero-actions { justify-content: flex-start; }
+
+.program-section { padding: clamp(56px, 7vw, 96px) 0; background: var(--white); }
+.program-section-tint { background: var(--bg); }
+
+.program-competency-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 36px 48px; }
+.program-competency-card { display: flex; gap: 20px; }
+.program-competency-card .node {
+    flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px -6px rgba(10,27,51,0.3);
+}
+.program-competency-card .node svg { width: 24px; height: 24px; color: var(--white); stroke-width: 2; }
+.program-competency-card:nth-child(4n+1) .node { background: var(--orange); }
+.program-competency-card:nth-child(4n+2) .node { background: var(--green); }
+.program-competency-card:nth-child(4n+3) .node { background: var(--navy); }
+.program-competency-card:nth-child(4n+4) .node { background: var(--orange); }
+.program-competency-card h3 { font-size: 1.1rem; margin-bottom: 6px; }
+.program-competency-card p { color: var(--muted); font-size: 0.95rem; }
+
+.program-outcome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.program-outcome-card {
+    position: relative; overflow: hidden; border-radius: var(--radius-md);
+    min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end;
+    color: var(--white);
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s;
+}
+.program-outcome-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+.program-outcome-photo {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;
+    transition: filter 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+}
+.program-outcome-card:hover .program-outcome-photo { filter: blur(5px); transform: scale(1.08); }
+.program-outcome-scrim {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(0deg, rgba(8,21,39,0.9) 0%, rgba(8,21,39,0.45) 55%, rgba(8,21,39,0.1) 100%);
+}
+.program-outcome-content { position: relative; z-index: 2; padding: 28px; }
+
+.program-outcome-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; border-radius: 50%; margin-bottom: 16px;
+    box-shadow: 0 6px 16px -6px rgba(10,27,51,0.4);
+}
+.program-outcome-icon svg { width: 24px; height: 24px; color: var(--white); stroke-width: 2; }
+.program-outcome-accent-orange .program-outcome-icon { background: var(--orange); }
+.program-outcome-accent-green .program-outcome-icon { background: var(--green); }
+.program-outcome-accent-navy .program-outcome-icon { background: var(--navy); }
+
+.program-outcome-card h3 { color: var(--white); font-size: 1.12rem; margin-bottom: 8px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+.program-outcome-card p { color: rgba(255,255,255,0.85); font-size: 0.92rem; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+
+.program-photo-panel {
+    position: relative; overflow: hidden; border-radius: var(--radius-md);
+    min-height: 320px; display: flex; align-items: center; justify-content: center;
+    text-align: center; color: var(--white);
+}
+.program-photo-panel-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.program-photo-panel-scrim {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, rgba(8,21,39,0.5) 0%, rgba(8,21,39,0.62) 100%);
+}
+/* Content sits bottom-left (see .program-photo-panel), so the
+   watermark anchors top-right instead of the panel's dead center. */
+.program-photo-panel-placeholder {
+    position: absolute; inset: 0; z-index: 0;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    padding: 24px; text-align: right;
+    background: linear-gradient(155deg, var(--navy-3) 0%, var(--green-2) 145%);
+    color: rgba(255,255,255,0.3);
+}
+.program-photo-panel-placeholder svg { width: 36px; height: 36px; }
+.program-photo-panel-placeholder span { font-size: 0.78rem; font-weight: 600; }
+.program-photo-panel-content { position: relative; z-index: 2; padding: 32px; max-width: 520px; margin: 0 auto; }
+.program-photo-panel-content h3 { color: var(--white); margin-bottom: 8px; }
+.program-photo-panel-content p { color: rgba(255,255,255,0.8); }
+
+.program-credibility {
+    background: var(--white); border: 1px solid var(--line);
+    border-top-width: 3px; border-top-color: var(--orange);
+    border-radius: var(--radius-md); padding: clamp(28px, 4vw, 40px);
+}
+.program-credibility-badge { margin-bottom: 16px; }
+.program-credibility h3 { margin-bottom: 8px; }
+.program-credibility p { color: var(--muted); font-size: 0.94rem; max-width: 70ch; margin-bottom: 22px; }
+.program-credibility-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.program-credibility-chips li {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.86rem; font-weight: 600; color: var(--navy);
+    background: var(--bg); border: 1px solid var(--line);
+    padding: 9px 16px; border-radius: 999px;
+}
+.program-credibility-chips svg { width: 15px; height: 15px; color: var(--orange); flex-shrink: 0; }
+
+.program-cta {
+    position: relative; overflow: hidden;
+    padding: clamp(48px, 6vw, 76px) 0;
+    background: var(--white); border-top: 1px solid var(--line);
+}
+/* Same oversized-icon watermark treatment as the newsletter band. */
+.program-cta-deco {
+    position: absolute; top: 50%; right: clamp(-40px, 4vw, 40px); transform: translateY(-50%);
+    width: clamp(220px, 26vw, 380px); height: clamp(220px, 26vw, 380px);
+    color: rgba(16,40,74,0.05); stroke-width: 0.6; z-index: 0; pointer-events: none;
+}
+.program-cta-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.program-cta h2 { font-size: clamp(1.5rem, 2.6vw, 2rem); margin-bottom: 6px; }
+.program-cta p { color: var(--muted); }
+
+/* =========================================================
    WHATSAPP FAB
    ========================================================= */
 .whatsapp-fab {
@@ -740,6 +890,9 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 
     .footer-grid { grid-template-columns: 1fr 1fr; }
     .footer-brand { grid-column: span 2; }
+
+    .program-outcome-grid { grid-template-columns: 1fr; }
+    .program-competency-grid { grid-template-columns: 1fr; gap: 30px; }
 }
 
 @media (max-width: 640px) {
@@ -758,6 +911,11 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 
     .newsletter-form { flex-direction: column; }
     .whatsapp-fab { width: 52px; height: 52px; bottom: 18px; right: 18px; }
+
+    .program-hero-content .hero-actions { flex-direction: column; align-items: stretch; }
+    .program-hero-content .hero-actions .btn { width: 100%; }
+    .program-cta-inner { flex-direction: column; align-items: flex-start; }
+    .program-cta-inner .btn { width: 100%; justify-content: center; }
 }
 
 /* =========================================================
