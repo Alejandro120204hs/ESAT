@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="{{ asset('assets/css/css_website.css') }}">
 </head>
 <body>
@@ -45,6 +46,11 @@
             <symbol id="ico-ai" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></symbol>
             <symbol id="ico-megaphone" viewBox="0 0 24 24"><path d="M3 10.5v3a1 1 0 0 0 1 1h1.7l4.5 3.8a.5.5 0 0 0 .8-.4V6.1a.5.5 0 0 0-.8-.4L5.7 9.5H4a1 1 0 0 0-1 1Z"/><path d="M14.5 8.2a4.2 4.2 0 0 1 0 7.6M17.3 5.3a8.2 8.2 0 0 1 0 13.4"/></symbol>
             <symbol id="ico-heart" viewBox="0 0 24 24"><path d="M12 20.2s-7.3-4.4-9.6-9.1A5.4 5.4 0 0 1 12 6.4a5.4 5.4 0 0 1 9.6 4.7c-2.3 4.7-9.6 9.1-9.6 9.1Z"/></symbol>
+            <symbol id="ico-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h6M14 7h6M4 7l-2.5 5a2.5 2.5 0 0 0 5 0L4 7ZM20 7l-2.5 5a2.5 2.5 0 0 0 5 0L20 7Z"/></symbol>
+            <symbol id="ico-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"/></symbol>
+            <symbol id="ico-building" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1"/></symbol>
+            <symbol id="ico-leaf" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20h2C16 20 20 14 20 4Z"/><path d="M6 18C10 14 14 10 18 6"/></symbol>
+            <symbol id="ico-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .8-1.9 1.9-1.9H17a4 4 0 0 0 4-4c0-4.4-4-7.5-9-7.5Z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="14" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></symbol>
         </defs>
     </svg>
 
@@ -436,33 +442,46 @@
         <!-- ============ CONVENIOS INSTITUCIONALES ============ -->
         <section class="convenios">
             <div class="section-inner">
-                <div class="section-head section-head-light" data-aos="fade-up">
+                <div class="section-head" data-aos="fade-up">
                     <h2>Convenios institucionales</h2>
                     <p>Alianzas públicas y privadas que respaldan nuestra formación en toda la región.</p>
                 </div>
 
-                <div class="convenios-grid">
-                    <div class="convenio-block" data-aos="fade-up">
+                <!-- Alcaldías: panel ancho — los chips necesitan espacio horizontal,
+                     no una columna alta, para no dejar espacio muerto. -->
+                <div class="convenio-hero convenio-accent-orange" data-aos="fade-up">
+                    <div class="convenio-hero-text">
+                        <span class="badge badge-double convenio-hero-badge">8 municipios aliados</span>
                         <h3>Alcaldías municipales</h3>
-                        <ul class="chip-row">
-                            <li>Villeta</li><li>Cachipay</li><li>Albán</li><li>La Vega</li>
-                            <li>Supatá</li><li>Anolaima</li><li>Guaduas</li><li>La Dorada</li>
-                        </ul>
+                        <p>Cada alcaldía respalda espacios de práctica, convocatorias y proyección social para nuestros estudiantes en su municipio.</p>
                     </div>
+                    <ul class="chip-row chip-row-pinned">
+                        @foreach (['Villeta','Cachipay','Albán','La Vega','Supatá','Anolaima','Guaduas','La Dorada'] as $municipio)
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>{{ $municipio }}</li>
+                        @endforeach
+                    </ul>
+                </div>
 
-                    <div class="convenio-block" data-aos="fade-up" data-aos-delay="100">
-                        <h3>Entidades públicas</h3>
+                <div class="convenios-grid">
+                    <div class="convenio-block convenio-accent-green" data-aos="fade-up">
+                        <h3>Entidades públicas y privadas</h3>
                         <ul class="entity-list">
-                            <li><span>Fiscalía y CTI de Villeta</span></li>
-                            <li><span>INPEC — Honda, Norcasia y Puerto Triunfo</span></li>
-                            <li><span>FTI Bogotá</span></li>
-                            <li><span>Todo en Salud a la Mano S.A.S.</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-scale"/></svg><span>Fiscalía y CTI de Villeta</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg><span>INPEC — Honda, Norcasia y Puerto Triunfo</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-building"/></svg><span>FTI Bogotá</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg><span>Todo en Salud a la Mano S.A.S.</span></li>
                         </ul>
                     </div>
 
-                    <div class="convenio-block" data-aos="fade-up" data-aos-delay="200">
+                    <div class="convenio-block convenio-accent-navy" data-aos="fade-up" data-aos-delay="100">
                         <h3>Otras alianzas</h3>
-                        <p class="convenio-note">Clínicas veterinarias, granjas especializadas, empresas de obras civiles, centros artísticos y universidades acompañan las prácticas y la formación continuada de nuestros estudiantes.</p>
+                        <ul class="simple-list">
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-vet"/></svg><span>Clínicas veterinarias</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-leaf"/></svg><span>Granjas especializadas</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-building"/></svg><span>Empresas de obras civiles</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-palette"/></svg><span>Centros artísticos</span></li>
+                            <li><svg viewBox="0 0 24 24"><use href="#ico-cert"/></svg><span>Universidades</span></li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -479,15 +498,18 @@
                 <div class="convocatorias-row">
                     @php
                         $calls = [
-                            ['Salud', 'Curso de Actualización en Atención al Paciente', 'Para personal asistencial que busca renovar su certificación.'],
-                            ['Salud', 'Curso Obligatorio Salud Ocupacional', 'Requisito legal para operar en entornos laborales regulados.'],
-                            ['Administrativo', 'Programa Técnico Laboral en el Área Administrativa', 'Formación integral en gestión y procesos de oficina.'],
-                            ['Continuada', 'Educación Continuada en Normativa y Procedimientos', 'Actualización para profesionales en ejercicio.'],
+                            ['Salud', 'ico-salud', 'Curso de Actualización en Atención al Paciente', 'Para personal asistencial que busca renovar su certificación.'],
+                            ['Salud', 'ico-salud', 'Curso Obligatorio Salud Ocupacional', 'Requisito legal para operar en entornos laborales regulados.'],
+                            ['Administrativo', 'ico-admin', 'Programa Técnico Laboral en el Área Administrativa', 'Formación integral en gestión y procesos de oficina.'],
+                            ['Continuada', 'ico-cert', 'Educación Continuada en Normativa y Procedimientos', 'Actualización para profesionales en ejercicio.'],
                         ];
                     @endphp
-                    @foreach ($calls as [$tag, $title, $desc])
-                        <article class="call-card" data-aos="fade-up" data-aos-delay="{{ $loop->index * 80 }}">
-                            <span class="badge badge-tag tag-{{ Str::slug($tag) }}">{{ $tag }}</span>
+                    @foreach ($calls as [$tag, $icon, $title, $desc])
+                        <article class="call-card call-accent-{{ Str::slug($tag) }}" data-aos="fade-up" data-aos-delay="{{ $loop->index * 80 }}">
+                            <div class="call-card-top">
+                                <svg class="call-card-icon" viewBox="0 0 24 24"><use href="#{{ $icon }}"/></svg>
+                                <span class="badge badge-tag tag-{{ Str::slug($tag) }}">{{ $tag }}</span>
+                            </div>
                             <h3>{{ $title }}</h3>
                             <p>{{ $desc }}</p>
                             <a href="{{ $wa($title) }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Ver más</a>
@@ -497,71 +519,22 @@
             </div>
         </section>
 
-        <!-- ============ SEDES ============ -->
-        <section class="sedes" id="sedes">
-            <div class="section-inner sedes-grid">
-                <div class="sedes-map" data-aos="zoom-in" aria-hidden="true">
-                    <svg viewBox="0 0 420 460" class="map-svg">
-                        <path class="map-route" d="M120 90 L300 130 L340 300 L160 380 L120 90"/>
-                        <circle class="map-node" cx="120" cy="90" r="7"/>
-                        <circle class="map-node" cx="300" cy="130" r="7"/>
-                        <circle class="map-node" cx="340" cy="300" r="7"/>
-                        <circle class="map-node" cx="160" cy="380" r="7"/>
-                        <circle class="map-node-pulse" cx="120" cy="90" r="7"/>
-                        <circle class="map-node-pulse" cx="300" cy="130" r="7"/>
-                        <circle class="map-node-pulse" cx="340" cy="300" r="7"/>
-                        <circle class="map-node-pulse" cx="160" cy="380" r="7"/>
-                    </svg>
-                </div>
-
-                <div class="sedes-list">
-                    <div class="section-head section-head-light" data-aos="fade-up">
-                        <h2>Nuestras sedes</h2>
-                        <p>Cuatro puntos de encuentro en Cundinamarca y Caldas.</p>
-                    </div>
-
-                    <ul>
-                        <li data-aos="fade-up" data-aos-delay="0">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Bogotá</h3><p>Cra 52 #71-18</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="80">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Sasaima</h3><p>Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="160">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>Guaduas</h3><p>Cra 2 No. 1-83, Calle de la Pola, Cundinamarca</p></div>
-                        </li>
-                        <li data-aos="fade-up" data-aos-delay="240">
-                            <svg viewBox="0 0 24 24"><use href="#ico-pin"/></svg>
-                            <div><h3>La Dorada</h3><p>Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas</p></div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
         <!-- ============ NEWSLETTER + CERTIFICADOS ============ -->
-        <section class="cta-band" id="contacto">
-            <div class="section-inner cta-grid">
-                <div class="cta-card" data-aos="fade-up">
-                    <svg viewBox="0 0 24 24"><use href="#ico-mail"/></svg>
-                    <h3>Novedades académicas</h3>
+        <section class="newsletter-band" id="contacto">
+            <svg class="newsletter-band-deco" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-mail"/></svg>
+            <div class="section-inner newsletter-inner" data-aos="fade-up">
+                <div class="newsletter-copy">
+                    <span class="cta-card-icon"><svg viewBox="0 0 24 24"><use href="#ico-mail"/></svg></span>
+                    <h2>Novedades académicas</h2>
                     <p>Recibe convocatorias, fechas de apertura y noticias de las siete escuelas directamente en tu correo.</p>
+                </div>
+                <div class="newsletter-action">
                     <form class="newsletter-form" id="newsletterForm" novalidate>
                         <label for="newsletterEmail" class="sr-only">Correo electrónico</label>
                         <input type="email" id="newsletterEmail" name="email" placeholder="tucorreo@ejemplo.com" required autocomplete="email">
                         <button type="submit" class="btn btn-accent btn-sm">Suscribirme</button>
                     </form>
                     <p class="form-note" id="newsletterNote" role="status" aria-live="polite"></p>
-                </div>
-
-                <div class="cta-card cta-card-dark" data-aos="fade-up" data-aos-delay="100">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cert"/></svg>
-                    <h3>¿Ya eres egresado?</h3>
-                    <p>Consulta y verifica tu certificado técnico directamente con nuestro equipo de registro académico.</p>
-                    <a href="{{ $wa('consultar mi certificado') }}" target="_blank" rel="noopener" class="btn btn-outline-light btn-sm">Ver mi certificado online</a>
                 </div>
             </div>
         </section>
@@ -592,18 +565,28 @@
                     <li><a href="#areas-formacion">Programas técnicos</a></li>
                     <li><a href="#nuevas-carreras">Nuevas carreras</a></li>
                     <li><a href="#convocatorias">Convocatorias</a></li>
-                    <li><a href="#sedes">Sedes</a></li>
                     <li><a href="#contacto">Contacto</a></li>
                 </ul>
             </div>
 
             <div class="footer-col">
+                @php
+                    $sedes = [
+                        ['name' => 'Bogotá', 'address' => 'Cra 52 #71-18', 'lat' => 4.6682, 'lng' => -74.0817],
+                        ['name' => 'Sasaima', 'address' => 'Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca', 'lat' => 5.0128, 'lng' => -74.4361],
+                        ['name' => 'Guaduas', 'address' => 'Cra 2 No. 1-83, Calle de la Pola, Cundinamarca', 'lat' => 5.0700, 'lng' => -74.5928],
+                        ['name' => 'La Dorada', 'address' => 'Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas', 'lat' => 5.4544, 'lng' => -74.6379],
+                    ];
+                @endphp
                 <h4>Sedes</h4>
-                <ul>
-                    <li>Bogotá — Cra 52 #71-18</li>
-                    <li>Sasaima — Cundinamarca</li>
-                    <li>Guaduas — Cundinamarca</li>
-                    <li>La Dorada — Caldas</li>
+                <div class="footer-sedes-map-wrap">
+                    <div id="footerSedesMap" class="footer-sedes-map" data-points="{{ json_encode($sedes) }}" aria-label="Mapa de ubicación de las cuatro sedes de ESAT"></div>
+                    <div class="footer-sedes-scrim" aria-hidden="true"></div>
+                </div>
+                <ul class="sr-only">
+                    @foreach ($sedes as $sede)
+                        <li>{{ $sede['name'] }} — {{ $sede['address'] }}</li>
+                    @endforeach
                 </ul>
             </div>
 
@@ -612,6 +595,7 @@
                 <ul>
                     <li><a href="{{ $wa('información general sobre ESAT') }}" target="_blank" rel="noopener">315 295 75 88</a></li>
                     <li><a href="{{ $wa('información general sobre ESAT', '573123773144') }}" target="_blank" rel="noopener">312 377 31 44</a></li>
+                    <li><a href="{{ $wa('consultar mi certificado') }}" target="_blank" rel="noopener">¿Eres egresado? Verifica tu certificado</a></li>
                 </ul>
             </div>
         </div>
@@ -629,6 +613,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/js/js_website.js') }}" defer></script>
 </body>
 </html>

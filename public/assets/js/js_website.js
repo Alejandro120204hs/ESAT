@@ -237,6 +237,89 @@
     })();
 
     /* ============================================================
+       Footer sedes: small real minimap (Leaflet + standard
+       OpenStreetMap tiles, no API key required) plotting the four
+       campuses at their actual coordinates. A dark scrim div sits
+       on top (same photo+scrim technique used elsewhere on the
+       site) so the map reads as a normal, full-color map dimmed
+       toward black, instead of a recolored/filtered basemap that
+       loses its linework. Hovering a point shows its name and
+       address, standing in for the plain address list.
+       ============================================================ */
+    (function () {
+        var mapEl = document.getElementById("footerSedesMap");
+        if (!mapEl || !window.L) return;
+
+        var points = JSON.parse(mapEl.getAttribute("data-points") || "[]");
+        if (!points.length) return;
+
+        var map = L.map(mapEl, {
+            zoomControl: false,
+            scrollWheelZoom: false,
+            attributionControl: false,
+            maxZoom: 18
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            subdomains: "abc"
+        }).addTo(map);
+
+        var markerIcon = L.divIcon({
+            className: "footer-sedes-marker",
+            html: '<span class="footer-sedes-marker-dot"></span>',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        });
+
+        var bounds = [];
+        var markers = points.map(function (p) {
+            var latlng = [p.lat, p.lng];
+            bounds.push(latlng);
+            var marker = L.marker(latlng, { icon: markerIcon, keyboard: false }).addTo(map);
+            marker._sedeData = p;
+            return marker;
+        });
+
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [30, 30] });
+
+        // Bind tooltips only once the view is final: a marker in the
+        // top half of this small map opens its tooltip downward, and
+        // one in the bottom half opens upward — whichever direction
+        // has room, since the multi-line address routinely doesn't
+        // fit between a marker near an edge and that edge. The same
+        // nudge happens sideways: a marker close to the left/right
+        // edge shifts its tooltip inward instead of letting it touch
+        // the map's border.
+        var mapSize = map.getSize();
+        var TOOLTIP_HALF_WIDTH = 75;
+        var EDGE_MARGIN = 10;
+        markers.forEach(function (marker) {
+            var point = map.latLngToContainerPoint(marker.getLatLng());
+            var opensDown = point.y < mapSize.y * 0.45;
+
+            var leftOverflow = (TOOLTIP_HALF_WIDTH + EDGE_MARGIN) - point.x;
+            var rightOverflow = (point.x + TOOLTIP_HALF_WIDTH + EDGE_MARGIN) - mapSize.x;
+            var xNudge = 0;
+            if (leftOverflow > 0) xNudge = leftOverflow;
+            else if (rightOverflow > 0) xNudge = -rightOverflow;
+
+            var tooltipHtml = "<strong>" + marker._sedeData.name + "</strong><span>" + marker._sedeData.address + "</span>";
+            marker.bindTooltip(tooltipHtml, {
+                direction: opensDown ? "bottom" : "top",
+                offset: [xNudge, opensDown ? 6 : -6]
+            });
+        });
+
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.doubleClickZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
+    })();
+
+    /* ============================================================
        Mobile nav
        ============================================================ */
     var navToggle = document.getElementById("navToggle");

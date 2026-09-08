@@ -433,6 +433,7 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
    NUEVAS CARRERAS TÉCNICAS
    ========================================================= */
 .new-careers { padding: clamp(72px, 9vw, 120px) 0; background: var(--bg); }
+.new-careers .section-head { text-align: center; margin-left: auto; margin-right: auto; }
 .career-card {
     position: relative; overflow: hidden; border-radius: var(--radius-lg);
     background: var(--navy); color: var(--white);
@@ -511,22 +512,80 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 /* =========================================================
    CONVENIOS
    ========================================================= */
-.convenios { padding: clamp(64px, 8vw, 104px) 0; background: var(--navy-3);
+.convenios {
+    position: relative; overflow: hidden;
+    padding: clamp(64px, 8vw, 104px) 0; background: var(--navy-4);
     background-image: radial-gradient(60% 60% at 100% 0%, rgba(217,123,46,0.14), transparent 70%);
 }
-.convenios-grid { display: grid; grid-template-columns: 1.3fr 1fr 0.9fr; gap: 28px; }
-.convenio-block { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-lg); padding: 30px; }
-.convenio-block h3 { color: var(--white); font-size: 1.02rem; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.14); }
-.chip-row { display: flex; flex-wrap: wrap; gap: 9px; }
-.chip-row li {
-    font-size: 0.86rem; font-weight: 600; color: rgba(255,255,255,0.88);
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
-    padding: 8px 14px; border-radius: 999px;
+.convenios .section-inner { position: relative; z-index: 1; }
+.convenios .section-head h2 { color: var(--orange); }
+.convenios .section-head p { color: rgba(255,255,255,0.68); }
+
+/* Hero: one wide panel for Alcaldías, text beside the chips — chips
+   are horizontal content by nature, so a wide short panel uses the
+   space they actually need instead of a tall column with dead air
+   underneath (what an earlier version of this section did). */
+.convenio-hero {
+    position: relative; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14);
+    border-top-width: 3px; border-radius: var(--radius-md);
+    padding: 34px; margin-bottom: 22px;
+    display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 36px; align-items: center;
 }
-.entity-list { display: flex; flex-direction: column; gap: 12px; }
-.entity-list li { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: rgba(255,255,255,0.85); }
-.entity-list li::before { content: ""; width: 6px; height: 6px; border-radius: 1px; background: var(--orange); flex-shrink: 0; transform: rotate(45deg); }
+.convenio-hero::before {
+    content: ""; position: absolute; top: 14px; left: 14px; width: 16px; height: 16px;
+    border-top: 2px solid rgba(255,255,255,0.3); border-left: 2px solid rgba(255,255,255,0.3);
+}
+.convenio-hero::after {
+    content: ""; position: absolute; bottom: 14px; right: 14px; width: 16px; height: 16px;
+    border-bottom: 2px solid rgba(255,255,255,0.3); border-right: 2px solid rgba(255,255,255,0.3);
+}
+/* The generic navy badge would blend into this section's own navy
+   background — orange keeps it legible here specifically. */
+.convenio-hero-badge { margin-bottom: 14px; background: var(--orange); color: var(--white); }
+.convenio-hero-text h3 { color: var(--white); font-size: 1.5rem; margin-bottom: 10px; }
+.convenio-hero-text p { color: rgba(255,255,255,0.75); max-width: 40ch; }
+
+.convenios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+/* Same framed-panel signature as .area-panel/.why-lead elsewhere on
+   the page (corner brackets, bordered panel) — kept consistent
+   instead of introducing a one-off treatment here. */
+.convenio-block {
+    position: relative; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14);
+    border-top-width: 3px; border-radius: var(--radius-md); padding: 30px;
+}
+.convenio-accent-orange { border-top-color: var(--orange); }
+.convenio-accent-green { border-top-color: var(--green); }
+.convenio-accent-navy { border-top-color: rgba(255,255,255,0.4); }
+.convenio-block::before {
+    content: ""; position: absolute; top: 14px; left: 14px; width: 16px; height: 16px;
+    border-top: 2px solid rgba(255,255,255,0.3); border-left: 2px solid rgba(255,255,255,0.3);
+}
+.convenio-block::after {
+    content: ""; position: absolute; bottom: 14px; right: 14px; width: 16px; height: 16px;
+    border-bottom: 2px solid rgba(255,255,255,0.3); border-right: 2px solid rgba(255,255,255,0.3);
+}
+.convenio-block h3 { color: var(--white); font-size: 1.02rem; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.14); }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip-row li {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.86rem; font-weight: 600; color: var(--white);
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+    padding: 9px 16px; border-radius: 999px;
+}
+.chip-row-pinned li svg { width: 14px; height: 14px; color: var(--orange); flex-shrink: 0; }
+
+/* Two columns, filled column-first, so short entries use the panel's
+   full width instead of stacking in one narrow strip with the whole
+   right half sitting empty. */
+.entity-list { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 16px 24px; }
+.entity-list li { display: flex; align-items: center; gap: 12px; font-size: 0.92rem; color: rgba(255,255,255,0.88); }
+.entity-list li svg { width: 20px; height: 20px; color: var(--green); flex-shrink: 0; }
 .convenio-note { color: rgba(255,255,255,0.72); font-size: 0.92rem; }
+.simple-list { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; gap: 16px 24px; }
+.simple-list li { display: flex; align-items: center; gap: 12px; font-size: 0.92rem; color: rgba(255,255,255,0.88); }
+.simple-list li svg { width: 20px; height: 20px; color: rgba(255,255,255,0.4); flex-shrink: 0; }
 
 /* =========================================================
    CONVOCATORIAS
@@ -534,59 +593,63 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .convocatorias { padding: clamp(72px, 9vw, 120px) 0; background: var(--white); }
 .convocatorias-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .call-card {
-    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    position: relative;
+    background: var(--bg); border: 1px solid var(--line); border-top-width: 3px; border-top-color: var(--line-strong);
+    border-radius: var(--radius-md);
     padding: 26px; display: flex; flex-direction: column; gap: 10px;
     transition: transform 0.35s var(--ease-out), box-shadow 0.35s;
 }
-.call-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-.call-card .badge-tag { align-self: flex-start; margin-bottom: 4px; }
+.call-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+.call-accent-salud { border-top-color: var(--orange); }
+.call-accent-administrativo { border-top-color: var(--green); }
+.call-accent-continuada { border-top-color: var(--navy); }
+
+.call-card-top { display: flex; align-items: center; justify-content: space-between; }
+.call-card-icon { width: 30px; height: 30px; color: var(--line-strong); }
+.call-accent-salud .call-card-icon { color: var(--orange); }
+.call-accent-administrativo .call-card-icon { color: var(--green); }
+.call-accent-continuada .call-card-icon { color: var(--navy); }
+
+.call-card .badge-tag { margin-bottom: 4px; }
 .call-card h3 { font-size: 1.05rem; }
 .call-card p { color: var(--muted); font-size: 0.9rem; flex: 1; margin-bottom: 8px; }
-.call-card .btn { align-self: flex-start; }
+.call-card .btn { align-self: flex-start; transition: color 0.25s, border-color 0.25s, background 0.25s; }
+.call-card .btn:hover { color: var(--orange); border-color: var(--orange); background: rgba(217,123,46,0.06); }
 
 /* =========================================================
-   SEDES
+   NEWSLETTER BAND
    ========================================================= */
-.sedes { padding: clamp(72px, 9vw, 120px) 0; background: var(--navy);
-    background-image: linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 100%);
+.newsletter-band {
+    position: relative; overflow: hidden;
+    padding: clamp(48px, 6vw, 76px) 0;
+    background: var(--bg);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
-.sedes-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(30px, 6vw, 70px); align-items: center; }
-.sedes-map { position: relative; }
-.map-svg { width: 100%; height: auto; overflow: visible; }
-.map-route { fill: none; stroke: rgba(217,123,46,0.6); stroke-width: 2; stroke-dasharray: 6 8; }
-.map-node { fill: var(--orange); stroke: var(--navy-3); stroke-width: 3; }
-.map-node-pulse { fill: none; stroke: var(--orange); stroke-width: 1.5; opacity: 0; transform-origin: center; transform-box: fill-box; animation: mapPulse 2.6s ease-out infinite; }
-.map-svg circle:nth-of-type(6) { animation-delay: 0.6s; }
-.map-svg circle:nth-of-type(7) { animation-delay: 1.2s; }
-.map-svg circle:nth-of-type(8) { animation-delay: 1.8s; }
-@keyframes mapPulse { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(3.2); } }
+/* Oversized outline of the section's own mail icon, echoed faintly
+   in the background — ties the decoration to what the section is
+   about instead of adding an unrelated pattern. */
+.newsletter-band-deco {
+    position: absolute; top: 50%; right: clamp(-40px, 4vw, 40px); transform: translateY(-50%);
+    width: clamp(220px, 26vw, 380px); height: clamp(220px, 26vw, 380px);
+    color: rgba(16,40,74,0.05); stroke-width: 0.6; z-index: 0; pointer-events: none;
+}
+.newsletter-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: clamp(24px, 4vw, 48px); flex-wrap: wrap; }
+.newsletter-copy { max-width: 480px; }
+.newsletter-copy h2 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); margin: 14px 0 8px; }
+.newsletter-copy p { color: var(--muted); }
+.newsletter-action { flex: 1; min-width: 280px; max-width: 440px; }
 
-.sedes-list ul { display: flex; flex-direction: column; }
-.sedes-list li { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid rgba(255,255,255,0.14); }
-.sedes-list li:last-child { border-bottom: 1px solid rgba(255,255,255,0.14); }
-.sedes-list li svg { width: 22px; height: 22px; color: var(--orange); flex-shrink: 0; margin-top: 3px; }
-.sedes-list h3 { color: var(--white); font-size: 1.05rem; margin-bottom: 3px; }
-.sedes-list p { color: rgba(255,255,255,0.68); font-size: 0.92rem; }
+.cta-card-icon {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 52px; height: 52px; border-radius: 50%; background: var(--green-tint);
+}
+.cta-card-icon svg { width: 24px; height: 24px; color: var(--green); }
 
-/* =========================================================
-   CTA BAND — NEWSLETTER + CERTIFICADOS
-   ========================================================= */
-.cta-band { padding: clamp(64px, 8vw, 104px) 0; background: var(--bg); }
-.cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.cta-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: clamp(30px, 4vw, 44px); }
-.cta-card > svg { width: 32px; height: 32px; color: var(--green); margin-bottom: 16px; }
-.cta-card h3 { font-size: 1.35rem; margin-bottom: 10px; }
-.cta-card p { color: var(--muted); margin-bottom: 22px; max-width: 42ch; }
-.cta-card-dark { background: linear-gradient(155deg, var(--navy) 0%, var(--green-2) 145%); border-color: transparent; }
-.cta-card-dark > svg { color: var(--orange-tint); }
-.cta-card-dark h3, .cta-card-dark p { color: var(--white); }
-.cta-card-dark p { color: rgba(255,255,255,0.75); }
-
-.newsletter-form { display: flex; gap: 10px; max-width: 420px; }
+.newsletter-form { display: flex; gap: 10px; }
 .newsletter-form input {
     flex: 1; padding: 13px 18px; border-radius: 999px; border: 1.5px solid var(--line-strong);
-    background: var(--bg); color: var(--text); font-size: 0.94rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--white); color: var(--text); font-size: 0.94rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 .newsletter-form input:focus { border-color: var(--orange); box-shadow: 0 0 0 4px var(--orange-tint); outline: none; }
 .newsletter-form input::placeholder { color: var(--muted); }
@@ -608,6 +671,31 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .footer-col h4 { color: var(--white); font-size: 0.9rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 18px; }
 .footer-col ul { display: flex; flex-direction: column; gap: 11px; font-size: 0.9rem; }
 .footer-col a:hover { color: var(--white); }
+
+.footer-sedes-map-wrap {
+    position: relative; width: 100%; aspect-ratio: 1 / 0.95; border-radius: var(--radius-md);
+    background: #000; border: 1px solid rgba(255,255,255,0.14); overflow: hidden;
+}
+.footer-sedes-map { position: absolute; inset: 0; }
+/* A dark scrim over the normal, full-color map — same photo+scrim
+   technique used elsewhere on the site — reads as a real map dimmed
+   toward black, instead of a filtered basemap that loses its own
+   linework. Sits above the tiles but below the markers/tooltips. */
+.footer-sedes-scrim { position: absolute; inset: 0; z-index: 450; pointer-events: none; background: rgba(0,0,0,0.15); }
+.footer-sedes-marker { display: flex; align-items: center; justify-content: center; }
+.footer-sedes-marker-dot {
+    position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--orange); box-shadow: 0 0 0 3px rgba(8,21,39,0.6); transform: translate(-50%, -50%);
+}
+.footer-sedes-map .leaflet-tooltip {
+    background: var(--navy-4); color: var(--white); border: 1px solid rgba(255,255,255,0.16); font-family: inherit;
+    font-size: 0.78rem; padding: 6px 10px; border-radius: 6px; width: 150px; white-space: normal;
+    box-shadow: 0 8px 20px -8px rgba(3,10,22,0.7);
+}
+.footer-sedes-map .leaflet-tooltip strong { display: block; font-size: 0.8rem; margin-bottom: 2px; }
+.footer-sedes-map .leaflet-tooltip span { display: block; font-size: 0.68rem; line-height: 1.35; color: rgba(255,255,255,0.68); }
+.footer-sedes-map .leaflet-tooltip-top::before { border-top-color: var(--navy-4); }
+.footer-sedes-map .leaflet-tooltip-bottom::before { border-bottom-color: var(--navy-4); }
 
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding: 22px 0; }
 .footer-bottom p { font-size: 0.82rem; color: rgba(255,255,255,0.6); text-align: center; }
@@ -633,6 +721,7 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
     .mega-col-wide { grid-column: span 3; grid-row: auto; }
     .mega-two-col { grid-template-columns: repeat(3, 1fr); }
     .convenios-grid { grid-template-columns: 1fr; }
+    .convenio-hero { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 980px) {
@@ -649,11 +738,6 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 
     .convocatorias-row { grid-template-columns: repeat(2, 1fr); }
 
-    .sedes-grid { grid-template-columns: 1fr; }
-    .sedes-map { max-width: 340px; margin: 0 auto 20px; }
-
-    .cta-grid { grid-template-columns: 1fr; }
-
     .footer-grid { grid-template-columns: 1fr 1fr; }
     .footer-brand { grid-column: span 2; }
 }
@@ -667,6 +751,8 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 
     .convocatorias-row { grid-template-columns: 1fr; }
 
+    .entity-list, .simple-list { grid-template-columns: 1fr; grid-auto-flow: row; }
+
     .footer-grid { grid-template-columns: 1fr; }
     .footer-brand { grid-column: span 1; }
 
@@ -679,6 +765,6 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .scroll-cue span, .map-node-pulse { animation: none !important; }
+    .scroll-cue span { animation: none !important; }
     .btn:hover, .area-panel:hover, .career-card:hover, .call-card:hover, .whatsapp-fab:hover { transform: none; }
 }
