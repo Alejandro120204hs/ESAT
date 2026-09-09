@@ -46,6 +46,7 @@
 
         <!-- ============ POR QUÉ ESTUDIAR EN ESAT ============ -->
         <section class="why" id="por-que-esat">
+            <img src="{{ asset('assets/img/favicon.png') }}" class="section-watermark" alt="" aria-hidden="true">
             <div class="section-inner why-grid">
                 <div class="why-lead" data-aos="fade-up">
                     <h2>Por qué estudiar en ESAT</h2>
@@ -129,6 +130,7 @@
 
         <!-- ============ NUEVAS CARRERAS TÉCNICAS ============ -->
         <section class="new-careers" id="nuevas-carreras">
+            <img src="{{ asset('assets/img/favicon.png') }}" class="section-watermark" alt="" aria-hidden="true">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Nuevas carreras técnicas</h2>
