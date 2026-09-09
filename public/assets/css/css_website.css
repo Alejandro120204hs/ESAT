@@ -100,19 +100,29 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: translateY(0); }
 
+/* Bootstrap's own .btn:hover sets a text color via its own CSS
+   variable, and that rule's specificity (class + :hover) outranks
+   our plain .btn-accent base rule — so every hover state below
+   restates color explicitly instead of assuming it carries over. */
 .btn-accent { background: var(--orange); color: var(--white); box-shadow: var(--shadow-sm); }
-.btn-accent:hover { background: var(--orange-2); box-shadow: var(--shadow-md); }
+.btn-accent:hover { background: var(--orange-2); color: var(--white); box-shadow: var(--shadow-md); }
 
 .btn-outline { background: transparent; color: var(--navy); border-color: var(--line-strong); }
-.btn-outline:hover { border-color: var(--navy); background: rgba(16,40,74,0.04); }
+.btn-outline:hover { border-color: var(--navy); background: rgba(16,40,74,0.04); color: var(--navy); }
 
 .btn-outline-light { background: transparent; color: var(--white); border-color: rgba(255,255,255,0.35); }
-.btn-outline-light:hover { border-color: var(--white); background: rgba(255,255,255,0.08); }
+.btn-outline-light:hover { border-color: var(--white); background: rgba(255,255,255,0.08); color: var(--white); }
+/* The hero's WhatsApp button turns green on hover — a hint of where
+   it actually goes, before the click. */
+.hero .btn-outline-light:hover { border-color: var(--green); background: var(--green); color: var(--white); }
+.program-hero .btn-accent:hover,
+.program-cta .btn-accent:hover { background: var(--green); color: var(--white); box-shadow: var(--shadow-md); }
 
 .btn-ghost { background: transparent; color: var(--navy); }
-.btn-ghost:hover { background: rgba(16,40,74,0.06); }
+.btn-ghost:hover { background: rgba(16,40,74,0.06); color: var(--navy); }
 
 .btn-lg { padding: 16px 30px; font-size: 1rem; }
+.btn-lg svg { width: 22px; height: 22px; }
 .btn-sm { padding: 10px 18px; font-size: 0.88rem; }
 
 /* ---------- Badges ---------- */
@@ -673,9 +683,21 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .footer-brand .brand-logo { height: 76px; }
 .footer-legal { margin: 20px 0 22px; font-size: 0.85rem; line-height: 1.7; color: rgba(255,255,255,0.55); max-width: 42ch; }
 .social-row { display: flex; gap: 10px; }
-.social-row a { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); transition: background-color 0.2s, transform 0.25s; }
-.social-row a:hover { background: var(--orange); border-color: var(--orange); transform: translateY(-3px); }
-.social-row svg { width: 17px; height: 17px; color: var(--white); }
+.social-row a { position: relative; overflow: hidden; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); transition: background-color 0.2s, border-color 0.2s, transform 0.25s; }
+.social-row a:hover { transform: translateY(-3px); }
+.social-row a.social-fb:hover { background: #1877F2; border-color: #1877F2; }
+.social-row a.social-x:hover { background: #000000; border-color: #000000; }
+.social-row a.social-yt:hover { background: #FF0000; border-color: #FF0000; }
+/* A gradient can't cross-fade in through background-color alone, so
+   it lives on its own layer and fades in via opacity instead —
+   otherwise it would snap in instantly instead of transitioning. */
+.social-row a.social-ig::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity 0.25s;
+    background: radial-gradient(circle at 30% 110%, #FDF497 0%, #FD5949 45%, #D6249F 60%, #285AEB 90%);
+}
+.social-row a.social-ig:hover { border-color: transparent; }
+.social-row a.social-ig:hover::before { opacity: 1; }
+.social-row svg { position: relative; z-index: 1; width: 20px; height: 20px; color: var(--white); }
 
 .footer-col h4 { color: var(--white); font-size: 0.9rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 18px; }
 .footer-col ul { display: flex; flex-direction: column; gap: 11px; font-size: 0.9rem; }
@@ -789,6 +811,17 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
     background: linear-gradient(0deg, rgba(8,21,39,0.9) 0%, rgba(8,21,39,0.45) 55%, rgba(8,21,39,0.1) 100%);
 }
 .program-outcome-content { position: relative; z-index: 2; padding: 28px; }
+/* Content sits bottom-left, so the watermark anchors top-right —
+   same convention as the hero/practice-panel placeholders. */
+.program-outcome-placeholder {
+    position: absolute; inset: 0; z-index: 0;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    padding: 20px; text-align: right;
+    background: linear-gradient(155deg, var(--navy-3) 0%, var(--navy) 100%);
+    color: rgba(255,255,255,0.3);
+}
+.program-outcome-placeholder svg { width: 32px; height: 32px; }
+.program-outcome-placeholder span { font-size: 0.72rem; font-weight: 600; }
 
 .program-outcome-icon {
     display: flex; align-items: center; justify-content: center;
@@ -800,8 +833,11 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .program-outcome-accent-green .program-outcome-icon { background: var(--green); }
 .program-outcome-accent-navy .program-outcome-icon { background: var(--navy); }
 
-.program-outcome-card h3 { color: var(--white); font-size: 1.12rem; margin-bottom: 8px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
-.program-outcome-card p { color: rgba(255,255,255,0.85); font-size: 0.92rem; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+/* Reserves room for a two-line title even when the text only needs
+   one — otherwise a short title lets the icon sit lower than it
+   does on a card with a longer, wrapped title next to it. */
+.program-outcome-card h3 { color: var(--white); font-size: 1.12rem; line-height: 1.1; min-height: 2.2em; margin-bottom: 8px; text-shadow: 0 1px 8px rgba(0,0,0,0.45); }
+.program-outcome-card p { color: rgba(255,255,255,0.85); font-size: 0.92rem; line-height: 1.55; min-height: 4.65em; text-shadow: 0 1px 6px rgba(0,0,0,0.4); }
 
 .program-photo-panel {
     position: relative; overflow: hidden; border-radius: var(--radius-md);

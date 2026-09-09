@@ -9,3 +9,7 @@ Route::get('/', function () {
 Route::get('/servicios-geriatricos', function () {
     return view('paginas.servicios-geriatricos');
 })->name('programas.servicios-geriatricos');
+
+Route::get('/seguridad-ocupacional-y-laboral', function () {
+    return view('paginas.seguridad-ocupacional-y-laboral');
+})->name('programas.seguridad-ocupacional-y-laboral');

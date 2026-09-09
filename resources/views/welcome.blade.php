@@ -25,8 +25,8 @@
 
             <div class="hero-content">
                 <p class="hero-eyebrow-line"><span>Licencia de Funcionamiento 5850</span><span class="dot"></span><span>Secretaría de Educación de Cundinamarca</span></p>
-                <h1>Fórmate para el mundo laboral que te espera</h1>
-                <p class="hero-sub">Formación técnica certificada, práctica desde el primer día y con salida real al empleo. Siete escuelas, cuatro sedes, un mismo propósito: que trabajes en lo que te apasiona.</p>
+                <h1>Tu futuro empieza con la formación correcta</h1>
+                <p class="hero-sub">Formación técnica certificada, práctica desde el primer día y con proyección real. Siete escuelas, cuatro sedes, un mismo propósito: que crezcas en lo que te apasiona.</p>
                 <div class="hero-actions">
                     <a href="#areas-formacion" class="btn btn-accent btn-lg">
                         Ver programas técnicos
