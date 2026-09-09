@@ -52,7 +52,7 @@
                     <ul>
                         <li><a href="{{ route('programas.servicios-geriatricos') }}">Servicios Geriátricos</a></li>
                         <li><a href="{{ route('programas.seguridad-ocupacional-y-laboral') }}">Seguridad Ocupacional y Laboral</a></li>
-                        <li><a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener">Auxiliar de Psiquiatría</a></li>
+                        <li><a href="{{ route('programas.auxiliar-de-psiquiatria') }}">Auxiliar de Psiquiatría</a></li>
                         <li><a href="{{ $wa('Camillero Hospitalario') }}" target="_blank" rel="noopener">Camillero Hospitalario</a></li>
                     </ul>
                 </div>
@@ -153,6 +153,7 @@
                     $programRoutes = [
                         'Servicios Geriátricos' => route('programas.servicios-geriatricos'),
                         'Seguridad Ocupacional y Laboral' => route('programas.seguridad-ocupacional-y-laboral'),
+                        'Auxiliar de Psiquiatría' => route('programas.auxiliar-de-psiquiatria'),
                     ];
                 @endphp
                 @foreach ($schools as [$name, $icon, $programs])
