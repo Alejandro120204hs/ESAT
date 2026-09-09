@@ -10,10 +10,10 @@
                 NIT 900820764-1 · Decreto 4904 de 2009, Ministerio de Educación Nacional.
             </p>
             <ul class="social-row">
-                <li><a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><use href="#ico-fb"/></svg></a></li>
-                <li><a href="#" aria-label="Twitter / X"><svg viewBox="0 0 24 24"><use href="#ico-x"/></svg></a></li>
-                <li><a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><use href="#ico-ig"/></svg></a></li>
-                <li><a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><use href="#ico-yt"/></svg></a></li>
+                <li><a href="#" class="social-fb" aria-label="Facebook"><svg viewBox="0 0 24 24"><use href="#ico-fb"/></svg></a></li>
+                <li><a href="#" class="social-x" aria-label="Twitter / X"><svg viewBox="0 0 24 24"><use href="#ico-x"/></svg></a></li>
+                <li><a href="#" class="social-ig" aria-label="Instagram"><svg viewBox="0 0 24 24"><use href="#ico-ig"/></svg></a></li>
+                <li><a href="#" class="social-yt" aria-label="YouTube"><svg viewBox="0 0 24 24"><use href="#ico-yt"/></svg></a></li>
             </ul>
         </div>
 
