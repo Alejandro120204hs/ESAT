@@ -51,6 +51,7 @@
 
         <!-- ============ QUÉ DESARROLLARÁS ============ -->
         <section class="program-section">
+            <img src="{{ asset('assets/img/favicon.png') }}" class="section-watermark" alt="" aria-hidden="true">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Qué desarrollarás</h2>
