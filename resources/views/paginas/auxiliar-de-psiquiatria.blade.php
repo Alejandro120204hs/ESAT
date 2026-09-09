@@ -1,20 +1,25 @@
 @extends('layouts.app')
 
-@section('title', 'Servicios Geriátricos · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico en Servicios Geriátricos en ESAT: formación en atención integral, bienestar y cuidado especializado del adulto mayor, con salida a hogares, clínicas y programas de atención.')
+@section('title', 'Auxiliar de Psiquiatría · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Auxiliar de Psiquiatría en ESAT: formación para apoyar la atención en salud mental, acompañar pacientes y aplicar cuidados básicos con enfoque humano.')
 
 @php
-    // Drop the real photos in public/assets/img with these exact
-    // filenames and they replace the placeholder panels automatically
-    // — no code changes needed.
-    $heroPhoto = 'servicio-geriatrico.png';
+    // Drop the real photo in public/assets/img with this exact
+    // filename and it replaces the placeholder panel automatically —
+    // no code changes needed.
+    $heroPhoto = 'auxiliar-psiquiatria.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprendiendo-geriatrico.jpeg';
+    $practicePhoto = 'enseñar-psiquiatria.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
+
+    $outcomes = [
+        ['Instituciones de salud mental', 'Apoya la atención de pacientes en centros especializados en salud mental.', 'ico-heart', 'orange', 'Instituciones-de-salud-mental.jpeg'],
+        ['Hospitales y clínicas', 'Brinda apoyo en unidades de psiquiatría dentro de hospitales y clínicas generales.', 'ico-salud', 'green', 'psiquiatria-hospitales.jpeg'],
+        ['Programas de atención especializada', 'Acompaña programas de atención especializada con un enfoque humano y responsable.', 'ico-shield', 'navy', 'atencion-salud-mental.jpeg'],
+    ];
 @endphp
 
 @section('content')
-        <!-- ============ BREADCRUMB ============ -->
         <!-- ============ HERO DEL PROGRAMA ============ -->
         <section class="program-hero">
             @if ($heroPhotoExists)
@@ -33,11 +38,11 @@
                         <svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg>
                         Escuela de Salud
                     </span>
-                    <h1>Servicios Geriátricos</h1>
-                    <p class="program-hero-tagline">Cuidado digno y humano para el adulto mayor.</p>
-                    <p class="program-hero-lead">Formamos profesionales capacitados en la atención integral al adulto mayor, con énfasis en el bienestar, el acompañamiento, el cuidado especializado y el respeto a la dignidad en cada etapa del envejecimiento.</p>
+                    <h1>Auxiliar de Psiquiatría</h1>
+                    <p class="program-hero-tagline">Apoyo humano en la salud mental.</p>
+                    <p class="program-hero-lead">Formamos profesionales capacitados para apoyar la atención en salud mental, acompañar pacientes y aplicar cuidados básicos con un enfoque humano y responsable.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Servicios Geriátricos') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -52,24 +57,24 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Qué desarrollarás</h2>
-                    <p>Formación práctica, guiada por instructores con experiencia real en el cuidado del adulto mayor.</p>
+                    <p>Formación práctica, guiada por instructores con experiencia real en salud mental.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Atención integral al adulto mayor</h3><p>Formación centrada en el bienestar y el acompañamiento en cada etapa del envejecimiento.</p></div>
+                        <div><h3>Apoyo en salud mental</h3><p>Brinda apoyo en la atención en salud mental de los pacientes.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg></span>
-                        <div><h3>Cuidado especializado</h3><p>Competencias para brindar cuidado con respeto a la dignidad de la persona mayor.</p></div>
+                        <div><h3>Acompañamiento a pacientes</h3><p>Acompaña a los pacientes con un enfoque humano y responsable.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
-                        <div><h3>Formación práctica</h3><p>Instructores expertos que conectan la teoría con la práctica real del oficio.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
+                        <div><h3>Cuidados básicos</h3><p>Aplica cuidados básicos con un enfoque humano y responsable.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-arrow"/></svg></span>
-                        <div><h3>Fórmate para cuidar mejor</h3><p>Formación pensada para que brindes una atención más completa al adulto mayor.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
+                        <div><h3>Formación práctica</h3><p>Docentes expertos que conectan la teoría con la práctica real.</p></div>
                     </div>
                 </div>
             </div>
@@ -83,33 +88,25 @@
                     <p>Egresa listo para desempeñarte en estos entornos.</p>
                 </div>
                 <div class="program-outcome-grid">
-                    <article class="program-outcome-card program-outcome-accent-orange" data-aos="fade-up" data-aos-delay="0">
-                        <img src="{{ asset('assets/img/hogares-geriatricos.jpeg') }}" class="program-outcome-photo" alt="" aria-hidden="true">
-                        <div class="program-outcome-scrim" aria-hidden="true"></div>
-                        <div class="program-outcome-content">
-                            <span class="program-outcome-icon"><svg viewBox="0 0 24 24"><use href="#ico-building"/></svg></span>
-                            <h3>Hogares geriátricos</h3>
-                            <p>Acompaña el día a día de los residentes: actividades, cuidado personal y bienestar constante.</p>
-                        </div>
-                    </article>
-                    <article class="program-outcome-card program-outcome-accent-green" data-aos="fade-up" data-aos-delay="80">
-                        <img src="{{ asset('assets/img/clinica-adulto-mayor.jpeg') }}" class="program-outcome-photo" alt="" aria-hidden="true">
-                        <div class="program-outcome-scrim" aria-hidden="true"></div>
-                        <div class="program-outcome-content">
-                            <span class="program-outcome-icon"><svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg></span>
-                            <h3>Clínicas</h3>
-                            <p>Apoya la atención clínica del adulto mayor junto a un equipo de salud especializado.</p>
-                        </div>
-                    </article>
-                    <article class="program-outcome-card program-outcome-accent-navy" data-aos="fade-up" data-aos-delay="160">
-                        <img src="{{ asset('assets/img/programa-atencion-adulto-mayor.jpeg') }}" class="program-outcome-photo" alt="" aria-hidden="true">
-                        <div class="program-outcome-scrim" aria-hidden="true"></div>
-                        <div class="program-outcome-content">
-                            <span class="program-outcome-icon"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                            <h3>Programas de atención al adulto mayor</h3>
-                            <p>Participa en programas sociales y comunitarios que promueven una vejez activa y feliz.</p>
-                        </div>
-                    </article>
+                    @foreach ($outcomes as [$title, $desc, $icon, $accent, $photo])
+                        @php $photoExists = file_exists(public_path('assets/img/' . $photo)); @endphp
+                        <article class="program-outcome-card program-outcome-accent-{{ $accent }}" data-aos="fade-up" data-aos-delay="{{ $loop->index * 80 }}">
+                            @if ($photoExists)
+                                <img src="{{ asset('assets/img/' . $photo) }}" class="program-outcome-photo" alt="" aria-hidden="true">
+                                <div class="program-outcome-scrim" aria-hidden="true"></div>
+                            @else
+                                <div class="program-outcome-placeholder" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><use href="#{{ $icon }}"/></svg>
+                                    <span>Foto pendiente — public/assets/img/{{ $photo }}</span>
+                                </div>
+                            @endif
+                            <div class="program-outcome-content">
+                                <span class="program-outcome-icon"><svg viewBox="0 0 24 24"><use href="#{{ $icon }}"/></svg></span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $desc }}</p>
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
             </div>
         </section>
@@ -129,7 +126,7 @@
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica el cuidado del adulto mayor guiado por un equipo profesional.</p>
+                        <p>Practica el acompañamiento de pacientes guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -157,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte en Servicios Geriátricos?</h2>
+                    <h2>¿Listo para formarte en Auxiliar de Psiquiatría?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Servicios Geriátricos') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>

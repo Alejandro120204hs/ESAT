@@ -13,3 +13,11 @@ Route::get('/servicios-geriatricos', function () {
 Route::get('/seguridad-ocupacional-y-laboral', function () {
     return view('paginas.seguridad-ocupacional-y-laboral');
 })->name('programas.seguridad-ocupacional-y-laboral');
+
+Route::get('/auxiliar-de-psiquiatria', function () {
+    return view('paginas.auxiliar-de-psiquiatria');
+})->name('programas.auxiliar-de-psiquiatria');
+
+Route::get('/camillero-hospitalario', function () {
+    return view('paginas.camillero-hospitalario');
+})->name('programas.camillero-hospitalario');
