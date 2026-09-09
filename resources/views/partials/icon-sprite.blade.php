@@ -31,5 +31,6 @@
         <symbol id="ico-leaf" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20h2C16 20 20 14 20 4Z"/><path d="M6 18C10 14 14 10 18 6"/></symbol>
         <symbol id="ico-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .8-1.9 1.9-1.9H17a4 4 0 0 0 4-4c0-4.4-4-7.5-9-7.5Z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="14" cy="6.5" r="1.1" fill="currentColor" stroke="none"/></symbol>
         <symbol id="ico-mind" viewBox="0 0 24 24"><path d="M9 3.5A3 3 0 0 0 6 6.5a3 3 0 0 0-1 5.8A3.5 3.5 0 0 0 7.5 18a3 3 0 0 0 4.5-2.6V6.5A3 3 0 0 0 9 3.5Z"/><path d="M15 3.5a3 3 0 0 1 3 3 3 3 0 0 1 1 5.8 3.5 3.5 0 0 1-2.5 5.7 3 3 0 0 1-4.5-2.6V6.5a3 3 0 0 1 3-3Z"/><path d="M6.3 8.2h1.4M16.3 8.2h1.4M8.5 12.3h1.5M14 12.3h1.5"/></symbol>
+        <symbol id="ico-stretcher" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="5" rx="1.5"/><path d="M5 9c0-1.2.8-2.5 2.5-2.5"/><path d="M6 14v4M18 14v4"/><circle cx="6" cy="19.3" r="1.2" fill="currentColor" stroke="none"/><circle cx="18" cy="19.3" r="1.2" fill="currentColor" stroke="none"/></symbol>
     </defs>
 </svg>

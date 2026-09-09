@@ -151,7 +151,7 @@
 
         <!-- ============ CTA FINAL ============ -->
         <section class="program-cta">
-            <svg class="program-cta-deco" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-shield"/></svg>
+            <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
                     <h2>¿Listo para formarte en Seguridad Ocupacional y Laboral?</h2>

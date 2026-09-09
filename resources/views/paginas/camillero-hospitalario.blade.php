@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Auxiliar de Psiquiatría · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico en Auxiliar de Psiquiatría en ESAT: formación para apoyar la atención en salud mental, acompañar pacientes y aplicar cuidados básicos con enfoque humano.')
+@section('title', 'Camillero Hospitalario · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Camillero Hospitalario en ESAT: formación en traslado seguro de pacientes, apoyo asistencial y cumplimiento de protocolos en instituciones de salud.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'auxiliar-psiquiatria.png';
+    $heroPhoto = 'camillero.jpeg';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'enseñar-psiquiatria.png';
+    $practicePhoto = 'aprender-camillero.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Instituciones de salud mental', 'Apoya la atención de pacientes en centros especializados en salud mental.', 'ico-heart', 'orange', 'Instituciones-de-salud-mental.jpeg'],
-        ['Hospitales y clínicas', 'Brinda apoyo en unidades de psiquiatría dentro de hospitales y clínicas generales.', 'ico-salud', 'green', 'psiquiatria-hospitales.jpeg'],
-        ['Programas de atención especializada', 'Acompaña programas de atención especializada con un enfoque humano y responsable.', 'ico-shield', 'navy', 'atencion-salud-mental.jpeg'],
+        ['Clínicas', 'Apoya el traslado seguro de pacientes dentro de clínicas.', 'ico-salud', 'orange', 'camillero-clinica.jpeg'],
+        ['Hospitales', 'Brinda apoyo asistencial y cumple protocolos en hospitales.', 'ico-building', 'green', 'camillero-hospital.jpeg'],
+        ['Servicios de atención médica', 'Ofrece atención oportuna y humanizada en servicios de salud.', 'ico-heart', 'navy', 'camillero-servicio.jpeg'],
     ];
 @endphp
 
@@ -23,7 +23,7 @@
         <!-- ============ HERO DEL PROGRAMA ============ -->
         <section class="program-hero">
             @if ($heroPhotoExists)
-                <img src="{{ asset('assets/img/' . $heroPhoto) }}" class="program-hero-photo" alt="" aria-hidden="true">
+                <img src="{{ asset('assets/img/' . $heroPhoto) }}" class="program-hero-photo program-hero-photo-lower" alt="" aria-hidden="true">
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
@@ -38,11 +38,11 @@
                         <svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg>
                         Escuela de Salud
                     </span>
-                    <h1>Auxiliar de Psiquiatría</h1>
-                    <p class="program-hero-tagline">Apoyo humano en la salud mental.</p>
-                    <p class="program-hero-lead">Formamos profesionales capacitados para apoyar la atención en salud mental, acompañar pacientes y aplicar cuidados básicos con un enfoque humano y responsable.</p>
+                    <h1>Camillero Hospitalario</h1>
+                    <p class="program-hero-tagline">Apoyo esencial en la atención al paciente.</p>
+                    <p class="program-hero-lead">Formamos profesionales en el traslado seguro de pacientes, apoyo asistencial y cumplimiento de protocolos, con atención oportuna y humanizada en instituciones de salud.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Camillero Hospitalario') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -57,20 +57,20 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Qué desarrollarás</h2>
-                    <p>Formación práctica, guiada por instructores con experiencia real en salud mental.</p>
+                    <p>Formación práctica, guiada por instructores con experiencia real en instituciones de salud.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Apoyo en salud mental</h3><p>Brinda apoyo en la atención en salud mental de los pacientes.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg></span>
+                        <div><h3>Traslado seguro de pacientes</h3><p>Moviliza pacientes de forma segura dentro de la institución de salud.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg></span>
-                        <div><h3>Acompañamiento a pacientes</h3><p>Acompaña a los pacientes con un enfoque humano y responsable.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
+                        <div><h3>Apoyo asistencial</h3><p>Brinda apoyo oportuno y humanizado en la atención al paciente.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Cuidados básicos</h3><p>Aplica cuidados básicos con un enfoque humano y responsable.</p></div>
+                        <div><h3>Cumplimiento de protocolos</h3><p>Aplica los protocolos institucionales en cada procedimiento.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
@@ -126,7 +126,7 @@
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica el acompañamiento de pacientes guiado por un equipo profesional.</p>
+                        <p>Practica el traslado y apoyo asistencial de pacientes guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte en Auxiliar de Psiquiatría?</h2>
+                    <h2>¿Listo para formarte en Camillero Hospitalario?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Camillero Hospitalario') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>

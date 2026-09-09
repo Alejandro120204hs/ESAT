@@ -743,6 +743,10 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
    the subject and the edge of frame — this crops in past it instead
    of stretching the whole (mostly empty) width across the banner. */
 .program-hero-photo-tight { transform: scale(1.08); transform-origin: 25% 40%; }
+/* Shows more of the bottom of the frame instead of the default
+   top-biased crop — for photos where the subject of interest sits
+   lower (e.g. a stretcher/gurney at the bottom of the shot). */
+.program-hero-photo-lower { object-position: center 28%; }
 .program-hero-scrim {
     position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(0deg,
@@ -899,6 +903,9 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
     width: clamp(220px, 26vw, 380px); height: clamp(220px, 26vw, 380px);
     color: rgba(16,40,74,0.05); stroke-width: 0.6; z-index: 0; pointer-events: none;
 }
+/* The brand-mark version is a raster image, not an SVG icon — its
+   low-opacity look comes from the opacity property, not fill color. */
+img.program-cta-deco { opacity: 0.06; }
 .program-cta-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .program-cta h2 { font-size: clamp(1.5rem, 2.6vw, 2rem); margin-bottom: 6px; }
 .program-cta p { color: var(--muted); }

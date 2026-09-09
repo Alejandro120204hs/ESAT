@@ -17,3 +17,7 @@ Route::get('/seguridad-ocupacional-y-laboral', function () {
 Route::get('/auxiliar-de-psiquiatria', function () {
     return view('paginas.auxiliar-de-psiquiatria');
 })->name('programas.auxiliar-de-psiquiatria');
+
+Route::get('/camillero-hospitalario', function () {
+    return view('paginas.camillero-hospitalario');
+})->name('programas.camillero-hospitalario');
