@@ -51,9 +51,9 @@
                     <div class="mega-col-head"><svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg><h3>Escuela de Salud</h3></div>
                     <ul>
                         <li><a href="{{ route('programas.servicios-geriatricos') }}">Servicios Geriátricos</a></li>
-                        <li><a href="{{ $wa('Seguridad Ocupacional y Laboral') }}" target="_blank" rel="noopener">Seguridad Ocupacional y Laboral</a></li>
-                        <li><a href="{{ $wa('Auxiliar de Psiquiatría') }}" target="_blank" rel="noopener">Auxiliar de Psiquiatría</a></li>
-                        <li><a href="{{ $wa('Camillero Hospitalario') }}" target="_blank" rel="noopener">Camillero Hospitalario</a></li>
+                        <li><a href="{{ route('programas.seguridad-ocupacional-y-laboral') }}">Seguridad Ocupacional y Laboral</a></li>
+                        <li><a href="{{ route('programas.auxiliar-de-psiquiatria') }}">Auxiliar de Psiquiatría</a></li>
+                        <li><a href="{{ route('programas.camillero-hospitalario') }}">Camillero Hospitalario</a></li>
                     </ul>
                 </div>
 
@@ -152,6 +152,9 @@
                     // Programs with a real page get an internal link instead of a WhatsApp one.
                     $programRoutes = [
                         'Servicios Geriátricos' => route('programas.servicios-geriatricos'),
+                        'Seguridad Ocupacional y Laboral' => route('programas.seguridad-ocupacional-y-laboral'),
+                        'Auxiliar de Psiquiatría' => route('programas.auxiliar-de-psiquiatria'),
+                        'Camillero Hospitalario' => route('programas.camillero-hospitalario'),
                     ];
                 @endphp
                 @foreach ($schools as [$name, $icon, $programs])
