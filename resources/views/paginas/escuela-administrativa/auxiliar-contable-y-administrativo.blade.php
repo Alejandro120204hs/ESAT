@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'auxiliar-contable.png';
+    $heroPhoto = 'contable.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
     $practicePhoto = 'aprender-contable.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Empresas privadas', 'Brinda apoyo contable y administrativo en empresas del sector privado.', 'ico-building', 'orange', 'empresa-privada-contable.jpeg'],
-        ['Entidades públicas', 'Apoya la gestión administrativa en oficinas y entidades públicas.', 'ico-shield', 'green', 'entidad-publica-contable.jpeg'],
-        ['Organizaciones de diversos sectores', 'Trabaja en organizaciones de distintos sectores productivos.', 'ico-admin', 'navy', 'organizacion-contable.jpeg'],
+        ['Empresas privadas', 'Brinda apoyo contable y administrativo en empresas del sector privado.', 'ico-building', 'orange', 'contable-empresa.png'],
+        ['Entidades públicas', 'Apoya la gestión administrativa en oficinas y entidades públicas.', 'ico-shield', 'green', 'contable-publica.png'],
+        ['Organizaciones de diversos sectores', 'Trabaja en organizaciones de distintos sectores productivos.', 'ico-admin', 'navy', 'contable-sector.png'],
     ];
 @endphp
 
