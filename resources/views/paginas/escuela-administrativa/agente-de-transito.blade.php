@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Sommelier · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico Sommelier en ESAT: formación en cata, maridaje y servicio de vinos, con conocimientos sensoriales y técnicos de alto nivel.')
+@section('title', 'Agente de Tránsito · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Agente de Tránsito en ESAT: formación en regulación vial, control del tráfico y orientación ciudadana, para la seguridad y el orden en las vías.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'sommelier.png';
+    $heroPhoto = 'transito.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-sommelier.png';
+    $practicePhoto = 'transito-aprender.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Restaurantes', 'Asesora el maridaje y servicio de vinos en restaurantes.', 'ico-cocina', 'orange', 'sommelier-restaurante.png'],
-        ['Hoteles', 'Brinda experiencias de vino de alto nivel en el sector hotelero.', 'ico-building', 'green', 'sommelier-hotel.png'],
-        ['Experiencias enológicas', 'Guía eventos y experiencias enológicas para los comensales.', 'ico-heart', 'navy', 'sommelier-experiencias.png'],
+        ['Secretarías de Tránsito', 'Apoya la regulación y el control del tráfico en secretarías municipales de tránsito.', 'ico-shield', 'orange', 'transito-secretaria.png'],
+        ['Empresas de transporte', 'Contribuye al orden y la seguridad vial en empresas de transporte público y privado.', 'ico-building', 'green', 'transito-empresa.png'],
+        ['Organismos de control vial', 'Trabaja en organismos de tránsito y movilidad que velan por la seguridad en las vías.', 'ico-scale', 'navy', 'transito-vial.png'],
     ];
 @endphp
 
@@ -27,7 +27,7 @@
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                    <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
                     <span>Foto pendiente — public/assets/img/{{ $heroPhoto }}</span>
                 </div>
             @endif
@@ -35,14 +35,14 @@
             <div class="section-inner">
                 <div class="program-hero-content">
                     <span class="badge badge-double program-hero-badge">
-                        <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
-                        Cocina y Turismo
+                        <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
+                        Escuela Administrativa
                     </span>
-                    <h1>Sommelier</h1>
-                    <p class="program-hero-tagline">El arte de elevar la experiencia del vino.</p>
-                    <p class="program-hero-lead">Formamos profesionales en cata, maridaje y servicio de vinos, desarrollando conocimientos sensoriales y técnicos para ofrecer experiencias gastronómicas de alto nivel.</p>
+                    <h1>Agente de Tránsito</h1>
+                    <p class="program-hero-tagline">Orden y seguridad en las vías.</p>
+                    <p class="program-hero-lead">Formamos profesionales capacitados en regulación vial, control del tráfico y orientación ciudadana, contribuyendo a la seguridad, el orden y la convivencia en las vías.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Agente de Tránsito') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -57,24 +57,24 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Formación práctica</h2>
-                    <p>Descubre los conocimientos y técnicas detrás de una gran experiencia con el vino.</p>
+                    <p>Domina la regulación vial, el control del tráfico y la orientación ciudadana en las vías.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Cata de vinos</h3><p>Desarrolla conocimientos sensoriales para evaluar vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-scale"/></svg></span>
+                        <div><h3>Regulación vial</h3><p>Regula el tráfico y el flujo vehicular en las vías públicas.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg></span>
-                        <div><h3>Maridaje</h3><p>Combina vinos y alimentos para experiencias gastronómicas de alto nivel.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg></span>
+                        <div><h3>Control del tráfico</h3><p>Controla la movilidad y previene incidentes en las vías.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Servicio de vinos</h3><p>Aplica el protocolo y técnica del servicio de vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-megaphone"/></svg></span>
+                        <div><h3>Orientación ciudadana</h3><p>Orienta a los ciudadanos para una convivencia vial segura.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
-                        <div><h3>Formación práctica</h3><p>Expertos del sector que conectan la teoría con la práctica real.</p></div>
+                        <div><h3>Formación práctica</h3><p>Instructores expertos que conectan la teoría con la práctica real.</p></div>
                     </div>
                 </div>
             </div>
@@ -120,13 +120,13 @@
                         <div class="program-photo-panel-scrim" aria-hidden="true"></div>
                     @else
                         <div class="program-photo-panel-placeholder" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                            <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
                             <span>Foto pendiente — public/assets/img/{{ $practicePhoto }}</span>
                         </div>
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica la cata y el servicio de vinos guiado por expertos del sector.</p>
+                        <p>Practica la regulación y el control del tráfico guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte como Sommelier?</h2>
+                    <h2>¿Listo para formarte en Agente de Tránsito?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Agente de Tránsito') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>

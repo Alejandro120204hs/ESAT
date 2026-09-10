@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'inspector-de-calidad-de-alimentos-y-bebidas.jpg';
+    $heroPhoto = 'inspeccion.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'inspector-de-calidad-de-alimentos-y-bebidas-practica.jpg';
+    $practicePhoto = 'inspector-aprender.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Industrias de alimentos y bebidas', 'Controla la calidad de productos en plantas de producción.', 'ico-building', 'orange', 'inspector-industrias.jpg'],
-        ['Restaurantes y hoteles', 'Verifica el cumplimiento de estándares de inocuidad en cocina y servicio.', 'ico-cocina', 'green', 'inspector-restaurantes.jpg'],
-        ['Entidades de control sanitario', 'Apoya la vigilancia y el cumplimiento normativo en entidades de control.', 'ico-shield', 'navy', 'inspector-control-sanitario.jpg'],
+        ['Industrias de alimentos y bebidas', 'Controla la calidad de productos en plantas de producción.', 'ico-building', 'orange', 'inspector-industria.png'],
+        ['Restaurantes y hoteles', 'Verifica el cumplimiento de estándares de inocuidad en cocina y servicio.', 'ico-cocina', 'green', 'inspector-restaurante.png'],
+        ['Entidades de control sanitario', 'Apoya la vigilancia y el cumplimiento normativo en entidades de control.', 'ico-shield', 'navy', 'isnpector-entidades.png'],
     ];
 @endphp
 
