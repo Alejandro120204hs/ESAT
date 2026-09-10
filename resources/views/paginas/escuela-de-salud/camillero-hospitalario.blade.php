@@ -56,8 +56,8 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="section-watermark" alt="" aria-hidden="true">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Qué desarrollarás</h2>
-                    <p>Formación práctica, guiada por instructores con experiencia real en instituciones de salud.</p>
+                    <h2>Formación práctica</h2>
+                    <p>Aprende a movilizar pacientes con seguridad y a brindar apoyo oportuno en cada procedimiento.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
