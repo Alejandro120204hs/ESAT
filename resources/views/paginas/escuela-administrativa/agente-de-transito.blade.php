@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'agente-transito.png';
+    $heroPhoto = 'transito.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-transito.png';
+    $practicePhoto = 'transito-aprender.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Secretarías de Tránsito', 'Apoya la regulación y el control del tráfico en secretarías municipales de tránsito.', 'ico-shield', 'orange', 'secretaria-transito.jpeg'],
-        ['Empresas de transporte', 'Contribuye al orden y la seguridad vial en empresas de transporte público y privado.', 'ico-building', 'green', 'empresa-transporte.jpeg'],
-        ['Organismos de control vial', 'Trabaja en organismos de tránsito y movilidad que velan por la seguridad en las vías.', 'ico-scale', 'navy', 'organismo-control-vial.jpeg'],
+        ['Secretarías de Tránsito', 'Apoya la regulación y el control del tráfico en secretarías municipales de tránsito.', 'ico-shield', 'orange', 'transito-secretaria.png'],
+        ['Empresas de transporte', 'Contribuye al orden y la seguridad vial en empresas de transporte público y privado.', 'ico-building', 'green', 'transito-empresa.png'],
+        ['Organismos de control vial', 'Trabaja en organismos de tránsito y movilidad que velan por la seguridad en las vías.', 'ico-scale', 'navy', 'transito-vial.png'],
     ];
 @endphp
 
