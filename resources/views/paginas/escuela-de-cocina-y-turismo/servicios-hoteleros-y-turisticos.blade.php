@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Seguridad Ocupacional y Laboral · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico en Seguridad Ocupacional y Laboral en ESAT: formación en prevención de riesgos, identificación de peligros y cumplimiento normativo para entornos laborales seguros.')
+@section('title', 'Servicios Hoteleros y Turísticos · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Servicios Hoteleros y Turísticos en ESAT: formación en atención al cliente, operación de servicios y calidad turística.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'seguridad-ocupacional-y-laboral.png';
+    $heroPhoto = 'turismo.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'seguridad-y-salud-aprende-haciendo.png';
+    $practicePhoto = 'aprender-hoteleria.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Empresas industriales y manufactureras', 'Sector con mayor exigencia en gestión de riesgos laborales.', 'ico-tool', 'orange', 'Empresas-industriales-y-manufactureras.jpeg'],
-        ['Construcción y obras civiles', 'Uno de los sectores de mayor accidentalidad y demanda de personal SST.', 'ico-building', 'green', 'Obras-civiles.jpeg'],
-        ['Empresas de cualquier sector', 'Todas las empresas necesitan profesionales que cuiden la seguridad de su equipo de trabajo.', 'ico-admin', 'navy', 'cauqluier-sector.jpeg'],
+        ['Hoteles', 'Brinda atención al cliente y operación de servicios en hoteles.', 'ico-building', 'orange', 'hoteles.jpeg'],
+        ['Agencias de viajes', 'Apoya la operación de agencias y destinos turísticos.', 'ico-pin', 'green', 'agencia.jpeg'],
+        ['Eventos turísticos', 'Participa en la organización de eventos y experiencias turísticas.', 'ico-megaphone', 'navy', 'evento.jpeg'],
     ];
 @endphp
 
@@ -27,7 +27,7 @@
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg>
+                    <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
                     <span>Foto pendiente — public/assets/img/{{ $heroPhoto }}</span>
                 </div>
             @endif
@@ -35,14 +35,14 @@
             <div class="section-inner">
                 <div class="program-hero-content">
                     <span class="badge badge-double program-hero-badge">
-                        <svg viewBox="0 0 24 24"><use href="#ico-salud"/></svg>
-                        Escuela de Salud
+                        <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                        Cocina y Turismo
                     </span>
-                    <h1>Seguridad Ocupacional y Laboral</h1>
-                    <p class="program-hero-tagline">Protege la vida en el trabajo.</p>
-                    <p class="program-hero-lead">Formamos profesionales en prevención de riesgos, identificación de peligros y cumplimiento normativo, para contribuir a entornos laborales seguros, saludables y productivos.</p>
+                    <h1>Servicios Hoteleros y Turísticos</h1>
+                    <p class="program-hero-tagline">Experiencias que dejan huella.</p>
+                    <p class="program-hero-lead">Formamos profesionales en atención al cliente, operación de servicios y calidad turística, con habilidades prácticas para brindar experiencias memorables y competitivas.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Seguridad Ocupacional y Laboral') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Servicios Hoteleros y Turísticos') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -56,25 +56,25 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="section-watermark" alt="" aria-hidden="true">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Qué desarrollarás</h2>
-                    <p>Formación práctica, guiada por instructores con experiencia real en seguridad y salud en el trabajo.</p>
+                    <h2>Formación práctica</h2>
+                    <p>Fórmate en atención al cliente, operación hotelera y calidad turística para dejar huella en cada experiencia.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg></span>
-                        <div><h3>Prevención de riesgos</h3><p>Competencias para anticipar y controlar riesgos en entornos laborales.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
+                        <div><h3>Atención al cliente</h3><p>Brinda un servicio memorable en cada interacción con el huésped.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Identificación de peligros</h3><p>Reconoce condiciones y actos que pueden derivar en incidentes laborales.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg></span>
+                        <div><h3>Operación de servicios</h3><p>Gestiona la operación diaria de servicios hoteleros y turísticos.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-scale"/></svg></span>
-                        <div><h3>Cumplimiento normativo</h3><p>Aplica la normativa vigente en seguridad y salud en el trabajo.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
+                        <div><h3>Calidad turística</h3><p>Aplica estándares de calidad en cada experiencia que ofreces.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-building"/></svg></span>
-                        <div><h3>Implementación de programas</h3><p>Pon en marcha programas de seguridad y salud en diversas organizaciones.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
+                        <div><h3>Formación práctica</h3><p>Docentes expertos que conectan la teoría con la práctica real.</p></div>
                     </div>
                 </div>
             </div>
@@ -120,13 +120,13 @@
                         <div class="program-photo-panel-scrim" aria-hidden="true"></div>
                     @else
                         <div class="program-photo-panel-placeholder" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg>
+                            <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
                             <span>Foto pendiente — public/assets/img/{{ $practicePhoto }}</span>
                         </div>
                     @endif
                     <div class="program-photo-panel-content">
-                        <h3>Formación práctica, en terreno real</h3>
-                        <p>Clases en campo donde aprendes a reconocer riesgos y aplicar la normativa de seguridad y salud en el trabajo.</p>
+                        <h3>Formación con supervisión profesional</h3>
+                        <p>Practica la atención y el servicio turístico guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte en Seguridad Ocupacional y Laboral?</h2>
+                    <h2>¿Listo para formarte en Servicios Hoteleros y Turísticos?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Seguridad Ocupacional y Laboral') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Servicios Hoteleros y Turísticos') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>
