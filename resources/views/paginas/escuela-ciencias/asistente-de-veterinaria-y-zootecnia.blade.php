@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Sommelier · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico Sommelier en ESAT: formación en cata, maridaje y servicio de vinos, con conocimientos sensoriales y técnicos de alto nivel.')
+@section('title', 'Asistente de Veterinaria y Zootecnia · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Asistente de Veterinaria y Zootecnia en ESAT: formación en apoyo clínico, manejo animal y cuidados básicos para el bienestar animal.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'sommelier.png';
+    $heroPhoto = 'asistente-veterinaria.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-sommelier.png';
+    $practicePhoto = 'aprender-veterinaria.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Restaurantes', 'Asesora el maridaje y servicio de vinos en restaurantes.', 'ico-cocina', 'orange', 'sommelier-restaurante.png'],
-        ['Hoteles', 'Brinda experiencias de vino de alto nivel en el sector hotelero.', 'ico-building', 'green', 'sommelier-hotel.png'],
-        ['Experiencias enológicas', 'Guía eventos y experiencias enológicas para los comensales.', 'ico-heart', 'navy', 'sommelier-experiencias.png'],
+        ['Clínicas veterinarias', 'Apoya procedimientos clínicos en clínicas veterinarias.', 'ico-vet', 'orange', 'clinica-veterinaria.jpeg'],
+        ['Fincas', 'Brinda cuidado animal en fincas y explotaciones pecuarias.', 'ico-leaf', 'green', 'finca-veterinaria.jpeg'],
+        ['Centros de producción animal', 'Trabaja en centros dedicados a la producción animal.', 'ico-building', 'navy', 'centro-produccion-animal.jpeg'],
     ];
 @endphp
 
@@ -27,7 +27,7 @@
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                    <svg viewBox="0 0 24 24"><use href="#ico-ciencias"/></svg>
                     <span>Foto pendiente — public/assets/img/{{ $heroPhoto }}</span>
                 </div>
             @endif
@@ -35,14 +35,14 @@
             <div class="section-inner">
                 <div class="program-hero-content">
                     <span class="badge badge-double program-hero-badge">
-                        <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
-                        Cocina y Turismo
+                        <svg viewBox="0 0 24 24"><use href="#ico-ciencias"/></svg>
+                        Escuela Ciencias
                     </span>
-                    <h1>Sommelier</h1>
-                    <p class="program-hero-tagline">El arte de elevar la experiencia del vino.</p>
-                    <p class="program-hero-lead">Formamos profesionales en cata, maridaje y servicio de vinos, desarrollando conocimientos sensoriales y técnicos para ofrecer experiencias gastronómicas de alto nivel.</p>
+                    <h1>Asistente de Veterinaria y Zootecnia</h1>
+                    <p class="program-hero-tagline">Cuidado y bienestar animal en cada detalle.</p>
+                    <p class="program-hero-lead">Formamos profesionales en apoyo clínico, manejo animal y cuidados básicos, fortaleciendo la empleabilidad y la preparación para distintos entornos de atención animal.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Asistente de Veterinaria y Zootecnia') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -57,24 +57,24 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Formación práctica</h2>
-                    <p>Descubre los conocimientos y técnicas detrás de una gran experiencia con el vino.</p>
+                    <p>Aprende apoyo clínico, manejo animal y cuidados básicos para el bienestar de los animales.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Cata de vinos</h3><p>Desarrolla conocimientos sensoriales para evaluar vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-vet"/></svg></span>
+                        <div><h3>Apoyo clínico</h3><p>Brinda apoyo clínico en procedimientos veterinarios.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg></span>
-                        <div><h3>Maridaje</h3><p>Combina vinos y alimentos para experiencias gastronómicas de alto nivel.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
+                        <div><h3>Manejo animal</h3><p>Aplica técnicas seguras de manejo y contención animal.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Servicio de vinos</h3><p>Aplica el protocolo y técnica del servicio de vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
+                        <div><h3>Cuidados básicos</h3><p>Brinda cuidados básicos para el bienestar de los animales.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
-                        <div><h3>Formación práctica</h3><p>Expertos del sector que conectan la teoría con la práctica real.</p></div>
+                        <div><h3>Formación práctica</h3><p>Instructores expertos que conectan la teoría con la práctica real.</p></div>
                     </div>
                 </div>
             </div>
@@ -120,13 +120,13 @@
                         <div class="program-photo-panel-scrim" aria-hidden="true"></div>
                     @else
                         <div class="program-photo-panel-placeholder" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                            <svg viewBox="0 0 24 24"><use href="#ico-ciencias"/></svg>
                             <span>Foto pendiente — public/assets/img/{{ $practicePhoto }}</span>
                         </div>
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica la cata y el servicio de vinos guiado por expertos del sector.</p>
+                        <p>Practica el apoyo clínico y el manejo animal guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte como Sommelier?</h2>
+                    <h2>¿Listo para formarte en Asistente de Veterinaria y Zootecnia?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Asistente de Veterinaria y Zootecnia') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>
