@@ -60,10 +60,10 @@
                 <div class="mega-col">
                     <div class="mega-col-head"><svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg><h3>Cocina y Turismo</h3></div>
                     <ul>
-                        <li><a href="{{ $wa('Servicios Hoteleros y Turísticos') }}" target="_blank" rel="noopener">Servicios Hoteleros y Turísticos</a></li>
-                        <li><a href="{{ $wa('Cocina Nacional e Internacional') }}" target="_blank" rel="noopener">Cocina Nacional e Internacional</a></li>
-                        <li><a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener">Sommelier</a></li>
-                        <li><a href="{{ $wa('Inspector de Calidad de Alimentos y Bebidas') }}" target="_blank" rel="noopener">Inspector de Calidad de Alimentos y Bebidas</a></li>
+                        <li><a href="{{ route('programas.servicios-hoteleros-y-turisticos') }}">Servicios Hoteleros y Turísticos</a></li>
+                        <li><a href="{{ route('programas.cocina-nacional-e-internacional') }}">Cocina Nacional e Internacional</a></li>
+                        <li><a href="{{ route('programas.sommelier') }}">Sommelier</a></li>
+                        <li><a href="{{ route('programas.inspector-de-calidad-de-alimentos-y-bebidas') }}">Inspector de Calidad de Alimentos y Bebidas</a></li>
                     </ul>
                 </div>
 
@@ -155,6 +155,10 @@
                         'Seguridad Ocupacional y Laboral' => route('programas.seguridad-ocupacional-y-laboral'),
                         'Auxiliar de Psiquiatría' => route('programas.auxiliar-de-psiquiatria'),
                         'Camillero Hospitalario' => route('programas.camillero-hospitalario'),
+                        'Servicios Hoteleros y Turísticos' => route('programas.servicios-hoteleros-y-turisticos'),
+                        'Cocina Nacional e Internacional' => route('programas.cocina-nacional-e-internacional'),
+                        'Sommelier' => route('programas.sommelier'),
+                        'Inspector de Calidad de Alimentos y Bebidas' => route('programas.inspector-de-calidad-de-alimentos-y-bebidas'),
                     ];
                 @endphp
                 @foreach ($schools as [$name, $icon, $programs])
