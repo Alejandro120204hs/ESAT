@@ -801,6 +801,32 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 .program-competency-card h3 { font-size: 1.1rem; margin-bottom: 6px; }
 .program-competency-card p { color: var(--muted); font-size: 0.95rem; }
 
+/* Educación Continuada category pages list several named diplomados
+   instead of the técnico template's competency grid + work-setting
+   cards, so this is a lighter, name-only card that wraps to fit
+   anywhere from 5 to 12 items per category. */
+.program-courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.program-course-card {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
+    border-top-width: 3px; border-top-style: solid;
+    padding: 22px 24px; box-shadow: var(--shadow-sm);
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s;
+}
+.program-course-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.program-course-card:nth-child(3n+1) { border-top-color: var(--orange); }
+.program-course-card:nth-child(3n+2) { border-top-color: var(--green); }
+.program-course-card:nth-child(3n+3) { border-top-color: var(--navy); }
+.program-course-card .node {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.program-course-card .node svg { width: 23px; height: 23px; color: var(--white); stroke-width: 2; }
+.program-course-card:nth-child(3n+1) .node { background: var(--orange); }
+.program-course-card:nth-child(3n+2) .node { background: var(--green); }
+.program-course-card:nth-child(3n+3) .node { background: var(--navy); }
+.program-course-card span { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+
 .program-outcome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 /* When a program only has two confirmed work settings, two wider
    cards read better than forcing a 3-column grid with a gap. */

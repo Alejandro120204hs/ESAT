@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Sommelier · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico Sommelier en ESAT: formación en cata, maridaje y servicio de vinos, con conocimientos sensoriales y técnicos de alto nivel.')
+@section('title', 'Auditoría y Facturación de Cuentas Médicas · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Auditoría y Facturación de Cuentas Médicas en ESAT: formación en gestión, revisión y control de procesos financieros en salud, con cumplimiento normativo y eficiencia administrativa.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'sommelier.png';
+    $heroPhoto = 'auditoria-cuentas-medicas.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-sommelier.png';
+    $practicePhoto = 'aprender-auditoria.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Restaurantes', 'Asesora el maridaje y servicio de vinos en restaurantes.', 'ico-cocina', 'orange', 'sommelier-restaurante.png'],
-        ['Hoteles', 'Brinda experiencias de vino de alto nivel en el sector hotelero.', 'ico-building', 'green', 'sommelier-hotel.png'],
-        ['Experiencias enológicas', 'Guía eventos y experiencias enológicas para los comensales.', 'ico-heart', 'navy', 'sommelier-experiencias.png'],
+        ['Clínicas', 'Apoya la gestión financiera y de facturación dentro de clínicas.', 'ico-building', 'orange', 'clinica-auditoria.jpeg'],
+        ['Hospitales', 'Audita y controla procesos de cuentas médicas en hospitales.', 'ico-heart', 'green', 'hospital-auditoria.jpeg'],
+        ['EPS y entidades del sistema de salud', 'Trabaja en entidades promotoras de salud y del sistema de salud en general.', 'ico-shield', 'navy', 'eps-auditoria.jpeg'],
     ];
 @endphp
 
@@ -27,7 +27,7 @@
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                    <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
                     <span>Foto pendiente — public/assets/img/{{ $heroPhoto }}</span>
                 </div>
             @endif
@@ -35,14 +35,14 @@
             <div class="section-inner">
                 <div class="program-hero-content">
                     <span class="badge badge-double program-hero-badge">
-                        <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
-                        Cocina y Turismo
+                        <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
+                        Escuela Administrativa
                     </span>
-                    <h1>Sommelier</h1>
-                    <p class="program-hero-tagline">El arte de elevar la experiencia del vino.</p>
-                    <p class="program-hero-lead">Formamos profesionales en cata, maridaje y servicio de vinos, desarrollando conocimientos sensoriales y técnicos para ofrecer experiencias gastronómicas de alto nivel.</p>
+                    <h1>Auditoría y Facturación de Cuentas Médicas</h1>
+                    <p class="program-hero-tagline">Precisión y control en la salud.</p>
+                    <p class="program-hero-lead">Formamos profesionales en la gestión, revisión y control de procesos financieros en salud, con precisión, cumplimiento normativo y eficiencia administrativa.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Auditoría y Facturación de Cuentas Médicas') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -57,24 +57,24 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Formación práctica</h2>
-                    <p>Descubre los conocimientos y técnicas detrás de una gran experiencia con el vino.</p>
+                    <p>Aprende a gestionar, revisar y controlar procesos financieros en el sistema de salud con precisión y rigor.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Cata de vinos</h3><p>Desarrolla conocimientos sensoriales para evaluar vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-cert"/></svg></span>
+                        <div><h3>Facturación de cuentas médicas</h3><p>Factura procesos de atención en salud con precisión y respaldo normativo.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg></span>
-                        <div><h3>Maridaje</h3><p>Combina vinos y alimentos para experiencias gastronómicas de alto nivel.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-scale"/></svg></span>
+                        <div><h3>Auditoría de procesos en salud</h3><p>Revisa y controla procesos financieros dentro de instituciones de salud.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Servicio de vinos</h3><p>Aplica el protocolo y técnica del servicio de vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-shield"/></svg></span>
+                        <div><h3>Cumplimiento normativo</h3><p>Aplica la normativa vigente del sistema de salud en cada proceso.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
                         <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
-                        <div><h3>Formación práctica</h3><p>Expertos del sector que conectan la teoría con la práctica real.</p></div>
+                        <div><h3>Eficiencia administrativa</h3><p>Optimiza procesos administrativos con precisión y responsabilidad.</p></div>
                     </div>
                 </div>
             </div>
@@ -120,13 +120,13 @@
                         <div class="program-photo-panel-scrim" aria-hidden="true"></div>
                     @else
                         <div class="program-photo-panel-placeholder" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                            <svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg>
                             <span>Foto pendiente — public/assets/img/{{ $practicePhoto }}</span>
                         </div>
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica la cata y el servicio de vinos guiado por expertos del sector.</p>
+                        <p>Practica la auditoría y facturación de cuentas médicas guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte como Sommelier?</h2>
+                    <h2>¿Listo para formarte en Auditoría y Facturación de Cuentas Médicas?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Auditoría y Facturación de Cuentas Médicas') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>

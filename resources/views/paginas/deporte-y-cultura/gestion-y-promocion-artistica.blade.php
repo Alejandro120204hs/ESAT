@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Sommelier · ESAT — Formación Técnica Certificada')
-@section('meta_description', 'Técnico Sommelier en ESAT: formación en cata, maridaje y servicio de vinos, con conocimientos sensoriales y técnicos de alto nivel.')
+@section('title', 'Gestión y Promoción Artística · ESAT — Formación Técnica Certificada')
+@section('meta_description', 'Técnico en Gestión y Promoción Artística en ESAT: formación en desarrollo cultural, organización de proyectos y difusión del arte en danza, teatro, música y artes plásticas.')
 
 @php
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'sommelier.png';
+    $heroPhoto = 'gestion-artistica.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-sommelier.png';
+    $practicePhoto = 'aprender-gestion-artistica.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Restaurantes', 'Asesora el maridaje y servicio de vinos en restaurantes.', 'ico-cocina', 'orange', 'sommelier-restaurante.png'],
-        ['Hoteles', 'Brinda experiencias de vino de alto nivel en el sector hotelero.', 'ico-building', 'green', 'sommelier-hotel.png'],
-        ['Experiencias enológicas', 'Guía eventos y experiencias enológicas para los comensales.', 'ico-heart', 'navy', 'sommelier-experiencias.png'],
+        ['Casas de cultura', 'Apoya la programación cultural en casas de cultura municipales.', 'ico-building', 'orange', 'casa-cultura.jpeg'],
+        ['Fundaciones culturales', 'Trabaja en fundaciones y organizaciones dedicadas al arte y la cultura.', 'ico-heart', 'green', 'fundacion-cultural.jpeg'],
+        ['Eventos y producciones artísticas', 'Participa en la organización de eventos y producciones artísticas.', 'ico-megaphone', 'navy', 'evento-artistico.jpeg'],
     ];
 @endphp
 
@@ -27,7 +27,7 @@
                 <div class="program-hero-scrim" aria-hidden="true"></div>
             @else
                 <div class="program-hero-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                    <svg viewBox="0 0 24 24"><use href="#ico-deporte"/></svg>
                     <span>Foto pendiente — public/assets/img/{{ $heroPhoto }}</span>
                 </div>
             @endif
@@ -35,14 +35,14 @@
             <div class="section-inner">
                 <div class="program-hero-content">
                     <span class="badge badge-double program-hero-badge">
-                        <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
-                        Cocina y Turismo
+                        <svg viewBox="0 0 24 24"><use href="#ico-deporte"/></svg>
+                        Deporte y Cultura
                     </span>
-                    <h1>Sommelier</h1>
-                    <p class="program-hero-tagline">El arte de elevar la experiencia del vino.</p>
-                    <p class="program-hero-lead">Formamos profesionales en cata, maridaje y servicio de vinos, desarrollando conocimientos sensoriales y técnicos para ofrecer experiencias gastronómicas de alto nivel.</p>
+                    <h1>Gestión y Promoción Artística</h1>
+                    <p class="program-hero-tagline">El arte que transforma comunidades.</p>
+                    <p class="program-hero-lead">Formamos profesionales en desarrollo cultural, organización de proyectos y difusión del arte, fortaleciendo talentos en danza, teatro, música y artes plásticas.</p>
                     <div class="hero-actions">
-                        <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                        <a href="{{ $wa('Gestión y Promoción Artística') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                             <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                             Quiero inscribirme
                         </a>
@@ -57,24 +57,24 @@
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
                     <h2>Formación práctica</h2>
-                    <p>Descubre los conocimientos y técnicas detrás de una gran experiencia con el vino.</p>
+                    <p>Aprende a gestionar proyectos culturales y a promover el arte en danza, teatro, música y artes plásticas.</p>
                 </div>
                 <div class="program-competency-grid">
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="0">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
-                        <div><h3>Cata de vinos</h3><p>Desarrolla conocimientos sensoriales para evaluar vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-admin"/></svg></span>
+                        <div><h3>Gestión cultural</h3><p>Desarrolla y gestiona iniciativas culturales en tu comunidad.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="80">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg></span>
-                        <div><h3>Maridaje</h3><p>Combina vinos y alimentos para experiencias gastronómicas de alto nivel.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-check"/></svg></span>
+                        <div><h3>Organización de proyectos</h3><p>Organiza proyectos y eventos artísticos de principio a fin.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="160">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-heart"/></svg></span>
-                        <div><h3>Servicio de vinos</h3><p>Aplica el protocolo y técnica del servicio de vinos.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-megaphone"/></svg></span>
+                        <div><h3>Difusión artística</h3><p>Promueve y difunde expresiones artísticas y culturales.</p></div>
                     </div>
                     <div class="program-competency-card" data-aos="fade-up" data-aos-delay="240">
-                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-tool"/></svg></span>
-                        <div><h3>Formación práctica</h3><p>Expertos del sector que conectan la teoría con la práctica real.</p></div>
+                        <span class="node"><svg viewBox="0 0 24 24"><use href="#ico-palette"/></svg></span>
+                        <div><h3>Talento en artes escénicas y plásticas</h3><p>Fortalece talentos en danza, teatro, música y artes plásticas.</p></div>
                     </div>
                 </div>
             </div>
@@ -120,13 +120,13 @@
                         <div class="program-photo-panel-scrim" aria-hidden="true"></div>
                     @else
                         <div class="program-photo-panel-placeholder" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><use href="#ico-cocina"/></svg>
+                            <svg viewBox="0 0 24 24"><use href="#ico-deporte"/></svg>
                             <span>Foto pendiente — public/assets/img/{{ $practicePhoto }}</span>
                         </div>
                     @endif
                     <div class="program-photo-panel-content">
                         <h3>Formación con supervisión profesional</h3>
-                        <p>Practica la cata y el servicio de vinos guiado por expertos del sector.</p>
+                        <p>Practica la organización de proyectos culturales guiado por un equipo profesional.</p>
                     </div>
                 </article>
             </div>
@@ -154,10 +154,10 @@
             <img src="{{ asset('assets/img/favicon.png') }}" class="program-cta-deco" alt="" aria-hidden="true">
             <div class="section-inner program-cta-inner" data-aos="fade-up">
                 <div>
-                    <h2>¿Listo para formarte como Sommelier?</h2>
+                    <h2>¿Listo para formarte en Gestión y Promoción Artística?</h2>
                     <p>Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.</p>
                 </div>
-                <a href="{{ $wa('Sommelier') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
+                <a href="{{ $wa('Gestión y Promoción Artística') }}" target="_blank" rel="noopener" class="btn btn-accent btn-lg">
                     <svg viewBox="0 0 24 24"><use href="#ico-whatsapp"/></svg>
                     Quiero inscribirme
                 </a>
