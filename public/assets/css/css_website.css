@@ -933,7 +933,13 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 /* The brand-mark version is a raster image, not an SVG icon — its
    low-opacity look comes from the opacity property, not fill color. */
 img.program-cta-deco { opacity: 0.06; }
-.program-cta-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.program-cta-inner { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+/* The text block shrinks and wraps its own heading internally instead
+   of pushing the button onto a separate flex line — a long program
+   name then wraps to two lines while the button stays put on the
+   same row, vertically centered against the full text block. */
+.program-cta-inner > div { flex: 1 1 auto; min-width: 0; }
+.program-cta-inner .btn { flex-shrink: 0; }
 .program-cta h2 { font-size: clamp(1.5rem, 2.6vw, 2rem); margin-bottom: 6px; }
 .program-cta p { color: var(--muted); }
 

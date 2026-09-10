@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'auditoria-cuentas-medicas.png';
+    $heroPhoto = 'facturacion-medica.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-auditoria.png';
+    $practicePhoto = 'facturacion-aprender.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Clínicas', 'Apoya la gestión financiera y de facturación dentro de clínicas.', 'ico-building', 'orange', 'clinica-auditoria.jpeg'],
-        ['Hospitales', 'Audita y controla procesos de cuentas médicas en hospitales.', 'ico-heart', 'green', 'hospital-auditoria.jpeg'],
-        ['EPS y entidades del sistema de salud', 'Trabaja en entidades promotoras de salud y del sistema de salud en general.', 'ico-shield', 'navy', 'eps-auditoria.jpeg'],
+        ['Clínicas', 'Apoya la gestión financiera y de facturación dentro de clínicas.', 'ico-building', 'orange', 'facturacion-clinica.png'],
+        ['Hospitales', 'Audita y controla procesos de cuentas médicas en hospitales.', 'ico-heart', 'green', 'facturacion-hospital.png'],
+        ['EPS y entidades del sistema de salud', 'Trabaja en entidades promotoras de salud y del sistema de salud en general.', 'ico-shield', 'navy', 'facturacion-eps.png'],
     ];
 @endphp
 
