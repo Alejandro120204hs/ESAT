@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Un usuario ya logueado que visita /login (middleware 'guest')
+        // cae en su propio panel según el rol, no en el dashboard
+        // genérico de Breeze.
+        RedirectIfAuthenticated::redirectUsing(fn ($request) => $request->user()->panelUrl());
+
         // Shared across every page (not just the layout) because a
         // child view's @section content is captured before the parent
         // layout it extends ever runs its own @php block.

@@ -49,6 +49,8 @@
                 Mi certificado
             </a>
             <a href="{{ route('home') }}#areas-formacion" class="btn btn-accent btn-sm">Ver programas</a>
+            <a href="{{ route('login') }}" class="btn btn-outline btn-sm">Iniciar sesión</a>
+
             <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav" aria-label="Abrir menú">
                 <svg viewBox="0 0 24 24"><use href="#ico-menu"/></svg>
             </button>
@@ -227,6 +229,8 @@
         </div>
 
         <a href="{{ route('home') }}#contacto" class="mobile-link">Contacto</a>
+
+        <a href="{{ route('login') }}" class="mobile-link">Iniciar sesión</a>
 
         <a href="{{ route('home') }}#areas-formacion" class="btn btn-accent mobile-cta">Ver programas técnicos</a>
     </div>
