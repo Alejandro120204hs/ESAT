@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'salvamento-acuatico.png';
+    $heroPhoto = 'salvamento.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-salvamento.png';
+    $practicePhoto = 'salvamento-aprender.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Piscinas', 'Brinda vigilancia y rescate en piscinas públicas y privadas.', 'ico-shield', 'orange', 'piscina-salvamento.jpeg'],
-        ['Playas', 'Vela por la seguridad de los bañistas en zonas de playa.', 'ico-pin', 'green', 'playa-salvamento.jpeg'],
-        ['Centros recreativos', 'Apoya la seguridad acuática en centros recreativos y clubes.', 'ico-heart', 'navy', 'centro-recreativo-salvamento.jpeg'],
+        ['Piscinas', 'Brinda vigilancia y rescate en piscinas públicas y privadas.', 'ico-shield', 'orange', 'salvamento-piscina.png'],
+        ['Playas', 'Vela por la seguridad de los bañistas en zonas de playa.', 'ico-pin', 'green', 'salvamento-playa.png'],
+        ['Centros recreativos', 'Apoya la seguridad acuática en centros recreativos y clubes.', 'ico-heart', 'navy', 'salvamento-parque.png'],
     ];
 @endphp
 
@@ -84,8 +84,8 @@
         <section class="program-section program-section-tint">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Dónde trabajarás</h2>
-                    <p>Egresa listo para desempeñarte en estos entornos.</p>
+                    <h2>Proyección</h2>
+                    <p>Algunos de los sectores donde podrás desempeñarte profesionalmente.</p>
                 </div>
                 <div class="program-outcome-grid">
                     @foreach ($outcomes as [$title, $desc, $icon, $accent, $photo])

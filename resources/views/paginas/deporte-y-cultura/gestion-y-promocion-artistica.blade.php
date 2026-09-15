@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'gestion-artistica.png';
+    $heroPhoto = 'artistica.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-gestion-artistica.png';
+    $practicePhoto = 'enseñar-artistica.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Casas de cultura', 'Apoya la programación cultural en casas de cultura municipales.', 'ico-building', 'orange', 'casa-cultura.jpeg'],
-        ['Fundaciones culturales', 'Trabaja en fundaciones y organizaciones dedicadas al arte y la cultura.', 'ico-heart', 'green', 'fundacion-cultural.jpeg'],
-        ['Eventos y producciones artísticas', 'Participa en la organización de eventos y producciones artísticas.', 'ico-megaphone', 'navy', 'evento-artistico.jpeg'],
+        ['Casas de cultura', 'Apoya la programación cultural en casas de cultura municipales.', 'ico-building', 'orange', 'artistica-casa.png'],
+        ['Fundaciones culturales', 'Trabaja en fundaciones y organizaciones dedicadas al arte y la cultura.', 'ico-heart', 'green', 'artistica-fundacion.png'],
+        ['Eventos y producciones artísticas', 'Participa en la organización de eventos y producciones artísticas.', 'ico-megaphone', 'navy', 'artistica-eventos.png'],
     ];
 @endphp
 
@@ -84,8 +84,8 @@
         <section class="program-section program-section-tint">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Dónde trabajarás</h2>
-                    <p>Egresa listo para desempeñarte en estos entornos.</p>
+                    <h2>Proyección</h2>
+                    <p>Algunos de los sectores donde podrás desempeñarte profesionalmente.</p>
                 </div>
                 <div class="program-outcome-grid">
                     @foreach ($outcomes as [$title, $desc, $icon, $accent, $photo])
