@@ -13,9 +13,9 @@
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Educación superior y becas', 'Accede a oportunidades educativas y becas que exigen dominio del francés.', 'ico-cert', 'orange', 'educacion-becas-frances.jpeg'],
-        ['Empleo nacional e internacional', 'Amplía tus oportunidades laborales dentro y fuera del país.', 'ico-building', 'green', 'empleo-frances.jpeg'],
-        ['Turismo y negocios', 'Comunícate con confianza en contextos de turismo y negocios internacionales.', 'ico-pin', 'navy', 'turismo-negocios-frances.jpeg'],
+        ['Educación superior y becas', 'Accede a oportunidades educativas y becas que exigen dominio del francés.', 'ico-cert', 'orange', 'frances-becas.png'],
+        ['Empleo nacional e internacional', 'Amplía tus oportunidades laborales dentro y fuera del país.', 'ico-building', 'green', 'frances-internacional.png'],
+        ['Turismo y negocios', 'Comunícate con confianza en contextos de turismo y negocios internacionales.', 'ico-pin', 'navy', 'turismo-frances.jpeg'],
     ];
 @endphp
 
