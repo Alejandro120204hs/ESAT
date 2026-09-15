@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'asistente-preescolar.png';
+    $heroPhoto = 'preescolar.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
     $practicePhoto = 'aprender-preescolar.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Jardines infantiles', 'Brinda apoyo educativo y cuidado en jardines infantiles.', 'ico-building', 'orange', 'jardin-infantil.jpeg'],
-        ['Colegios', 'Apoya procesos pedagógicos dentro de colegios.', 'ico-cert', 'green', 'colegio-preescolar.jpeg'],
-        ['Programas de atención a la primera infancia', 'Participa en programas de atención integral a la primera infancia.', 'ico-heart', 'navy', 'programa-primera-infancia.jpeg'],
+        ['Jardines infantiles', 'Brinda apoyo educativo y cuidado en jardines infantiles.', 'ico-building', 'orange', 'preescolar-1.jpeg'],
+        ['Colegios', 'Apoya procesos pedagógicos dentro de colegios.', 'ico-cert', 'green', 'preescolar-colegios.png'],
+        ['Programas de atención a la primera infancia', 'Participa en programas de atención integral a la primera infancia.', 'ico-heart', 'navy', 'preescolar-3.png'],
     ];
 @endphp
 
