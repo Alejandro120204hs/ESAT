@@ -7,15 +7,15 @@
     // Drop the real photo in public/assets/img with this exact
     // filename and it replaces the placeholder panel automatically —
     // no code changes needed.
-    $heroPhoto = 'recreacion-deportes.png';
+    $heroPhoto = 'deportes.png';
     $heroPhotoExists = file_exists(public_path('assets/img/' . $heroPhoto));
-    $practicePhoto = 'aprender-recreacion.png';
+    $practicePhoto = 'aprender-deporte.png';
     $practicePhotoExists = file_exists(public_path('assets/img/' . $practicePhoto));
 
     $outcomes = [
-        ['Instituciones educativas', 'Apoya programas de recreación y deporte en instituciones educativas.', 'ico-building', 'orange', 'institucion-educativa-recreacion.jpeg'],
-        ['Centros recreativos', 'Lidera actividades recreativas en centros comunitarios y recreativos.', 'ico-heart', 'green', 'centro-recreativo-deportes.jpeg'],
-        ['Organizaciones deportivas', 'Trabaja en clubes y organizaciones deportivas de la región.', 'ico-deporte', 'navy', 'organizacion-deportiva.jpeg'],
+        ['Instituciones educativas', 'Apoya programas de recreación y deporte en instituciones educativas.', 'ico-building', 'orange', 'deportes-institucion.png'],
+        ['Centros recreativos', 'Lidera actividades recreativas en centros comunitarios y recreativos.', 'ico-heart', 'green', 'deportes-centro.png'],
+        ['Organizaciones deportivas', 'Trabaja en clubes y organizaciones deportivas de la región.', 'ico-deporte', 'navy', 'deporte-organizacion.png'],
     ];
 @endphp
 
@@ -84,8 +84,8 @@
         <section class="program-section program-section-tint">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Dónde trabajarás</h2>
-                    <p>Egresa listo para desempeñarte en estos entornos.</p>
+                    <h2>Proyección</h2>
+                    <p>Algunos de los sectores donde podrás desempeñarte profesionalmente.</p>
                 </div>
                 <div class="program-outcome-grid">
                     @foreach ($outcomes as [$title, $desc, $icon, $accent, $photo])
