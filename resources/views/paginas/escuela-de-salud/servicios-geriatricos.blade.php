@@ -79,8 +79,8 @@
         <section class="program-section program-section-tint">
             <div class="section-inner">
                 <div class="section-head" data-aos="fade-up">
-                    <h2>Dónde trabajarás</h2>
-                    <p>Egresa listo para desempeñarte en estos entornos.</p>
+                    <h2>Proyección</h2>
+                    <p>Algunos de los sectores donde podrás desempeñarte profesionalmente.</p>
                 </div>
                 <div class="program-outcome-grid">
                     <article class="program-outcome-card program-outcome-accent-orange" data-aos="fade-up" data-aos-delay="0">
