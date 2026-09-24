@@ -1,8 +1,8 @@
 /* =========================================================
-   ESAT — Panel Superadmin
-   Layout propio (no Tailwind/Vite): sidebar + topbar + contenido.
-   Modo "Operate": prioriza escaneo y densidad de información
-   sobre la expresión visual del sitio público.
+   ESAT — Panel Superadmin: layout compartido
+   Sidebar + topbar + shell. Cargado en TODAS las páginas del
+   panel vía superadmin.layout. El CSS propio de cada panel
+   (dashboard.css, profile.css, ...) va aparte.
    ========================================================= */
 
 :root {
@@ -28,6 +28,20 @@
 
 .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
+/* Browser surfaces carry the design (mismo tratamiento que el sitio público) */
+::selection { background: var(--orange); color: var(--white); }
+:focus-visible { outline: 2.5px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+.app-content::-webkit-scrollbar { width: 12px; height: 12px; }
+.app-content::-webkit-scrollbar-track { background: var(--bg); }
+.app-content::-webkit-scrollbar-thumb { background: var(--navy-2); border-radius: 8px; border: 3px solid var(--bg); }
+.app-content { scrollbar-color: var(--navy-2) var(--bg); scrollbar-width: thin; }
+
+.app-sidebar::-webkit-scrollbar { width: 10px; }
+.app-sidebar::-webkit-scrollbar-track { background: transparent; }
+.app-sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 8px; border: 3px solid var(--navy-3); }
+.app-sidebar { scrollbar-color: rgba(255, 255, 255, 0.2) transparent; scrollbar-width: thin; }
+
 body.app-page {
     font-family: "Public Sans", system-ui, sans-serif;
     color: var(--text);
@@ -35,11 +49,15 @@ body.app-page {
     min-height: 100vh;
 }
 
-.app-shell { display: flex; min-height: 100vh; }
+/* El shell ocupa exactamente el viewport y no crece con el contenido:
+   así el sidebar queda siempre completo y solo el contenido hace scroll. */
+.app-shell { display: flex; height: 100vh; overflow: hidden; }
 
 /* ---------- Sidebar ---------- */
 .app-sidebar {
     flex: 0 0 260px;
+    height: 100%;
+    overflow-y: auto;
     background: var(--navy-3);
     color: rgba(255, 255, 255, 0.85);
     display: flex;
@@ -90,7 +108,7 @@ body.app-page {
 .app-sidebar-footer { margin-top: auto; padding: 12px 6px 0; font-size: 0.72rem; color: rgba(255, 255, 255, 0.3); }
 
 /* ---------- Main ---------- */
-.app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.app-main { flex: 1; height: 100%; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
 .app-topbar {
     height: 68px; flex-shrink: 0;
@@ -143,7 +161,7 @@ body.app-page {
 .app-user-dropdown-logout:hover { background: #FBE9D8; }
 .app-user-dropdown-divider { height: 1px; background: var(--line); margin: 4px 2px; }
 
-.app-content { flex: 1; padding: 36px; max-width: 920px; }
+.app-content { flex: 1; overflow-y: auto; padding: 36px; max-width: 920px; }
 
 .app-welcome {
     margin-bottom: 32px;
@@ -158,6 +176,7 @@ body.app-page {
     text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 12px;
 }
 
+/* Panel base reutilizable: cada panel.css decide qué va adentro. */
 .app-panel {
     background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm); overflow: hidden;
@@ -190,95 +209,12 @@ body.app-page {
     .app-welcome, .app-panel { animation: none; opacity: 1; transform: none; }
 }
 
-/* ---------- Alertas ---------- */
+/* ---------- Alertas (mensajes de sesión: éxito, error) ---------- */
 .app-alert {
     padding: 12px 16px; border-radius: var(--radius-md);
     font-size: 0.88rem; font-weight: 600; margin-bottom: 20px;
 }
 .app-alert-success { background: #EAF3E8; color: var(--green); border: 1px solid rgba(64, 118, 58, 0.25); }
-
-/* ---------- Perfil ---------- */
-.app-content-wide { max-width: 1080px; }
-
-.app-profile-hero {
-    display: flex; align-items: center; gap: 22px;
-    margin-bottom: 28px;
-    opacity: 0; transform: translateY(10px);
-    animation: appFadeUp 0.5s var(--ease-out) forwards;
-}
-.app-profile-hero-avatar {
-    width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(155deg, var(--orange) 0%, var(--orange-2) 100%);
-    color: var(--white); display: flex; align-items: center; justify-content: center;
-    font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.7rem;
-    box-shadow: 0 10px 24px -10px rgba(217, 123, 46, 0.55);
-}
-.app-profile-hero-text h2 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -0.01em; color: var(--navy-3); }
-.app-profile-hero-role {
-    display: inline-block; margin-top: 4px; font-size: 0.72rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.05em; color: var(--orange-2);
-    background: #FBE9D8; padding: 3px 10px; border-radius: 999px;
-}
-.app-profile-hero-meta { margin-top: 8px; font-size: 0.86rem; color: var(--muted); }
-
-.app-profile-grid {
-    display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: start;
-}
-.app-identity-panel { padding: 22px 24px; }
-.app-identity-panel h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1rem; color: var(--navy-3); }
-.app-identity-note { font-size: 0.8rem; color: var(--muted); margin-top: 3px; margin-bottom: 18px; }
-.app-identity-list { display: flex; flex-direction: column; }
-.app-identity-list > div { padding: 12px 0; }
-.app-identity-list > div + div { border-top: 1px solid var(--line); }
-.app-identity-list dt { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 4px; }
-.app-identity-list dd { font-size: 0.9rem; font-weight: 600; color: var(--navy-3); }
-
-.app-profile-main { display: flex; flex-direction: column; gap: 24px; }
-
-@media (max-width: 860px) {
-    .app-profile-grid { grid-template-columns: 1fr; }
-    .app-profile-hero { gap: 16px; }
-    .app-profile-hero-avatar { width: 58px; height: 58px; font-size: 1.4rem; }
-}
-
-/* ---------- Formularios (perfil, configuración) ---------- */
-.app-form-panel { padding: 26px 28px; }
-.app-form-header { margin-bottom: 20px; }
-.app-form-header h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--navy-3); margin-bottom: 3px; }
-.app-form-header p { font-size: 0.85rem; color: var(--muted); }
-
-.app-form-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px;
-}
-.app-field-wide { grid-column: 1 / -1; }
-.app-field { display: flex; flex-direction: column; gap: 6px; }
-.app-field label {
-    font-size: 0.8rem; font-weight: 600; color: var(--navy-3);
-}
-.app-field input {
-    font-family: inherit; font-size: 0.92rem; color: var(--text);
-    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
-    background: var(--white); transition: border-color 0.2s, box-shadow 0.2s;
-}
-.app-field input:focus {
-    outline: none; border-color: var(--orange);
-    box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
-}
-.app-field-error { font-size: 0.78rem; color: #B3261E; }
-.app-field-value { font-size: 0.92rem; color: var(--navy-3); font-weight: 600; }
-
-.app-form-actions { display: flex; align-items: center; gap: 14px; margin-top: 22px; }
-.app-btn-primary {
-    font-family: inherit; font-weight: 700; font-size: 0.88rem; color: var(--white);
-    background: var(--orange); border: none; border-radius: 999px;
-    padding: 11px 24px; cursor: pointer; transition: background-color 0.2s;
-}
-.app-btn-primary:hover { background: var(--orange-2); }
-.app-form-saved { font-size: 0.85rem; color: var(--green); font-weight: 600; }
-
-@media (max-width: 640px) {
-    .app-form-grid { grid-template-columns: 1fr; }
-}
 
 .app-menu-toggle {
     display: none; align-items: center; justify-content: center;

@@ -12,7 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,600;0,700;0,800;0,900;1,700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('assets/css/superadmin/superadmin.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/superadmin/layout.css') }}">
+    @stack('styles')
 </head>
 <body class="app-page">
     @include('partials.icon-sprite')
@@ -32,6 +33,7 @@
         </div>
     </div>
 
-    <script src="{{ asset('assets/js/superadmin/superadmin.js') }}" defer></script>
+    <script src="{{ asset('assets/js/superadmin/layout.js') }}" defer></script>
+    @stack('scripts')
 </body>
 </html>

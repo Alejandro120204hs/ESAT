@@ -1,5 +1,6 @@
-// ESAT — comportamiento propio del panel Superadmin: menú lateral en
-// móvil y el desplegable de usuario (perfil / cerrar sesión).
+// ESAT — comportamiento del layout compartido del panel Superadmin:
+// menú lateral en móvil y el desplegable de usuario (perfil / cerrar sesión).
+// Se carga en TODAS las páginas del panel vía superadmin.layout.
 document.addEventListener('DOMContentLoaded', function () {
     var shell = document.querySelector('.app-shell');
     var toggle = document.querySelector('.app-menu-toggle');
