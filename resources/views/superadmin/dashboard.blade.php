@@ -20,12 +20,12 @@
     --}}
     @php
         $ingresosPorMes = [
-            ['mes' => 'Abr', 'valor' => 9.2],
-            ['mes' => 'May', 'valor' => 10.1],
-            ['mes' => 'Jun', 'valor' => 11.4],
-            ['mes' => 'Jul', 'valor' => 10.8],
-            ['mes' => 'Ago', 'valor' => 13.2],
-            ['mes' => 'Sep', 'valor' => 14.25],
+            ['mes' => 'Abr', 'mesCompleto' => 'Abril', 'anio' => 2026, 'valor' => 9.2],
+            ['mes' => 'May', 'mesCompleto' => 'Mayo', 'anio' => 2026, 'valor' => 10.1],
+            ['mes' => 'Jun', 'mesCompleto' => 'Junio', 'anio' => 2026, 'valor' => 11.4],
+            ['mes' => 'Jul', 'mesCompleto' => 'Julio', 'anio' => 2026, 'valor' => 10.8],
+            ['mes' => 'Ago', 'mesCompleto' => 'Agosto', 'anio' => 2026, 'valor' => 13.2],
+            ['mes' => 'Sep', 'mesCompleto' => 'Septiembre', 'anio' => 2026, 'valor' => 14.25],
         ];
         $maxIngreso = max(array_column($ingresosPorMes, 'valor'));
 
@@ -74,7 +74,12 @@
         <div class="app-revenue-chart">
             @foreach ($ingresosPorMes as $item)
                 <div class="app-revenue-bar-col">
-                    <div class="app-revenue-bar" style="height: {{ round(($item['valor'] / $maxIngreso) * 100) }}%"></div>
+                    <div class="app-revenue-bar" style="height: {{ round(($item['valor'] / $maxIngreso) * 100) }}%">
+                        <span class="app-revenue-tooltip">
+                            {{ $item['mesCompleto'] }} {{ $item['anio'] }}
+                            <strong>${{ number_format($item['valor'] * 1000000, 0, ',', '.') }}</strong>
+                        </span>
+                    </div>
                     <span class="app-revenue-bar-label">{{ $item['mes'] }}</span>
                 </div>
             @endforeach
