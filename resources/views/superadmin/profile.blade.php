@@ -4,6 +4,10 @@
 @section('page-title', 'Mi perfil')
 @section('content-class', 'app-content-wide')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/superadmin/profile.css') }}">
+@endpush
+
 @section('content')
     <div class="app-profile-hero">
         <span class="app-profile-hero-avatar">{{ strtoupper(substr($user->nombres ?? $user->email, 0, 1)) }}</span>
