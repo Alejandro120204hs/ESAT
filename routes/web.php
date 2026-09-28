@@ -165,6 +165,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/sedes', function () {
         return view('superadmin.sedes-programas');
     })->name('sedes');
+
+    Route::get('/administradores', function () {
+        return view('superadmin.administradores');
+    })->name('administradores');
+
+    Route::get('/estudiantes', function () {
+        return view('superadmin.estudiantes');
+    })->name('estudiantes');
 });
 
 Route::middleware('auth')->group(function () {

@@ -172,6 +172,16 @@ document.addEventListener('DOMContentLoaded', function () {
             panel.style.left = rect.left + 'px';
             panel.style.top = (rect.bottom + 6) + 'px';
             panel.style.width = rect.width + 'px';
+
+            // El panel siempre abre hacia abajo (nunca hacia arriba), pero
+            // no debe salirse de la pantalla: si queda poco espacio entre
+            // el campo y el borde inferior de la ventana, la lista se
+            // encoge a lo que quepa, en vez de cortarse sin avisar.
+            var margenInferior = 12;
+            var espacioDisponible = window.innerHeight - (rect.bottom + 6) - margenInferior;
+            var buscadorAltura = search.closest('.app-combobox-search-wrap').offsetHeight;
+            var alturaLista = Math.max(espacioDisponible - buscadorAltura - 14, 40);
+            list.style.maxHeight = alturaLista + 'px';
         }
 
         function abrir() {

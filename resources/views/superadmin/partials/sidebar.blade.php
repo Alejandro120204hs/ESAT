@@ -20,11 +20,16 @@
             </a>
         </li>
         <li>
-            <span class="app-nav-soon">
+            <a href="{{ route('superadmin.administradores') }}" class="app-nav-link {{ $active === 'administradores' ? 'is-active' : '' }}">
                 <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/></svg>
                 Administradores
-                <span class="app-nav-soon-tag">Pronto</span>
-            </span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('superadmin.estudiantes') }}" class="app-nav-link {{ $active === 'estudiantes' ? 'is-active' : '' }}">
+                <svg viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
+                Estudiantes
+            </a>
         </li>
         <li>
             <span class="app-nav-soon">
