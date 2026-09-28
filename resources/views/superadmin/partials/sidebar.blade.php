@@ -14,16 +14,15 @@
             </a>
         </li>
         <li>
-            <span class="app-nav-soon">
-                <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/></svg>
-                Administradores
-                <span class="app-nav-soon-tag">Pronto</span>
-            </span>
+            <a href="{{ route('superadmin.sedes') }}" class="app-nav-link {{ $active === 'sedes' ? 'is-active' : '' }}">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v3M16 4v3"/></svg>
+                Sedes
+            </a>
         </li>
         <li>
             <span class="app-nav-soon">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v3M16 4v3"/></svg>
-                Sedes y programas
+                <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/></svg>
+                Administradores
                 <span class="app-nav-soon-tag">Pronto</span>
             </span>
         </li>
