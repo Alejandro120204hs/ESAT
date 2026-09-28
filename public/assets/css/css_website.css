@@ -115,6 +115,11 @@ svg[viewBox] { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linec
 /* The hero's WhatsApp button turns green on hover — a hint of where
    it actually goes, before the click. */
 .hero .btn-outline-light:hover { border-color: var(--green); background: var(--green); color: var(--white); }
+/* The header's login button turns orange on hover, matching the
+   site's accent color instead of the generic outline darken — and
+   stays put instead of lifting like every other .btn, since it sits
+   right in the nav row rather than as a standalone CTA. */
+.header-actions .btn-outline:hover { border-color: var(--orange); background: var(--orange); color: var(--white); transform: none; }
 .program-hero .btn-accent:hover,
 .program-cta .btn-accent:hover { background: var(--green); color: var(--white); box-shadow: var(--shadow-md); }
 

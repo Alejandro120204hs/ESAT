@@ -1,0 +1,237 @@
+/* =========================================================
+   ESAT — Panel Superadmin: página "Sedes y programas"
+   Carga aparte de layout.css; solo la usa sedes-programas.blade.php.
+   ========================================================= */
+
+.app-sp-content { max-width: 1600px; }
+
+.app-page-intro {
+    font-size: 1.05rem; line-height: 1.5; color: var(--navy-2); margin-bottom: 20px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) forwards;
+}
+
+/* ---------- Pestañas ---------- */
+.app-tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) forwards;
+}
+.app-tab {
+    font-family: inherit; font-weight: 600; font-size: 0.9rem; color: var(--muted);
+    background: none; border: none; cursor: pointer;
+    padding: 10px 16px; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+.app-tab:hover { color: var(--navy-3); }
+.app-tab.is-active { color: var(--navy-3); border-bottom-color: var(--orange); }
+
+.app-tab-panel {
+    padding: 24px 26px; margin-bottom: 16px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) 0.06s forwards;
+}
+
+.app-tab-panel h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--navy-3); }
+.app-panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 16px; }
+.app-panel-heading-actions { display: flex; align-items: center; gap: 12px; }
+.app-panel-subtext { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+/* ---------- Tablas ---------- */
+.app-table-scroll { overflow-x: auto; }
+.app-table-scroll-tall { max-height: 460px; overflow-y: auto; }
+.app-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.app-table thead th {
+    text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.03em; color: var(--muted); padding: 0 14px 10px; position: sticky; top: 0;
+    background: var(--white);
+}
+.app-table tbody td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--text); }
+.app-table-strong { font-weight: 700; color: var(--navy-3); }
+.app-table-empty { color: var(--muted); font-style: italic; }
+.app-table-actions-col { width: 44px; }
+.app-table-actions { text-align: right; }
+
+.app-status-tag {
+    display: inline-block; font-size: 0.72rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px;
+}
+.app-status-active { background: #E3EEE1; color: var(--green); }
+
+.app-icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: none; background: none;
+    color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+.app-icon-btn:hover { background: rgba(16, 40, 74, 0.06); color: var(--navy-3); }
+.app-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Buscador ---------- */
+.app-search {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--white); min-width: 200px;
+}
+.app-search svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-search input {
+    border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text);
+    width: 100%; background: none;
+}
+.app-search input::placeholder { color: var(--muted); }
+
+/* ---------- Paginación ---------- */
+.app-pagination {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--line);
+}
+.app-pagination[hidden] { display: none; }
+.app-pagination-btn {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--line); cursor: pointer; color: var(--navy-3);
+    transition: background-color 0.2s, opacity 0.2s;
+}
+.app-pagination-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-pagination-btn:hover:not(:disabled) { background: rgba(16, 40, 74, 0.05); }
+.app-pagination-btn:disabled { opacity: 0.35; cursor: default; }
+.app-pagination-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); min-width: 110px; text-align: center; }
+
+/* ---------- Controles compartidos (select, botones) ---------- */
+.app-select {
+    font-family: inherit; font-size: 0.86rem; color: var(--navy-3); font-weight: 600;
+    padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); cursor: pointer;
+}
+.app-btn-primary {
+    font-family: inherit; font-weight: 700; font-size: 0.86rem; color: var(--white);
+    background: var(--orange); border: none; border-radius: 999px;
+    padding: 10px 20px; cursor: pointer; transition: background-color 0.2s; white-space: nowrap;
+}
+.app-btn-primary:hover { background: var(--orange-2); }
+.app-btn-secondary {
+    font-family: inherit; font-weight: 700; font-size: 0.86rem; color: var(--navy-3);
+    background: none; border: 1px solid var(--line); border-radius: 999px;
+    padding: 10px 20px; cursor: pointer; transition: background-color 0.2s;
+}
+.app-btn-secondary:hover { background: rgba(16, 40, 74, 0.05); }
+
+/* ---------- Asignaciones (sede -> programas) ---------- */
+.app-sede-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.app-sede-pill {
+    font-family: inherit; font-weight: 700; font-size: 0.84rem; color: var(--navy-3);
+    background: var(--bg); border: 1px solid transparent; border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; transition: background-color 0.2s, color 0.2s;
+}
+.app-sede-pill:hover { background: rgba(16, 40, 74, 0.1); }
+.app-sede-pill.is-active { background: var(--navy-3); color: var(--white); }
+
+.app-assign-list { list-style: none; display: flex; flex-direction: column; }
+.app-assign-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 4px;
+}
+.app-assign-row + .app-assign-row { border-top: 1px solid var(--line); }
+.app-assign-row label { display: flex; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 600; color: var(--navy-3); cursor: pointer; }
+.app-assign-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--orange); cursor: pointer; }
+.app-assign-escuela { font-size: 0.78rem; color: var(--muted); }
+
+.app-save-bar { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.app-save-confirm { display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; color: var(--green); }
+.app-save-confirm[hidden] { display: none; }
+.app-save-confirm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Formularios (modales) ---------- */
+.app-form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 18px; margin: 20px 0; }
+.app-field-wide { grid-column: 1 / -1; }
+.app-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.app-field label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.app-field input, .app-field select {
+    width: 100%; min-width: 0; max-width: 100%;
+    font-family: inherit; font-size: 0.92rem; color: var(--text);
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-field select { text-overflow: ellipsis; }
+
+/* ---------- Combobox propio (departamento / ciudad) ---------- */
+.app-combobox { position: relative; }
+.app-combobox-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-family: inherit; font-size: 0.92rem; color: var(--text); text-align: left;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-combobox-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-combobox.is-open .app-combobox-trigger {
+    outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
+.app-combobox-chevron {
+    width: 15px; height: 15px; flex-shrink: 0; color: var(--muted);
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.2s var(--ease-out);
+}
+.app-combobox.is-open .app-combobox-chevron { transform: rotate(180deg); }
+
+/* position: fixed (no absolute) para que el panel flote por encima de
+   TODO, incluido el scroll interno del modal — igual que un <select>
+   nativo. La posición y el ancho exactos los calcula JS al abrirlo. */
+.app-combobox-panel {
+    position: fixed; z-index: 80;
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); padding: 8px; display: flex; flex-direction: column; gap: 6px;
+}
+.app-combobox-panel[hidden] { display: none; }
+
+.app-combobox-search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px;
+}
+.app-combobox-search-wrap svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-search { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
+.app-combobox-search::placeholder { color: var(--muted); }
+
+.app-combobox-list { list-style: none; max-height: 240px; overflow-y: auto; }
+.app-combobox-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 10px; border-radius: 8px; font-size: 0.88rem; color: var(--navy-3);
+    cursor: pointer; transition: background-color 0.15s;
+}
+.app-combobox-list li[hidden] { display: none; }
+.app-combobox-list li:hover { background: rgba(16, 40, 74, 0.06); }
+.app-combobox-list li.is-selected { background: #FBE9D8; color: var(--orange-2); font-weight: 700; }
+.app-combobox-list li.is-selected svg { display: block; }
+.app-combobox-list li svg { display: none; width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-empty { padding: 14px 10px; font-size: 0.86rem; color: var(--muted); text-align: center; }
+.app-field input:focus, .app-field select:focus {
+    outline: none; border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
+
+/* ---------- Modal ---------- */
+.app-modal-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(10, 27, 51, 0.45);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.app-modal-backdrop[hidden] { display: none; }
+.app-modal {
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    width: 100%; max-width: 520px; min-width: 0; padding: 26px 28px; max-height: 90vh; overflow-y: auto;
+}
+.app-modal-header { display: flex; align-items: center; justify-content: space-between; }
+.app-modal-header h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--navy-3); }
+.app-modal-close {
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: none;
+    color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.app-modal-close:hover { background: rgba(16, 40, 74, 0.06); }
+.app-modal-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+@media (max-width: 640px) {
+    .app-form-grid { grid-template-columns: 1fr; }
+    .app-panel-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .app-panel-heading-actions { flex-wrap: wrap; }
+}

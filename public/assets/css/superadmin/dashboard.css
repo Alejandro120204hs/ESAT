@@ -1,0 +1,156 @@
+/* =========================================================
+   ESAT — Panel Superadmin: página "Inicio" (dashboard)
+   Carga aparte de layout.css; solo la usa dashboard.blade.php.
+   ========================================================= */
+
+.app-dashboard-content { max-width: 1600px; }
+
+/* ---------- Ingresos (hero de recaudo + gráfica) ---------- */
+.app-revenue-hero {
+    display: flex; align-items: stretch; gap: 36px;
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm); padding: 24px 32px; margin-bottom: 16px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) 0.1s forwards;
+}
+.app-revenue-main { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; }
+.app-revenue-label { font-size: 0.86rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.app-revenue-value { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 2.6rem; letter-spacing: -0.02em; color: var(--navy-3); line-height: 1; white-space: nowrap; }
+.app-revenue-delta {
+    display: flex; align-items: center; gap: 5px; margin-top: 10px;
+    font-size: 0.84rem; font-weight: 700; color: var(--green);
+}
+.app-revenue-delta svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.app-revenue-total { margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
+
+.app-revenue-chart {
+    flex: 1; display: flex; align-items: flex-end; gap: 18px;
+    padding-left: 32px; border-left: 1px solid var(--line);
+    min-width: 0; height: 110px;
+}
+.app-revenue-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+.app-revenue-bar {
+    position: relative;
+    width: 100%; max-width: 34px; border-radius: 6px 6px 2px 2px;
+    background: linear-gradient(180deg, var(--orange) 0%, var(--orange-2) 100%);
+    min-height: 6px;
+    transition: filter 0.15s;
+}
+.app-revenue-bar-col:hover .app-revenue-bar { filter: brightness(1.08); }
+.app-revenue-bar-label { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+
+.app-revenue-tooltip {
+    position: absolute; bottom: calc(100% + 10px); left: 50%;
+    transform: translate(-50%, 4px);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: var(--navy-3); color: rgba(255, 255, 255, 0.75);
+    font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+    padding: 7px 12px; border-radius: 8px; box-shadow: var(--shadow-md);
+    opacity: 0; pointer-events: none; z-index: 5;
+    transition: opacity 0.15s var(--ease-out), transform 0.15s var(--ease-out);
+}
+.app-revenue-tooltip strong { color: var(--white); font-size: 0.86rem; font-weight: 800; }
+.app-revenue-tooltip::after {
+    content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--navy-3);
+}
+.app-revenue-bar-col:hover .app-revenue-tooltip { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Encabezado común de panel (título + contador) ---------- */
+.app-panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.app-panel-heading h3 { margin-bottom: 0; }
+.app-panel-count {
+    font-size: 0.72rem; font-weight: 700; color: var(--muted);
+    background: rgba(16, 40, 74, 0.06); padding: 3px 9px; border-radius: 999px;
+}
+
+.app-cartera-panel h3, .app-alerts-panel h3, .app-activity-panel h3 {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.98rem;
+    color: var(--navy-3); margin-bottom: 14px;
+}
+
+/* ---------- Cartera + alertas (una fila de dos, misma altura) ---------- */
+.app-oversight-grid {
+    display: grid; grid-template-columns: minmax(280px, 420px) 1fr; gap: 18px; margin-bottom: 16px;
+}
+.app-cartera-panel, .app-alerts-panel, .app-activity-panel { padding: 20px 24px; }
+
+.app-cartera-bar {
+    display: flex; width: 100%; height: 10px; border-radius: 999px; overflow: hidden;
+    background: var(--bg); margin-bottom: 14px;
+}
+.app-cartera-seg-pagado { background: var(--green); }
+.app-cartera-seg-pendiente { background: var(--orange); }
+.app-cartera-seg-vencido { background: #B3261E; }
+.app-cartera-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 0.82rem; color: var(--navy-3); font-weight: 600; margin-bottom: 18px; }
+.app-cartera-legend span { display: flex; align-items: center; }
+.app-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+.app-dot-pagado { background: var(--green); }
+.app-dot-pendiente { background: var(--orange); }
+.app-dot-vencido { background: #B3261E; }
+
+.app-cartera-breakdown { display: flex; flex-direction: column; }
+.app-cartera-breakdown-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 0; font-size: 0.86rem;
+}
+.app-cartera-breakdown-row + .app-cartera-breakdown-row { border-top: 1px solid var(--line); }
+.app-cartera-breakdown-label { display: flex; align-items: center; color: var(--navy-3); font-weight: 600; }
+.app-cartera-breakdown-amount { color: var(--navy-3); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Alertas: hasta 4 por página + paginación */
+.app-alert-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.app-alert-item { display: flex; align-items: flex-start; gap: 12px; }
+.app-alert-item[hidden] { display: none; }
+.app-alert-icon {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: #FBE7E5; color: #B3261E;
+    display: flex; align-items: center; justify-content: center;
+}
+.app-alert-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-alert-item p { font-size: 0.88rem; color: var(--navy-3); line-height: 1.4; padding-top: 4px; }
+.app-alert-item p strong { font-weight: 700; }
+
+.app-pagination {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.app-pagination-btn {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--line); cursor: pointer; color: var(--navy-3);
+    transition: background-color 0.2s, opacity 0.2s;
+}
+.app-pagination-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-pagination-btn:hover:not(:disabled) { background: rgba(16, 40, 74, 0.05); }
+.app-pagination-btn:disabled { opacity: 0.35; cursor: default; }
+.app-pagination-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); min-width: 110px; text-align: center; }
+
+/* ---------- Actividad reciente (ancho completo, en dos columnas) ---------- */
+.app-activity-panel { margin-bottom: 16px; }
+.app-activity-list {
+    list-style: none; column-count: 2; column-gap: 32px;
+}
+.app-activity-list li { display: flex; align-items: flex-start; gap: 12px; break-inside: avoid; padding-bottom: 14px; }
+.app-activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); flex-shrink: 0; margin-top: 7px; }
+.app-activity-list p { font-size: 0.88rem; color: var(--navy-3); line-height: 1.4; }
+.app-activity-time { font-size: 0.78rem; color: var(--muted); }
+
+/* ---------- Mini stats (estructura del sistema) ---------- */
+.app-mini-stats { display: flex; flex-wrap: wrap; gap: 24px; padding: 4px; }
+.app-mini-stats span { font-size: 0.86rem; color: var(--muted); }
+.app-mini-stats strong { font-family: "Archivo", system-ui, sans-serif; color: var(--navy-3); font-weight: 800; margin-right: 5px; }
+
+@media (max-width: 900px) {
+    .app-oversight-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .app-activity-list { column-count: 1; }
+}
+@media (max-width: 760px) {
+    .app-revenue-hero { flex-direction: column; gap: 20px; }
+    .app-revenue-chart {
+        flex: none; width: 100%; height: 140px;
+        padding-left: 0; border-left: none; padding-top: 16px; border-top: 1px solid var(--line);
+    }
+}

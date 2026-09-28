@@ -1,0 +1,246 @@
+/* =========================================================
+   ESAT — Panel Superadmin: layout compartido
+   Sidebar + topbar + shell. Cargado en TODAS las páginas del
+   panel vía superadmin.layout. El CSS propio de cada panel
+   (dashboard.css, profile.css, ...) va aparte.
+   ========================================================= */
+
+:root {
+    --navy: #10284A;
+    --navy-2: #173B67;
+    --navy-3: #0A1B33;
+    --orange: #D97B2E;
+    --orange-2: #BE661F;
+    --green: #40763A;
+    --bg: #EEF2F7;
+    --white: #FFFFFF;
+    --text: #1A1A1A;
+    --muted: #6B7280;
+    --line: rgba(16, 40, 74, 0.12);
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 2px rgba(10, 27, 51, 0.06);
+    --shadow-md: 0 8px 24px -8px rgba(10, 27, 51, 0.16);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Browser surfaces carry the design (mismo tratamiento que el sitio público) */
+::selection { background: var(--orange); color: var(--white); }
+:focus-visible { outline: 2.5px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+.app-content::-webkit-scrollbar { width: 12px; height: 12px; }
+.app-content::-webkit-scrollbar-track { background: var(--bg); }
+.app-content::-webkit-scrollbar-thumb { background: var(--navy-2); border-radius: 8px; border: 3px solid var(--bg); }
+.app-content { scrollbar-color: var(--navy-2) var(--bg); scrollbar-width: thin; }
+
+.app-sidebar::-webkit-scrollbar { width: 10px; }
+.app-sidebar::-webkit-scrollbar-track { background: transparent; }
+.app-sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 8px; border: 3px solid var(--navy-3); }
+.app-sidebar { scrollbar-color: rgba(255, 255, 255, 0.2) transparent; scrollbar-width: thin; }
+
+body.app-page {
+    font-family: "Public Sans", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+}
+
+/* El shell ocupa exactamente el viewport y no crece con el contenido:
+   así el sidebar queda siempre completo y solo el contenido hace scroll. */
+.app-shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* ---------- Sidebar ---------- */
+.app-sidebar {
+    flex: 0 0 260px;
+    height: 100%;
+    overflow-y: auto;
+    background: var(--navy-3);
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 18px;
+}
+
+.app-sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 24px; }
+.app-sidebar-brand img { height: 30px; width: auto; }
+.app-sidebar-brand span {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.5); letter-spacing: 0.02em;
+}
+
+.app-sidebar-divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 0 6px 18px; }
+
+.app-nav-label {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.68rem;
+    text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.32);
+    padding: 0 12px; margin-bottom: 10px;
+}
+
+.app-nav { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.app-nav-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.75); font-weight: 600; font-size: 0.92rem;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+.app-nav-link svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-nav-link:hover { background: rgba(255, 255, 255, 0.06); color: var(--white); }
+.app-nav-link.is-active { background: var(--orange); color: var(--white); box-shadow: 0 6px 16px -6px rgba(217, 123, 46, 0.6); }
+
+.app-nav-soon {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.35); font-weight: 600; font-size: 0.92rem;
+    cursor: default;
+}
+.app-nav-soon svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-nav-soon-tag {
+    margin-left: auto; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.5);
+    padding: 2px 7px; border-radius: 999px;
+}
+
+.app-sidebar-footer { margin-top: auto; padding: 12px 6px 0; font-size: 0.72rem; color: rgba(255, 255, 255, 0.3); }
+
+/* ---------- Main ---------- */
+.app-main { flex: 1; height: 100%; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+.app-topbar {
+    height: 68px; flex-shrink: 0;
+    background: var(--white); border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+}
+.app-topbar h1 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--navy-3); }
+
+.app-user { position: relative; display: flex; align-items: center; gap: 12px; }
+.app-user-info { line-height: 1.25; text-align: right; }
+.app-user-name { font-weight: 700; font-size: 0.88rem; color: var(--navy-3); }
+.app-user-role { font-size: 0.76rem; color: var(--muted); }
+
+.app-user-trigger {
+    display: flex; align-items: center; justify-content: center;
+    padding: 3px; border-radius: 50%; flex-shrink: 0;
+    background: none; border: 2px solid transparent; cursor: pointer;
+    transition: border-color 0.2s;
+}
+.app-user-trigger:hover,
+.app-user.is-open .app-user-trigger { border-color: rgba(217, 123, 46, 0.4); }
+.app-user-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--orange); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.app-user-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+    width: 200px; background: var(--white); border-radius: var(--radius-md);
+    border: 1px solid var(--line); box-shadow: var(--shadow-md);
+    padding: 6px; display: none; flex-direction: column; gap: 2px;
+}
+.app-user.is-open .app-user-dropdown { display: flex; }
+.app-user-dropdown-link {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 9px 10px; border-radius: 8px;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 0.88rem; font-weight: 600; color: var(--text); text-align: left;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+.app-user-dropdown form { display: contents; }
+.app-user-dropdown-link svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-user-dropdown-link:hover { background: rgba(16, 40, 74, 0.05); }
+.app-user-dropdown-logout { color: var(--orange-2); }
+.app-user-dropdown-logout:hover { background: #FBE9D8; }
+.app-user-dropdown-divider { height: 1px; background: var(--line); margin: 4px 2px; }
+
+.app-content { flex: 1; overflow-y: auto; padding: 36px; max-width: 920px; }
+
+.app-welcome {
+    margin-bottom: 32px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) forwards;
+}
+.app-welcome h2 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.7rem; letter-spacing: -0.01em; color: var(--navy-3); margin-bottom: 6px; }
+.app-welcome p { color: var(--muted); font-size: 0.96rem; max-width: 60ch; }
+
+.app-section-label {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 12px;
+}
+
+/* Panel base reutilizable: cada panel.css decide qué va adentro. */
+.app-panel {
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm); overflow: hidden;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) 0.1s forwards;
+}
+
+.app-list-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px;
+}
+.app-list-row + .app-list-row { border-top: 1px solid var(--line); }
+.app-list-icon {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(16, 40, 74, 0.06); color: var(--navy-3);
+}
+.app-list-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-list-body { flex: 1; min-width: 0; }
+.app-list-body h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.98rem; color: var(--navy-3); margin-bottom: 3px; }
+.app-list-body p { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+.app-list-tag {
+    flex-shrink: 0; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; background: rgba(16, 40, 74, 0.06); color: var(--muted);
+    padding: 4px 10px; border-radius: 999px;
+}
+
+@keyframes appFadeUp { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .app-welcome, .app-panel { animation: none; opacity: 1; transform: none; }
+}
+
+/* ---------- Alertas (mensajes de sesión: éxito, error) ---------- */
+.app-alert {
+    padding: 12px 16px; border-radius: var(--radius-md);
+    font-size: 0.88rem; font-weight: 600; margin-bottom: 20px;
+}
+.app-alert-success { background: #EAF3E8; color: var(--green); border: 1px solid rgba(64, 118, 58, 0.25); }
+
+.app-menu-toggle {
+    display: none; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: var(--radius-md);
+    color: var(--navy-3); margin-right: 8px;
+}
+.app-menu-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app-topbar-left { display: flex; align-items: center; }
+
+.app-sidebar-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 40;
+    background: rgba(10, 27, 51, 0.45);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 860px) {
+    .app-sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.3s var(--ease-out);
+    }
+    .app-shell.is-nav-open .app-sidebar { transform: translateX(0); }
+    .app-shell.is-nav-open .app-sidebar-backdrop { display: block; }
+    .app-menu-toggle { display: flex; }
+    .app-topbar { padding: 0 18px; }
+    .app-topbar h1 { font-size: 1.05rem; }
+    .app-user-info { display: none; }
+    .app-content { padding: 20px; }
+}
