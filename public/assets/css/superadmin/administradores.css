@@ -1,0 +1,237 @@
+/* =========================================================
+   ESAT — Panel Superadmin: página "Administradores"
+   Carga aparte de layout.css; solo la usa administradores.blade.php.
+   ========================================================= */
+
+.app-adm-content { max-width: 1400px; }
+
+.app-page-intro {
+    font-size: 1.05rem; line-height: 1.5; color: var(--navy-2); margin-bottom: 20px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) forwards;
+}
+
+.app-list-panel {
+    padding: 24px 26px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.5s var(--ease-out) 0.06s forwards;
+}
+.app-panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 16px; }
+
+/* ---------- Tabla ---------- */
+.app-table-scroll { overflow-x: auto; }
+.app-table-scroll-tall { max-height: 460px; overflow-y: auto; }
+.app-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.app-table thead th {
+    text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.03em; color: var(--muted); padding: 0 14px 10px; position: sticky; top: 0;
+    background: var(--white);
+}
+.app-table tbody td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--text); }
+.app-table-strong { font-weight: 700; color: var(--navy-3); }
+.app-table-actions-col { width: 44px; }
+.app-table-actions { text-align: right; }
+
+.app-icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: none; background: none;
+    color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+.app-icon-btn:hover { background: rgba(16, 40, 74, 0.06); color: var(--navy-3); }
+.app-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Estado activo/inactivo: botón-interruptor, no una etiqueta estática —
+   se puede cambiar con un clic (vista previa, no persiste todavía). */
+.app-status-toggle {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: inherit; font-size: 0.78rem; font-weight: 700;
+    padding: 5px 12px 5px 9px; border-radius: 999px; border: none; cursor: pointer;
+    background: rgba(16, 40, 74, 0.06); color: var(--muted);
+    transition: background-color 0.2s, color 0.2s;
+}
+.app-status-toggle-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.app-status-toggle.is-active { background: #E3EEE1; color: var(--green); }
+
+/* ---------- Buscador ---------- */
+.app-search {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--white); min-width: 200px;
+}
+.app-search svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-search input { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
+.app-search input::placeholder { color: var(--muted); }
+
+/* ---------- Paginación ---------- */
+.app-pagination {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--line);
+}
+.app-pagination[hidden] { display: none; }
+.app-pagination-btn {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--line); cursor: pointer; color: var(--navy-3);
+    transition: background-color 0.2s, opacity 0.2s;
+}
+.app-pagination-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-pagination-btn:hover:not(:disabled) { background: rgba(16, 40, 74, 0.05); }
+.app-pagination-btn:disabled { opacity: 0.35; cursor: default; }
+.app-pagination-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); min-width: 110px; text-align: center; }
+
+/* ---------- Botones ---------- */
+.app-btn-primary {
+    font-family: inherit; font-weight: 700; font-size: 0.86rem; color: var(--white);
+    background: var(--orange); border: none; border-radius: 999px;
+    padding: 10px 20px; cursor: pointer; transition: background-color 0.2s; white-space: nowrap;
+}
+.app-btn-primary:hover { background: var(--orange-2); }
+.app-btn-primary:disabled { opacity: 0.5; cursor: default; }
+.app-btn-secondary {
+    font-family: inherit; font-weight: 700; font-size: 0.86rem; color: var(--navy-3);
+    background: none; border: 1px solid var(--line); border-radius: 999px;
+    padding: 10px 20px; cursor: pointer; transition: background-color 0.2s;
+}
+.app-btn-secondary:hover { background: rgba(16, 40, 74, 0.05); }
+
+/* ---------- Formularios ---------- */
+.app-form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 18px; }
+.app-field-wide { grid-column: 1 / -1; }
+.app-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.app-field label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.app-field input, .app-field select {
+    width: 100%; min-width: 0; max-width: 100%;
+    font-family: inherit; font-size: 0.92rem; color: var(--text);
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-field input:focus, .app-field select:focus {
+    outline: none; border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
+.app-field.has-error input, .app-field.has-error select { border-color: #B3261E; }
+.app-field.has-error .app-combobox-trigger { border-color: #B3261E; }
+.app-field-error { font-size: 0.78rem; color: #B3261E; min-height: 0; }
+.app-field-error:empty { display: none; }
+.app-field-hint { font-size: 0.78rem; color: var(--muted); }
+
+/* ---------- Combobox propio (departamento / ciudad de nacimiento) ---------- */
+.app-combobox { position: relative; }
+.app-combobox-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-family: inherit; font-size: 0.92rem; color: var(--text); text-align: left;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-combobox-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-combobox.is-open .app-combobox-trigger {
+    outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
+.app-combobox-chevron {
+    width: 15px; height: 15px; flex-shrink: 0; color: var(--muted);
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.2s var(--ease-out);
+}
+.app-combobox.is-open .app-combobox-chevron { transform: rotate(180deg); }
+
+/* position: fixed para que el panel flote por encima de todo, incluido
+   el scroll interno del modal — igual que un <select> nativo. */
+.app-combobox-panel {
+    position: fixed; z-index: 80;
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); padding: 8px; display: flex; flex-direction: column; gap: 6px;
+}
+.app-combobox-panel[hidden] { display: none; }
+
+.app-combobox-search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px;
+}
+.app-combobox-search-wrap svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-search { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
+.app-combobox-search::placeholder { color: var(--muted); }
+
+.app-combobox-list { list-style: none; max-height: 240px; overflow-y: auto; }
+.app-combobox-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 10px; border-radius: 8px; font-size: 0.88rem; color: var(--navy-3);
+    cursor: pointer; transition: background-color 0.15s;
+}
+.app-combobox-list li[hidden] { display: none; }
+.app-combobox-list li:hover { background: rgba(16, 40, 74, 0.06); }
+.app-combobox-list li.is-selected { background: #FBE9D8; color: var(--orange-2); font-weight: 700; }
+.app-combobox-list li.is-selected svg { display: block; }
+.app-combobox-list li svg { display: none; width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-empty { padding: 14px 10px; font-size: 0.86rem; color: var(--muted); text-align: center; }
+
+/* ---------- Modal ---------- */
+.app-modal-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(10, 27, 51, 0.45);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.app-modal-backdrop[hidden] { display: none; }
+.app-modal {
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    width: 100%; max-width: 520px; min-width: 0; padding: 26px 28px; max-height: 90vh; overflow-y: auto;
+}
+.app-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.app-modal-header h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--navy-3); }
+.app-modal-close {
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: none;
+    color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.app-modal-close:hover { background: rgba(16, 40, 74, 0.06); }
+.app-modal-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Asistente (wizard) de administrador ---------- */
+.app-modal-wizard { max-width: 640px; }
+
+.app-wizard-steps {
+    display: flex; align-items: center; margin: 22px 0 4px;
+}
+.app-wizard-step {
+    display: flex; align-items: center; gap: 9px; flex: 1; position: relative;
+}
+.app-wizard-step:not(:last-child)::after {
+    content: ""; flex: 1; height: 1px; background: var(--line); margin: 0 10px;
+}
+.app-wizard-step-num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    background: rgba(16, 40, 74, 0.06); transition: background-color 0.2s, color 0.2s;
+}
+.app-wizard-step-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap; transition: color 0.2s; }
+.app-wizard-step.is-active .app-wizard-step-num { background: var(--orange); color: var(--white); }
+.app-wizard-step.is-active .app-wizard-step-label { color: var(--navy-3); }
+.app-wizard-step.is-done .app-wizard-step-num { background: var(--green); color: var(--white); }
+
+.app-wizard-body { padding: 24px 0; min-height: 260px; }
+.app-wizard-panel[hidden] { display: none; }
+
+.app-wizard-summary { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.app-wizard-summary h4 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.92rem; color: var(--navy-3); margin-bottom: 12px; }
+.app-wizard-summary dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+.app-wizard-summary dl div { display: flex; flex-direction: column; gap: 2px; }
+.app-wizard-summary dt { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.app-wizard-summary dd { font-size: 0.86rem; font-weight: 600; color: var(--navy-3); }
+
+.app-wizard-note {
+    display: flex; align-items: flex-start; gap: 10px; margin-top: 18px;
+    padding: 12px 14px; border-radius: var(--radius-md); background: rgba(16, 40, 74, 0.04);
+}
+.app-wizard-note svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--navy-2); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-top: 1px; }
+.app-wizard-note p { font-size: 0.82rem; color: var(--navy-2); line-height: 1.5; }
+
+.app-wizard-footer {
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+    padding-top: 18px; border-top: 1px solid var(--line);
+}
+.app-wizard-progress { font-size: 0.78rem; color: var(--muted); margin-right: auto; }
+
+@media (max-width: 640px) {
+    .app-form-grid { grid-template-columns: 1fr; }
+    .app-panel-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .app-wizard-step-label { display: none; }
+}
