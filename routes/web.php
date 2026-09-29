@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Superadmin\AdministradorController;
+use App\Http\Controllers\Superadmin\SedeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -162,13 +164,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
         return view('superadmin.dashboard');
     })->name('dashboard');
 
-    Route::get('/sedes', function () {
-        return view('superadmin.sedes-programas');
-    })->name('sedes');
+    Route::get('/sedes', [SedeController::class, 'index'])->name('sedes');
+    Route::post('/sedes', [SedeController::class, 'store'])->name('sedes.store');
+    Route::put('/sedes/{sede}', [SedeController::class, 'update'])->name('sedes.update');
 
-    Route::get('/administradores', function () {
-        return view('superadmin.administradores');
-    })->name('administradores');
+    Route::get('/administradores', [AdministradorController::class, 'index'])->name('administradores');
+    Route::post('/administradores', [AdministradorController::class, 'store'])->name('administradores.store');
+    Route::put('/administradores/{administrador}', [AdministradorController::class, 'update'])->name('administradores.update');
+    Route::patch('/administradores/{administrador}/toggle', [AdministradorController::class, 'toggleActivo'])->name('administradores.toggle');
 
     Route::get('/estudiantes', function () {
         return view('superadmin.estudiantes');
@@ -177,6 +180,17 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/auditoria', function () {
         return view('superadmin.auditoria');
     })->name('auditoria');
+
+    Route::get('/configuracion', function () {
+        return view('superadmin.configuracion');
+    })->name('configuracion');
+});
+
+// ============ PANEL ADMIN ============
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        return view('admin.dashboard');
+    })->name('dashboard');
 });
 
 Route::middleware('auth')->group(function () {

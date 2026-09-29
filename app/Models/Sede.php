@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sede extends Model
 {
-    protected $fillable = ['nombre', 'ciudad', 'direccion'];
+    protected $fillable = ['nombre', 'departamento', 'ciudad', 'direccion'];
 
     public function usuarios(): HasMany
     {
