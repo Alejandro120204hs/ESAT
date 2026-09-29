@@ -10,22 +10,6 @@
 @endpush
 
 @section('content')
-    {{--
-        Vista previa de interfaz — solo frontend, sin conexión a base de datos
-        todavía. Los datos de sedes son de ejemplo (los nombres reales sí son
-        los reales de ESAT; dirección/ciudad ya existían del proyecto). El
-        botón "Nueva sede" abre un modal de ejemplo que no guarda nada — falta
-        construir el backend completo (controlador, validación).
-    --}}
-    @php
-        $sedes = [
-            ['nombre' => 'Bogotá', 'direccion' => 'Cra 52 #71-18', 'departamento' => 'Cundinamarca', 'ciudad' => 'Bogotá', 'activa' => true],
-            ['nombre' => 'Sasaima', 'direccion' => 'Urbanización San José, Cra 2 #8-84', 'departamento' => 'Cundinamarca', 'ciudad' => 'Sasaima', 'activa' => true],
-            ['nombre' => 'Guaduas', 'direccion' => 'Cra 2 No. 1-83, Calle de la Pola', 'departamento' => 'Cundinamarca', 'ciudad' => 'Guaduas', 'activa' => true],
-            ['nombre' => 'La Dorada', 'direccion' => 'Calle 9 No. 7-55, Barrio Magdalena', 'departamento' => 'Caldas', 'ciudad' => 'La Dorada', 'activa' => true],
-        ];
-    @endphp
-
     <p class="app-page-intro" data-page-intro>Aquí podrás crear nuevas sedes, editarlas, y desactivar las que ya no estén en funcionamiento.</p>
 
     <div class="app-tab-panel app-panel">
@@ -51,22 +35,26 @@
                 <tbody>
                     @foreach ($sedes as $sede)
                         <tr
-                            data-nombre="{{ $sede['nombre'] }}"
-                            data-direccion="{{ $sede['direccion'] }}"
-                            data-departamento="{{ $sede['departamento'] }}"
-                            data-ciudad="{{ $sede['ciudad'] }}"
+                            data-id="{{ $sede->id }}"
+                            data-nombre="{{ $sede->nombre }}"
+                            data-direccion="{{ $sede->direccion }}"
+                            data-departamento="{{ $sede->departamento }}"
+                            data-ciudad="{{ $sede->ciudad }}"
                         >
-                            <td class="app-table-strong">{{ $sede['nombre'] }}</td>
-                            <td>{{ $sede['direccion'] }}</td>
-                            <td>{{ $sede['ciudad'] }}, {{ $sede['departamento'] }}</td>
+                            <td class="app-table-strong">{{ $sede->nombre }}</td>
+                            <td>{{ $sede->direccion }}</td>
+                            <td>{{ $sede->ciudad }}, {{ $sede->departamento }}</td>
                             <td><span class="app-status-tag app-status-active">Activa</span></td>
                             <td class="app-table-actions">
-                                <button type="button" class="app-icon-btn" data-edit-modal="sede" aria-label="Editar {{ $sede['nombre'] }}">
+                                <button type="button" class="app-icon-btn" data-edit-modal="sede" aria-label="Editar {{ $sede->nombre }}">
                                     <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                 </button>
                             </td>
                         </tr>
                     @endforeach
+                    @if ($sedes->isEmpty())
+                        <tr><td colspan="5" class="app-table-empty-row">No hay sedes registradas todavía.</td></tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -128,7 +116,7 @@
             </div>
             <div class="app-modal-actions">
                 <button type="button" class="app-btn-secondary" data-close-modal>Cancelar</button>
-                <button type="button" class="app-btn-primary" data-close-modal data-modal-save data-create-label="Guardar sede" data-edit-label="Guardar cambios">Guardar sede</button>
+                <button type="button" class="app-btn-primary" data-modal-save data-create-label="Guardar sede" data-edit-label="Guardar cambios">Guardar sede</button>
             </div>
         </div>
     </div>

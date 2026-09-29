@@ -1,0 +1,393 @@
+﻿/* =========================================================
+   ESAT â€” Panel Superadmin: pÃ¡gina "ConfiguraciÃ³n"
+   Carga aparte de layout.css; solo la usa configuracion.blade.php.
+   ========================================================= */
+
+/* Mismo patrÃ³n que app-adm-content: fill completo, scrollbar en el borde */
+.app-cfg-content { max-width: 1400px; }
+.cfg-inner { max-width: 100%; }
+
+/* ---------- Intro ---------- */
+.app-page-intro {
+    font-size: 1.02rem; line-height: 1.55; color: var(--navy-2); margin-bottom: 24px;
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.45s var(--ease-out) forwards;
+}
+
+/* ---------- PestaÃ±as ---------- */
+.cfg-tabs {
+    display: flex; gap: 2px; margin-bottom: 24px;
+    border-bottom: 2px solid var(--line);
+    opacity: 0; transform: translateY(10px);
+    animation: appFadeUp 0.45s var(--ease-out) 0.05s forwards;
+}
+
+.cfg-tab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px 12px; margin-bottom: -2px;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.92rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+    white-space: nowrap;
+}
+.cfg-tab svg {
+    width: 16px; height: 16px; fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+}
+.cfg-tab:hover { color: var(--navy-2); background: rgba(16, 40, 74, 0.04); }
+.cfg-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* ---------- Panel de contenido ---------- */
+.cfg-panel {
+    display: flex; flex-direction: column; gap: 20px;
+    opacity: 0; transform: translateY(8px);
+    animation: appFadeUp 0.4s var(--ease-out) 0.1s forwards;
+}
+/* Bug fix: display:flex pisa el [hidden] nativo del navegador */
+.cfg-panel[hidden] { display: none; }
+
+/* ---------- Tarjeta de secciÃ³n ---------- */
+.cfg-card {
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+    padding: 24px 26px;
+}
+.cfg-card .app-section-label { margin-bottom: 18px; }
+
+/* ---------- Grilla de campos ---------- */
+.cfg-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+}
+.cfg-grid-single { grid-template-columns: 1fr; max-width: 380px; }
+
+.cfg-field { display: flex; flex-direction: column; gap: 6px; }
+.cfg-field-full { grid-column: 1 / -1; }
+
+.cfg-label {
+    font-size: 0.82rem; font-weight: 700; color: var(--navy-3);
+    letter-spacing: 0.01em;
+}
+.cfg-field-hint {
+    font-size: 0.79rem; color: var(--muted); line-height: 1.5;
+    margin-top: -2px;
+}
+
+/* ---------- Inputs ---------- */
+.cfg-input {
+    padding: 10px 13px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-md);
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.9rem; color: var(--text); background: var(--white);
+    width: 100%; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cfg-input::placeholder { color: var(--muted); }
+.cfg-input:hover:not(:focus) { border-color: rgba(16, 40, 74, 0.28); }
+.cfg-input:focus {
+    outline: none; border-color: var(--orange);
+    box-shadow: 0 0 0 3.5px rgba(217, 123, 46, 0.12);
+}
+
+/* Input con Ã­cono a la izquierda */
+.cfg-input-icon-wrap {
+    position: relative; display: flex; align-items: center;
+}
+.cfg-input-icon-wrap svg {
+    position: absolute; left: 12px; width: 15px; height: 15px; flex-shrink: 0;
+    fill: none; stroke: var(--muted); stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
+}
+.cfg-input-icon { padding-left: 36px; }
+
+/* ---------- SecciÃ³n de logo: dos paneles que llenan el card ---------- */
+.cfg-card-logo { padding: 0; overflow: hidden; }
+
+.cfg-logo-area {
+    display: grid;
+    grid-template-columns: minmax(200px, 30%) 1fr;
+    min-height: 130px;
+}
+
+/* Panel izquierdo: navy, logo centrado */
+.cfg-logo-preview {
+    background: var(--navy-3);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; padding: 20px 24px;
+    position: relative; overflow: hidden;
+}
+/* CuadrÃ­cula sutil que indica fondo transparente */
+.cfg-logo-preview::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.028) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.028) 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
+}
+.cfg-logo-preview-inner {
+    position: relative; z-index: 1;
+    padding: 14px 22px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+}
+.cfg-logo-preview-inner img { height: 36px; width: auto; display: block; }
+.cfg-logo-preview-label {
+    position: relative; z-index: 1;
+    font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: rgba(255,255,255,0.3);
+}
+
+/* Panel derecho: blanco, info + botÃ³n */
+.cfg-logo-meta {
+    padding: 20px 26px;
+    display: flex; flex-direction: column; justify-content: center; gap: 8px;
+    border-left: 1px solid var(--line);
+}
+.cfg-logo-section-label { margin-bottom: 14px; }
+.cfg-bloq-section-label { margin-bottom: 4px; }
+
+.cfg-logo-file-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 2px;
+}
+.cfg-logo-file-icon {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: rgba(16,40,74,0.06); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.cfg-logo-file-icon svg {
+    width: 18px; height: 18px; fill: none; stroke: var(--navy-2);
+    stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.cfg-logo-filename {
+    font-size: 0.92rem; font-weight: 700; color: var(--navy-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cfg-logo-subtext { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+
+.cfg-logo-hint {
+    font-size: 0.8rem; color: var(--muted); line-height: 1.55;
+}
+
+.cfg-logo-actions { margin-top: 2px; }
+
+.cfg-upload-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: var(--radius-md);
+    background: var(--bg); border: 1.5px solid var(--line); color: var(--navy-3);
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.86rem; font-weight: 600; cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.cfg-upload-btn svg {
+    width: 15px; height: 15px; fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+}
+.cfg-upload-btn:hover { background: white; border-color: var(--orange); color: var(--orange); }
+
+/* Input de archivo oculto (accesible: tabindex=-1, activado por botÃ³n) */
+.cfg-file-input {
+    position: absolute; width: 1px; height: 1px;
+    opacity: 0; pointer-events: none; overflow: hidden;
+}
+
+/* ---------- Stepper numÃ©rico ---------- */
+.cfg-stepper-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px;
+}
+.cfg-step-btn {
+    width: 36px; height: 40px; flex-shrink: 0;
+    border: 1.5px solid var(--line); border-radius: var(--radius-md);
+    background: var(--bg); color: var(--navy-3);
+    font-size: 1.15rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+    line-height: 1;
+}
+.cfg-step-btn:hover { background: rgba(16, 40, 74, 0.08); border-color: var(--navy-2); color: var(--navy-3); }
+.cfg-step-btn:active { background: rgba(16, 40, 74, 0.14); }
+
+.cfg-input-num {
+    width: 74px; text-align: center; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+}
+.cfg-input-num::-webkit-inner-spin-button,
+.cfg-input-num::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.cfg-stepper-unit {
+    font-size: 0.84rem; color: var(--muted); font-weight: 500; flex-shrink: 0;
+}
+
+/* ---------- Badge en tab ---------- */
+.cfg-tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; font-size: 0.65rem; font-weight: 800;
+    background: var(--orange); color: var(--white);
+    line-height: 1; margin-left: 2px;
+    transition: opacity 0.2s;
+}
+.cfg-tab-badge:empty,
+.cfg-tab-badge[data-count="0"] { opacity: 0; pointer-events: none; }
+
+/* ---------- Card de bloqueados ---------- */
+.cfg-card-bloqueados { padding: 0; overflow: hidden; }
+
+.cfg-bloq-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+}
+.cfg-bloq-subtitle { font-size: 0.84rem; color: var(--muted); line-height: 1.4; }
+
+/* Estado vacÃ­o */
+.cfg-bloq-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 52px 24px; text-align: center;
+}
+.cfg-bloq-empty[hidden] { display: none; }
+.cfg-bloq-empty svg {
+    width: 42px; height: 42px; fill: none; stroke: var(--green);
+    stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7;
+}
+.cfg-bloq-empty p { font-size: 0.9rem; color: var(--muted); font-weight: 500; }
+
+/* Tabla */
+.cfg-table-scroll { overflow-x: auto; }
+.cfg-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+.cfg-table thead th {
+    text-align: left; font-size: 0.71rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); padding: 0 18px 10px;
+    position: sticky; top: 0; background: var(--white);
+}
+.cfg-table thead tr { border-bottom: 1px solid var(--line); }
+.cfg-table thead th:first-child { padding-left: 24px; }
+.cfg-table thead th:last-child { padding-right: 24px; }
+.cfg-table tbody td {
+    padding: 14px 18px; border-top: 1px solid var(--line); vertical-align: middle;
+}
+.cfg-table tbody td:first-child { padding-left: 24px; }
+.cfg-table tbody td:last-child { padding-right: 24px; }
+
+.cfg-bloq-row { transition: background-color 0.15s; }
+.cfg-bloq-row:hover { background: rgba(16, 40, 74, 0.025); }
+.cfg-bloq-row.is-removing {
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+}
+
+/* Avatar + nombre en primera columna */
+.cfg-table tbody td:first-child { display: flex; align-items: center; gap: 11px; }
+.cfg-bloq-avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    background: var(--orange); color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.82rem;
+}
+.cfg-bloq-name { font-weight: 600; color: var(--navy-3); }
+
+/* Chips de rol */
+.cfg-role-chip {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 0.74rem; font-weight: 700;
+    background: rgba(16, 40, 74, 0.07); color: var(--navy-2);
+}
+.cfg-role-chip.cfg-role-docente { background: rgba(64,118,58,0.1); color: var(--green); }
+
+/* Chips de motivo */
+.cfg-motivo-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.76rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 999px;
+}
+.cfg-motivo-chip.cfg-motivo-intentos { background: #FBE9D8; color: var(--orange-2); }
+.cfg-motivo-chip.cfg-motivo-inactividad { background: rgba(16,40,74,0.06); color: var(--muted); }
+.cfg-bloq-detalle { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+.cfg-bloq-sede, .cfg-bloq-fecha {
+    color: var(--muted); font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+.cfg-bloq-accion { text-align: right; white-space: nowrap; }
+
+.cfg-desbloquear-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 14px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    color: var(--navy-3); font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+.cfg-desbloquear-btn svg {
+    width: 14px; height: 14px; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+}
+.cfg-desbloquear-btn:hover { border-color: var(--green); color: var(--green); background: #EAF3E8; }
+
+/* ---------- BotÃ³n guardar ---------- */
+.cfg-footer {
+    display: flex; justify-content: flex-end;
+}
+
+.cfg-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 26px; border-radius: var(--radius-md);
+    background: var(--orange); border: none; color: var(--white);
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.92rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 14px -4px rgba(217, 123, 46, 0.5);
+    transition: background-color 0.2s, box-shadow 0.2s, transform 0.12s;
+}
+.cfg-btn-primary:hover {
+    background: var(--orange-2);
+    box-shadow: 0 6px 18px -4px rgba(217, 123, 46, 0.6);
+}
+.cfg-btn-primary:active { transform: scale(0.97); }
+
+/* ---------- Toast ---------- */
+.cfg-toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(14px);
+    background: var(--navy-3); color: var(--white);
+    font-family: "Public Sans", system-ui, sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    padding: 13px 22px; border-radius: 999px;
+    box-shadow: 0 8px 28px -6px rgba(10, 27, 51, 0.45);
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0; white-space: nowrap; z-index: 200; pointer-events: none;
+    transition: opacity 0.25s, transform 0.3s var(--ease-out);
+}
+.cfg-toast.is-visible {
+    opacity: 1; transform: translateX(-50%) translateY(0);
+}
+/* Bug fix: display:flex pisa el [hidden] nativo */
+.cfg-toast[hidden] { display: none; }
+.cfg-toast svg {
+    width: 16px; height: 16px; flex-shrink: 0;
+    fill: none; stroke: var(--orange);
+    stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+    .cfg-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; }
+    .cfg-tab { padding: 10px 14px 12px; font-size: 0.87rem; }
+    .cfg-grid { grid-template-columns: 1fr; }
+    .cfg-grid-single { max-width: 100%; }
+    .cfg-card { padding: 18px; }
+    .cfg-logo-area { grid-template-columns: 1fr; }
+    .cfg-logo-preview { min-height: 130px; }
+    .cfg-logo-meta { border-left: none; border-top: 1px solid var(--line); }
+    .cfg-toast { width: calc(100% - 32px); text-align: center; justify-content: center; }
+}
+
+

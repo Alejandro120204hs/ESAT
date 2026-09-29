@@ -3,7 +3,7 @@
    Carga aparte de layout.css; solo la usa profile.blade.php.
    ========================================================= */
 
-.app-content-wide { max-width: 1080px; }
+.app-content-wide { max-width: 1400px; }
 
 .app-profile-hero {
     display: flex; align-items: center; gap: 22px;

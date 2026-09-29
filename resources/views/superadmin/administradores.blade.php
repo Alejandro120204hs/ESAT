@@ -10,45 +10,6 @@
 @endpush
 
 @section('content')
-    {{--
-        Vista previa de interfaz — solo frontend, sin conexión a base de datos
-        todavía. Los administradores de ejemplo abajo son ficticios (nombres
-        y documentos inventados para previsualizar la pantalla); las sedes a
-        las que se asignan sí son las 4 sedes reales de ESAT. La sede La
-        Dorada queda sin administrador a propósito, para que coincida con la
-        alerta ya existente en el inicio ("La sede La Dorada no tiene
-        administrador asignado"). El asistente de "Nuevo administrador" no
-        guarda nada — falta backend completo (controlador, validación,
-        creación real del usuario con role=admin y contraseña = cédula).
-    --}}
-    @php
-        $sedes = ['Bogotá', 'Sasaima', 'Guaduas', 'La Dorada'];
-
-        $administradores = [
-            [
-                'nombres' => 'María', 'apellidos' => 'Pérez Londoño', 'genero' => 'femenino',
-                'fecha_nacimiento' => '1990-04-12', 'departamento_nacimiento' => 'Cundinamarca', 'ciudad_nacimiento' => 'Bogotá',
-                'tipo_documento' => 'CC', 'numero_documento' => '52334221',
-                'telefono' => '3011234567', 'correo' => 'maria.perez@esat.edu.co',
-                'sede' => 'Bogotá', 'activo' => true,
-            ],
-            [
-                'nombres' => 'Carlos', 'apellidos' => 'Gómez Ruiz', 'genero' => 'masculino',
-                'fecha_nacimiento' => '1985-11-03', 'departamento_nacimiento' => 'Cundinamarca', 'ciudad_nacimiento' => 'Girardot',
-                'tipo_documento' => 'CC', 'numero_documento' => '79221884',
-                'telefono' => '3122345678', 'correo' => 'carlos.gomez@esat.edu.co',
-                'sede' => 'Sasaima', 'activo' => true,
-            ],
-            [
-                'nombres' => 'Laura', 'apellidos' => 'Torres Medina', 'genero' => 'femenino',
-                'fecha_nacimiento' => '1993-07-22', 'departamento_nacimiento' => 'Tolima', 'ciudad_nacimiento' => 'Ibagué',
-                'tipo_documento' => 'CC', 'numero_documento' => '1070845221',
-                'telefono' => '3187654321', 'correo' => 'laura.torres@esat.edu.co',
-                'sede' => 'Guaduas', 'activo' => true,
-            ],
-        ];
-    @endphp
-
     <p class="app-page-intro">Aquí podrás crear nuevas cuentas de administrador, asignarlas a una sede y activarlas o desactivarlas.</p>
 
     <div class="app-panel app-list-panel">
@@ -76,36 +37,40 @@
                 <tbody>
                     @foreach ($administradores as $admin)
                         <tr
-                            data-nombres="{{ $admin['nombres'] }}"
-                            data-apellidos="{{ $admin['apellidos'] }}"
-                            data-genero="{{ $admin['genero'] }}"
-                            data-fecha_nacimiento="{{ $admin['fecha_nacimiento'] }}"
-                            data-departamento_nacimiento="{{ $admin['departamento_nacimiento'] }}"
-                            data-ciudad_nacimiento="{{ $admin['ciudad_nacimiento'] }}"
-                            data-tipo_documento="{{ $admin['tipo_documento'] }}"
-                            data-numero_documento="{{ $admin['numero_documento'] }}"
-                            data-telefono="{{ $admin['telefono'] }}"
-                            data-correo="{{ $admin['correo'] }}"
-                            data-sede="{{ $admin['sede'] }}"
+                            data-id="{{ $admin->id }}"
+                            data-nombres="{{ $admin->nombres }}"
+                            data-apellidos="{{ $admin->apellidos }}"
+                            data-genero="{{ $admin->genero }}"
+                            data-fecha_nacimiento="{{ $admin->fecha_nacimiento?->format('Y-m-d') }}"
+                            data-departamento_nacimiento="{{ $admin->departamento_nacimiento }}"
+                            data-ciudad_nacimiento="{{ $admin->lugar_nacimiento }}"
+                            data-tipo_documento="{{ $admin->tipo_documento }}"
+                            data-numero_documento="{{ $admin->numero_documento }}"
+                            data-telefono="{{ $admin->telefono }}"
+                            data-correo="{{ $admin->email }}"
+                            data-sede="{{ $admin->sede_id }}"
                         >
-                            <td class="app-table-strong">{{ $admin['nombres'] }} {{ $admin['apellidos'] }}</td>
-                            <td>{{ $admin['tipo_documento'] }} {{ $admin['numero_documento'] }}</td>
-                            <td>{{ $admin['sede'] }}</td>
-                            <td>{{ $admin['correo'] }}</td>
-                            <td>{{ $admin['telefono'] }}</td>
+                            <td class="app-table-strong">{{ $admin->nombres }} {{ $admin->apellidos }}</td>
+                            <td>{{ $admin->tipo_documento }} {{ $admin->numero_documento }}</td>
+                            <td>{{ $admin->sede?->nombre ?? '—' }}</td>
+                            <td>{{ $admin->email }}</td>
+                            <td>{{ $admin->telefono }}</td>
                             <td>
-                                <button type="button" class="app-status-toggle {{ $admin['activo'] ? 'is-active' : '' }}" data-status-toggle aria-pressed="{{ $admin['activo'] ? 'true' : 'false' }}">
+                                <button type="button" class="app-status-toggle {{ $admin->activo ? 'is-active' : '' }}" data-status-toggle aria-pressed="{{ $admin->activo ? 'true' : 'false' }}">
                                     <span class="app-status-toggle-dot"></span>
-                                    <span data-status-label>{{ $admin['activo'] ? 'Activo' : 'Inactivo' }}</span>
+                                    <span data-status-label>{{ $admin->activo ? 'Activo' : 'Inactivo' }}</span>
                                 </button>
                             </td>
                             <td class="app-table-actions">
-                                <button type="button" class="app-icon-btn" data-edit-wizard aria-label="Editar {{ $admin['nombres'] }}">
+                                <button type="button" class="app-icon-btn" data-edit-wizard aria-label="Editar {{ $admin->nombres }}">
                                     <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                 </button>
                             </td>
                         </tr>
                     @endforeach
+                    @if ($administradores->isEmpty())
+                        <tr><td colspan="7" class="app-table-empty-row">No hay administradores registrados todavía.</td></tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -257,7 +222,7 @@
                             <select id="administrador-sede" data-required>
                                 <option value="" selected disabled>Selecciona una sede</option>
                                 @foreach ($sedes as $sede)
-                                    <option value="{{ $sede }}">{{ $sede }}</option>
+                                    <option value="{{ $sede->id }}">{{ $sede->nombre }}</option>
                                 @endforeach
                             </select>
                             <span class="app-field-error" data-field-error></span>

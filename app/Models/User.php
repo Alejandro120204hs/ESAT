@@ -39,6 +39,7 @@ class User extends Authenticatable
         'direccion',
         'profesion',
         'titulo_academico',
+        'activo',
     ];
 
     /**
@@ -76,6 +77,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => RolUsuario::class,
             'fecha_nacimiento' => 'date',
+            'activo'           => 'boolean',
         ];
     }
 
@@ -113,6 +115,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             RolUsuario::Superadmin => route('superadmin.dashboard'),
+            RolUsuario::Admin      => route('admin.dashboard'),
             default => route('dashboard'),
         };
     }

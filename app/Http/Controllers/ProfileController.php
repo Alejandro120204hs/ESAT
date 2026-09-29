@@ -22,6 +22,10 @@ class ProfileController extends Controller
             return view('superadmin.profile', ['user' => $user]);
         }
 
+        if ($user->isAdmin()) {
+            return view('admin.profile', ['user' => $user]);
+        }
+
         return view('profile.edit', ['user' => $user]);
     }
 

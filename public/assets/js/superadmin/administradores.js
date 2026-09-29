@@ -1,9 +1,7 @@
-// ESAT — panel Superadmin, página "Administradores": tabla con búsqueda +
-// paginación, interruptor de estado activo/inactivo, y el asistente de
-// 4 pasos para crear/editar un administrador (vista previa, no guarda
-// nada todavía — falta el backend: controlador, validación real,
-// creación del usuario con role=admin y contraseña = documento).
+// ESAT — panel Superadmin, página "Administradores"
 document.addEventListener('DOMContentLoaded', function () {
+    var csrf   = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content');
+    var editId = null;
     // ---- Tabla: búsqueda + paginación ----
     function setupTable(table) {
         var name = table.dataset.table;
@@ -50,13 +48,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('[data-table]').forEach(setupTable);
 
-    // ---- Interruptor activo/inactivo (vista previa, no persiste) ----
+    // ---- Interruptor activo/inactivo ----
     document.querySelectorAll('[data-status-toggle]').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
-            e.stopPropagation(); // no debe abrir el asistente de editar
+            e.stopPropagation();
+            var fila   = btn.closest('tr');
+            var userId = fila ? fila.dataset.id : null;
+            if (!userId) return;
+
             var activo = btn.classList.toggle('is-active');
             btn.setAttribute('aria-pressed', activo ? 'true' : 'false');
             btn.querySelector('[data-status-label]').textContent = activo ? 'Activo' : 'Inactivo';
+
+            fetch('/superadmin/administradores/' + userId + '/toggle', {
+                method: 'PATCH',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+            }).catch(function () {
+                // Revertir si falla la petición
+                btn.classList.toggle('is-active', !activo);
+                btn.setAttribute('aria-pressed', !activo ? 'true' : 'false');
+                btn.querySelector('[data-status-label]').textContent = !activo ? 'Activo' : 'Inactivo';
+            });
         });
     });
 
@@ -312,6 +324,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 var edad = calcularEdad(valor);
                 valor = valor + (edad !== null ? ' (' + edad + ' años)' : '');
             }
+            if (clave === 'sede') {
+                var selOpt = campo.options[campo.selectedIndex];
+                valor = selOpt ? selOpt.text : valor;
+            }
 
             var div = document.createElement('div');
             var dt = document.createElement('dt');
@@ -368,6 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('[data-open-wizard]').forEach(function (btn) {
         btn.addEventListener('click', function () {
+            editId = null;
             tituloEl.textContent = tituloEl.dataset.createTitle;
             finishBtn.textContent = finishBtn.dataset.createLabel;
             limpiarAsistente();
@@ -375,20 +392,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Toda la fila abre el asistente de editar (no solo el lápiz), para no
-    // obligar a acertarle a un ícono pequeño. El interruptor de estado
-    // detiene la propagación arriba para no abrir el asistente también.
     document.querySelectorAll('[data-edit-wizard]').forEach(function (btn) {
         var fila = btn.closest('tr');
         if (!fila) return;
         fila.classList.add('app-row-clickable');
         fila.addEventListener('click', function () {
+            editId = fila.dataset.id || null;
             tituloEl.textContent = tituloEl.dataset.editTitle;
             finishBtn.textContent = finishBtn.dataset.editLabel;
             limpiarAsistente();
 
             Object.keys(fila.dataset).forEach(function (key) {
-                if (key === 'departamento_nacimiento' || key === 'ciudad_nacimiento') return;
+                if (key === 'id' || key === 'departamento_nacimiento' || key === 'ciudad_nacimiento') return;
                 var campo = document.getElementById('administrador-' + key);
                 if (campo) campo.value = fila.dataset[key];
             });
@@ -408,10 +423,47 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.querySelectorAll('[data-close-wizard]').forEach(function (btn) {
         btn.addEventListener('click', function () { modal.hidden = true; });
     });
+
     finishBtn.addEventListener('click', function () {
         if (!validarPasoActual()) return;
-        modal.hidden = true;
+
+        var campos = ['nombres', 'apellidos', 'genero', 'fecha_nacimiento',
+                      'departamento_nacimiento', 'ciudad_nacimiento',
+                      'tipo_documento', 'numero_documento', 'telefono', 'correo', 'sede'];
+
+        var payload = {};
+        campos.forEach(function (clave) {
+            var el = document.getElementById('administrador-' + clave);
+            if (el) payload[clave === 'sede' ? 'sede_id' : clave] = el.value;
+        });
+
+        var url    = editId ? '/superadmin/administradores/' + editId : '/superadmin/administradores';
+        var method = editId ? 'PUT' : 'POST';
+
+        finishBtn.disabled = true;
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept':       'application/json',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.ok) {
+                location.reload();
+            } else {
+                finishBtn.disabled = false;
+            }
+        })
+        .catch(function () {
+            finishBtn.disabled = false;
+        });
     });
+
     modal.addEventListener('click', function (e) {
         if (e.target === modal) modal.hidden = true;
     });

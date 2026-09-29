@@ -1,0 +1,172 @@
+/* =========================================================
+   ESAT — Panel Admin: Mi perfil
+   ========================================================= */
+
+/* ── Hero / Banner ───────────────────────────── */
+.prf-hero {
+    position: relative; overflow: hidden;
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+    min-height: 160px;
+    display: flex; align-items: center;
+}
+.prf-hero-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(130deg, var(--navy-3) 0%, var(--navy-2) 55%, #1a4a80 100%);
+}
+.prf-hero-mark {
+    position: absolute; z-index: 0;
+    right: 14px; top: 50%; transform: translateY(-50%);
+    width: 110px; height: 110px; object-fit: contain;
+    opacity: 0.35;
+    pointer-events: none; user-select: none;
+}
+.prf-hero-inner {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 24px;
+    padding: 32px 36px; width: 100%;
+}
+.prf-hero-avatar {
+    width: 82px; height: 82px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(150deg, var(--orange) 0%, var(--orange-2) 100%);
+    color: var(--white); display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 900; font-size: 1.7rem;
+    letter-spacing: -0.03em;
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.12), 0 12px 28px -8px rgba(217,123,46,0.5);
+}
+.prf-hero-name {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 900; font-size: 1.6rem; color: var(--white);
+    letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px;
+}
+.prf-hero-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+}
+.prf-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+}
+.prf-chip svg {
+    width: 13px; height: 13px; flex-shrink: 0;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.prf-chip-role  { background: rgba(217,123,46,0.25); color: #FFCF96; border: 1px solid rgba(217,123,46,0.35); }
+.prf-chip-sede  { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.15); }
+.prf-chip-doc   { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.1); }
+.prf-chip-email { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.1); }
+
+/* ── Alerta ──────────────────────────────────── */
+.prf-alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 18px; border-radius: var(--radius-md);
+    font-size: 0.875rem; font-weight: 600; margin-bottom: 20px;
+}
+.prf-alert svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.prf-alert-ok { background: #E6F4E4; color: #2D6A27; border: 1px solid #C3E6C0; }
+
+/* ── Grid de dos columnas ────────────────────── */
+.prf-body {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Card ────────────────────────────────────── */
+.prf-card {
+    background: var(--white); border-radius: var(--radius-lg);
+    border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+.prf-card-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 24px 18px;
+    border-bottom: 1px solid var(--line);
+}
+.prf-card-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.prf-card-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.prf-card-icon-blue   { background: #EEF4FF; color: var(--navy-2); }
+.prf-card-icon-orange { background: #FBE9D8; color: var(--orange-2); }
+.prf-card-title { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1rem; color: var(--navy-3); }
+.prf-card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Formulario ──────────────────────────────── */
+.prf-form { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.prf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.prf-field { display: flex; flex-direction: column; gap: 6px; }
+.prf-field label {
+    font-size: 0.78rem; font-weight: 700; color: var(--navy-3);
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.prf-field input {
+    font-family: inherit; font-size: 0.9rem; color: var(--text);
+    padding: 10px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.prf-field input:focus {
+    outline: none; border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(217,123,46,0.14);
+}
+.prf-field input::placeholder { color: var(--muted); font-size: 0.875rem; }
+.prf-err { font-size: 0.76rem; color: #B3261E; font-weight: 600; }
+
+/* Input con ícono */
+.prf-input-wrap { position: relative; }
+.prf-input-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; fill: none; stroke: var(--muted);
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    pointer-events: none;
+}
+.prf-input-wrap input { padding-left: 38px; width: 100%; }
+
+/* Tip de seguridad */
+.prf-tip {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: #F0F6FF; border: 1px solid #D1E4FF; border-radius: 8px;
+    padding: 10px 13px; font-size: 0.8rem; color: var(--navy-2); line-height: 1.5;
+}
+.prf-tip svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: var(--navy-2); stroke-width: 1.8; stroke-linecap: round; }
+
+/* ── Acciones ────────────────────────────────── */
+.prf-actions { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
+
+.prf-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: inherit; font-weight: 700; font-size: 0.875rem; color: var(--white);
+    background: var(--orange); border: none; border-radius: 999px;
+    padding: 11px 22px; cursor: pointer; transition: background 0.2s, transform 0.12s;
+}
+.prf-btn:hover { background: var(--orange-2); }
+.prf-btn:active { transform: scale(0.97); }
+.prf-btn svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.prf-btn-outline {
+    background: none; color: var(--navy-2);
+    border: 1.5px solid var(--navy-2);
+}
+.prf-btn-outline:hover { background: var(--navy-2); color: var(--white); }
+
+.prf-saved {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.84rem; color: var(--green); font-weight: 700;
+}
+.prf-saved svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 900px) {
+    .prf-body { grid-template-columns: 1fr; }
+    .prf-hero-inner { padding: 24px 20px; gap: 18px; }
+    .prf-hero-avatar { width: 64px; height: 64px; font-size: 1.35rem; }
+    .prf-hero-name { font-size: 1.3rem; }
+}
+@media (max-width: 600px) {
+    .prf-row { grid-template-columns: 1fr; }
+    .prf-hero-inner { flex-direction: column; align-items: flex-start; }
+}
