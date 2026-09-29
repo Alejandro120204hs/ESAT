@@ -2,8 +2,8 @@
 
 <aside class="app-sidebar">
     <div class="app-sidebar-brand">
-        <img src="{{ asset('assets/img/favicon.png') }}" alt="">
-        <span>Superadmin</span>
+        <img class="app-sidebar-brand-mark" src="{{ asset('assets/img/favicon.png') }}" alt="">
+        <img class="app-sidebar-brand-logo" src="{{ asset('assets/img/logo-negativo.png') }}" alt="ESAT">
     </div>
 
     <ul class="app-nav">
@@ -32,11 +32,10 @@
             </a>
         </li>
         <li>
-            <span class="app-nav-soon">
+            <a href="{{ route('superadmin.auditoria') }}" class="app-nav-link {{ $active === 'auditoria' ? 'is-active' : '' }}">
                 <svg viewBox="0 0 24 24"><path d="M4 4h16v14l-8 4-8-4Z"/><path d="M9 12h6M9 9h6M9 15h3"/></svg>
                 Auditoría
-                <span class="app-nav-soon-tag">Pronto</span>
-            </span>
+            </a>
         </li>
         <li>
             <span class="app-nav-soon">

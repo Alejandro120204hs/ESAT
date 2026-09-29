@@ -71,9 +71,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return '$' + Number(valor).toLocaleString('es-CO');
     }
 
-    document.querySelectorAll('[data-view-student]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var fila = btn.closest('tr');
+    // Toda la fila abre el detalle (no solo el botón del ojo), para no
+    // obligar a acertarle a un ícono pequeño.
+    document.querySelectorAll('[data-table="estudiantes"] tbody tr').forEach(function (fila) {
+        fila.addEventListener('click', function () {
             var est = estudiantes[parseInt(fila.dataset.estIndex, 10)];
             if (!est) return;
 

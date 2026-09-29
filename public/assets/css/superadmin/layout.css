@@ -65,12 +65,9 @@ body.app-page {
     padding: 24px 18px;
 }
 
-.app-sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 24px; }
-.app-sidebar-brand img { height: 30px; width: auto; }
-.app-sidebar-brand span {
-    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.5); letter-spacing: 0.02em;
-}
+.app-sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 24px; }
+.app-sidebar-brand-mark { width: 28px; height: 28px; flex-shrink: 0; }
+.app-sidebar-brand-logo { width: 108px; height: auto; }
 
 .app-sidebar-divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 0 6px 18px; }
 
