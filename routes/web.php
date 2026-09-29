@@ -173,6 +173,10 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/estudiantes', function () {
         return view('superadmin.estudiantes');
     })->name('estudiantes');
+
+    Route::get('/auditoria', function () {
+        return view('superadmin.auditoria');
+    })->name('auditoria');
 });
 
 Route::middleware('auth')->group(function () {

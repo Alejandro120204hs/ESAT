@@ -377,12 +377,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Toda la fila abre el modal de editar (no solo el lápiz), para no
+    // obligar a acertarle a un ícono pequeño.
     document.querySelectorAll('[data-edit-modal]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+        var fila = btn.closest('tr');
+        if (!fila) return;
+        fila.classList.add('app-row-clickable');
+        fila.addEventListener('click', function () {
             var tipo = btn.dataset.editModal;
             var modal = document.querySelector('[data-modal="modal-' + tipo + '"]');
-            var fila = btn.closest('tr');
-            if (modal && fila) {
+            if (modal) {
                 ponerModoEditar(modal, tipo, fila.dataset);
                 modal.hidden = false;
             }

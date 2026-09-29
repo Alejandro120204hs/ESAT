@@ -49,6 +49,8 @@
     background: var(--white);
 }
 .app-table tbody td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--text); }
+.app-row-clickable { cursor: pointer; transition: background-color 0.15s; }
+.app-row-clickable:hover { background: rgba(16, 40, 74, 0.035); }
 .app-table-strong { font-weight: 700; color: var(--navy-3); }
 .app-table-empty { color: var(--muted); font-style: italic; }
 .app-table-actions-col { width: 44px; }
