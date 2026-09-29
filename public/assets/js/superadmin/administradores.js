@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Interruptor activo/inactivo (vista previa, no persiste) ----
     document.querySelectorAll('[data-status-toggle]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation(); // no debe abrir el asistente de editar
             var activo = btn.classList.toggle('is-active');
             btn.setAttribute('aria-pressed', activo ? 'true' : 'false');
             btn.querySelector('[data-status-label]').textContent = activo ? 'Activo' : 'Inactivo';
@@ -374,9 +375,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Toda la fila abre el asistente de editar (no solo el lápiz), para no
+    // obligar a acertarle a un ícono pequeño. El interruptor de estado
+    // detiene la propagación arriba para no abrir el asistente también.
     document.querySelectorAll('[data-edit-wizard]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var fila = btn.closest('tr');
+        var fila = btn.closest('tr');
+        if (!fila) return;
+        fila.classList.add('app-row-clickable');
+        fila.addEventListener('click', function () {
             tituloEl.textContent = tituloEl.dataset.editTitle;
             finishBtn.textContent = finishBtn.dataset.editLabel;
             limpiarAsistente();

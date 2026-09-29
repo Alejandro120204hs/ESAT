@@ -1,9 +1,9 @@
 /* =========================================================
-   ESAT — Panel Superadmin: página "Estudiantes" (solo consulta)
-   Carga aparte de layout.css; solo la usa estudiantes.blade.php.
+   ESAT — Panel Superadmin: página "Auditoría" (solo consulta)
+   Carga aparte de layout.css; solo la usa auditoria.blade.php.
    ========================================================= */
 
-.app-est-content { max-width: 1400px; }
+.app-aud-content { max-width: 1400px; }
 
 .app-page-intro {
     font-size: 1.05rem; line-height: 1.5; color: var(--navy-2); margin-bottom: 14px;
@@ -13,7 +13,7 @@
 
 /* ---------- Resumen ---------- */
 .app-stat-row {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px;
     opacity: 0; transform: translateY(10px);
     animation: appFadeUp 0.5s var(--ease-out) 0.04s forwards;
 }
@@ -23,9 +23,6 @@
 }
 .app-stat-value { display: block; font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.7rem; color: var(--navy-3); letter-spacing: -0.01em; }
 .app-stat-label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
-.app-stat-tile-green .app-stat-value { color: var(--green); }
-.app-stat-tile-orange .app-stat-value { color: var(--orange-2); }
-.app-stat-tile-red .app-stat-value { color: #B3261E; }
 
 .app-list-panel {
     padding: 20px 22px;
@@ -37,29 +34,30 @@
 
 /* ---------- Tabla ---------- */
 .app-table-scroll { overflow-x: auto; }
-.app-table-scroll-tall { max-height: 320px; overflow-y: auto; }
+.app-table-scroll-tall { max-height: 400px; overflow-y: auto; }
 .app-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .app-table thead th {
     text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.03em; color: var(--muted); padding: 0 14px 10px; position: sticky; top: 0;
     background: var(--white);
 }
-.app-table tbody td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--text); }
-.app-table[data-table="estudiantes"] tbody tr { cursor: pointer; transition: background-color 0.15s; }
-.app-table[data-table="estudiantes"] tbody tr:hover { background: rgba(16, 40, 74, 0.035); }
+.app-table tbody td { padding: 12px 14px; border-top: 1px solid var(--line); color: var(--text); vertical-align: top; }
+.app-table[data-table="eventos"] tbody tr { cursor: pointer; transition: background-color 0.15s; }
+.app-table[data-table="eventos"] tbody tr:hover { background: rgba(16, 40, 74, 0.035); }
 .app-table-strong { font-weight: 700; color: var(--navy-3); }
-.app-table-empty { color: var(--muted); }
 .app-table-actions-col { width: 44px; }
 .app-table-actions { text-align: right; }
+.app-table-fecha { display: block; color: var(--navy-3); font-weight: 600; }
+.app-table-hora { display: block; font-size: 0.78rem; color: var(--muted); }
 
-.app-status-tag {
+.app-tag {
     display: inline-block; font-size: 0.72rem; font-weight: 700;
     padding: 3px 10px; border-radius: 999px;
 }
-.app-status-active { background: #E3EEE1; color: var(--green); }
-.app-status-warn { background: #FBE9D8; color: var(--orange-2); }
-.app-status-danger { background: #FBE7E5; color: #B3261E; }
-.app-status-muted { background: rgba(16, 40, 74, 0.06); color: var(--muted); }
+.app-tag-crear { background: #E3EEE1; color: var(--green); }
+.app-tag-editar { background: rgba(16, 40, 74, 0.08); color: var(--navy-2); }
+.app-tag-eliminar { background: #FBE7E5; color: #B3261E; }
+.app-tag-desactivar { background: rgba(16, 40, 74, 0.06); color: var(--muted); }
 
 .app-icon-btn {
     width: 32px; height: 32px; border-radius: 8px; border: none; background: none;
@@ -111,21 +109,25 @@
 .app-modal-backdrop[hidden] { display: none; }
 .app-modal {
     background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
-    width: 100%; max-width: 560px; min-width: 0; padding: 26px 28px; max-height: 90vh; overflow-y: auto;
+    width: 100%; max-width: 480px; min-width: 0; padding: 26px 28px; max-height: 90vh; overflow-y: auto;
 }
-.app-modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
-.app-modal-header h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--navy-3); }
-.app-modal-subtext { font-size: 0.84rem; color: var(--muted); margin-top: 3px; }
+.app-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.app-modal-header h3 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--navy-3); }
 .app-modal-close {
-    width: 30px; height: 30px; border-radius: 50%; border: none; background: none; flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: none;
     color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 .app-modal-close:hover { background: rgba(16, 40, 74, 0.06); }
 .app-modal-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.app-modal-section-title { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.86rem; color: var(--navy-3); margin-bottom: 10px; }
+
+.app-modal-detalle-desc { font-size: 0.96rem; color: var(--navy-3); line-height: 1.5; margin-bottom: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.app-modal-detalle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+.app-modal-detalle-grid dt { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 3px; }
+.app-modal-detalle-grid dd { font-size: 0.9rem; font-weight: 600; color: var(--navy-3); }
 
 @media (max-width: 720px) {
-    .app-stat-row { grid-template-columns: 1fr 1fr; }
+    .app-stat-row { grid-template-columns: 1fr; }
     .app-panel-heading { flex-direction: column; align-items: flex-start; }
     .app-select { max-width: none; }
+    .app-modal-detalle-grid { grid-template-columns: 1fr; }
 }
