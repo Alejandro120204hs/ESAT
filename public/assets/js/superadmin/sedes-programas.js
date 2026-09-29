@@ -1,8 +1,7 @@
-// ESAT — panel Superadmin, página "Sedes y programas": pestañas, tablas
-// con búsqueda + paginación (15 filas por página), checkboxes de
-// asignación por sede, selector de periodos por programa, y los modales
-// de creación (vista previa, no guardan nada todavía — falta el backend).
+// ESAT — panel Superadmin, página "Sedes y programas"
 document.addEventListener('DOMContentLoaded', function () {
+    var csrf = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content');
+    var editId = null;
     // ---- Pestañas ----
     var tabs = document.querySelectorAll('.app-tab');
     var panels = document.querySelectorAll('.app-tab-panel');
@@ -342,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var guardar = modal.querySelector('[data-modal-save]');
         if (titulo) titulo.textContent = titulo.dataset.createTitle;
         if (guardar) guardar.textContent = guardar.dataset.createLabel;
+        editId = null;
         limpiarCampos(modal);
     }
 
@@ -350,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var guardar = modal.querySelector('[data-modal-save]');
         if (titulo) titulo.textContent = titulo.dataset.editTitle;
         if (guardar) guardar.textContent = guardar.dataset.editLabel;
+        editId = datos.id || null;
 
         Object.keys(datos).forEach(function (key) {
             if (tipo === 'sede' && (key === 'departamento' || key === 'ciudad')) {
@@ -409,4 +410,55 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // ---- Guardar sede: POST (crear) o PUT (editar) ----
+    var saveBtn = document.querySelector('[data-modal-save]');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function () {
+            var nombre       = document.getElementById('sede-nombre');
+            var departamento = document.getElementById('sede-departamento');
+            var ciudad       = document.getElementById('sede-ciudad');
+            var direccion    = document.getElementById('sede-direccion');
+
+            if (!nombre || !nombre.value.trim() ||
+                !departamento || !departamento.value.trim() ||
+                !ciudad || !ciudad.value.trim() ||
+                !direccion || !direccion.value.trim()) {
+                return;
+            }
+
+            var payload = {
+                nombre:       nombre.value.trim(),
+                departamento: departamento.value.trim(),
+                ciudad:       ciudad.value.trim(),
+                direccion:    direccion.value.trim()
+            };
+
+            var url    = editId ? '/superadmin/sedes/' + editId : '/superadmin/sedes';
+            var method = editId ? 'PUT' : 'POST';
+
+            saveBtn.disabled = true;
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type':  'application/json',
+                    'Accept':        'application/json',
+                    'X-CSRF-TOKEN':  csrf
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    location.reload();
+                } else {
+                    saveBtn.disabled = false;
+                }
+            })
+            .catch(function () {
+                saveBtn.disabled = false;
+            });
+        });
+    }
 });
