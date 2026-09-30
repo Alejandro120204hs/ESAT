@@ -340,11 +340,11 @@
 .dash-welcome-text { position: relative; z-index: 1; }
 .dash-welcome-title {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 1.45rem; color: var(--white);
+    font-weight: 900; font-size: 1.85rem; color: var(--white);
     line-height: 1.2; margin-bottom: 6px;
 }
 .dash-welcome-title span { color: var(--orange); }
-.dash-welcome-desc { font-size: 0.9rem; color: rgba(255,255,255,0.62); max-width: 480px; line-height: 1.55; }
+.dash-welcome-desc { font-size: 0.97rem; color: rgba(255,255,255,0.62); max-width: 480px; line-height: 1.55; }
 .dash-welcome-badge {
     position: relative; z-index: 1; flex-shrink: 0;
     display: flex; flex-direction: column; align-items: center; gap: 4px;

@@ -191,6 +191,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/', function () {
         return view('admin.dashboard');
     })->name('dashboard');
+
+    Route::get('programas', function () {
+        return view('admin.programas.index');
+    })->name('programas');
+
+    Route::get('docentes', function () {
+        return view('admin.docentes.index');
+    })->name('docentes');
+
+    Route::get('cursos', function () {
+        return view('admin.cursos.index');
+    })->name('cursos');
 });
 
 Route::middleware('auth')->group(function () {

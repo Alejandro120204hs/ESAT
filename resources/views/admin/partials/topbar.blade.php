@@ -1,6 +1,7 @@
 @php
     $initials = strtoupper(substr(auth()->user()->nombres ?? auth()->user()->name ?? 'A', 0, 1) . substr(auth()->user()->apellidos ?? '', 0, 1));
     if (strlen($initials) < 1) $initials = 'A';
+    $topbarSede = auth()->user()->sede?->nombre ?? 'Sin sede';
 @endphp
 
 <header class="app-topbar">
@@ -8,7 +9,12 @@
         <button class="app-menu-toggle" aria-label="Abrir menú">
             <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
         </button>
-        <h1>@yield('page-title', 'Panel')</h1>
+        <div class="app-topbar-sede">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>{{ $topbarSede }}</span>
+        </div>
     </div>
 
     <div class="app-user">
