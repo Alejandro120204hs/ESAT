@@ -199,6 +199,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('docentes', function () {
         return view('admin.docentes.index');
     })->name('docentes');
+
+    Route::get('cursos', function () {
+        return view('admin.cursos.index');
+    })->name('cursos');
 });
 
 Route::middleware('auth')->group(function () {

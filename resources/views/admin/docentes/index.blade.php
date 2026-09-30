@@ -152,7 +152,7 @@ $escuelasDoc   = count(array_unique(array_column($docentes, 'escuela')));
     <div class="doc-header">
         <div>
             <h2 class="doc-title">Planta docente</h2>
-            <p class="doc-sub">{{ $sedeName }} · Educación para el Trabajo y el Desarrollo Humano</p>
+            <p class="doc-sub">Aquí podrás registrar nuevos docentes, consultar su información, ver los cursos que tienen asignados y gestionar su estado en la institución.</p>
         </div>
         <button class="doc-btn doc-btn-primary" id="btn-nuevo-doc">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
