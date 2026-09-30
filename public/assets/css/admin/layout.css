@@ -54,7 +54,7 @@ body.app-page {
 .app-sidebar {
     flex: 0 0 270px;
     height: 100%;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     background: var(--navy-3);
     display: flex;
@@ -71,6 +71,8 @@ body.app-page {
 .app-sidebar-brand-mark { width: 28px; height: 28px; flex-shrink: 0; object-fit: contain; }
 .app-sidebar-brand-logo { width: 108px; height: auto; flex-shrink: 0; }
 
+
+.app-sidebar-bottom-nav { flex-shrink: 0; }
 
 .app-sidebar-sede {
     display: flex; align-items: center; gap: 8px;
@@ -100,15 +102,70 @@ body.app-page {
 }
 
 /* Nav */
-.app-sidebar-nav { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; gap: 2px; }
+.app-sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 16px 14px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: none; }
+.app-sidebar-nav::-webkit-scrollbar { display: none; }
 
-.app-nav-group { margin-bottom: 20px; }
+.app-nav-group { margin-bottom: 14px; }
 .app-nav-group:last-child { margin-bottom: 0; }
 .app-nav-group-label {
     font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
     font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
-    color: rgba(255,255,255,0.28); padding: 0 10px; margin-bottom: 6px;
+    color: rgba(255,255,255,0.45); padding: 0 10px; margin-bottom: 6px;
 }
+
+/* Grupos con flyout lateral (Finanzas, Comunicación) */
+.app-nav-group--flyout { margin-bottom: 4px; }
+
+.app-nav-flyout-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; background: none; border: none; cursor: pointer;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
+    font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.38); padding: 5px 10px;
+    border-radius: var(--radius-md);
+    transition: color 0.15s, background 0.15s;
+}
+.app-nav-flyout-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+.app-nav-flyout-btn.is-active { color: var(--orange); }
+.app-nav-flyout-btn.is-open { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.07); }
+.app-nav-flyout-btn svg {
+    width: 13px; height: 13px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.18s var(--ease-out);
+}
+.app-nav-flyout-btn.is-open svg { transform: translateX(2px); }
+
+/* Panel flyout (posición fija, aparece al lado del sidebar) */
+.app-nav-flyout {
+    position: fixed;
+    left: 278px;
+    z-index: 500;
+    background: var(--navy-2);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    min-width: 196px;
+    box-shadow: 0 12px 36px -6px rgba(10,27,51,0.45), 0 0 0 1px rgba(255,255,255,0.09);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+.app-nav-flyout.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+.app-nav-flyout-header {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 800;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.45); padding: 2px 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.09); margin-bottom: 6px;
+}
+
+/* Separador + Reportes suelto */
+.app-nav-sep { height: 1px; background: rgba(255,255,255,0.07); margin: 2px 10px 12px; }
+.app-nav-bottom { margin-bottom: 0; }
 
 .app-nav { list-style: none; display: flex; flex-direction: column; gap: 1px; }
 .app-nav-link {

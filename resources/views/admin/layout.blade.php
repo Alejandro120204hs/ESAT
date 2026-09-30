@@ -17,10 +17,50 @@
 </head>
 <body class="app-page">
 
+@php $activeSection = trim($__env->yieldContent('active')); @endphp
+
 <div class="app-shell @yield('shell-class')">
 
     {{-- Sidebar --}}
-    @include('admin.partials.sidebar', ['active' => trim($__env->yieldContent('active'))])
+    @include('admin.partials.sidebar', ['active' => $activeSection])
+
+    {{-- Flyout: Finanzas --}}
+    <div id="flyout-finanzas" class="app-nav-flyout" role="menu">
+        <div class="app-nav-flyout-header">Finanzas</div>
+        <ul class="app-nav">
+            <li>
+                <a href="#" class="app-nav-link {{ $activeSection === 'pagos' ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    Pagos
+                </a>
+            </li>
+            <li>
+                <a href="#" class="app-nav-link {{ $activeSection === 'contabilidad' ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Contabilidad
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    {{-- Flyout: Comunicación --}}
+    <div id="flyout-comunicacion" class="app-nav-flyout" role="menu">
+        <div class="app-nav-flyout-header">Comunicación</div>
+        <ul class="app-nav">
+            <li>
+                <a href="#" class="app-nav-link {{ $activeSection === 'comunicados' ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    Comunicados
+                </a>
+            </li>
+            <li>
+                <a href="#" class="app-nav-link {{ $activeSection === 'foro' ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Foro
+                </a>
+            </li>
+        </ul>
+    </div>
 
     {{-- Main --}}
     <div class="app-main">
