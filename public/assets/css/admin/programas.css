@@ -5,16 +5,16 @@
 /* ── Wrap + header ───────────────────────────── */
 .prg-wrap { display: flex; flex-direction: column; gap: 22px; }
 
-.prg-header {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap;
+.prg-header { display: flex; flex-direction: column; gap: 6px; }
+.prg-header-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
 }
 .prg-title {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 1.55rem; color: var(--navy-3);
-    line-height: 1.15; margin-bottom: 3px;
+    font-weight: 900; font-size: 1.85rem; color: var(--navy-3);
+    line-height: 1.15;
 }
-.prg-sub { font-size: 0.88rem; color: var(--muted); font-weight: 500; }
+.prg-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; line-height: 1.5; max-width: 68%; }
 
 /* ── Botones ──────────────────────────────────── */
 .prg-btn {
@@ -69,23 +69,23 @@
 }
 .prg-search-box {
     display: flex; align-items: center; gap: 8px;
-    background: var(--white); border: 1.5px solid var(--line);
-    border-radius: var(--radius-md); padding: 8px 14px;
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--radius-md); padding: 10px 14px;
     flex: 1; min-width: 200px; max-width: 340px;
-    transition: border-color 0.18s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
-.prg-search-box:focus-within { border-color: var(--orange); }
+.prg-search-box:focus-within { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15); }
 .prg-search-box svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
 .prg-search-box input { border: none; outline: none; background: none; font-family: inherit; font-size: 0.875rem; color: var(--text); width: 100%; }
 .prg-search-box input::placeholder { color: var(--muted); }
 
 .prg-select {
-    background: var(--white); border: 1.5px solid var(--line);
-    border-radius: var(--radius-md); padding: 8px 14px;
-    font-family: inherit; font-size: 0.875rem; color: var(--text);
-    cursor: pointer; outline: none; transition: border-color 0.18s;
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--radius-md); padding: 10px 12px;
+    font-family: inherit; font-size: 0.92rem; color: var(--text);
+    cursor: pointer; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.prg-select:focus { border-color: var(--orange); }
+.prg-select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15); }
 
 .prg-count-badge {
     margin-left: auto; font-size: 0.8rem; font-weight: 700;
@@ -481,12 +481,14 @@
 .prg-req { color: var(--orange); }
 .prg-field-hint { font-size: 0.72rem; color: var(--muted); line-height: 1.4; min-height: 0; }
 .prg-field input, .prg-field select, .prg-field textarea {
-    border: 1.5px solid var(--line); border-radius: var(--radius-md);
-    padding: 9px 13px; font-family: inherit; font-size: 0.875rem;
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 10px 12px; font-family: inherit; font-size: 0.92rem;
     color: var(--text); background: var(--white); outline: none;
-    transition: border-color 0.18s; resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s; resize: vertical;
 }
-.prg-field input:focus, .prg-field select:focus, .prg-field textarea:focus { border-color: var(--orange); }
+.prg-field input:focus, .prg-field select:focus, .prg-field textarea:focus {
+    border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
 
 .prg-checks { display: flex; gap: 12px; flex-wrap: wrap; }
 .prg-chk {
@@ -495,8 +497,8 @@
 }
 .prg-chk input { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
 
-.prg-input-pfx { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: var(--radius-md); overflow: hidden; transition: border-color 0.18s; }
-.prg-input-pfx:focus-within { border-color: var(--orange); }
+.prg-input-pfx { display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+.prg-input-pfx:focus-within { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15); }
 .prg-input-pfx span { padding: 9px 12px; background: var(--bg); font-weight: 700; color: var(--muted); font-size: 0.875rem; border-right: 1px solid var(--line); flex-shrink: 0; }
 .prg-input-pfx input { border: none; outline: none; padding: 9px 12px; font-family: inherit; font-size: 0.875rem; color: var(--text); flex: 1; min-width: 0; }
 

@@ -343,14 +343,14 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
 
     {{-- Encabezado --}}
     <div class="prg-header">
-        <div>
+        <div class="prg-header-top">
             <h2 class="prg-title">Programas académicos</h2>
-            <p class="prg-sub">{{ $sedeName }} · Educación para el Trabajo y el Desarrollo Humano</p>
+            <button class="prg-btn prg-btn-primary" id="btn-nuevo">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuevo programa
+            </button>
         </div>
-        <button class="prg-btn prg-btn-primary" id="btn-nuevo">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo programa
-        </button>
+        <p class="prg-sub">Aquí podrás registrar nuevos programas académicos, consultar y editar los ya existentes, actualizar su estado y organizarlos por nivel, escuela y modalidad. Usa los filtros para encontrar rápidamente el programa que necesitas gestionar.</p>
     </div>
 
     {{-- KPI chips --}}
@@ -399,18 +399,27 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="search" id="prg-search" placeholder="Buscar programa..." autocomplete="off">
         </div>
-        <select id="prg-filter-escuela" class="prg-select">
-            <option value="">Todas las escuelas</option>
-            @foreach($escuelas as $esc)
-                <option value="{{ $esc }}">{{ $esc }}</option>
-            @endforeach
-        </select>
-        <select id="prg-filter-estado" class="prg-select">
-            <option value="">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="en_aprobacion">En aprobación</option>
-            <option value="inactivo">Inactivo</option>
-        </select>
+        <div class="app-combobox" id="prg-cb-filter-escuela" data-position="absolute"
+             data-options='@json(array_values($escuelas))'>
+            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                <span data-combobox-label>Todas las escuelas</span>
+                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="app-combobox-panel" data-combobox-panel hidden>
+                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+            </div>
+            <input type="hidden" id="prg-filter-escuela" data-combobox-value>
+        </div>
+        <div class="app-combobox" id="prg-cb-filter-estado" data-position="absolute">
+            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                <span data-combobox-label>Todos los estados</span>
+                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="app-combobox-panel" data-combobox-panel hidden>
+                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+            </div>
+            <input type="hidden" id="prg-filter-estado" data-combobox-value>
+        </div>
         <span class="prg-count-badge" id="prg-count">{{ count($programas) }} programas</span>
     </div>
 
@@ -731,33 +740,46 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
                     </div>
                     <div class="prg-field">
                         <label>Nivel <span class="prg-req">*</span></label>
-                        <select>
-                            <option value="">Seleccionar...</option>
-                            <option>Técnico Laboral</option>
-                            <option>Técnico Laboral por Competencias</option>
-                            <option>Auxiliar</option>
-                        </select>
+                        <div class="app-combobox" id="prg-cb-nivel">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar...</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="prg-inp-nivel" data-combobox-value>
+                        </div>
                     </div>
                     <div class="prg-field">
                         <label>Escuela / Área <span class="prg-req">*</span></label>
-                        <select>
-                            <option value="">Seleccionar...</option>
-                            <option>Salud</option>
-                            <option>Cocina y Turismo</option>
-                            <option>Administrativa</option>
-                            <option>Deporte y Cultura</option>
-                            <option>Ciencias</option>
-                            <option>Educación e Idiomas</option>
-                            <option>Belleza</option>
-                        </select>
+                        <div class="app-combobox" id="prg-cb-escuela">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar...</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <div class="app-combobox-search-wrap">
+                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                                    <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar...">
+                                </div>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="prg-inp-escuela" data-combobox-value>
+                        </div>
                     </div>
                     <div class="prg-field">
                         <label>Modalidad <span class="prg-req">*</span></label>
-                        <select>
-                            <option>Presencial</option>
-                            <option>Virtual</option>
-                            <option>Mixta</option>
-                        </select>
+                        <div class="app-combobox" id="prg-cb-modalidad">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar...</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="prg-inp-modalidad" data-combobox-value>
+                        </div>
                     </div>
                     <div class="prg-field">
                         <label>Duración en horas <span class="prg-req">*</span></label>
@@ -800,11 +822,16 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
                     </div>
                     <div class="prg-field prg-field-full">
                         <label>Estado del programa <span class="prg-req">*</span></label>
-                        <select>
-                            <option value="activo">Activo</option>
-                            <option value="en_aprobacion">En proceso de aprobación</option>
-                            <option value="inactivo">Inactivo</option>
-                        </select>
+                        <div class="app-combobox" id="prg-cb-estado">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar...</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="prg-inp-estado" data-combobox-value>
+                        </div>
                     </div>
                 </div>
             </div>

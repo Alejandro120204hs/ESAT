@@ -195,6 +195,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('programas', function () {
         return view('admin.programas.index');
     })->name('programas');
+
+    Route::get('docentes', function () {
+        return view('admin.docentes.index');
+    })->name('docentes');
 });
 
 Route::middleware('auth')->group(function () {

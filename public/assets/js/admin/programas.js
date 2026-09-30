@@ -339,6 +339,178 @@
 
     // (sin cálculo en paso 3 — el sistema calcula totales en rol estudiante)
 
+    /* ── Combobox genérico ────────────────────── */
+    function initCombobox(root) {
+        var trigger     = root.querySelector('[data-combobox-trigger]');
+        var panel       = root.querySelector('[data-combobox-panel]');
+        var list        = root.querySelector('[data-combobox-list]');
+        var searchInput = root.querySelector('[data-combobox-search]');
+        var hidden      = root.querySelector('[data-combobox-value]');
+        var label       = root.querySelector('[data-combobox-label]');
+        var placeholder = label.textContent;
+
+        function posicionar() {
+            var rect  = trigger.getBoundingClientRect();
+            var dirUp = root.dataset.direction === 'up';
+            var margen = 12;
+            panel.style.left  = rect.left + 'px';
+            panel.style.width = rect.width + 'px';
+            var espacio;
+            if (dirUp) {
+                panel.style.top    = '';
+                panel.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+                espacio = Math.min(rect.top - 6 - margen, 320);
+            } else {
+                panel.style.bottom = '';
+                panel.style.top    = (rect.bottom + 6) + 'px';
+                espacio = window.innerHeight - (rect.bottom + 6) - margen;
+            }
+            var searchWrap = searchInput && searchInput.closest('.app-combobox-search-wrap');
+            var searchAlto = searchWrap ? searchWrap.offsetHeight : 0;
+            list.style.maxHeight = Math.max(espacio - searchAlto - 14, 40) + 'px';
+        }
+        var esAbsoluto = root.dataset.position === 'absolute';
+        function abrir() {
+            panel.hidden = false;
+            root.classList.add('is-open');
+            if (!esAbsoluto) {
+                posicionar();
+                window.addEventListener('scroll', posicionar, true);
+                window.addEventListener('resize', posicionar);
+            }
+            if (searchInput) {
+                searchInput.value = '';
+                filtrar('');
+                searchInput.focus();
+            }
+        }
+        function cerrar() {
+            panel.hidden = true;
+            root.classList.remove('is-open');
+            if (!esAbsoluto) {
+                window.removeEventListener('scroll', posicionar, true);
+                window.removeEventListener('resize', posicionar);
+            }
+        }
+        function filtrar(q) {
+            var q2 = q.toLowerCase();
+            var items = list.querySelectorAll('li[data-value]');
+            var visible = 0;
+            items.forEach(function (li) {
+                var match = li.dataset.label.toLowerCase().includes(q2);
+                li.hidden = !match;
+                if (match) visible++;
+            });
+            var empty = list.querySelector('.app-combobox-empty');
+            if (empty) empty.hidden = visible > 0;
+        }
+
+        trigger.addEventListener('click', function () {
+            panel.hidden ? abrir() : cerrar();
+        });
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                filtrar(searchInput.value);
+            });
+        }
+        document.addEventListener('click', function (e) {
+            if (!root.contains(e.target)) cerrar();
+        });
+
+        root.setOptions = function (opciones) {
+            list.innerHTML = '';
+            opciones.forEach(function (opcion) {
+                var val = typeof opcion === 'object' ? opcion.value : opcion;
+                var lbl = typeof opcion === 'object' ? opcion.label : opcion;
+                var li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                li.dataset.value = val;
+                li.dataset.label = lbl;
+                var span = document.createElement('span');
+                span.textContent = lbl;
+                var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.innerHTML = '<path d="M20 6 9 17l-5-5"/>';
+                li.appendChild(span);
+                li.appendChild(svg);
+                li.addEventListener('click', function () { root.setValue(val, lbl); cerrar(); });
+                list.appendChild(li);
+            });
+            var empty = document.createElement('li');
+            empty.className = 'app-combobox-empty';
+            empty.hidden = opciones.length > 0;
+            empty.textContent = 'Sin resultados';
+            list.appendChild(empty);
+        };
+        root.setValue = function (valor, etiqueta, opts) {
+            hidden.value = valor || '';
+            label.textContent = etiqueta || valor || placeholder;
+            list.querySelectorAll('li[data-value]').forEach(function (li) {
+                li.classList.toggle('is-selected', li.dataset.value === valor);
+            });
+            if (!(opts && opts.silent)) {
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        };
+        root.reset = function () {
+            hidden.value = '';
+            label.textContent = placeholder;
+            list.querySelectorAll('li[data-value]').forEach(function (li) {
+                li.classList.remove('is-selected');
+            });
+        };
+    }
+
+    /* ── Filtros de la tabla ─────────────────── */
+    var cbFiltEsc = document.getElementById('prg-cb-filter-escuela');
+    var cbFiltEst = document.getElementById('prg-cb-filter-estado');
+
+    if (cbFiltEsc) {
+        initCombobox(cbFiltEsc);
+        var pEscOpts = JSON.parse(cbFiltEsc.dataset.options || '[]');
+        cbFiltEsc.setOptions([{value:'', label:'Todas las escuelas'}].concat(pEscOpts.map(function(v){return {value:v, label:v};})));
+        cbFiltEsc.setValue('', 'Todas las escuelas', {silent:true});
+    }
+    if (cbFiltEst) {
+        initCombobox(cbFiltEst);
+        cbFiltEst.setOptions([
+            {value:'', label:'Todos los estados'},
+            {value:'activo', label:'Activo'},
+            {value:'en_aprobacion', label:'En aprobación'},
+            {value:'inactivo', label:'Inactivo'},
+        ]);
+        cbFiltEst.setValue('', 'Todos los estados', {silent:true});
+    }
+
+    /* ── Inicializar comboboxes del wizard ───── */
+    var cbNivel    = document.getElementById('prg-cb-nivel');
+    var cbEscuela  = document.getElementById('prg-cb-escuela');
+    var cbModalidad= document.getElementById('prg-cb-modalidad');
+    var cbEstado   = document.getElementById('prg-cb-estado');
+
+    if (cbNivel) {
+        initCombobox(cbNivel);
+        cbNivel.setOptions(['Técnico Laboral', 'Técnico Laboral por Competencias', 'Auxiliar']);
+    }
+    if (cbEscuela) {
+        initCombobox(cbEscuela);
+        cbEscuela.setOptions(['Salud', 'Cocina y Turismo', 'Administrativa', 'Deporte y Cultura', 'Ciencias', 'Educación e Idiomas', 'Belleza']);
+    }
+    if (cbModalidad) {
+        initCombobox(cbModalidad);
+        cbModalidad.setOptions(['Presencial', 'Virtual', 'Mixta']);
+        cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
+    }
+    if (cbEstado) {
+        initCombobox(cbEstado);
+        cbEstado.setOptions([
+            { value: 'activo',        label: 'Activo' },
+            { value: 'en_aprobacion', label: 'En proceso de aprobación' },
+            { value: 'inactivo',      label: 'Inactivo' },
+        ]);
+        cbEstado.setValue('activo', 'Activo', { silent: true });
+    }
+
     // Inicializar
     applyFilters();
     renderStep();

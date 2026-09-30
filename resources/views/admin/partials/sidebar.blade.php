@@ -41,7 +41,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="app-nav-link {{ $active === 'docentes' ? 'is-active' : '' }}">
+                    <a href="{{ route('admin.docentes') }}" class="app-nav-link {{ $active === 'docentes' ? 'is-active' : '' }}">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/><path d="M2 10h2M20 10h2"/></svg>
                         Docentes
                     </a>
@@ -105,14 +105,8 @@
             </ul>
         </div>
 
-
-    </nav>
-
-    {{-- Finanzas, Comunicación y Reportes: fijos fuera del nav scrolleable --}}
-    <div class="app-sidebar-bottom-nav">
-        <div class="app-nav-sep" style="margin: 0 10px 8px;"></div>
-
-        <div class="app-nav-group app-nav-group--flyout" style="margin-bottom: 2px;">
+        {{-- Finanzas --}}
+        <div class="app-nav-group app-nav-group--flyout">
             <button type="button"
                 class="app-nav-flyout-btn {{ in_array($active, ['pagos','contabilidad']) ? 'is-active' : '' }}"
                 data-flyout="flyout-finanzas">
@@ -121,7 +115,8 @@
             </button>
         </div>
 
-        <div class="app-nav-group app-nav-group--flyout" style="margin-bottom: 2px;">
+        {{-- Comunicación --}}
+        <div class="app-nav-group app-nav-group--flyout">
             <button type="button"
                 class="app-nav-flyout-btn {{ in_array($active, ['comunicados','foro']) ? 'is-active' : '' }}"
                 data-flyout="flyout-comunicacion">
@@ -132,22 +127,26 @@
 
         <div class="app-nav-sep" style="margin: 8px 10px;"></div>
 
-        <ul class="app-nav" style="padding: 0 14px 8px;">
-            <li>
-                <a href="#" class="app-nav-link {{ $active === 'reportes' ? 'is-active' : '' }}">
-                    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                    Reportes
-                </a>
-            </li>
-        </ul>
-    </div>
+        {{-- Reportes --}}
+        <div class="app-nav-group">
+            <ul class="app-nav">
+                <li>
+                    <a href="#" class="app-nav-link {{ $active === 'reportes' ? 'is-active' : '' }}">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Reportes
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </nav>
 
     {{-- Footer: usuario + sede combinados --}}
     <div class="app-sidebar-user">
         <div class="app-sidebar-user-avatar">{{ $initials }}</div>
         <div class="app-sidebar-user-info">
             <div class="app-sidebar-user-name">{{ auth()->user()->nombres ?? auth()->user()->name }}</div>
-            <div class="app-sidebar-user-role">{{ auth()->user()->role->label() }} · {{ $sedeName }}</div>
+            <div class="app-sidebar-user-role">{{ auth()->user()->role->label() }}</div>
         </div>
     </div>
 </aside>
