@@ -253,6 +253,8 @@
 
 .prg-tab-panel { display: none; }
 .prg-tab-panel.is-active { display: block; }
+.prg-page-panel { display: none; }
+.prg-page-panel.is-active { display: flex; flex-direction: column; gap: 22px; }
 
 /* Info grid */
 .prg-info-grid {

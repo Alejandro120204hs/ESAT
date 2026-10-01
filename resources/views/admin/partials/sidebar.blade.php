@@ -49,11 +49,11 @@
                 <li>
                     <a href="{{ route('admin.cursos') }}" class="app-nav-link {{ $active === 'cursos' ? 'is-active' : '' }}">
                         <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                        Cursos
+                        Grupos
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="app-nav-link {{ $active === 'horarios' ? 'is-active' : '' }}">
+                    <a href="{{ route('admin.horarios') }}" class="app-nav-link {{ $active === 'horarios' ? 'is-active' : '' }}">
                         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                         Horarios
                     </a>

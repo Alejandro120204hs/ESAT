@@ -203,6 +203,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('cursos', function () {
         return view('admin.cursos.index');
     })->name('cursos');
+
+    Route::get('horarios', function () {
+        return view('admin.horarios.index');
+    })->name('horarios');
 });
 
 Route::middleware('auth')->group(function () {
