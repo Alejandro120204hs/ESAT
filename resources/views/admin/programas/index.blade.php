@@ -7,6 +7,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/admin/programas.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/escuelas.css') }}">
 @endpush
 
 @php
@@ -336,6 +337,17 @@ $totalEst   = array_sum(array_column($programas,'estudiantes'));
 $totalGrupos= array_sum(array_map(fn($p)=>count($p['grupos']),$programas));
 $activos    = count(array_filter($programas,fn($p)=>$p['estado']==='activo'));
 $escuelas   = array_unique(array_column($programas,'escuela'));
+
+/* ---- mock escuelas ---- */
+$escuelasData = [
+    ['id'=>1,'slug'=>'sal','nombre'=>'Salud',               'programas'=>7],
+    ['id'=>2,'slug'=>'tur','nombre'=>'Cocina y Turismo',    'programas'=>3],
+    ['id'=>3,'slug'=>'adm','nombre'=>'Administrativa',      'programas'=>2],
+    ['id'=>4,'slug'=>'edu','nombre'=>'Educación e Idiomas', 'programas'=>2],
+    ['id'=>5,'slug'=>'dep','nombre'=>'Deporte y Cultura',   'programas'=>1],
+    ['id'=>6,'slug'=>'cie','nombre'=>'Ciencias',            'programas'=>3],
+    ['id'=>7,'slug'=>'bel','nombre'=>'Belleza',             'programas'=>1],
+];
 @endphp
 
 @section('content')
@@ -344,14 +356,29 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
     {{-- Encabezado --}}
     <div class="prg-header">
         <div class="prg-header-top">
-            <h2 class="prg-title">Programas académicos</h2>
-            <button class="prg-btn prg-btn-primary" id="btn-nuevo">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nuevo programa
-            </button>
+            <h2 class="prg-title" id="prg-main-title">Programas académicos</h2>
+            <div style="display:flex;gap:8px;">
+                <button class="prg-btn prg-btn-primary" id="btn-nuevo">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nuevo programa
+                </button>
+                <button class="prg-btn prg-btn-primary" id="btn-nueva-esc" style="display:none">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nueva escuela
+                </button>
+            </div>
         </div>
-        <p class="prg-sub">Aquí podrás registrar nuevos programas académicos, consultar y editar los ya existentes, actualizar su estado y organizarlos por nivel, escuela y modalidad. Usa los filtros para encontrar rápidamente el programa que necesitas gestionar.</p>
+        <p class="prg-sub" id="prg-main-sub">Aquí podrás registrar nuevos programas académicos, consultar y editar los ya existentes, actualizar su estado y organizarlos por nivel, escuela y modalidad. Usa los filtros para encontrar rápidamente el programa que necesitas gestionar.</p>
     </div>
+
+    {{-- Tabs --}}
+    <div class="prg-tabs">
+        <button class="prg-tab-btn is-active" data-tab="programas">Programas</button>
+        <button class="prg-tab-btn" data-tab="escuelas">Escuelas</button>
+    </div>
+
+    {{-- Tab: Programas --}}
+    <div id="tab-programas" class="prg-page-panel is-active">
 
     {{-- KPI chips --}}
     <div class="prg-kpis">
@@ -509,6 +536,35 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
             <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
         </button>
     </div>
+
+    </div>{{-- /tab-programas --}}
+
+    {{-- Tab: Escuelas --}}
+    <div id="tab-escuelas" class="prg-page-panel">
+
+        <div class="esc-grid">
+            @foreach($escuelasData as $e)
+            <div class="esc-card" data-id="{{ $e['id'] }}">
+                <div class="esc-card-avatar prg-prog-avatar prg-esc-{{ $e['slug'] }}">
+                    {{ strtoupper(substr($e['nombre'], 0, 2)) }}
+                </div>
+                <div class="esc-card-body">
+                    <div class="esc-card-name">{{ $e['nombre'] }}</div>
+                    <div class="esc-card-meta">{{ $e['programas'] }} {{ $e['programas'] === 1 ? 'programa' : 'programas' }}</div>
+                </div>
+                <div class="esc-card-actions">
+                    <button class="esc-act-btn esc-btn-edit" data-id="{{ $e['id'] }}" title="Editar">
+                        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+                    </button>
+                    <button class="esc-act-btn esc-act-del esc-btn-del" data-id="{{ $e['id'] }}" title="Eliminar">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+    </div>{{-- /tab-escuelas --}}
 
 </div>{{-- /prg-wrap --}}
 
@@ -879,9 +935,30 @@ $escuelas   = array_unique(array_column($programas,'escuela'));
 
     </div>{{-- /prg-modal-box --}}
 </div>
+
+{{-- Modal nueva/editar escuela --}}
+<div class="esc-modal-backdrop" id="esc-modal" hidden>
+    <div class="esc-modal-box">
+        <div class="esc-modal-head">
+            <span class="esc-modal-title" id="esc-modal-title">Nueva escuela</span>
+            <button class="esc-modal-close" id="esc-modal-close">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div>
+            <label class="esc-modal-label" for="esc-inp-nombre">Nombre de la escuela</label>
+            <input type="text" class="esc-modal-input" id="esc-inp-nombre" placeholder="Ej: Tecnología">
+        </div>
+        <div class="esc-modal-foot">
+            <button class="prg-btn prg-btn-ghost" id="esc-btn-cancel">Cancelar</button>
+            <button class="prg-btn prg-btn-primary" id="esc-btn-save">Guardar</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
-<script>var PRG_DATA = @json($programas);</script>
+<script>var PRG_DATA = @json($programas); var ESC_DATA = @json($escuelasData);</script>
 <script src="{{ asset('assets/js/admin/programas.js') }}" defer></script>
+<script src="{{ asset('assets/js/admin/escuelas.js') }}" defer></script>
 @endpush

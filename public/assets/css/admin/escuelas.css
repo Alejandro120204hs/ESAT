@@ -1,0 +1,183 @@
+/* ESAT — Admin: Escuelas (tab dentro de Programas) */
+
+/* ── Tab switcher ── */
+.prg-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #E5E9EF;
+    margin-bottom: 24px;
+}
+.prg-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 10px 22px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: color .15s, border-color .15s;
+}
+.prg-tab-btn:hover { color: var(--navy); }
+.prg-tab-btn.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* ── Escuelas header ── */
+.esc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.esc-sub {
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 68%;
+}
+
+/* ── Grid de cards ── */
+.esc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+}
+.esc-card {
+    background: var(--white);
+    border: 1.5px solid #E5E9EF;
+    border-radius: 12px;
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: box-shadow .15s, border-color .15s;
+}
+.esc-card:hover {
+    box-shadow: 0 4px 18px rgba(0,0,0,.07);
+    border-color: #D1D5DB;
+}
+.esc-card-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+}
+.esc-card-body { flex: 1; min-width: 0; }
+.esc-card-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--navy-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.esc-card-meta {
+    font-size: 0.76rem;
+    color: var(--muted);
+    margin-top: 3px;
+}
+.esc-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.esc-act-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1.5px solid #E5E9EF;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    transition: background .15s, color .15s, border-color .15s;
+}
+.esc-act-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+.esc-act-btn.esc-act-del:hover { background: #DC2626; color: #fff; border-color: #DC2626; }
+.esc-act-btn svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── Modal ── */
+.esc-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,27,51,.45);
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.esc-modal-backdrop[hidden] { display: none !important; }
+.esc-modal-box {
+    background: var(--white);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.esc-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.esc-modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--navy-3);
+}
+.esc-modal-close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    transition: background .15s;
+}
+.esc-modal-close:hover { background: #E5E9EF; }
+.esc-modal-close svg {
+    width: 16px; height: 16px;
+    fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.esc-modal-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--navy-3);
+    margin-bottom: 6px;
+}
+.esc-modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color .15s;
+}
+.esc-modal-input:focus { border-color: var(--orange); }
+.esc-modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+}

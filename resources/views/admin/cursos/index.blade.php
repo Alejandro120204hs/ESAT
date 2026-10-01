@@ -1,8 +1,8 @@
 {{-- mock --}}
 @extends('admin.layout')
 
-@section('title', 'Cursos')
-@section('page-title', 'Cursos')
+@section('title', 'Grupos')
+@section('page-title', 'Grupos')
 @section('active', 'cursos')
 
 @push('styles')
@@ -155,6 +155,28 @@ $totalCupo      = array_sum(array_column($cursos, 'cupo_max'));
 $activos        = count(array_filter($cursos, fn($c)=>$c['estado']==='activo'));
 $cupoDisponible = $totalCupo - $totalInscritos;
 $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')));
+
+$escuelasConProgramas = [
+    ['id'=>1,'nombre'=>'Salud','programas'=>[
+        'Técnico Laboral en Servicios Geriátricos',
+        'Técnico Laboral en Auxiliar de Psiquiatría',
+        'Técnico Laboral en Seguridad Ocupacional y Laboral',
+    ]],
+    ['id'=>2,'nombre'=>'Cocina y Turismo','programas'=>[
+        'Técnico Laboral en Cocina Nacional e Internacional',
+        'Técnico Laboral en Sommelier y Enología',
+    ]],
+    ['id'=>3,'nombre'=>'Administrativa','programas'=>[
+        'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas',
+        'Técnico Laboral en Auxiliar Contable y Administrativo',
+    ]],
+    ['id'=>4,'nombre'=>'Educación e Idiomas','programas'=>[
+        'Técnico Laboral en Asistente de Preescolar',
+    ]],
+    ['id'=>5,'nombre'=>'Deporte y Cultura','programas'=>[]],
+    ['id'=>6,'nombre'=>'Ciencias','programas'=>[]],
+    ['id'=>7,'nombre'=>'Belleza','programas'=>[]],
+];
 @endphp
 
 @section('content')
@@ -163,13 +185,13 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
     {{-- Encabezado --}}
     <div class="cur-header">
         <div class="cur-header-top">
-            <h2 class="cur-title">Cursos</h2>
+            <h2 class="cur-title">Grupos</h2>
             <button class="cur-btn cur-btn-primary" id="btn-nuevo-cur">
                 <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nuevo curso
+                Nuevo grupo
             </button>
         </div>
-        <p class="cur-sub">Aquí podrás crear nuevos cursos, asignarles un docente y consultar los estudiantes inscritos en cada uno.</p>
+        <p class="cur-sub">Aquí podrás registrar nuevos grupos por programa, asignarles un docente y consultar los estudiantes inscritos en cada uno.</p>
     </div>
 
     {{-- KPIs --}}
@@ -180,7 +202,7 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
             </div>
             <div>
                 <div class="cur-kpi-val">{{ count($cursos) }}</div>
-                <div class="cur-kpi-lbl">Total cursos</div>
+                <div class="cur-kpi-lbl">Total grupos</div>
             </div>
         </div>
         <div class="cur-kpi-card">
@@ -216,7 +238,7 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
     <div class="cur-filter-bar">
         <div class="cur-search-wrap">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="cur-search" class="cur-search" placeholder="Buscar curso...">
+            <input type="text" id="cur-search" class="cur-search" placeholder="Buscar grupo...">
         </div>
 
         {{-- Filtro programa --}}
@@ -244,7 +266,7 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
             <input type="hidden" id="cur-filter-estado" data-combobox-value>
         </div>
 
-        <span class="cur-count-badge" id="cur-count">{{ count($cursos) }} cursos</span>
+        <span class="cur-count-badge" id="cur-count">{{ count($cursos) }} grupos</span>
     </div>
 
     {{-- Tabla --}}
@@ -252,7 +274,7 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
         <table class="cur-table" id="cur-table">
             <thead>
                 <tr>
-                    <th>Curso</th>
+                    <th>Grupo</th>
                     <th>Programa</th>
                     <th>Docente</th>
                     <th>Horario</th>
@@ -283,12 +305,11 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
                 @endphp
                 <tr class="cur-row"
                     data-id="{{ $c['id'] }}"
-                    data-nombre="{{ strtolower($c['nombre'] . ' ' . $c['grupo']) }}"
+                    data-nombre="{{ strtolower($c['grupo'] . ' ' . $c['programa']) }}"
                     data-programa="{{ $c['programa'] }}"
                     data-estado="{{ $c['estado'] }}">
                     <td>
                         <div class="cur-cell-nombre">
-                            <span class="cur-nombre-txt">{{ $c['nombre'] }}</span>
                             <span class="cur-grupo-txt">{{ $c['grupo'] }}</span>
                             <span class="cur-codigo-txt">{{ $c['codigo'] }}</span>
                         </div>
@@ -333,8 +354,8 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
 
         <div id="cur-empty" class="cur-empty" style="display:none;">
             <div class="cur-empty-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-            <div class="cur-empty-ttl">Sin cursos</div>
-            <div class="cur-empty-sub">No se encontraron cursos con ese filtro.</div>
+            <div class="cur-empty-ttl">Sin grupos</div>
+            <div class="cur-empty-sub">No se encontraron grupos con ese filtro.</div>
         </div>
 
         <div id="cur-pagination" class="cur-pagination" style="display:none;">
@@ -444,9 +465,9 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
     <div class="cur-drawer-footer">
         <button class="cur-btn cur-btn-ghost" id="cur-drawer-edit-btn">
             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar curso
+            Editar grupo
         </button>
-        <button class="cur-btn cur-btn-danger" id="cur-drawer-toggle-btn">Finalizar curso</button>
+        <button class="cur-btn cur-btn-danger" id="cur-drawer-toggle-btn">Finalizar grupo</button>
     </div>
 </div>
 
@@ -455,7 +476,7 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
     <div id="cur-modal" class="cur-modal" role="dialog" aria-hidden="true">
 
         <div class="cur-modal-head">
-            <span class="cur-modal-title" id="cur-modal-title">Nuevo curso</span>
+            <span class="cur-modal-title" id="cur-modal-title">Nuevo grupo</span>
             <button class="cur-modal-close" id="cur-modal-close">
                 <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -478,10 +499,6 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
             {{-- Paso 1 --}}
             <div class="cur-mstep is-active" data-step="1">
                 <div class="cur-form-grid">
-                    <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Nombre del curso</label>
-                        <input type="text" class="cur-form-input" placeholder="Ej: Servicios Geriátricos">
-                    </div>
                     <div class="cur-form-group">
                         <label class="cur-form-lbl">Código</label>
                         <input type="text" class="cur-form-input" placeholder="Ej: CUR-SAL-001-A">
@@ -491,7 +508,20 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
                         <input type="text" class="cur-form-input" placeholder="Ej: Grupo A">
                     </div>
                     <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Programa</label>
+                        <label class="cur-form-lbl">Escuela / Área <span class="cur-form-req">*</span></label>
+                        <div class="app-combobox" id="cur-cb-escuela" data-position="absolute" data-list-max-height="160">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar escuela</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="cur-val-escuela" data-combobox-value>
+                        </div>
+                    </div>
+                    <div class="cur-form-group full">
+                        <label class="cur-form-lbl">Programa <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-programa" data-list-max-height="160">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Seleccionar programa</span>
@@ -601,6 +631,9 @@ $programasUnicos = array_values(array_unique(array_column($cursos, 'programa')))
 @endsection
 
 @push('scripts')
-<script>var CUR_DATA = @json($cursos);</script>
-<script src="{{ asset('assets/js/admin/cursos.js') }}" defer></script>
+<script>
+var CUR_DATA = @json($cursos);
+var CUR_ESC_PRG = @json($escuelasConProgramas);
+</script>
+<script src="{{ asset('assets/js/admin/cursos.js') }}?v={{ filemtime(public_path('assets/js/admin/cursos.js')) }}" defer></script>
 @endpush

@@ -69,7 +69,7 @@
             if (i >= start && i < end) row.classList.remove('is-hidden');
         });
 
-        if (countBdg) countBdg.textContent = total + ' curso' + (total !== 1 ? 's' : '');
+        if (countBdg) countBdg.textContent = total + ' grupo' + (total !== 1 ? 's' : '');
         if (emptyEl)  emptyEl.style.display = total === 0 ? 'block' : 'none';
 
         if (!paginationEl) return;
@@ -190,13 +190,13 @@
         var toggleBtn = document.getElementById('cur-drawer-toggle-btn');
         if (toggleBtn) {
             if (c.estado === 'activo') {
-                toggleBtn.textContent = 'Finalizar curso';
+                toggleBtn.textContent = 'Finalizar grupo';
                 toggleBtn.className = 'cur-btn cur-btn-danger';
             } else if (c.estado === 'planificacion') {
-                toggleBtn.textContent = 'Activar curso';
+                toggleBtn.textContent = 'Activar grupo';
                 toggleBtn.className = 'cur-btn cur-btn-secondary';
             } else {
-                toggleBtn.textContent = 'Reactivar curso';
+                toggleBtn.textContent = 'Reactivar grupo';
                 toggleBtn.className = 'cur-btn cur-btn-secondary';
             }
         }
@@ -258,7 +258,7 @@
     function openModal(id) {
         currentStep = 1;
         renderStep();
-        if (modalTitle) modalTitle.textContent = id ? 'Editar curso' : 'Nuevo curso';
+        if (modalTitle) modalTitle.textContent = id ? 'Editar grupo' : 'Nuevo grupo';
         if (modal) { modal.classList.add('is-open'); document.body.style.overflow = 'hidden'; }
         if (modalOverlay) modalOverlay.classList.add('is-open');
     }
@@ -284,7 +284,7 @@
         });
         if (stepLbl)    stepLbl.textContent = 'Paso ' + currentStep + ' de ' + totalSteps;
         if (btnWizBack) btnWizBack.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-        if (btnWizNext) btnWizNext.textContent = currentStep === totalSteps ? 'Guardar curso' : 'Siguiente';
+        if (btnWizNext) btnWizNext.textContent = currentStep === totalSteps ? 'Guardar grupo' : 'Siguiente';
     }
 
     if (btnWizNext) btnWizNext.addEventListener('click', function () {
@@ -426,24 +426,38 @@
     }
 
     /* ── Wizard — comboboxes ─────────────────── */
+    var cbEscuela   = document.getElementById('cur-cb-escuela');
     var cbPrograma  = document.getElementById('cur-cb-programa');
     var cbModalidad = document.getElementById('cur-cb-modalidad');
     var cbDocente   = document.getElementById('cur-cb-docente');
     var cbJornada   = document.getElementById('cur-cb-jornada');
     var cbEstado    = document.getElementById('cur-cb-estado');
 
+    var escPrgData = window.CUR_ESC_PRG || [];
+
+    if (cbEscuela) {
+        initCombobox(cbEscuela);
+        cbEscuela.setOptions(escPrgData.map(function (e) { return { value: String(e.id), label: e.nombre }; }));
+
+        var hiddenEsc = document.getElementById('cur-val-escuela');
+        if (hiddenEsc) {
+            hiddenEsc.addEventListener('change', function () {
+                var escId = hiddenEsc.value;
+                var esc = escPrgData.find(function (e) { return String(e.id) === escId; });
+                if (cbPrograma) {
+                    cbPrograma.reset();
+                    cbPrograma.setOptions(esc && esc.programas.length
+                        ? esc.programas
+                        : []
+                    );
+                }
+            });
+        }
+    }
+
     if (cbPrograma) {
         initCombobox(cbPrograma);
-        cbPrograma.setOptions([
-            'Técnico Laboral en Servicios Geriátricos',
-            'Técnico Laboral en Auxiliar de Psiquiatría',
-            'Técnico Laboral en Cocina Nacional e Internacional',
-            'Técnico Laboral en Sommelier y Enología',
-            'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas',
-            'Técnico Laboral en Auxiliar Contable y Administrativo',
-            'Técnico Laboral en Asistente de Preescolar',
-            'Técnico Laboral en Seguridad Ocupacional y Laboral',
-        ]);
+        cbPrograma.setOptions([]);
     }
     if (cbModalidad) {
         initCombobox(cbModalidad);
