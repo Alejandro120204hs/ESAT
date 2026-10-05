@@ -54,7 +54,7 @@ body.app-page {
 .app-sidebar {
     flex: 0 0 270px;
     height: 100%;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     background: var(--navy-3);
     display: flex;
@@ -71,6 +71,8 @@ body.app-page {
 .app-sidebar-brand-mark { width: 28px; height: 28px; flex-shrink: 0; object-fit: contain; }
 .app-sidebar-brand-logo { width: 108px; height: auto; flex-shrink: 0; }
 
+
+.app-sidebar-bottom-nav { flex-shrink: 0; }
 
 .app-sidebar-sede {
     display: flex; align-items: center; gap: 8px;
@@ -100,15 +102,70 @@ body.app-page {
 }
 
 /* Nav */
-.app-sidebar-nav { flex: 1; padding: 16px 14px; display: flex; flex-direction: column; gap: 2px; }
+.app-sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 16px 14px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: none; }
+.app-sidebar-nav::-webkit-scrollbar { display: none; }
 
-.app-nav-group { margin-bottom: 20px; }
+.app-nav-group { margin-bottom: 14px; }
 .app-nav-group:last-child { margin-bottom: 0; }
 .app-nav-group-label {
     font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
     font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
-    color: rgba(255,255,255,0.28); padding: 0 10px; margin-bottom: 6px;
+    color: rgba(255,255,255,0.45); padding: 0 10px; margin-bottom: 6px;
 }
+
+/* Grupos con flyout lateral (Finanzas, Comunicación) */
+.app-nav-group--flyout { margin-bottom: 4px; }
+
+.app-nav-flyout-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; background: none; border: none; cursor: pointer;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
+    font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.38); padding: 5px 10px;
+    border-radius: var(--radius-md);
+    transition: color 0.15s, background 0.15s;
+}
+.app-nav-flyout-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+.app-nav-flyout-btn.is-active { color: var(--orange); }
+.app-nav-flyout-btn.is-open { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.07); }
+.app-nav-flyout-btn svg {
+    width: 13px; height: 13px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.18s var(--ease-out);
+}
+.app-nav-flyout-btn.is-open svg { transform: translateX(2px); }
+
+/* Panel flyout (posición fija, aparece al lado del sidebar) */
+.app-nav-flyout {
+    position: fixed;
+    left: 278px;
+    z-index: 500;
+    background: var(--navy-3);
+    border-radius: var(--radius-md);
+    padding: 10px 8px;
+    min-width: 196px;
+    box-shadow: 0 12px 36px -6px rgba(10,27,51,0.45), 0 0 0 1px rgba(255,255,255,0.09);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+.app-nav-flyout.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+.app-nav-flyout-header {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 800;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.45); padding: 2px 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.09); margin-bottom: 6px;
+}
+
+/* Separador + Reportes suelto */
+.app-nav-sep { height: 1px; background: rgba(255,255,255,0.07); margin: 2px 10px 12px; }
+.app-nav-bottom { margin-bottom: 0; }
 
 .app-nav { list-style: none; display: flex; flex-direction: column; gap: 1px; }
 .app-nav-link {
@@ -168,6 +225,15 @@ body.app-page {
     font-family: "Archivo", system-ui, sans-serif;
     font-weight: 800; font-size: 1.18rem; color: var(--navy-3);
 }
+.app-topbar-sede {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--navy-3); color: var(--white);
+    padding: 6px 14px 6px 10px; border-radius: 999px;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 700; font-size: 0.88rem; letter-spacing: 0.01em;
+    box-shadow: 0 2px 8px -2px rgba(15,33,60,0.3);
+}
+.app-topbar-sede svg { width: 15px; height: 15px; stroke: var(--orange); flex-shrink: 0; }
 
 .app-menu-toggle {
     display: none; align-items: center; justify-content: center;
@@ -257,6 +323,55 @@ body.app-page {
 .app-status-danger  { background: #FEE2E2; color: #991B1B; }
 .app-status-muted   { background: #F1F5F9; color: var(--muted); }
 
+/* ── Combobox (departamento / ciudad) ─────────── */
+.app-combobox { position: relative; }
+.app-combobox-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-family: inherit; font-size: 0.92rem; color: var(--text); text-align: left;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: var(--white); cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-combobox-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-combobox.is-open .app-combobox-trigger {
+    outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
+}
+.app-combobox-chevron {
+    width: 15px; height: 15px; flex-shrink: 0; color: var(--muted);
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.2s var(--ease-out);
+}
+.app-combobox.is-open .app-combobox-chevron { transform: rotate(180deg); }
+.app-combobox-panel {
+    position: fixed; z-index: 9999;
+    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); padding: 8px; display: flex; flex-direction: column; gap: 6px;
+}
+.app-combobox-panel[hidden] { display: none; }
+.app-combobox[data-position="absolute"] { position: relative; }
+.app-combobox[data-position="absolute"] .app-combobox-panel {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; width: auto; bottom: auto;
+    z-index: 200; min-width: 180px;
+}
+.app-combobox-search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px;
+}
+.app-combobox-search-wrap svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-search { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
+.app-combobox-search::placeholder { color: var(--muted); }
+.app-combobox-list { list-style: none; max-height: 220px; overflow-y: auto; }
+.app-combobox-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 10px; border-radius: 8px; font-size: 0.88rem; color: var(--navy-3);
+    cursor: pointer; transition: background-color 0.15s;
+}
+.app-combobox-list li[hidden] { display: none; }
+.app-combobox-list li:hover { background: rgba(16, 40, 74, 0.06); }
+.app-combobox-list li.is-selected { background: #FBE9D8; color: var(--orange-2); font-weight: 700; }
+.app-combobox-list li.is-selected svg { display: block; }
+.app-combobox-list li svg { display: none; width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.app-combobox-empty { padding: 14px 10px; font-size: 0.86rem; color: var(--muted); text-align: center; }
+
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 900px) {
     .app-sidebar {
@@ -271,4 +386,6 @@ body.app-page {
     .app-topbar h1 { font-size: 1rem; }
     .app-user-info { display: none; }
     .app-content { padding: 20px; }
+    /* El panel flotante (Finanzas / Comunicación) no debe quedar fuera de la pantalla: generaba scroll horizontal */
+    .app-nav-flyout { left: auto; right: 12px; max-width: calc(100vw - 24px); }
 }
