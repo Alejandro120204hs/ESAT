@@ -386,4 +386,6 @@ body.app-page {
     .app-topbar h1 { font-size: 1rem; }
     .app-user-info { display: none; }
     .app-content { padding: 20px; }
+    /* El panel flotante (Finanzas / Comunicación) no debe quedar fuera de la pantalla: generaba scroll horizontal */
+    .app-nav-flyout { left: auto; right: 12px; max-width: calc(100vw - 24px); }
 }

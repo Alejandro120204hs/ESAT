@@ -207,6 +207,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('horarios', function () {
         return view('admin.horarios.index');
     })->name('horarios');
+
+    Route::get('estudiantes', function () {
+        return view('admin.estudiantes.index');
+    })->name('estudiantes');
 });
 
 Route::middleware('auth')->group(function () {

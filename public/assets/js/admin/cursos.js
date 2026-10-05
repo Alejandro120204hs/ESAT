@@ -306,31 +306,28 @@
         var placeholder = label.textContent;
         var esAbsoluto  = root.dataset.position === 'absolute';
 
+        /* Abre hacia donde quepa: mide el alto real del panel (buscador + márgenes)
+           y decide en cada apertura. data-direction="up" es solo una preferencia. */
         function posicionar() {
-            var rect  = trigger.getBoundingClientRect();
-            var dirUp = root.dataset.direction === 'up';
+            var rect   = trigger.getBoundingClientRect();
             var margen = 12;
             panel.style.left  = rect.left + 'px';
             panel.style.width = rect.width + 'px';
-            var espacio;
-            if (dirUp) {
-                panel.style.top    = '';
-                panel.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
-                espacio = Math.min(rect.top - 6 - margen, 500);
-            } else {
-                panel.style.bottom = '';
-                panel.style.top    = (rect.bottom + 6) + 'px';
-                espacio = window.innerHeight - (rect.bottom + 6) - margen;
-                if (espacio < 120) {
-                    root.dataset.direction = 'up';
-                    return posicionar();
-                }
-                if (espacio > 320) espacio = 320;
-            }
-            var searchWrap = searchInput && searchInput.closest('.app-combobox-search-wrap');
-            var searchAlto = searchWrap ? searchWrap.offsetHeight : 0;
-            list.style.maxHeight = Math.max(espacio - searchAlto - 14, 40) + 'px';
-            if (root.dataset.listMaxHeight) list.style.maxHeight = root.dataset.listMaxHeight + 'px';
+
+            var abajo  = window.innerHeight - rect.bottom - 6 - margen;
+            var arriba = rect.top - 6 - margen;
+            list.style.maxHeight = '';
+            var extra = panel.offsetHeight - list.offsetHeight;
+            var tope  = parseInt(root.dataset.listMaxHeight) || 320;
+            var necesario = Math.min(list.scrollHeight, tope) + extra;
+            var haciaArriba = root.dataset.direction === 'up'
+                ? (arriba >= necesario || arriba > abajo)
+                : (abajo < necesario && arriba > abajo);
+            var espacio = haciaArriba ? arriba : abajo;
+
+            panel.style.top    = haciaArriba ? '' : (rect.bottom + 6) + 'px';
+            panel.style.bottom = haciaArriba ? (window.innerHeight - rect.top + 6) + 'px' : '';
+            list.style.maxHeight = Math.max(Math.min(tope, espacio - extra), 40) + 'px';
         }
 
         function abrir() {

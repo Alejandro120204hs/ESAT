@@ -5,15 +5,15 @@
 @section('active', 'perfil')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/profile.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/profile.css') }}?v={{ filemtime(public_path('assets/css/admin/profile.css')) }}">
 @endpush
 
 @section('content')
 
 @php
-    $ini = strtoupper(
-        substr($user->nombres ?? $user->name ?? '', 0, 1) .
-        substr($user->apellidos ?? '', 0, 1)
+    $ini = mb_strtoupper(
+        mb_substr($user->nombres ?? $user->name ?? '', 0, 1) .
+        mb_substr($user->apellidos ?? '', 0, 1)
     ) ?: '?';
     $nombreCompleto = trim(($user->nombres ?? $user->name ?? '') . ' ' . ($user->apellidos ?? ''));
 @endphp

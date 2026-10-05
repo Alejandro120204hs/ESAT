@@ -6,8 +6,8 @@
 @section('active', 'programas')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/programas.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/escuelas.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/programas.css') }}?v={{ filemtime(public_path('assets/css/admin/programas.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/escuelas.css') }}?v={{ filemtime(public_path('assets/css/admin/escuelas.css')) }}">
 @endpush
 
 @php
@@ -475,7 +475,7 @@ $escuelasData = [
                     <td>
                         <div class="prg-prog-cell">
                             <div class="prg-prog-avatar prg-esc-{{ $esc }}">
-                                {{ strtoupper(substr($p['escuela'],0,2)) }}
+                                {{ mb_strtoupper(mb_substr($p['escuela'],0,2)) }}
                             </div>
                             <div>
                                 <div class="prg-prog-name">{{ $p['nombre'] }}</div>
@@ -546,7 +546,7 @@ $escuelasData = [
             @foreach($escuelasData as $e)
             <div class="esc-card" data-id="{{ $e['id'] }}">
                 <div class="esc-card-avatar prg-prog-avatar prg-esc-{{ $e['slug'] }}">
-                    {{ strtoupper(substr($e['nombre'], 0, 2)) }}
+                    {{ mb_strtoupper(mb_substr($e['nombre'], 0, 2)) }}
                 </div>
                 <div class="esc-card-body">
                     <div class="esc-card-name">{{ $e['nombre'] }}</div>
@@ -959,6 +959,6 @@ $escuelasData = [
 
 @push('scripts')
 <script>var PRG_DATA = @json($programas); var ESC_DATA = @json($escuelasData);</script>
-<script src="{{ asset('assets/js/admin/programas.js') }}" defer></script>
-<script src="{{ asset('assets/js/admin/escuelas.js') }}" defer></script>
+<script src="{{ asset('assets/js/admin/programas.js') }}?v={{ filemtime(public_path('assets/js/admin/programas.js')) }}" defer></script>
+<script src="{{ asset('assets/js/admin/escuelas.js') }}?v={{ filemtime(public_path('assets/js/admin/escuelas.js')) }}" defer></script>
 @endpush

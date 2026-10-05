@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/layout.css') }}?v={{ filemtime(public_path('assets/css/admin/layout.css')) }}">
     @stack('styles')
 </head>
 <body class="app-page">
@@ -74,7 +74,7 @@
     </div>
 </div>
 
-<script src="{{ asset('assets/js/admin/layout.js') }}" defer></script>
+<script src="{{ asset('assets/js/admin/layout.js') }}?v={{ filemtime(public_path('assets/js/admin/layout.js')) }}" defer></script>
 @stack('scripts')
 </body>
 </html>

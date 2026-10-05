@@ -6,7 +6,7 @@
 @section('active', 'cursos')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/cursos.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/cursos.css') }}?v={{ filemtime(public_path('assets/css/admin/cursos.css')) }}">
 @endpush
 
 @php
@@ -301,7 +301,7 @@ $escuelasConProgramas = [
                     $estadoLbl = match($c['estado']) {
                         'activo' => 'Activo', 'planificacion' => 'En planificación', default => 'Finalizado'
                     };
-                    $diasStr = implode(' · ', array_map(fn($d) => substr($d,0,3), $c['dias']));
+                    $diasStr = implode(' · ', array_map(fn($d) => mb_substr($d,0,3), $c['dias']));
                 @endphp
                 <tr class="cur-row"
                     data-id="{{ $c['id'] }}"
@@ -509,7 +509,7 @@ $escuelasConProgramas = [
                     </div>
                     <div class="cur-form-group full">
                         <label class="cur-form-lbl">Escuela / Área <span class="cur-form-req">*</span></label>
-                        <div class="app-combobox" id="cur-cb-escuela" data-position="absolute" data-list-max-height="160">
+                        <div class="app-combobox" id="cur-cb-escuela" data-list-max-height="160">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Seleccionar escuela</span>
                                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
