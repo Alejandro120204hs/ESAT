@@ -1,5 +1,5 @@
 @php
-    $initials = strtoupper(substr(auth()->user()->nombres ?? auth()->user()->name ?? 'A', 0, 1) . substr(auth()->user()->apellidos ?? '', 0, 1));
+    $initials = mb_strtoupper(mb_substr(auth()->user()->nombres ?? auth()->user()->name ?? 'A', 0, 1) . mb_substr(auth()->user()->apellidos ?? '', 0, 1));
     if (strlen($initials) < 1) $initials = 'A';
     $topbarSede = auth()->user()->sede?->nombre ?? 'Sin sede';
 @endphp

@@ -46,7 +46,7 @@
 .doc-kpi-blue  .doc-kpi-val  { color: #1D4ED8; }
 .doc-kpi-green .doc-kpi-icon { background: rgba(16,185,129,0.1);  color: #059669; }
 .doc-kpi-green .doc-kpi-val  { color: #065F46; }
-.doc-kpi-orange.doc-kpi-icon { background: rgba(217,123,46,0.1);  color: var(--orange); }
+.doc-kpi-orange .doc-kpi-icon { background: rgba(217,123,46,0.1);  color: var(--orange); }
 .doc-kpi-orange .doc-kpi-val { color: var(--orange); }
 .doc-kpi-navy  .doc-kpi-icon { background: rgba(10,27,51,0.08);   color: var(--navy-3); }
 .doc-kpi-navy  .doc-kpi-val  { color: var(--navy-3); }
@@ -165,6 +165,7 @@
 .doc-avatar.doc-esc-dep { background: #D97706; }
 .doc-avatar.doc-esc-cie { background: #4F46E5; }
 .doc-avatar.doc-esc-bel { background: #DB2777; }
+.doc-avatar[class*="doc-esc-"] { color: var(--white); }
 
 /* ── Vinculación badges ─────────────────────────────── */
 .doc-vinc-tag {
@@ -336,7 +337,7 @@
     display: flex; align-items: center; padding: 16px 20px;
     border-bottom: 1px solid var(--line); gap: 0;
 }
-.doc-wstep { display: flex; align-items: center; gap: 8px; flex: 1; }
+.doc-wstep { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .doc-wstep-dot {
     width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line);
     background: var(--bg); flex-shrink: 0; transition: all 0.2s;
@@ -346,7 +347,8 @@
 .doc-wstep.is-active span { color: var(--orange); }
 .doc-wstep.is-done .doc-wstep-dot { border-color: #059669; background: #059669; }
 .doc-wstep.is-done span { color: #059669; }
-.doc-wstep-line { flex: 1; height: 2px; background: var(--line); margin: 0 6px; max-width: 48px; }
+/* Cada paso mide lo que su texto; las líneas reparten el espacio sobrante por igual (antes quedaban corridas) */
+.doc-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
 
 .doc-modal-body { flex: 1; overflow-y: auto; }
 .doc-mstep { display: none; padding: 20px; }
@@ -384,6 +386,8 @@
     .doc-field-full { grid-column: 1; }
 }
 @media (max-width: 600px) {
+    /* Los nombres de los pasos no caben: solo el del paso actual */
+    .doc-wstep:not(.is-active) span { display: none; }
     .doc-kpis { grid-template-columns: 1fr 1fr; }
     .doc-table thead th:nth-child(3),
     .doc-table .doc-esp-cell { display: none; }

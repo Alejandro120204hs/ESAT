@@ -6,7 +6,7 @@
 @section('active', 'inicio')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/dashboard.css') }}?v={{ filemtime(public_path('assets/css/admin/dashboard.css')) }}">
 @endpush
 
 @php
@@ -314,7 +314,7 @@
                 <div class="dash-quick-label">Registrar pago</div>
                 <div class="dash-quick-sub">Matrículas y cuotas</div>
             </a>
-            <a href="#" class="dash-quick-item">
+            <a href="{{ route('admin.programas') }}#nuevo" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-green">
                     <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
                 </div>
@@ -352,5 +352,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin/dashboard.js') }}" defer></script>
+    <script src="{{ asset('assets/js/admin/dashboard.js') }}?v={{ filemtime(public_path('assets/js/admin/dashboard.js')) }}" defer></script>
 @endpush

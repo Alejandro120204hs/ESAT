@@ -6,7 +6,7 @@
 @section('active', 'docentes')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/docentes.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/docentes.css') }}?v={{ filemtime(public_path('assets/css/admin/docentes.css')) }}">
 @endpush
 
 @php
@@ -258,7 +258,7 @@ $escuelasDoc   = count(array_unique(array_column($docentes, 'escuela')));
                 @foreach($docentes as $d)
                 @php
                     $esc      = $escMap[$d['escuela']] ?? 'adm';
-                    $initials = strtoupper(substr($d['nombres'],0,1) . substr($d['apellidos'],0,1));
+                    $initials = mb_strtoupper(mb_substr($d['nombres'],0,1) . mb_substr($d['apellidos'],0,1));
                     $numCursos= count($d['cursos']);
                 @endphp
                 <tr class="doc-row"
@@ -484,17 +484,17 @@ $escuelasDoc   = count(array_unique(array_column($docentes, 'escuela')));
 
         {{-- Wizard steps --}}
         <div class="doc-wsteps">
-            <div class="doc-wstep is-active" data-step="1">
+            <div class="doc-wstep is-active" data-step="1" title="Paso 1: Datos personales">
                 <div class="doc-wstep-dot"></div>
                 <span>Datos personales</span>
             </div>
             <div class="doc-wstep-line"></div>
-            <div class="doc-wstep" data-step="2">
+            <div class="doc-wstep" data-step="2" title="Paso 2: Info académica">
                 <div class="doc-wstep-dot"></div>
                 <span>Info académica</span>
             </div>
             <div class="doc-wstep-line"></div>
-            <div class="doc-wstep" data-step="3">
+            <div class="doc-wstep" data-step="3" title="Paso 3: Vinculación">
                 <div class="doc-wstep-dot"></div>
                 <span>Vinculación</span>
             </div>
@@ -672,5 +672,5 @@ $escuelasDoc   = count(array_unique(array_column($docentes, 'escuela')));
 <script>
 var DOC_DATA = @json($docentes);
 </script>
-<script src="{{ asset('assets/js/admin/docentes.js') }}"></script>
+<script src="{{ asset('assets/js/admin/docentes.js') }}?v={{ filemtime(public_path('assets/js/admin/docentes.js')) }}"></script>
 @endpush

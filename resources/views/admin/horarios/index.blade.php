@@ -6,58 +6,67 @@
 @section('active', 'horarios')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/admin/horarios.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/admin/horarios.css') }}?v={{ filemtime(public_path('assets/css/admin/horarios.css')) }}">
 @endpush
 
 @php
-/* ── Datos mock de grupos con horario asignado ── */
+/* ── Datos mock (ficticios): cada grupo tiene sus sesiones semanales.
+      Una sesión = día + hora inicio + hora fin, así un grupo puede tener
+      horas distintas según el día (p. ej. lunes mañana, jueves tarde). ── */
+$ses = fn(array $dias, string $hi, string $hf) => array_map(
+    fn($d) => ['dia' => $d, 'hora_inicio' => $hi, 'hora_fin' => $hf], $dias
+);
+
 $grupos = [
     ['id'=>1,'codigo'=>'CUR-SAL-001-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-     'docente'=>'María González Ruiz','modalidad'=>'Presencial','jornada'=>'Mañana',
-     'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'08:00','hora_fin'=>'12:00','estado'=>'activo'],
+     'docente'=>'María González Ruiz','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'08:00','12:00')],
     ['id'=>2,'codigo'=>'CUR-SAL-001-B','grupo'=>'Grupo B',
      'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','jornada'=>'Tarde',
-     'dias'=>['Martes','Jueves'],'hora_inicio'=>'14:00','hora_fin'=>'18:00','estado'=>'activo'],
+     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>$ses(['Martes','Jueves'],'14:00','18:00')],
     ['id'=>3,'codigo'=>'CUR-SAL-002-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Auxiliar de Psiquiatría','escuela'=>'Salud',
-     'docente'=>'María González Ruiz','modalidad'=>'Presencial','jornada'=>'Tarde',
-     'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'14:00','hora_fin'=>'18:00','estado'=>'activo'],
+     'docente'=>'María González Ruiz','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'14:00','18:00')],
     ['id'=>4,'codigo'=>'CUR-TUR-001-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-     'docente'=>'Laura Martínez Peña','modalidad'=>'Presencial','jornada'=>'Mañana',
-     'dias'=>['Lunes','Martes','Jueves'],'hora_inicio'=>'07:00','hora_fin'=>'11:00','estado'=>'activo'],
+     'docente'=>'Laura Martínez Peña','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>array_merge($ses(['Lunes','Martes'],'07:00','11:00'), $ses(['Jueves'],'14:00','17:00'))],
     ['id'=>5,'codigo'=>'CUR-TUR-001-B','grupo'=>'Grupo B',
      'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','jornada'=>'Tarde',
-     'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'13:00','hora_fin'=>'17:00','estado'=>'activo'],
+     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'13:00','17:00')],
     ['id'=>6,'codigo'=>'CUR-TUR-002-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Sommelier y Enología','escuela'=>'Cocina y Turismo',
-     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','jornada'=>'Noche',
-     'dias'=>['Martes','Jueves','Sábado'],'hora_inicio'=>'18:00','hora_fin'=>'21:00','estado'=>'activo'],
+     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>array_merge($ses(['Martes','Jueves'],'18:00','21:00'), $ses(['Sábado'],'08:00','12:00'))],
     ['id'=>7,'codigo'=>'CUR-ADM-001-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas','escuela'=>'Administrativa',
-     'docente'=>'Patricia López Castro','modalidad'=>'Mixta','jornada'=>'Mañana',
-     'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'08:00','hora_fin'=>'12:00','estado'=>'activo'],
+     'docente'=>'Patricia López Castro','modalidad'=>'Mixta','estado'=>'activo',
+     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'08:00','12:00')],
     ['id'=>8,'codigo'=>'CUR-ADM-002-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa',
-     'docente'=>'Roberto Díaz Sierra','modalidad'=>'Presencial','jornada'=>'Tarde',
-     'dias'=>['Martes','Jueves'],'hora_inicio'=>'14:00','hora_fin'=>'18:00','estado'=>'activo'],
+     'docente'=>'Roberto Díaz Sierra','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>array_merge($ses(['Martes'],'14:00','18:00'), $ses(['Jueves'],'18:00','21:00'))],
     ['id'=>9,'codigo'=>'CUR-EDU-001-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Asistente de Preescolar','escuela'=>'Educación e Idiomas',
-     'docente'=>'Diana Vargas Nieto','modalidad'=>'Presencial','jornada'=>'Mañana',
-     'dias'=>['Lunes','Martes','Miércoles','Jueves','Viernes'],'hora_inicio'=>'07:00','hora_fin'=>'10:00','estado'=>'activo'],
+     'docente'=>'Diana Vargas Nieto','modalidad'=>'Presencial','estado'=>'activo',
+     'sesiones'=>$ses(['Lunes','Martes','Miércoles','Jueves','Viernes'],'07:00','10:00')],
     ['id'=>10,'codigo'=>'CUR-SAL-003-A','grupo'=>'Grupo A',
      'programa'=>'Técnico Laboral en Seguridad Ocupacional y Laboral','escuela'=>'Salud',
-     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','jornada'=>'Noche',
-     'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'18:00','hora_fin'=>'22:00','estado'=>'planificacion'],
+     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','estado'=>'planificacion',
+     'sesiones'=>array_merge($ses(['Lunes','Miércoles'],'18:00','22:00'), $ses(['Sábado'],'07:00','11:00'))],
 ];
 
+$jornadaDe = fn(string $h) => ((int) $h < 12) ? 'Mañana' : (((int) $h < 18) ? 'Tarde' : 'Noche');
+$tieneJornada = fn(array $g, string $j) => count(array_filter($g['sesiones'], fn($s) => $jornadaDe($s['hora_inicio']) === $j)) > 0;
+
 $total   = count($grupos);
-$manana  = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Mañana'));
-$tarde   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Tarde'));
-$noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
+$manana  = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Mañana')));
+$tarde   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Tarde')));
+$noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
 @endphp
 
 @section('content')
@@ -66,15 +75,13 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
     {{-- Encabezado --}}
     <div>
         <div class="hor-header-top">
-            <div>
-                <h2 class="hor-title">Horarios</h2>
-                <p class="hor-sub">Gestión y asignación de horarios por grupo y programa.</p>
-            </div>
+            <h2 class="hor-title">Horarios</h2>
             <button class="hor-btn hor-btn-primary" id="hor-btn-nuevo" type="button">
                 <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nuevo horario
             </button>
         </div>
+        <p class="hor-sub">Aquí podrás asignar los días y las horas de clase de cada grupo, con horarios distintos según el día si lo necesitas, verificar que ningún docente quede con dos clases a la misma hora y consultar el horario semanal por grupo, por docente o el general de la sede.</p>
     </div>
 
     {{-- KPIs --}}
@@ -93,7 +100,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             </div>
             <div>
-                <div class="hor-kpi-val">{{ $manana }}</div>
+                <div class="hor-kpi-val" id="hor-kpi-manana">{{ $manana }}</div>
                 <div class="hor-kpi-lbl">Jornada mañana</div>
             </div>
         </div>
@@ -102,7 +109,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
             </div>
             <div>
-                <div class="hor-kpi-val">{{ $tarde }}</div>
+                <div class="hor-kpi-val" id="hor-kpi-tarde">{{ $tarde }}</div>
                 <div class="hor-kpi-lbl">Jornada tarde</div>
             </div>
         </div>
@@ -111,7 +118,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             </div>
             <div>
-                <div class="hor-kpi-val">{{ $noche }}</div>
+                <div class="hor-kpi-val" id="hor-kpi-noche">{{ $noche }}</div>
                 <div class="hor-kpi-lbl">Jornada noche</div>
             </div>
         </div>
@@ -126,7 +133,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
             </div>
 
             {{-- Filtro escuela --}}
-            <div class="app-combobox" id="hor-cb-escuela" data-position="absolute">
+            <div class="app-combobox" id="hor-cb-escuela">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                     <span data-combobox-label>Todas las escuelas</span>
                     <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -138,7 +145,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
             </div>
 
             {{-- Filtro jornada --}}
-            <div class="app-combobox" id="hor-cb-jornada" data-position="absolute">
+            <div class="app-combobox" id="hor-cb-jornada">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                     <span data-combobox-label>Todas las jornadas</span>
                     <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -158,9 +165,9 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
                 Tabla
             </button>
-            <button class="hor-view-btn" id="hor-btn-grilla" type="button" title="Vista semanal">
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                Grilla
+            <button class="hor-view-btn" id="hor-btn-grilla" type="button" title="Horario semanal por grupo o docente">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Horario
             </button>
         </div>
     </div>
@@ -180,68 +187,8 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                         <th></th>
                     </tr>
                 </thead>
-                <tbody id="hor-tbody">
-                    @foreach($grupos as $g)
-                    @php
-                        $escMap = [
-                            'Salud'=>'sal','Cocina y Turismo'=>'tur','Administrativa'=>'adm',
-                            'Educación e Idiomas'=>'edu','Deporte y Cultura'=>'dep','Ciencias'=>'cie','Belleza'=>'bel'
-                        ];
-                        $escCls = $escMap[$g['escuela']] ?? 'adm';
-                        $jorCls = strtolower(str_replace('ñ','n',$g['jornada']));
-                        $diasCodes = ['Lunes'=>'L','Martes'=>'M','Miércoles'=>'Mi','Jueves'=>'J','Viernes'=>'V','Sábado'=>'S'];
-                        $todosDias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-
-                        // Duración
-                        $hi = explode(':',$g['hora_inicio']);
-                        $hf = explode(':',$g['hora_fin']);
-                        $durMin = (intval($hf[0])*60+intval($hf[1])) - (intval($hi[0])*60+intval($hi[1]));
-                        $durH = floor($durMin/60);
-                        $durStr = $durH.'h';
-                    @endphp
-                    <tr class="hor-row"
-                        data-grupo="{{ strtolower($g['grupo'].' '.$g['codigo']) }}"
-                        data-programa="{{ strtolower($g['programa']) }}"
-                        data-escuela="{{ $g['escuela'] }}"
-                        data-jornada="{{ $g['jornada'] }}"
-                        data-docente="{{ strtolower($g['docente']) }}">
-                        <td>
-                            <div class="hor-cell-grupo">
-                                <span class="hor-grupo-txt">{{ $g['grupo'] }}</span>
-                                <span class="hor-codigo-txt">{{ $g['codigo'] }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="hor-cell-programa">
-                                <span class="hor-programa-txt">{{ Str::limit($g['programa'], 42) }}</span>
-                                <span class="hor-esc-tag hor-esc-{{ $escCls }}">{{ $g['escuela'] }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="hor-dias-wrap">
-                                @foreach($todosDias as $d)
-                                    <span class="hor-dia-chip {{ in_array($d,$g['dias']) ? 'activo' : '' }}">{{ $diasCodes[$d] }}</span>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td>
-                            <div class="hor-horario-cell">
-                                <span class="hor-hora-rng">{{ $g['hora_inicio'] }} – {{ $g['hora_fin'] }}</span>
-                                <span class="hor-duracion">{{ $durStr }} por sesión</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="hor-jornada-tag hor-jornada-{{ $jorCls }}">{{ $g['jornada'] }}</span>
-                        </td>
-                        <td style="font-size:0.82rem; color:var(--text);">{{ $g['docente'] }}</td>
-                        <td>
-                            <button class="hor-action-btn hor-btn-edit" type="button" data-id="{{ $g['id'] }}" title="Editar">
-                                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
+                {{-- Filas generadas por horarios.js desde HOR_DATA (así "Guardar" se refleja al instante) --}}
+                <tbody id="hor-tbody"></tbody>
             </table>
 
             {{-- Empty state --}}
@@ -253,16 +200,46 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
         </div>
     </div>
 
-    {{-- ── Vista GRILLA ── --}}
+    {{-- ── Vista HORARIO: horario clásico de un grupo o de un docente ── --}}
     <div id="hor-view-grilla" style="display:none;">
-        <div class="hor-grilla-wrap">
-            <div class="hor-grilla" id="hor-grilla">
-                {{-- Cabecera días --}}
-                <div class="hor-grilla-head-cell hor-time-header"></div>
-                @foreach(['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'] as $d)
-                    <div class="hor-grilla-head-cell">{{ Str::upper(Str::substr($d,0,3)) }}</div>
-                @endforeach
-                {{-- Filas generadas por JS --}}
+        <div class="hor-cal-card" id="hor-cal-card">
+
+            <div class="hor-cal-top">
+                <div class="hor-cal-modo" role="tablist" aria-label="Ver horario">
+                    <button type="button" class="hor-cal-modo-btn is-active" data-modo="grupo" role="tab" aria-selected="true">Por grupo</button>
+                    <button type="button" class="hor-cal-modo-btn" data-modo="docente" role="tab" aria-selected="false">Por docente</button>
+                </div>
+
+                <div class="hor-cal-sel">
+                    <button type="button" class="hor-cal-flecha" id="hor-cal-prev" aria-label="Anterior">
+                        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <div class="app-combobox hor-cal-cb" id="hor-cb-ver">
+                        <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                            <span data-combobox-label>Seleccionar</span>
+                            <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="app-combobox-panel" data-combobox-panel hidden>
+                            <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                        </div>
+                        <input type="hidden" id="hor-val-ver" data-combobox-value>
+                    </div>
+                    <button type="button" class="hor-cal-flecha" id="hor-cal-next" aria-label="Siguiente">
+                        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Encabezado del horario (generado por horarios.js) --}}
+            <div class="hor-cal-info" id="hor-cal-info"></div>
+
+            {{-- Tabla días × horas (generada por horarios.js) --}}
+            <div class="hor-cal" id="hor-grilla"></div>
+
+            <div class="hor-empty" id="hor-cal-empty" hidden>
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span class="hor-empty-ttl">Sin horarios para mostrar</span>
+                <span class="hor-empty-sub">Ningún grupo o docente coincide con los filtros.</span>
             </div>
         </div>
     </div>
@@ -285,7 +262,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
             {{-- Grupo --}}
             <div class="hor-form-group">
                 <label class="hor-form-lbl">Grupo</label>
-                <div class="app-combobox" id="hor-cb-grupo-modal" data-position="absolute" data-list-max-height="160">
+                <div class="app-combobox" id="hor-cb-grupo-modal">
                     <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                         <span data-combobox-label>Seleccionar grupo</span>
                         <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -309,28 +286,44 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 </div>
             </div>
 
-            {{-- Días --}}
+            {{-- Días y horas de clase --}}
             <div class="hor-form-group">
-                <label class="hor-form-lbl">Días de clase</label>
+                <div class="hor-ses-head">
+                    <label class="hor-form-lbl">Días de clase</label>
+                    <label class="hor-switch" for="hor-mismo-horario">
+                        <input type="checkbox" id="hor-mismo-horario" checked>
+                        <span class="hor-switch-track" aria-hidden="true"><span class="hor-switch-thumb"></span></span>
+                        <span class="hor-switch-txt">Mismo horario todos los días</span>
+                    </label>
+                </div>
                 <div class="hor-dias-grid">
                     @foreach([['L','Lunes'],['M','Martes'],['Mi','Miércoles'],['J','Jueves'],['V','Viernes'],['S','Sábado']] as [$code,$name])
                     <input class="hor-dia-cb" type="checkbox" id="hor-dia-{{ $code }}" name="dias" value="{{ $name }}">
-                    <label class="hor-dia-lbl" for="hor-dia-{{ $code }}">{{ $code }}</label>
+                    <label class="hor-dia-lbl" for="hor-dia-{{ $code }}" title="{{ $name }}">{{ $code }}</label>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Horas y Jornada --}}
-            <div class="hor-form-row">
+            {{-- Modo 1: un solo rango de horas para todos los días marcados --}}
+            <div class="hor-form-row" id="hor-horas-comunes">
                 <div class="hor-form-group">
-                    <label class="hor-form-lbl">Hora inicio</label>
+                    <label class="hor-form-lbl" for="hor-inp-hinicio">Hora inicio</label>
                     <input class="hor-form-input" id="hor-inp-hinicio" type="time" value="07:00">
                 </div>
                 <div class="hor-form-group">
-                    <label class="hor-form-lbl">Hora fin</label>
+                    <label class="hor-form-lbl" for="hor-inp-hfin">Hora fin</label>
                     <input class="hor-form-input" id="hor-inp-hfin" type="time" value="11:00">
                 </div>
             </div>
+
+            {{-- Modo 2: horas distintas por día (filas generadas por JS) --}}
+            <div class="hor-form-group" id="hor-horas-por-dia" hidden>
+                <label class="hor-form-lbl">Horas por día</label>
+                <div class="hor-ses-list" id="hor-ses-list"></div>
+                <p class="hor-ses-vacio" id="hor-ses-vacio">Marca los días de clase para asignar sus horas.</p>
+            </div>
+
+            <p class="hor-ses-resumen" id="hor-ses-resumen"></p>
 
             {{-- Jornada (auto) --}}
             <div class="hor-form-row">
@@ -340,7 +333,7 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
                 </div>
                 <div class="hor-form-group">
                     <label class="hor-form-lbl">Docente</label>
-                    <div class="app-combobox" id="hor-cb-docente-modal" data-position="absolute" data-list-max-height="140">
+                    <div class="app-combobox" id="hor-cb-docente-modal">
                         <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                             <span data-combobox-label>Seleccionar docente</span>
                             <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -355,12 +348,17 @@ $noche   = count(array_filter($grupos, fn($g) => $g['jornada'] === 'Noche'));
 
         </div>
 
+        <div class="hor-form-error" id="hor-form-error" role="alert" hidden></div>
+
         <div class="hor-modal-foot">
             <button class="hor-btn hor-btn-ghost" id="hor-modal-cancel" type="button">Cancelar</button>
             <button class="hor-btn hor-btn-primary" id="hor-modal-save" type="button">Guardar horario</button>
         </div>
     </div>
 </div>
+
+{{-- Aviso al guardar --}}
+<div class="hor-toast" id="hor-toast" role="status" aria-live="polite" hidden></div>
 
 @endsection
 
