@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Superadmin;
+namespace App\Http\Controllers\Superadmin\Administradores;
 
 use App\Enums\RolUsuario;
 use App\Http\Controllers\Controller;
-use App\Models\Sede;
+use App\Models\Institucional\Sede;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

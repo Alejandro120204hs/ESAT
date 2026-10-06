@@ -181,3 +181,10 @@
     gap: 10px;
     margin-top: 24px;
 }
+
+/* Modal: confirmación de eliminar y errores */
+.esc-modal-texto { margin: 0; font-size: 0.88rem; color: #4B5563; line-height: 1.5; }
+.esc-modal-texto[hidden], #esc-form[hidden] { display: none; }
+.esc-modal-texto strong { color: var(--navy-3); }
+#esc-error { margin: 14px 0 0; }
+.esc-modal-input.is-invalid { border-color: var(--red); }

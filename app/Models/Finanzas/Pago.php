@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Finanzas;
 
+use App\Models\Academico\PeriodoAcademico;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

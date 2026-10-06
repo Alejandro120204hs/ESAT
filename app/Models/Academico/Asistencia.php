@@ -1,33 +1,30 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Academico;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Entrega extends Model
+class Asistencia extends Model
 {
     protected $fillable = [
-        'actividad_id',
+        'curso_id',
         'estudiante_id',
-        'archivo_path',
-        'contenido',
-        'fecha_entrega',
-        'calificacion',
-        'comentario_docente',
+        'fecha',
+        'estado',
     ];
 
     protected function casts(): array
     {
         return [
-            'fecha_entrega' => 'datetime',
-            'calificacion' => 'decimal:2',
+            'fecha' => 'date',
         ];
     }
 
-    public function actividad(): BelongsTo
+    public function curso(): BelongsTo
     {
-        return $this->belongsTo(Actividad::class);
+        return $this->belongsTo(Curso::class);
     }
 
     public function estudiante(): BelongsTo

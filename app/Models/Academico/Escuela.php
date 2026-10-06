@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Academico;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Escuela extends Model
 {
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'sigla'];
 
     public function programas(): HasMany
     {

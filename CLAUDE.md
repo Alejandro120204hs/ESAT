@@ -70,6 +70,33 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   significa que hay bastante CSS/JS duplicado entre archivos (tablas,
   modales, botones) — es intencional, no "arreglar" unificándolo.
 
+## Estructura del backend (MVC)
+
+- **Controladores por rol y por panel**: `app/Http/Controllers/{Rol}/{Panel}/`
+  (ej. `Superadmin/Sedes/SedeController`, `Admin/Programas/ProgramaController`).
+  Validación en Form Requests con la misma estructura:
+  `app/Http/Requests/{Rol}/{Panel}/`, mensajes en español.
+- **Modelos por dominio** (no por rol, porque varios roles comparten las
+  mismas tablas): `app/Models/Academico/` (Escuela, Programa,
+  ProgramaModulo, Curso, Periodo, Asistencia, actividades/evaluaciones),
+  `Finanzas/` (Matricula, Pago), `Institucional/` (Sede, Configuracion),
+  `Sistema/` (Auditoria). `User` se queda en `app/Models/`.
+- Catálogo **global** de escuelas y programas; la oferta de cada sede va en
+  `programa_sede`. El admin solo ve/modifica lo ofertado en su sede.
+- La **cuota del sistema** es global (`configuraciones.cuota_sistema_mensual`),
+  no por programa.
+- Toda acción de crear/editar/eliminar/activar/desactivar se registra con
+  `Auditoria::registrar()`.
+- Los datos de prueba se insertan **directo en la BD** (no seeders), sin
+  marcarlos como ficticios.
+- Datos propios de un rol van en una tabla de perfil 1 a 1 con `users`
+  (ej. `docente_perfiles`: escuela, vinculación, estado), no como columnas
+  nuevas de `users`. Título profesional = `users.profesion`, especialidad =
+  `users.titulo_academico`. Residencia = `departamento_residencia` /
+  `ciudad_residencia` (distinto del lugar de nacimiento).
+- Backend real hecho: Superadmin (Sedes, Administradores) y Admin
+  (Programas y Escuelas, Docentes). El resto del panel Admin sigue siendo maqueta.
+
 ## Bug recurrente a tener en cuenta
 
 Cuando un elemento se oculta/muestra con el atributo `hidden` (JS:

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Superadmin;
+namespace App\Http\Controllers\Superadmin\Sedes;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sede;
+use App\Models\Institucional\Sede;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 

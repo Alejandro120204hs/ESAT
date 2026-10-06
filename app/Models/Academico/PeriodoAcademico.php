@@ -1,33 +1,31 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Academico;
 
+use App\Models\Finanzas\Matricula;
+use App\Models\Finanzas\Pago;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Matricula extends Model
+class PeriodoAcademico extends Model
 {
+    protected $table = 'periodos_academicos';
+
     protected $fillable = [
-        'estudiante_id',
         'programa_id',
-        'sede_id',
-        'periodo_actual_id',
-        'plan_pago',
-        'estado',
+        'numero_periodo',
+        'nombre',
         'fecha_inicio',
+        'fecha_fin',
     ];
 
     protected function casts(): array
     {
         return [
             'fecha_inicio' => 'date',
+            'fecha_fin' => 'date',
         ];
-    }
-
-    public function estudiante(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'estudiante_id');
     }
 
     public function programa(): BelongsTo
@@ -35,14 +33,14 @@ class Matricula extends Model
         return $this->belongsTo(Programa::class);
     }
 
-    public function sede(): BelongsTo
+    public function cursos(): HasMany
     {
-        return $this->belongsTo(Sede::class);
+        return $this->hasMany(Curso::class);
     }
 
-    public function periodoActual(): BelongsTo
+    public function matriculas(): HasMany
     {
-        return $this->belongsTo(PeriodoAcademico::class, 'periodo_actual_id');
+        return $this->hasMany(Matricula::class, 'periodo_actual_id');
     }
 
     public function pagos(): HasMany
