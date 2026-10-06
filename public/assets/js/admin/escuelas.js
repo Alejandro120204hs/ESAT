@@ -13,49 +13,67 @@
     const btnCancel  = document.getElementById('esc-btn-cancel');
     const btnSave    = document.getElementById('esc-btn-save');
     const inpNombre  = document.getElementById('esc-inp-nombre');
+    const formEl     = document.getElementById('esc-form');
+    const confirmEl  = document.getElementById('esc-confirm');
+    const errorEl    = document.getElementById('esc-error');
     const mainTitle  = document.getElementById('prg-main-title');
     const mainSub    = document.getElementById('prg-main-sub');
+    const escuelas   = typeof ESC_DATA !== 'undefined' ? ESC_DATA : [];
+    const util       = window.PRG_UTIL;
+    const TAB_KEY    = 'esat.admin.programas.tab';
 
     const DESC_PROGRAMAS = 'Aquí podrás registrar nuevos programas académicos, consultar y editar los ya existentes, actualizar su estado y organizarlos por nivel, escuela y modalidad.';
     const DESC_ESCUELAS  = 'Gestiona las áreas académicas de la sede. Cada programa pertenece a una escuela.';
 
     let editingId = null;
+    let modo = 'guardar'; // guardar | eliminar
 
     /* ── Tab switching ── */
+    function mostrarTab(target) {
+        tabBtns.forEach(b => b.classList.toggle('is-active', b.dataset.tab === target));
+        tabPanels.forEach(p => p.classList.toggle('is-active', p.id === 'tab-' + target));
+        const esEsc = target === 'escuelas';
+        mainTitle.textContent    = esEsc ? 'Escuelas' : 'Programas académicos';
+        mainSub.textContent      = esEsc ? DESC_ESCUELAS : DESC_PROGRAMAS;
+        btnNuevo.style.display   = esEsc ? 'none' : 'flex';
+        btnNuevaEc.style.display = esEsc ? 'flex' : 'none';
+    }
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const target = btn.dataset.tab;
-            tabBtns.forEach(b => b.classList.remove('is-active'));
-            btn.classList.add('is-active');
-            tabPanels.forEach(p => p.classList.toggle('is-active', p.id === 'tab-' + target));
-
-            if (target === 'escuelas') {
-                mainTitle.textContent    = 'Escuelas';
-                mainSub.textContent      = DESC_ESCUELAS;
-                btnNuevo.style.display   = 'none';
-                btnNuevaEc.style.display = 'flex';
-            } else {
-                mainTitle.textContent    = 'Programas académicos';
-                mainSub.textContent      = DESC_PROGRAMAS;
-                btnNuevo.style.display   = 'flex';
-                btnNuevaEc.style.display = 'none';
-            }
+            mostrarTab(btn.dataset.tab);
+            try { sessionStorage.setItem(TAB_KEY, btn.dataset.tab); } catch (e) {}
         });
     });
+    // Tras guardar se recarga la página: volver a la pestaña en la que estaba
+    try { if (sessionStorage.getItem(TAB_KEY) === 'escuelas') mostrarTab('escuelas'); } catch (e) {}
 
-    /* ── Abrir modal nueva escuela ── */
-    function abrirModal(id = null) {
+    /* ── Modal ── */
+    function abrirModal(id = null, eliminar = false) {
         editingId = id;
-        if (id) {
-            const esc = (typeof ESC_DATA !== 'undefined' ? ESC_DATA : []).find(e => e.id === id);
-            modalTitle.textContent = 'Editar escuela';
-            inpNombre.value = esc ? esc.nombre : '';
+        modo = eliminar ? 'eliminar' : 'guardar';
+        const esc = escuelas.find(e => e.id === id);
+        errorEl.hidden = true;
+        inpNombre.classList.remove('is-invalid');
+        btnSave.disabled = false;
+
+        formEl.hidden = eliminar;
+        confirmEl.hidden = !eliminar;
+        btnSave.className = 'prg-btn ' + (eliminar ? 'prg-btn-danger' : 'prg-btn-primary');
+
+        if (eliminar) {
+            modalTitle.textContent = 'Eliminar escuela';
+            btnSave.textContent = 'Eliminar';
+            confirmEl.innerHTML = esc.programas > 0
+                ? '<strong>' + esc.nombre + '</strong> tiene ' + esc.programas + (esc.programas === 1 ? ' programa' : ' programas') + ' en tu sede. Para eliminarla, primero cambia esos programas a otra escuela.'
+                : '¿Eliminar la escuela <strong>' + esc.nombre + '</strong>? Esta acción no se puede deshacer.';
+            btnSave.disabled = esc.programas > 0;
         } else {
-            modalTitle.textContent = 'Nueva escuela';
-            inpNombre.value = '';
+            modalTitle.textContent = id ? 'Editar escuela' : 'Nueva escuela';
+            btnSave.textContent = 'Guardar';
+            inpNombre.value = esc ? esc.nombre : '';
         }
         modal.hidden = false;
-        inpNombre.focus();
+        (eliminar ? btnCancel : inpNombre).focus();
     }
 
     function cerrarModal() {
@@ -64,43 +82,50 @@
         editingId = null;
     }
 
+    function mostrarError(msg) {
+        errorEl.textContent = msg;
+        errorEl.hidden = false;
+        if (modo === 'guardar') { inpNombre.classList.add('is-invalid'); inpNombre.focus(); }
+    }
+
     if (btnNuevaEc) btnNuevaEc.addEventListener('click', () => abrirModal());
     if (modalClose) modalClose.addEventListener('click', cerrarModal);
     if (btnCancel)  btnCancel.addEventListener('click', cerrarModal);
+    inpNombre.addEventListener('input', () => { inpNombre.classList.remove('is-invalid'); errorEl.hidden = true; });
+    inpNombre.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); btnSave.click(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) cerrarModal(); });
 
     /* Cerrar al hacer clic en backdrop */
-    if (modal) {
-        modal.addEventListener('click', e => {
-            if (e.target === modal) cerrarModal();
-        });
-    }
+    modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
 
-    /* ── Botones editar en las cards ── */
+    /* ── Botones de las tarjetas ── */
     document.querySelectorAll('.esc-btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.id);
-            abrirModal(id);
-        });
+        btn.addEventListener('click', () => abrirModal(parseInt(btn.dataset.id)));
+    });
+    document.querySelectorAll('.esc-btn-del').forEach(btn => {
+        btn.addEventListener('click', () => abrirModal(parseInt(btn.dataset.id), true));
     });
 
-    /* ── Guardar (mock: solo cierra modal) ── */
-    if (btnSave) {
-        btnSave.addEventListener('click', () => {
+    /* ── Guardar / eliminar ── */
+    btnSave.addEventListener('click', () => {
+        errorEl.hidden = true;
+        let peticion;
+        if (modo === 'eliminar') {
+            peticion = util.enviar('DELETE', '/admin/escuelas/' + editingId);
+        } else {
             const nombre = inpNombre.value.trim();
-            if (!nombre) { inpNombre.focus(); return; }
-            cerrarModal();
-        });
-    }
-
-    /* ── Botones eliminar (mock: solo feedback visual) ── */
-    document.querySelectorAll('.esc-btn-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const card = btn.closest('.esc-card');
-            if (card) {
-                card.style.opacity = '0.4';
-                card.style.pointerEvents = 'none';
-            }
-        });
+            if (nombre.length < 3) { mostrarError('Escribe el nombre de la escuela (mínimo 3 letras).'); return; }
+            peticion = editingId
+                ? util.enviar('PUT', '/admin/escuelas/' + editingId, { nombre })
+                : util.enviar('POST', '/admin/escuelas', { nombre });
+        }
+        btnSave.disabled = true;
+        peticion
+            .then(r => util.recargarConAviso(r.mensaje))
+            .catch(err => {
+                btnSave.disabled = false;
+                mostrarError(err.errores && err.errores.nombre ? err.errores.nombre[0] : err.message);
+            });
     });
 
 })();

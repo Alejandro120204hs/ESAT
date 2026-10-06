@@ -1,0 +1,488 @@
+/* ESAT — Admin: Acudientes (mismos estilos que Docentes y Estudiantes) */
+
+.acu-wrap { display: flex; flex-direction: column; gap: 22px; }
+
+/* ── Encabezado ── */
+.acu-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.acu-header > div { flex: 1 1 0; min-width: 0; }
+.acu-title { font-family: 'Archivo', system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); margin: 0; }
+.acu-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin: 3px 0 0; line-height: 1.5; max-width: 68%; }
+
+/* ── Botones ── */
+.acu-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.acu-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.acu-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.acu-btn-primary:hover { background: #c96d1c; }
+.acu-btn-navy { background: var(--navy-2); color: var(--white); }
+.acu-btn-navy:hover { background: var(--navy); }
+.acu-btn-secondary { background: var(--bg); color: var(--navy-3); border-color: var(--line); }
+.acu-btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+.acu-btn-ghost { background: transparent; color: var(--navy-3); border-color: var(--line); }
+.acu-btn-ghost:hover { background: var(--bg); }
+/* Igual que .doc-btn-danger de Docentes */
+.acu-btn-danger { background: rgba(239,68,68,0.08); color: #b91c1c; border-color: rgba(239,68,68,0.2); }
+.acu-btn-danger:hover { background: rgba(239,68,68,0.15); }
+.acu-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.acu-btn-sm { padding: 7px 14px; font-size: 0.82rem; gap: 6px; }
+
+.acu-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+}
+.acu-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.acu-icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+.acu-icon-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ── KPI chips (mismo formato que Docentes) ── */
+.acu-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.acu-kpi-chip {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+}
+.acu-kpi-icon {
+    width: 42px; height: 42px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.acu-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.acu-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; }
+.acu-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.acu-kpi-blue   .acu-kpi-icon { background: rgba(59,130,246,0.1);  color: #2563EB; }
+.acu-kpi-blue   .acu-kpi-val  { color: #1D4ED8; }
+.acu-kpi-green  .acu-kpi-icon { background: rgba(16,185,129,0.1);  color: #059669; }
+.acu-kpi-green  .acu-kpi-val  { color: #065F46; }
+.acu-kpi-orange .acu-kpi-icon { background: rgba(217,123,46,0.1);  color: var(--orange); }
+.acu-kpi-orange .acu-kpi-val  { color: var(--orange); }
+.acu-kpi-navy   .acu-kpi-icon { background: rgba(10,27,51,0.08);   color: var(--navy-3); }
+.acu-kpi-navy   .acu-kpi-val  { color: var(--navy-3); }
+
+/* ── Barra de herramientas ── */
+.acu-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.acu-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.acu-search-wrap { position: relative; display: flex; align-items: center; flex: 1; min-width: 200px; }
+.acu-search-wrap svg { position: absolute; left: 12px; width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; pointer-events: none; }
+.acu-search {
+    width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); background: var(--white); outline: none;
+}
+.acu-search:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,.15); }
+.acu-search::placeholder { color: #8A94A3; }
+.acu-count-badge {
+    font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    background: var(--bg); border: 1.5px solid var(--line);
+    padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+
+/* ── Colores por escuela: los mismos de Docentes (sólido = avatar, tinte = etiqueta) ── */
+.acu-esc-sal { --esc: #DC2626; --esc-suave: rgba(239,68,68,0.12);  --esc-ink: #991B1B; }
+.acu-esc-tur { --esc: #EA580C; --esc-suave: rgba(249,115,22,0.12); --esc-ink: #9A3412; }
+.acu-esc-adm { --esc: #2563EB; --esc-suave: rgba(59,130,246,0.12); --esc-ink: #1E3A8A; }
+.acu-esc-edu { --esc: #059669; --esc-suave: rgba(16,185,129,0.12); --esc-ink: #065F46; }
+.acu-esc-dep { --esc: #D97706; --esc-suave: rgba(234,179,8,0.12);  --esc-ink: #713F12; }
+.acu-esc-cie { --esc: #4F46E5; --esc-suave: rgba(99,102,241,0.12); --esc-ink: #312E81; }
+.acu-esc-bel { --esc: #DB2777; --esc-suave: rgba(236,72,153,0.12); --esc-ink: #9D174D; }
+.acu-esc-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--esc-suave); color: var(--esc-ink); font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
+
+/* ═══ TABLA (mismos estilos que la tabla de Docentes) ═══ */
+.acu-lista-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.acu-lista-wrap[hidden] { display: none; }
+.acu-lista { width: 100%; border-collapse: collapse; }
+.acu-lista thead th {
+    padding: 11px 14px; text-align: left;
+    font-family: "Archivo", system-ui; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg);
+    white-space: nowrap;
+}
+.acu-fila { border-bottom: 1px solid var(--line); cursor: pointer; transition: background 0.14s; }
+.acu-fila:last-child { border-bottom: none; }
+.acu-fila:hover { background: rgba(217,123,46,0.03); }
+.acu-fila:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.acu-fila td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); }
+
+.acu-fila-acu { display: flex; align-items: center; gap: 12px; }
+.acu-fila-datos { display: flex; flex-direction: column; min-width: 0; }
+.acu-fila-foto {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.82rem;
+    background: var(--navy-2); color: var(--white);
+}
+.acu-fila.is-inactiva .acu-fila-foto { background: #94A3B8; }
+.acu-fila-nombre { font-weight: 700; font-size: 0.87rem; color: var(--navy-3); }
+.acu-fila-doc { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--muted); margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.acu-fila-movil { display: none; }
+
+/* Estudiantes a cargo: mini avatar con el color de la escuela (mismo vocabulario que la tabla) */
+.acu-cargo-lista { display: flex; flex-direction: column; gap: 7px; }
+.acu-cargo { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.acu-cargo-foto {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.64rem;
+    background: var(--esc); color: var(--white);
+}
+.acu-cargo.is-fuera .acu-cargo-foto { background: #94A3B8; }
+.acu-cargo-txt { display: flex; flex-direction: column; min-width: 0; }
+.acu-cargo-nombre { font-size: 0.84rem; font-weight: 600; color: var(--navy-3); white-space: nowrap; }
+.acu-cargo-sub { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.acu-sin-cargo { font-size: 0.82rem; color: #A0AABA; }
+
+/* Íconos de alerta (mismos de Estudiantes) */
+.acu-alertas { display: inline-flex; gap: 5px; }
+.acu-alerta-ico {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.acu-alerta-ico svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-alerta-ico.acu-alerta-alta  { background: #FDE7E7; color: #A61B1B; }
+.acu-alerta-ico.acu-alerta-media { background: #FEF1D9; color: #8A4B00; }
+.acu-sin-alertas { color: #A0AABA; }
+
+.acu-fila-wa { display: inline-flex; align-items: center; gap: 6px; color: #127A3E; font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.acu-fila-wa:hover { text-decoration: underline; text-underline-offset: 3px; }
+.acu-fila-wa:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+.acu-fila-wa svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.acu-wa {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #E8F6EE; color: #127A3E; transition: background 0.15s, color 0.15s;
+}
+.acu-wa:hover { background: #127A3E; color: #fff; }
+.acu-wa:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.acu-wa svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Acción: mismo botón de ícono que Docentes */
+.acu-fila-acc { text-align: right; white-space: nowrap; }
+.acu-icon-btn-fila {
+    width: 32px; height: 32px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); transition: border-color 0.15s, color 0.15s;
+}
+.acu-icon-btn-fila svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.acu-icon-btn-fila:hover { border-color: var(--orange); color: var(--orange); }
+.acu-icon-btn-fila:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.acu-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Vacío ── */
+.acu-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+    padding: 56px 20px; background: var(--white); border: 1px dashed #CBD5E1; border-radius: 14px; color: var(--muted);
+}
+.acu-empty[hidden] { display: none; }
+.acu-empty > svg { width: 42px; height: 42px; fill: none; stroke: #9AA6B6; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.acu-empty-ttl { font-size: 1rem; font-weight: 800; color: var(--navy-3); }
+.acu-empty-sub { font-size: 0.86rem; max-width: 420px; line-height: 1.5; margin-bottom: 6px; }
+
+/* ── Paginación (igual que Docentes) ── */
+.acu-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 0; }
+.acu-pagination[hidden] { display: none; }
+.acu-pg-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: var(--radius-md); border: 1.5px solid var(--line);
+    background: var(--white); font-family: "Archivo", system-ui;
+    font-weight: 700; font-size: 0.8rem; color: var(--navy-3);
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.acu-pg-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.acu-pg-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+.acu-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.acu-pg-pages { display: flex; align-items: center; gap: 4px; }
+.acu-pg-num {
+    width: 34px; height: 34px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.82rem;
+    color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.acu-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.acu-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.acu-pg-btn:focus-visible, .acu-pg-num:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ═══ FICHA (panel lateral) — mismo formato que la ficha de Docentes ═══ */
+.acu-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.acu-drawer.is-open { pointer-events: auto; }
+.acu-drawer-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.35); opacity: 0; transition: opacity 0.25s var(--ease-out); }
+.acu-drawer.is-open .acu-drawer-overlay { opacity: 1; }
+.acu-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 580px; max-width: 100vw;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out);
+    box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+.acu-drawer.is-open .acu-drawer-panel { transform: translateX(0); }
+
+.acu-drawer-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); gap: 12px; flex-shrink: 0;
+}
+.acu-drawer-head-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.acu-drawer-avatar {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 1.1rem; color: var(--white);
+    background: var(--navy-2);
+}
+.acu-drawer-avatar.is-inactiva { background: #94A3B8; }
+.acu-drawer-head-info { min-width: 0; }
+.acu-drawer-title { font-family: "Archivo", system-ui; font-size: 1.1rem; font-weight: 900; color: var(--navy-3); margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acu-drawer-doc { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.acu-drawer-badges { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+
+.acu-fi-tabs {
+    display: flex; border-bottom: 1px solid var(--line);
+    padding: 0 16px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+}
+.acu-fi-tabs[hidden] { display: none; }
+.acu-fi-tabs::-webkit-scrollbar { display: none; }
+.acu-fi-tab {
+    padding: 11px 14px; border: none; background: none; cursor: pointer;
+    font-family: "Archivo", system-ui; font-size: 0.8rem; font-weight: 700;
+    color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+}
+.acu-fi-tab:hover { color: var(--navy-3); }
+.acu-fi-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+.acu-fi-tab:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+
+.acu-drawer-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.acu-drawer-body[hidden] { display: none; }
+.acu-drawer-body > *, .acu-fi-panel > *, #acu-accion-cuerpo > * { flex-shrink: 0; }
+.acu-drawer-body, .acu-modal-body { scrollbar-width: thin; scrollbar-color: #B8C4D3 transparent; }
+.acu-drawer-body::-webkit-scrollbar, .acu-modal-body::-webkit-scrollbar { width: 10px; }
+.acu-drawer-body::-webkit-scrollbar-track, .acu-modal-body::-webkit-scrollbar-track { background: transparent; }
+.acu-drawer-body::-webkit-scrollbar-thumb, .acu-modal-body::-webkit-scrollbar-thumb { background: #B8C4D3; border-radius: 8px; border: 3px solid var(--white); }
+.acu-fi-panel { display: flex; flex-direction: column; gap: 18px; }
+
+.acu-drawer-foot {
+    padding: 14px 24px; border-top: 1.5px solid var(--line);
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;
+}
+.acu-drawer-foot[hidden] { display: none; }
+#acu-accion-foot { justify-content: space-between; }
+
+/* Rejilla de información como .doc-info-grid */
+.acu-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.acu-info-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.acu-info-full { grid-column: 1 / -1; }
+.acu-info-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.acu-info-val { font-size: 0.9rem; font-weight: 600; color: var(--navy-3); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
+/* Secciones como .doc-programas-section */
+.acu-sec { border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.acu-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.acu-sec-title { margin: 0; font-size: 0.71rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.acu-sec-dato { font-size: 0.85rem; font-weight: 700; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.acu-sec-nota { margin: 0; font-size: 0.85rem; color: #4B5563; line-height: 1.5; }
+.acu-sec-acc { display: flex; }
+
+.acu-contactos { display: flex; flex-wrap: wrap; gap: 6px; }
+.acu-contacto {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+    background: var(--bg); border: 1.5px solid var(--line); color: var(--navy-3);
+    font-size: 0.78rem; font-weight: 600; text-decoration: none; transition: border-color 0.15s, color 0.15s;
+}
+.acu-contacto:hover { border-color: var(--orange); color: var(--orange); }
+.acu-contacto:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.acu-contacto svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-contacto-wa { color: #127A3E; }
+
+.acu-fi-alertas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.acu-fi-alertas li { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: var(--radius-md); font-size: 0.84rem; font-weight: 600; }
+.acu-fi-alertas li svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-fi-alertas .acu-alerta-alta  { background: #FDECEC; color: #8F1717; }
+.acu-fi-alertas .acu-alerta-media { background: #FEF4E0; color: #7A4300; }
+
+.acu-callout { padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg); border: 1.5px solid var(--line); }
+.acu-callout strong { display: block; font-size: 0.88rem; color: var(--navy-3); }
+.acu-callout p { margin: 4px 0 0; font-size: 0.84rem; line-height: 1.5; color: #4B5563; }
+.acu-callout-alerta { background: #FDF1F1; border-color: #F3CACA; }
+.acu-callout-alerta strong { color: #8F1717; }
+.acu-callout-aviso { background: #FFF8EB; border-color: #F3DDB0; }
+.acu-num-inline { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+/* Tarjeta de estudiante a cargo (ficha) — mismo borde y radio que las opciones de grupo de Estudiantes */
+.acu-est-lista { display: flex; flex-direction: column; gap: 10px; }
+.acu-est-card { display: flex; flex-direction: column; gap: 12px; padding: 14px; background: var(--white); border: 1.5px solid #DCE3EC; border-radius: 12px; }
+.acu-est-top { display: flex; align-items: center; gap: 12px; }
+.acu-est-foto {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.82rem;
+    background: var(--esc); color: var(--white);
+}
+.acu-est-card.is-fuera .acu-est-foto { background: #94A3B8; }
+.acu-est-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.acu-est-info strong { font-size: 0.92rem; color: var(--navy-3); }
+.acu-est-info span { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.acu-est-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.acu-est-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 12px; border-top: 1px dashed #D5DDE7; }
+.acu-est-pie { display: flex; justify-content: flex-end; }
+.acu-link-btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px; border: none; background: none; cursor: pointer;
+    font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #b91c1c; border-radius: 6px;
+}
+.acu-link-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-link-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.acu-link-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* Vista de acción */
+.acu-back {
+    display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+    padding: 4px 8px 4px 2px; border: none; background: none; cursor: pointer;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700; color: var(--navy-2);
+}
+.acu-back svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-back:hover { color: var(--orange-2); }
+.acu-back:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
+.acu-accion-ttl { margin: 0; font-family: "Archivo", system-ui; font-size: 1.1rem; font-weight: 900; color: var(--navy-3); }
+.acu-accion-sub { margin: -8px 0 0; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+.acu-accion-sub:empty { display: none; }
+#acu-accion-cuerpo { display: flex; flex-direction: column; gap: 14px; }
+
+/* ═══ FORMULARIOS ═══ */
+.acu-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.acu-field[hidden] { display: none; }
+.acu-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.acu-lbl { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.acu-lbl em { font-style: normal; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.acu-input {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); background: var(--white); outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.acu-input::placeholder { color: #8A94A3; }
+.acu-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,.15); }
+.acu-input:disabled { background: var(--bg); color: var(--muted); }
+.acu-input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,.1); }
+.acu-num { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+.acu-form-error {
+    padding: 10px 12px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FECACA;
+    color: var(--red); font-size: 0.84rem; font-weight: 600; line-height: 1.45;
+}
+.acu-form-error[hidden] { display: none; }
+
+.acu-nota { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #EEF3FA; color: var(--navy-2); }
+.acu-nota[hidden] { display: none; }
+.acu-nota svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-nota p { margin: 0; font-size: 0.84rem; line-height: 1.5; }
+
+.acu-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.acu-chip { cursor: pointer; }
+.acu-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.acu-chip span {
+    display: inline-block; padding: 7px 13px; border-radius: 999px; border: 1.5px solid #DCE3EC; background: var(--white);
+    font-size: 0.82rem; font-weight: 700; color: var(--navy-3); transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.acu-chip:hover span { border-color: #AFC0D4; }
+.acu-chip input:checked + span { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
+.acu-chip input:focus-visible + span { box-shadow: 0 0 0 3px rgba(217,123,46,.3); }
+
+.acu-agregar-row { display: flex; }
+
+/* Estudiantes vinculados en el asistente */
+.acu-vinculos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.acu-vinculo { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid #DCE3EC; border-radius: 12px; background: var(--white); }
+.acu-vinculo .acu-est-info { gap: 1px; }
+.acu-vinculo-aviso { display: block; font-size: 0.76rem; font-weight: 600; color: #8A4B00; }
+.acu-vinculos-vacio { margin: 0; padding: 14px; border: 1px dashed #CBD5E1; border-radius: 12px; font-size: 0.84rem; color: var(--muted); text-align: center; }
+
+.acu-resumen { padding: 14px; border-radius: 12px; background: #F6F8FB; border: 1px solid #E2E8F0; }
+.acu-resumen[hidden] { display: none; }
+.acu-resumen h4 { margin: 0 0 10px; font-size: 0.86rem; font-weight: 800; color: var(--navy-3); }
+
+/* ═══ ASISTENTE (modal) — mismo formato que el asistente de Docentes ═══ */
+.acu-modal { position: fixed; inset: 0; z-index: 300; display: none; }
+.acu-modal.is-open { display: flex; align-items: center; justify-content: center; }
+.acu-modal-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.acu-modal-box {
+    position: relative; z-index: 1; width: 560px; max-width: calc(100vw - 40px);
+    background: var(--white); border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    display: flex; flex-direction: column; max-height: calc(100vh - 60px);
+    animation: acuModalIn 0.22s var(--ease-out);
+}
+@keyframes acuModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+.acu-modal-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 20px 20px 14px; border-bottom: 1.5px solid var(--line);
+}
+.acu-modal-ttl  { font-size: 1.05rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.acu-modal-paso { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+
+/* Indicador de pasos */
+.acu-wsteps { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); gap: 0; }
+.acu-wstep { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.acu-wstep-dot {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line);
+    background: var(--bg); flex-shrink: 0; transition: border-color 0.2s, background 0.2s;
+}
+.acu-wstep span { font-size: 0.74rem; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color 0.2s; }
+.acu-wstep.is-active .acu-wstep-dot { border-color: var(--orange); background: var(--orange); }
+.acu-wstep.is-active span { color: var(--orange); }
+.acu-wstep.is-done .acu-wstep-dot { border-color: #059669; background: #059669; }
+.acu-wstep.is-done span { color: #059669; }
+.acu-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
+
+.acu-modal-body { flex: 1; overflow-y: auto; }
+.acu-mstep { display: none; flex-direction: column; gap: 14px; padding: 20px; }
+.acu-mstep.is-active { display: flex; }
+#reg-error { margin: 0 20px 20px; }
+
+.acu-modal-foot {
+    padding: 14px 20px; border-top: 1.5px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+
+/* ── Aviso ── */
+.acu-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: #fff;
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.acu-toast.is-visible { opacity: 1; transform: none; }
+.acu-toast[hidden] { display: none; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .acu-kpis { grid-template-columns: repeat(2, 1fr); }
+    .acu-form-row { grid-template-columns: 1fr; }
+    .acu-sub { max-width: none; }
+    .acu-filtros { width: 100%; }
+    .acu-search-wrap, .acu-search { width: 100%; }
+    .acu-filtros .app-combobox { flex: 1 1 200px; }
+    .acu-lista th:nth-child(2), .acu-fila td:nth-child(2),
+    .acu-lista th:nth-child(4), .acu-fila td:nth-child(4),
+    .acu-lista th:nth-child(5), .acu-fila td:nth-child(5) { display: none; }
+    .acu-fila-movil { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .acu-fila-doc { white-space: normal; flex-wrap: wrap; }
+    .acu-fila-movil-est { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+    .acu-fila-movil-acc { display: flex; align-items: center; gap: 6px; }
+    .acu-est-datos { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+    .acu-form-row, .acu-info-grid { grid-template-columns: 1fr; }
+    .acu-info-full { grid-column: 1; }
+    .acu-lista th:nth-child(6), .acu-fila td:nth-child(6) { display: none; }
+    .acu-sub { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .acu-fila td { padding: 12px 10px; }
+    .acu-wstep:not(.is-active) span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .acu-drawer-panel, .acu-toast, .acu-drawer-overlay { transition: none; }
+    .acu-modal-box { animation: none; }
+}

@@ -70,6 +70,43 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   significa que hay bastante CSS/JS duplicado entre archivos (tablas,
   modales, botones) — es intencional, no "arreglar" unificándolo.
 
+## Estructura del backend (MVC)
+
+- **Controladores por rol y por panel**: `app/Http/Controllers/{Rol}/{Panel}/`
+  (ej. `Superadmin/Sedes/SedeController`, `Admin/Programas/ProgramaController`).
+  Validación en Form Requests con la misma estructura:
+  `app/Http/Requests/{Rol}/{Panel}/`, mensajes en español.
+- **Modelos por dominio** (no por rol, porque varios roles comparten las
+  mismas tablas): `app/Models/Academico/` (Escuela, Programa,
+  ProgramaModulo, Curso, Periodo, Asistencia, actividades/evaluaciones),
+  `Finanzas/` (Matricula, Pago), `Institucional/` (Sede, Configuracion),
+  `Sistema/` (Auditoria). `User` se queda en `app/Models/`.
+- Catálogo **global** de escuelas y programas; la oferta de cada sede va en
+  `programa_sede`. El admin solo ve/modifica lo ofertado en su sede.
+- La **cuota del sistema** es global (`configuraciones.cuota_sistema_mensual`),
+  no por programa.
+- Toda acción de crear/editar/eliminar/activar/desactivar se registra con
+  `Auditoria::registrar()`.
+- Los datos de prueba se insertan **directo en la BD** (no seeders), sin
+  marcarlos como ficticios.
+- Datos propios de un rol van en una tabla de perfil 1 a 1 con `users`
+  (ej. `docente_perfiles`: escuela, vinculación, estado), no como columnas
+  nuevas de `users`. Título profesional = `users.profesion`, especialidad =
+  `users.titulo_academico`. Residencia = `departamento_residencia` /
+  `ciudad_residencia` (distinto del lugar de nacimiento).
+- Grupos = tabla `cursos` (`nombre` = "Grupo A"). Modalidad y cupo NO se
+  guardan en el grupo: son siempre los del programa (se editan en Programas).
+  El programa no tiene fecha de inicio: la tiene cada grupo, y su `fecha_fin`
+  no se escribe, es `Curso::finPara()` = inicio + duración del programa (si
+  cambia la duración del programa se recalculan sus grupos). Editar un
+  programa no puede invalidar sus grupos vigentes (cupo, jornadas, horas).
+  Docente vía `curso_docente`
+  (uno por grupo); horario semanal en `curso_sesiones`. Las reglas de horario
+  (tope de horas del programa, cruces de docente) viven en
+  `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
+- Backend real hecho: Superadmin (Sedes, Administradores) y Admin
+  (Programas y Escuelas, Docentes, Grupos). El resto del panel Admin sigue siendo maqueta.
+
 ## Bug recurrente a tener en cuenta
 
 Cuando un elemento se oculta/muestra con el atributo `hidden` (JS:
@@ -79,6 +116,12 @@ navegador (el `display` de un autor gana sobre el `display:none` del
 user-agent). Ya pasó varias veces (paginación, lista de combobox, panel de
 combobox). Siempre que se le ponga `display:` a algo que también se oculta
 vía `hidden`, agregar explícitamente `.clase[hidden] { display: none; }`.
+
+Otro del combobox: se recoloca con `window.addEventListener('scroll', …, true)`,
+que también captura el scroll de **su propia lista**; como `posicionar()`
+reinicia `list.style.maxHeight`, la lista volvía al inicio y no dejaba bajar.
+El listener debe ser `alScroll(e)`, que ignora `e.target` dentro del panel.
+Al copiar el combobox a otra pantalla, copiar también `alScroll`.
 
 ## Combobox propio (departamento/ciudad de Colombia)
 

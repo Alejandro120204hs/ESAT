@@ -2,6 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Academico\Actividad;
+use App\Models\Academico\Asistencia;
+use App\Models\Academico\Curso;
+use App\Models\Academico\DocentePerfil;
+use App\Models\Academico\Entrega;
+use App\Models\Academico\Evaluacion;
+use App\Models\Finanzas\Matricula;
+use App\Models\Institucional\Sede;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RolUsuario;
 use Database\Factories\UserFactory;
@@ -10,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -35,8 +44,11 @@ class User extends Authenticatable
         'numero_documento',
         'fecha_nacimiento',
         'lugar_nacimiento',
+        'departamento_nacimiento',
         'genero',
         'direccion',
+        'departamento_residencia',
+        'ciudad_residencia',
         'profesion',
         'titulo_academico',
         'activo',
@@ -123,6 +135,12 @@ class User extends Authenticatable
     public function sede(): BelongsTo
     {
         return $this->belongsTo(Sede::class);
+    }
+
+    /** Datos propios del rol docente (escuela, vinculación, estado). */
+    public function docentePerfil(): HasOne
+    {
+        return $this->hasOne(DocentePerfil::class);
     }
 
     /** Programas en los que este usuario (como estudiante) está matriculado. */

@@ -108,7 +108,7 @@
 .cur-cupo-nums { font-size: 0.8rem; font-weight: 700; color: var(--navy-3); }
 .cur-cupo-nums span { font-weight: 400; color: var(--muted); }
 .cur-cupo-bar { height: 5px; background: var(--bg-2); border-radius: 99px; overflow: hidden; }
-.cur-cupo-fill { height: 100%; border-radius: 99px; background: var(--orange); transition: width 0.4s; }
+.cur-cupo-fill { height: 100%; border-radius: 99px; background: var(--orange); }
 .cur-cupo-fill.is-full { background: #dc2626; }
 .cur-cupo-fill.is-low  { background: #16a34a; }
 
@@ -120,6 +120,7 @@
 .cur-esc-tag {
     display: inline-block; padding: 3px 9px; border-radius: 99px;
     font-size: 0.72rem; font-weight: 700;
+    background: #F1F5F9; color: #475569; /* escuelas nuevas sin color propio */
 }
 .cur-esc-sal { background: #fef2f2; color: #b91c1c; }
 .cur-esc-tur { background: #fff7ed; color: #c2410c; }
@@ -340,3 +341,38 @@
 }
 .cur-step-lbl { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
 .cur-modal-foot-btns { display: flex; gap: 10px; }
+
+/* ── Ayuda bajo un campo ── */
+.cur-form-hint { display: block; margin-top: 5px; font-size: 0.74rem; color: var(--muted); line-height: 1.4; }
+.cur-form-hint:empty { display: none; }
+
+/* ── Errores del formulario (mismo estilo que Estudiantes) ── */
+.cur-form-error {
+    margin: 0 24px 16px; padding: 10px 12px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FECACA;
+    color: var(--red); font-size: 0.84rem; font-weight: 600; line-height: 1.45;
+}
+.cur-form-error[hidden] { display: none; }
+.cur-form-input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,.1); }
+.cur-btn:disabled { opacity: 0.55; cursor: progress; }
+
+/* ── Sesiones del horario en la ficha ── */
+.cur-ses-lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cur-ses-item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: var(--radius-md); background: var(--bg); font-size: 0.84rem; }
+.cur-ses-item strong { color: var(--navy-3); }
+.cur-ses-item span { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ── Aviso al guardar ── */
+.cur-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: #fff;
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.cur-toast.is-visible { opacity: 1; transform: none; }
+.cur-toast[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .cur-toast { transition: none; } }
+
+/* Datos que vienen del programa: solo lectura */
+.cur-form-input[readonly] { background: var(--bg); color: var(--navy-3); cursor: default; }
+.cur-form-input[readonly]:focus { border-color: var(--line); }
+.cur-form-hint.full { grid-column: 1 / -1; margin-top: -6px; }

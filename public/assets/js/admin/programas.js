@@ -2,12 +2,60 @@
 (function () {
     'use strict';
 
-    var data = window.PRG_DATA || [];
+    var data  = window.PRG_DATA || [];
+    var cuota = window.PRG_CUOTA || 0;
+    var opc   = window.PRG_OPC || { niveles: [], modalidades: [], jornadas: [] };
+    var csrf  = (document.querySelector('meta[name="csrf-token"]') || {}).content;
+    var FLASH = 'esat.admin.programas.aviso';
 
     /* ── Utilidades ───────────────────────────── */
     function fmt(n) {
         return '$ ' + Number(n).toLocaleString('es-CO');
     }
+    function esc(str) {
+        return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+            return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+        });
+    }
+
+    /* Petición JSON al backend; los errores de validación (422) llegan con su mensaje */
+    function enviar(metodo, url, cuerpo) {
+        return fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok) {
+                    var err = new Error(j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = j.errors || null;
+                    throw err;
+                }
+                return j;
+            });
+        });
+    }
+    /* Guarda el aviso y recarga: la tabla y los KPI salen del servidor */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(FLASH, msg); } catch (e) {}
+        location.reload();
+    }
+    var toastEl = document.getElementById('prg-toast');
+    function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.hidden = false;
+        requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
+        setTimeout(function () {
+            toastEl.classList.remove('is-visible');
+            setTimeout(function () { toastEl.hidden = true; }, 220);
+        }, 4200);
+    }
+    try {
+        var aviso = sessionStorage.getItem(FLASH);
+        if (aviso) { sessionStorage.removeItem(FLASH); toast(aviso); }
+    } catch (e) {}
+    window.PRG_UTIL = { enviar: enviar, recargarConAviso: recargarConAviso };
     function badge(estado) {
         var map = {
             activo:         '<span class="app-status-tag app-status-active">Activo</span>',
@@ -16,9 +64,9 @@
         };
         return map[estado] || '';
     }
-    function escClass(escuela) {
-        var m = { 'Salud':'sal','Cocina y Turismo':'tur','Administrativa':'adm','Educación e Idiomas':'edu','Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel' };
-        return m[escuela] || 'adm';
+    /* El color de la escuela sale de su sigla (sal, tur, adm...) */
+    function escClass(p) {
+        return p.sigla || 'adm';
     }
 
     /* ── Filtros / búsqueda / paginación ─────────────── */
@@ -166,36 +214,39 @@
         set('dw-duracion',   Number(p.horas).toLocaleString('es-CO') + ' h · ' + p.meses + ' meses');
         set('dw-jornadas',   p.jornadas.join(' · '));
         set('dw-cupo',       p.cupo + ' estudiantes por grupo');
-        set('dw-resolucion', p.resolucion);
-        set('dw-descripcion',p.descripcion);
-        set('dw-perfil',     p.perfil_egreso);
+        set('dw-resolucion', p.resolucion || 'Sin registrar');
+        set('dw-descripcion',p.descripcion || 'Sin descripción.');
+        set('dw-perfil',     p.perfil_egreso || 'Sin registrar.');
         set('dw-valor-programa', fmt(p.valor_programa));
         set('dw-matricula',      fmt(p.matricula));
-        set('dw-valor-mensual',  fmt(p.valor_mensual) + ' / mes');
-        html('dw-badges',        badge(p.estado) + ' <span class="prg-esc-tag prg-esc-' + escClass(p.escuela) + '">' + p.escuela + '</span>');
-        set('dw-doc-res',    p.resolucion);
-        set('dw-est-txt',    p.estudiantes + ' estudiantes matriculados en este programa');
+        set('dw-valor-mensual',  fmt(cuota) + ' / mes');
+        set('dw-periodos',       p.periodos + ' ' + (p.tipo_periodo === 'semestre' ? (p.periodos === 1 ? 'semestre' : 'semestres') : (p.periodos === 1 ? 'trimestre' : 'trimestres')));
+        html('dw-badges',        badge(p.estado) + ' <span class="prg-esc-tag prg-esc-' + escClass(p) + '">' + esc(p.escuela) + '</span>');
+        set('dw-doc-res',    p.resolucion || 'Sin registrar');
+        set('dw-est-txt',    p.estudiantes === 1 ? '1 estudiante matriculado en este programa' : p.estudiantes + ' estudiantes matriculados en este programa');
 
         // Módulos
         var tbody = document.getElementById('dw-modulos-body');
         if (tbody) {
             var totalH = 0;
-            tbody.innerHTML = p.modulos.map(function (m, i) {
+            tbody.innerHTML = p.modulos.length ? p.modulos.map(function (m, i) {
                 totalH += m.horas;
                 return '<tr>'
                     + '<td class="prg-mod-num">' + (i+1) + '</td>'
-                    + '<td>' + m.nombre + '</td>'
+                    + '<td>' + esc(m.nombre) + '</td>'
                     + '<td class="prg-mod-horas">' + m.horas + ' h</td>'
-                    + '<td class="prg-mod-docente">' + m.docente + '</td>'
+                    + '<td class="prg-mod-docente">' + esc(m.docente) + '</td>'
                     + '</tr>';
-            }).join('');
+            }).join('') : '<tr><td colspan="4" class="prg-mod-docente">Este programa todavía no tiene módulos registrados.</td></tr>';
             set('dw-horas-total', Number(totalH).toLocaleString('es-CO') + ' h totales');
         }
 
         // Grupos
         var gruposGrid = document.getElementById('dw-grupos-grid');
         if (gruposGrid) {
-            gruposGrid.innerHTML = p.grupos.map(function (g) {
+            gruposGrid.innerHTML = !p.grupos.length
+                ? '<div class="prg-placeholder"><p>Este programa todavía no tiene grupos en tu sede</p><span>Los grupos se crean en el módulo Grupos</span></div>'
+                : p.grupos.map(function (g) {
                 var pct = Math.round((g.inscritos / g.cupo) * 100);
                 return '<div class="prg-grupo-card">'
                     + '<div>'
@@ -272,6 +323,18 @@
         });
     }
 
+    // Activar / desactivar desde el drawer
+    var toggleEstadoBtn = document.getElementById('prg-drawer-toggle-btn');
+    if (toggleEstadoBtn) {
+        toggleEstadoBtn.addEventListener('click', function () {
+            if (!currentPrg) return;
+            toggleEstadoBtn.disabled = true;
+            enviar('PATCH', '/admin/programas/' + currentPrg.id + '/estado')
+                .then(function (r) { recargarConAviso(r.mensaje); })
+                .catch(function (err) { toggleEstadoBtn.disabled = false; toast(err.message); });
+        });
+    }
+
     /* ── Modal wizard ─────────────────────────── */
     var modal        = document.getElementById('prg-modal');
     var modalOverlay = document.getElementById('prg-modal-overlay');
@@ -282,15 +345,45 @@
     var modalTitle   = document.getElementById('prg-modal-title');
     var currentStep  = 1;
     var totalSteps   = 3;
+    var editandoId   = null;
+    var formError    = document.getElementById('prg-form-error');
+
+    function campo(id) { return document.getElementById(id); }
+    function valor(id) { return (campo(id).value || '').trim(); }
 
     function openModal(id) {
         currentStep = 1;
-        renderStep();
-        if (id) {
-            modalTitle.textContent = 'Editar programa';
+        editandoId = id || null;
+        limpiarErrores();
+        var p = id ? data.find(function (x) { return x.id === id; }) : null;
+        modalTitle.textContent = p ? 'Editar programa' : 'Nuevo programa';
+
+        campo('prg-inp-nombre').value      = p ? p.nombre : '';
+        campo('prg-inp-codigo').value      = p ? p.codigo : '';
+        campo('prg-inp-resolucion').value  = p ? (p.resolucion || '') : '';
+        campo('prg-inp-horas').value       = p ? p.horas : '';
+        campo('prg-inp-descripcion').value = p ? (p.descripcion || '') : '';
+        campo('prg-inp-perfil').value      = p ? (p.perfil_egreso || '') : '';
+        campo('prg-inp-cupo').value        = p ? p.cupo : '';
+        campo('prg-inp-meses').value       = p ? p.meses : '';
+        campo('prg-inp-valor-programa').value = p ? p.valor_programa : '';
+        campo('prg-inp-matricula').value   = p ? p.matricula : '';
+        document.querySelectorAll('#prg-inp-jornadas input').forEach(function (c) {
+            c.checked = !!p && p.jornadas.indexOf(c.value) >= 0;
+        });
+        if (p) {
+            cbNivel.setValue(p.nivel, p.nivel, { silent: true });
+            cbEscuela.setValue(String(p.escuela_id), p.escuela, { silent: true });
+            cbModalidad.setValue(p.modalidad, p.modalidad, { silent: true });
+            cbPeriodo.setValue(p.tipo_periodo, p.tipo_periodo === 'semestre' ? 'Semestre' : 'Trimestre', { silent: true });
+            cbEstado.setValue(p.estado, ESTADO_LBL[p.estado], { silent: true });
         } else {
-            modalTitle.textContent = 'Nuevo programa';
+            cbNivel.reset(); cbEscuela.reset(); cbPeriodo.reset();
+            cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
+            cbEstado.setValue('activo', 'Activo', { silent: true });
         }
+        pintarPeriodos();
+        renderStep();
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -305,11 +398,6 @@
     if (modalClose)   modalClose.addEventListener('click', closeModal);
 
     document.getElementById('btn-nuevo')?.addEventListener('click', function () { openModal(null); });
-    // Acceso rápido desde el Inicio: /admin/programas#nuevo abre el modal de crear
-    if (location.hash === '#nuevo') {
-        openModal(null);
-        history.replaceState(null, '', location.pathname);
-    }
 
     function renderStep() {
         // Steps
@@ -323,17 +411,118 @@
         });
         if (stepLbl) stepLbl.textContent = 'Paso ' + currentStep + ' de ' + totalSteps;
         if (btnBack) btnBack.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-        if (btnNext) btnNext.textContent = currentStep === totalSteps ? 'Guardar programa' : 'Siguiente';
+        if (btnNext) btnNext.textContent = currentStep === totalSteps ? (editandoId ? 'Guardar cambios' : 'Guardar programa') : 'Siguiente';
+        if (formError) formError.hidden = true;
+        var body = modal.querySelector('.prg-modal-body');
+        if (body) body.scrollTop = 0;
+    }
+
+    /* ── Validación por paso (el servidor vuelve a validar todo) ── */
+    function limpiarErrores() {
+        if (formError) formError.hidden = true;
+        modal.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+    }
+    function marcarError(msg, id) {
+        formError.textContent = msg;
+        formError.hidden = false;
+        var el = id && campo(id);
+        if (el) {
+            var marca = el.closest('.prg-input-pfx') || el;
+            marca.classList.add('is-invalid');
+            var foco = el.querySelector ? (el.querySelector('[data-combobox-trigger], input') || el) : el;
+            foco.focus();
+        }
+        return false;
+    }
+    function jornadasMarcadas() {
+        return Array.prototype.map.call(document.querySelectorAll('#prg-inp-jornadas input:checked'), function (c) { return c.value; });
+    }
+    function validarPaso(paso) {
+        limpiarErrores();
+        if (paso === 1) {
+            if (valor('prg-inp-nombre').length < 5) return marcarError('Escribe el nombre del programa.', 'prg-inp-nombre');
+            if (!cbNivel.value()) return marcarError('Selecciona el nivel.', 'prg-cb-nivel');
+            if (!cbEscuela.value()) return marcarError('Selecciona la escuela.', 'prg-cb-escuela');
+            if (!cbModalidad.value()) return marcarError('Selecciona la modalidad.', 'prg-cb-modalidad');
+            var h = parseInt(valor('prg-inp-horas'));
+            if (!(h >= 1 && h <= 5000)) return marcarError('Escribe la duración en horas (máximo 5.000).', 'prg-inp-horas');
+        }
+        if (paso === 2) {
+            if (!jornadasMarcadas().length) return marcarError('Selecciona al menos una jornada.', 'prg-inp-jornadas');
+            var c = parseInt(valor('prg-inp-cupo'));
+            if (!(c >= 1 && c <= 60)) return marcarError('El cupo por grupo debe estar entre 1 y 60 estudiantes.', 'prg-inp-cupo');
+            var m = parseInt(valor('prg-inp-meses'));
+            if (!(m >= 1 && m <= 60)) return marcarError('Indica la duración en meses (entre 1 y 60).', 'prg-inp-meses');
+            if (!cbPeriodo.value()) return marcarError('Selecciona si el programa va por semestres o trimestres.', 'prg-cb-periodo');
+            if (!cbEstado.value()) return marcarError('Selecciona el estado del programa.', 'prg-cb-estado');
+        }
+        if (paso === 3) {
+            var v = parseFloat(valor('prg-inp-valor-programa'));
+            var mt = parseFloat(valor('prg-inp-matricula'));
+            if (!(v >= 0) || valor('prg-inp-valor-programa') === '') return marcarError('Escribe el valor total del programa.', 'prg-inp-valor-programa');
+            if (!(mt >= 0) || valor('prg-inp-matricula') === '') return marcarError('Escribe el valor de la matrícula.', 'prg-inp-matricula');
+            if (mt > v) return marcarError('La matrícula no puede ser mayor que el valor total del programa.', 'prg-inp-matricula');
+        }
+        return true;
+    }
+
+    /* Campo del servidor → campo del formulario y paso donde está */
+    var CAMPOS = {
+        nombre: ['prg-inp-nombre', 1], codigo: ['prg-inp-codigo', 1], resolucion: ['prg-inp-resolucion', 1],
+        nivel: ['prg-cb-nivel', 1], escuela_id: ['prg-cb-escuela', 1], modalidad: ['prg-cb-modalidad', 1],
+        horas: ['prg-inp-horas', 1], descripcion: ['prg-inp-descripcion', 1], perfil_egreso: ['prg-inp-perfil', 1],
+        jornadas: ['prg-inp-jornadas', 2], cupo_grupo: ['prg-inp-cupo', 2],
+        duracion_meses: ['prg-inp-meses', 2], tipo_periodo: ['prg-cb-periodo', 2], estado: ['prg-cb-estado', 2],
+        precio_total: ['prg-inp-valor-programa', 3], matricula: ['prg-inp-matricula', 3]
+    };
+
+    function guardar() {
+        var cuerpo = {
+            nombre: valor('prg-inp-nombre'), codigo: valor('prg-inp-codigo'), resolucion: valor('prg-inp-resolucion'),
+            nivel: cbNivel.value(), escuela_id: cbEscuela.value(), modalidad: cbModalidad.value(),
+            horas: valor('prg-inp-horas'), descripcion: valor('prg-inp-descripcion'), perfil_egreso: valor('prg-inp-perfil'),
+            jornadas: jornadasMarcadas(), cupo_grupo: valor('prg-inp-cupo'),
+            duracion_meses: valor('prg-inp-meses'), tipo_periodo: cbPeriodo.value(), estado: cbEstado.value(),
+            precio_total: valor('prg-inp-valor-programa'), matricula: valor('prg-inp-matricula')
+        };
+        btnNext.disabled = true;
+        enviar(editandoId ? 'PUT' : 'POST', editandoId ? '/admin/programas/' + editandoId : '/admin/programas', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) {
+                btnNext.disabled = false;
+                var clave = err.errores && Object.keys(err.errores)[0];
+                var base = clave && clave.split('.')[0];
+                if (base && CAMPOS[base]) {
+                    currentStep = CAMPOS[base][1];
+                    renderStep();
+                    marcarError(err.errores[clave][0], CAMPOS[base][0]);
+                } else {
+                    marcarError(err.message);
+                }
+            });
     }
 
     if (btnNext) {
         btnNext.addEventListener('click', function () {
+            if (!validarPaso(currentStep)) return;
             if (currentStep < totalSteps) {
                 currentStep++;
                 renderStep();
             } else {
-                closeModal();
+                guardar();
             }
+        });
+    }
+    if (modal) {
+        modal.addEventListener('input', function (e) {
+            var m = e.target.closest('.is-invalid') || e.target;
+            m.classList.remove('is-invalid');
+            if (formError) formError.hidden = true;
+        });
+        modal.addEventListener('change', function (e) {
+            var m = e.target.closest('.is-invalid');
+            if (m) m.classList.remove('is-invalid');
+            if (formError) formError.hidden = true;
         });
     }
     if (btnBack) {
@@ -378,12 +567,18 @@
             list.style.maxHeight = Math.max(Math.min(tope, espacio - extra), 40) + 'px';
         }
         var esAbsoluto = root.dataset.position === 'absolute';
+        /* Se recoloca cuando la página se desplaza, pero no con el scroll de su propia
+           lista: recolocar reinicia el alto de la lista y la devolvía al inicio. */
+        function alScroll(e) {
+            if (panel.contains(e.target)) return;
+            posicionar();
+        }
         function abrir() {
             panel.hidden = false;
             root.classList.add('is-open');
             if (!esAbsoluto) {
                 posicionar();
-                window.addEventListener('scroll', posicionar, true);
+                window.addEventListener('scroll', alScroll, true);
                 window.addEventListener('resize', posicionar);
             }
             if (searchInput) {
@@ -396,7 +591,7 @@
             panel.hidden = true;
             root.classList.remove('is-open');
             if (!esAbsoluto) {
-                window.removeEventListener('scroll', posicionar, true);
+                window.removeEventListener('scroll', alScroll, true);
                 window.removeEventListener('resize', posicionar);
             }
         }
@@ -463,10 +658,12 @@
         root.reset = function () {
             hidden.value = '';
             label.textContent = placeholder;
+            root.classList.remove('is-invalid');
             list.querySelectorAll('li[data-value]').forEach(function (li) {
                 li.classList.remove('is-selected');
             });
         };
+        root.value = function () { return hidden.value; };
     }
 
     /* ── Filtros de la tabla ─────────────────── */
@@ -494,33 +691,41 @@
     var cbNivel    = document.getElementById('prg-cb-nivel');
     var cbEscuela  = document.getElementById('prg-cb-escuela');
     var cbModalidad= document.getElementById('prg-cb-modalidad');
+    var cbPeriodo  = document.getElementById('prg-cb-periodo');
     var cbEstado   = document.getElementById('prg-cb-estado');
+    var ESTADO_LBL = { activo: 'Activo', en_aprobacion: 'En proceso de aprobación', inactivo: 'Inactivo' };
 
-    if (cbNivel) {
-        initCombobox(cbNivel);
-        cbNivel.setOptions(['Técnico Laboral', 'Técnico Laboral por Competencias', 'Auxiliar']);
+    [cbNivel, cbEscuela, cbModalidad, cbPeriodo, cbEstado].forEach(initCombobox);
+    cbNivel.setOptions(opc.niveles);
+    // Escuelas reales (todas, aunque todavía no tengan programas en la sede)
+    cbEscuela.setOptions((window.ESC_DATA || []).map(function (e) { return { value: String(e.id), label: e.nombre }; }));
+    cbModalidad.setOptions(opc.modalidades);
+    cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
+    cbPeriodo.setOptions([{ value: 'semestre', label: 'Semestre' }, { value: 'trimestre', label: 'Trimestre' }]);
+    cbEstado.setOptions(Object.keys(ESTADO_LBL).map(function (k) { return { value: k, label: ESTADO_LBL[k] }; }));
+    cbEstado.setValue('activo', 'Activo', { silent: true });
+
+    // Periodos calculados en vivo: los mismos que guarda el servidor (meses ÷ 6 o ÷ 3, redondeado hacia arriba)
+    var periodosHint = document.getElementById('prg-periodos-hint');
+    function pintarPeriodos() {
+        var m = parseInt(valor('prg-inp-meses'));
+        var tipo = cbPeriodo.value();
+        if (!(m >= 1) || !tipo) { periodosHint.textContent = ''; return; }
+        var n = Math.max(1, Math.ceil(m / (tipo === 'semestre' ? 6 : 3)));
+        periodosHint.textContent = m + (m === 1 ? ' mes' : ' meses') + ' = ' + n + ' ' +
+            (tipo === 'semestre' ? (n === 1 ? 'semestre' : 'semestres') : (n === 1 ? 'trimestre' : 'trimestres'));
     }
-    if (cbEscuela) {
-        initCombobox(cbEscuela);
-        cbEscuela.setOptions(['Salud', 'Cocina y Turismo', 'Administrativa', 'Deporte y Cultura', 'Ciencias', 'Educación e Idiomas', 'Belleza']);
-    }
-    if (cbModalidad) {
-        initCombobox(cbModalidad);
-        cbModalidad.setOptions(['Presencial', 'Virtual', 'Mixta']);
-        cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
-    }
-    if (cbEstado) {
-        initCombobox(cbEstado);
-        cbEstado.setOptions([
-            { value: 'activo',        label: 'Activo' },
-            { value: 'en_aprobacion', label: 'En proceso de aprobación' },
-            { value: 'inactivo',      label: 'Inactivo' },
-        ]);
-        cbEstado.setValue('activo', 'Activo', { silent: true });
-    }
+    campo('prg-inp-meses').addEventListener('input', pintarPeriodos);
+    document.getElementById('prg-inp-periodo').addEventListener('change', pintarPeriodos);
 
     // Inicializar
     applyFilters();
     renderStep();
+
+    // Acceso rápido desde el Inicio: /admin/programas#nuevo abre el modal de crear
+    if (location.hash === '#nuevo') {
+        openModal(null);
+        history.replaceState(null, '', location.pathname);
+    }
 
 }());

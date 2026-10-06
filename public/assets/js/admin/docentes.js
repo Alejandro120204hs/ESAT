@@ -2,7 +2,46 @@
 (function () {
     'use strict';
 
-    var data = window.DOC_DATA || [];
+    var data  = window.DOC_DATA || [];
+    var csrf  = (document.querySelector('meta[name="csrf-token"]') || {}).content;
+    var FLASH = 'esat.admin.docentes.aviso';
+
+    /* ── Backend ──────────────────────────────── */
+    function enviar(metodo, url, cuerpo) {
+        return fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok) {
+                    var err = new Error(j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = j.errors || null;
+                    throw err;
+                }
+                return j;
+            });
+        });
+    }
+    /* Guarda el aviso y recarga: tabla y KPI salen del servidor */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(FLASH, msg); } catch (e) {}
+        location.reload();
+    }
+    var toastEl = document.getElementById('doc-toast');
+    function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.hidden = false;
+        requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
+        setTimeout(function () {
+            toastEl.classList.remove('is-visible');
+            setTimeout(function () { toastEl.hidden = true; }, 220);
+        }, 5000);
+    }
+    try {
+        var aviso = sessionStorage.getItem(FLASH);
+        if (aviso) { sessionStorage.removeItem(FLASH); toast(aviso); }
+    } catch (e) {}
 
     /* ── Utilidades ───────────────────────────── */
     function badge(estado) {
@@ -21,10 +60,14 @@
         };
         return map[v] || '';
     }
-    function escClass(escuela) {
-        var m = { 'Salud':'sal','Cocina y Turismo':'tur','Administrativa':'adm',
-                  'Educación e Idiomas':'edu','Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel' };
-        return m[escuela] || 'adm';
+    /* El color de la escuela sale de su sigla (sal, tur, adm...) */
+    function escClass(d) {
+        return d.sigla || 'adm';
+    }
+    function esc(str) {
+        return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+            return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+        });
     }
     function initials(d) {
         return ((d.nombres || '').charAt(0) + (d.apellidos || '').charAt(0)).toUpperCase();
@@ -164,27 +207,27 @@
     });
 
     function fillDrawer(d) {
-        var esc = escClass(d.escuela);
+        var sig = escClass(d);
         var ini = initials(d);
 
         // Header avatar
         var avatarEl = document.getElementById('dw-avatar');
         if (avatarEl) {
             avatarEl.textContent = ini;
-            avatarEl.className   = 'doc-drawer-avatar doc-avatar doc-esc-' + esc;
+            avatarEl.className   = 'doc-drawer-avatar doc-avatar doc-esc-' + sig;
         }
 
         set('dw-nombre',    d.nombres + ' ' + d.apellidos);
         set('dw-cedula-txt', d.tipo_doc + ' ' + d.cedula);
 
         html('dw-badges', badge(d.estado) + ' ' + vincBadge(d.vinculacion) +
-            ' <span class="doc-esc-tag doc-esc-' + esc + '">' + d.escuela + '</span>');
+            ' <span class="doc-esc-tag doc-esc-' + sig + '">' + esc(d.escuela) + '</span>');
 
         // Tab General
         set('dw-email',     d.email);
         set('dw-telefono',  d.telefono);
         set('dw-fecha-nac', d.fecha_nac);
-        set('dw-tipo-doc',  d.tipo_doc === 'CC' ? 'Cédula de ciudadanía' : d.tipo_doc);
+        set('dw-tipo-doc',  TIPOS_DOC[d.tipo_doc] || d.tipo_doc);
         set('dw-num-doc',   d.cedula);
         set('dw-direccion', d.direccion);
 
@@ -196,9 +239,9 @@
 
         var progList = document.getElementById('dw-programas-list');
         if (progList) {
-            progList.innerHTML = (d.programas || []).map(function (p) {
-                return '<span class="doc-prog-chip">' + p + '</span>';
-            }).join('');
+            progList.innerHTML = (d.programas || []).length
+                ? d.programas.map(function (p) { return '<span class="doc-prog-chip">' + esc(p) + '</span>'; }).join('')
+                : '<span class="doc-person-cedula">Todavía no tiene cursos asignados en ningún programa.</span>';
         }
 
         // Tab Cursos
@@ -208,10 +251,10 @@
             var cursos = d.cursos || [];
             tbody.innerHTML = cursos.map(function (c) {
                 return '<tr>'
-                    + '<td><div class="doc-curso-nombre">' + c.nombre + '</div></td>'
-                    + '<td><span class="doc-curso-prog">' + c.programa + '</span></td>'
-                    + '<td>' + c.grupo + '</td>'
-                    + '<td>' + c.horario + '</td>'
+                    + '<td><div class="doc-curso-nombre">' + esc(c.nombre) + '</div></td>'
+                    + '<td><span class="doc-curso-prog">' + esc(c.programa) + '</span></td>'
+                    + '<td>' + esc(c.grupo) + '</td>'
+                    + '<td>' + esc(c.horario) + '</td>'
                     + '</tr>';
             }).join('');
             if (emptyMsg) emptyMsg.style.display = cursos.length === 0 ? 'block' : 'none';
@@ -274,6 +317,16 @@
         });
     }
 
+    // Activar / desactivar desde el drawer
+    var toggleEstadoBtn = document.getElementById('doc-drawer-toggle-btn');
+    toggleEstadoBtn.addEventListener('click', function () {
+        if (!currentDoc) return;
+        toggleEstadoBtn.disabled = true;
+        enviar('PATCH', '/admin/docentes/' + currentDoc.id + '/estado')
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) { toggleEstadoBtn.disabled = false; toast(err.message); });
+    });
+
     /* ── Modal wizard ─────────────────────────── */
     var modal        = document.getElementById('doc-modal');
     var modalOverlay = document.getElementById('doc-modal-overlay');
@@ -284,11 +337,53 @@
     var modalTitle   = document.getElementById('doc-modal-title');
     var currentStep  = 1;
     var totalSteps   = 3;
+    var editandoId   = null;
+    var formError    = document.getElementById('doc-form-error');
+    var TIPOS_DOC    = { CC: 'Cédula de ciudadanía', CE: 'Cédula de extranjería', PA: 'Pasaporte' };
+    var VINC_LBL     = { tiempo_completo: 'Tiempo completo', medio_tiempo: 'Medio tiempo', hora_catedra: 'Hora cátedra' };
+    var ESTADO_LBL   = { activo: 'Activo', en_proceso: 'En proceso', inactivo: 'Inactivo' };
+
+    function campo(id) { return document.getElementById(id); }
+    function valor(id) { return (campo(id).value || '').trim(); }
 
     function openModal(id) {
         currentStep = 1;
+        editandoId = id || null;
+        limpiarErrores();
+        var d = id ? data.find(function (x) { return x.id === id; }) : null;
+        modalTitle.textContent = d ? 'Editar docente' : 'Nuevo docente';
+        document.getElementById('doc-nota-clave').hidden = !!d;
+
+        campo('doc-inp-nombres').value      = d ? d.nombres : '';
+        campo('doc-inp-apellidos').value    = d ? d.apellidos : '';
+        campo('doc-inp-cedula').value       = d ? d.documento : '';
+        campo('doc-inp-email').value        = d ? d.email : '';
+        campo('doc-inp-telefono').value     = d ? d.telefono : '';
+        campo('doc-inp-fecha-nac').value    = d ? (d.fecha_nac_iso || '') : '';
+        campo('doc-inp-direccion').value    = d ? (d.direccion_raw || '') : '';
+        campo('doc-inp-titulo').value       = d ? (d.titulo || '') : '';
+        campo('doc-inp-especialidad').value = d ? (d.especialidad || '') : '';
+
+        var tipo = d ? d.tipo_doc : 'CC';
+        cbTipoDoc.setValue(tipo, TIPOS_DOC[tipo], { silent: true });
+        if (d) cbEscuela.setValue(String(d.escuela_id), d.escuela, { silent: true });
+        else cbEscuela.reset(null, { keepOptions: true });
+        var vinc = d ? d.vinculacion : 'tiempo_completo';
+        cbVinc.setValue(vinc, VINC_LBL[vinc], { silent: true });
+        var est = d ? d.estado : 'activo';
+        cbEstado.setValue(est, ESTADO_LBL[est], { silent: true });
+
+        // Residencia: el departamento llena las ciudades y luego se marca la ciudad
+        docCbDepto.reset(null, { keepOptions: true });
+        docCbCiudad.reset('Elige el departamento primero');
+        if (d && d.depto) {
+            colombiaListo.then(function () {
+                docCbDepto.setValue(d.depto, d.depto);
+                if (d.ciudad) docCbCiudad.setValue(d.ciudad, d.ciudad, { silent: true });
+            });
+        }
+
         renderStep();
-        modalTitle.textContent = id ? 'Editar docente' : 'Nuevo docente';
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
@@ -316,12 +411,105 @@
         });
         if (stepLbl) stepLbl.textContent = 'Paso ' + currentStep + ' de ' + totalSteps;
         if (btnBack) btnBack.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-        if (btnNext) btnNext.textContent = currentStep === totalSteps ? 'Guardar docente' : 'Siguiente';
+        if (btnNext) btnNext.textContent = currentStep === totalSteps ? (editandoId ? 'Guardar cambios' : 'Guardar docente') : 'Siguiente';
+        // La nota de la contraseña acompaña el último paso al registrar
+        var nota = document.getElementById('doc-nota-clave');
+        if (nota) nota.hidden = !!editandoId || currentStep !== totalSteps;
+        if (formError) formError.hidden = true;
+        var body = modal.querySelector('.doc-modal-body');
+        if (body) body.scrollTop = 0;
+    }
+
+    /* ── Validación por paso (el servidor vuelve a validar todo) ── */
+    function limpiarErrores() {
+        if (formError) formError.hidden = true;
+        modal.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+    }
+    function marcarError(msg, id) {
+        formError.textContent = msg;
+        formError.hidden = false;
+        var el = id && campo(id);
+        if (el) {
+            el.classList.add('is-invalid');
+            (el.querySelector ? (el.querySelector('[data-combobox-trigger]') || el) : el).focus();
+        }
+        return false;
+    }
+    function validarPaso(paso) {
+        limpiarErrores();
+        if (paso === 1) {
+            if (valor('doc-inp-nombres').length < 2) return marcarError('Escribe los nombres del docente.', 'doc-inp-nombres');
+            if (valor('doc-inp-apellidos').length < 2) return marcarError('Escribe los apellidos del docente.', 'doc-inp-apellidos');
+            if (!cbTipoDoc.value()) return marcarError('Selecciona el tipo de documento.', 'doc-cb-tipo-doc');
+            var doc = valor('doc-inp-cedula').replace(cbTipoDoc.value() === 'PA' ? /[^A-Za-z0-9]/g : /\D/g, '');
+            if (doc.length < 5 || doc.length > 15) return marcarError('El número de documento debe tener entre 5 y 15 caracteres.', 'doc-inp-cedula');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor('doc-inp-email'))) return marcarError('Escribe un correo válido.', 'doc-inp-email');
+            if (!/^3\d{9}$/.test(valor('doc-inp-telefono').replace(/\D/g, ''))) return marcarError('El teléfono debe ser un celular de 10 dígitos que empiece por 3.', 'doc-inp-telefono');
+            var nac = valor('doc-inp-fecha-nac');
+            if (nac) {
+                var lim = new Date(); lim.setFullYear(lim.getFullYear() - 18);
+                if (new Date(nac + 'T00:00:00') > lim) return marcarError('El docente debe ser mayor de edad.', 'doc-inp-fecha-nac');
+            }
+            if (docCbDepto.value() && !docCbCiudad.value()) return marcarError('Selecciona la ciudad de residencia.', 'doc-cb-ciudad');
+        }
+        if (paso === 2) {
+            if (valor('doc-inp-titulo').length < 3) return marcarError('Escribe el título profesional.', 'doc-inp-titulo');
+            if (valor('doc-inp-especialidad').length < 3) return marcarError('Escribe la especialidad o énfasis.', 'doc-inp-especialidad');
+            if (!cbEscuela.value()) return marcarError('Selecciona la escuela.', 'doc-cb-escuela');
+        }
+        if (paso === 3) {
+            if (!cbVinc.value()) return marcarError('Selecciona el tipo de vinculación.', 'doc-cb-vinculacion');
+            if (!cbEstado.value()) return marcarError('Selecciona el estado.', 'doc-cb-estado');
+        }
+        return true;
+    }
+
+    /* Campo del servidor → campo del formulario y paso donde está */
+    var CAMPOS = {
+        nombres: ['doc-inp-nombres', 1], apellidos: ['doc-inp-apellidos', 1], tipo_documento: ['doc-cb-tipo-doc', 1],
+        numero_documento: ['doc-inp-cedula', 1], email: ['doc-inp-email', 1], telefono: ['doc-inp-telefono', 1],
+        fecha_nacimiento: ['doc-inp-fecha-nac', 1], direccion: ['doc-inp-direccion', 1],
+        departamento_residencia: ['doc-cb-depto', 1], ciudad_residencia: ['doc-cb-ciudad', 1],
+        profesion: ['doc-inp-titulo', 2], titulo_academico: ['doc-inp-especialidad', 2], escuela_id: ['doc-cb-escuela', 2],
+        vinculacion: ['doc-cb-vinculacion', 3], estado: ['doc-cb-estado', 3]
+    };
+
+    function guardar() {
+        var cuerpo = {
+            nombres: valor('doc-inp-nombres'), apellidos: valor('doc-inp-apellidos'),
+            tipo_documento: cbTipoDoc.value(), numero_documento: valor('doc-inp-cedula'),
+            email: valor('doc-inp-email'), telefono: valor('doc-inp-telefono'),
+            fecha_nacimiento: valor('doc-inp-fecha-nac') || null, direccion: valor('doc-inp-direccion') || null,
+            departamento_residencia: docCbDepto.value() || null, ciudad_residencia: docCbCiudad.value() || null,
+            profesion: valor('doc-inp-titulo'), titulo_academico: valor('doc-inp-especialidad'),
+            escuela_id: cbEscuela.value(), vinculacion: cbVinc.value(), estado: cbEstado.value()
+        };
+        btnNext.disabled = true;
+        enviar(editandoId ? 'PUT' : 'POST', editandoId ? '/admin/docentes/' + editandoId : '/admin/docentes', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) {
+                btnNext.disabled = false;
+                var clave = err.errores && Object.keys(err.errores)[0];
+                if (clave && CAMPOS[clave]) {
+                    currentStep = CAMPOS[clave][1];
+                    renderStep();
+                    marcarError(err.errores[clave][0], CAMPOS[clave][0]);
+                } else {
+                    marcarError(err.message);
+                }
+            });
     }
 
     if (btnNext) btnNext.addEventListener('click', function () {
+        if (!validarPaso(currentStep)) return;
         if (currentStep < totalSteps) { currentStep++; renderStep(); }
-        else { closeModal(); }
+        else { guardar(); }
+    });
+    modal.addEventListener('input', function (e) { e.target.classList.remove('is-invalid'); formError.hidden = true; });
+    modal.addEventListener('change', function (e) {
+        var cb = e.target.closest('.app-combobox');
+        if (cb) cb.classList.remove('is-invalid');
+        formError.hidden = true;
     });
     if (btnBack) btnBack.addEventListener('click', function () {
         if (currentStep > 1) { currentStep--; renderStep(); }
@@ -361,12 +549,18 @@
             list.style.maxHeight = Math.max(Math.min(tope, espacio - extra), 40) + 'px';
         }
         var esAbsoluto = root.dataset.position === 'absolute';
+        /* Se recoloca cuando la página se desplaza, pero no con el scroll de su propia
+           lista: recolocar reinicia el alto de la lista y la devolvía al inicio. */
+        function alScroll(e) {
+            if (panel.contains(e.target)) return;
+            posicionar();
+        }
         function abrir() {
             panel.hidden = false;
             root.classList.add('is-open');
             if (!esAbsoluto) {
                 posicionar();
-                window.addEventListener('scroll', posicionar, true);
+                window.addEventListener('scroll', alScroll, true);
                 window.addEventListener('resize', posicionar);
             }
             if (searchInput) {
@@ -379,7 +573,7 @@
             panel.hidden = true;
             root.classList.remove('is-open');
             if (!esAbsoluto) {
-                window.removeEventListener('scroll', posicionar, true);
+                window.removeEventListener('scroll', alScroll, true);
                 window.removeEventListener('resize', posicionar);
             }
         }
@@ -441,7 +635,9 @@
             else { list.querySelectorAll('li[data-value]').forEach(function (li) { li.classList.remove('is-selected'); }); }
             hidden.value    = '';
             label.textContent = placeholder;
+            root.classList.remove('is-invalid');
         };
+        root.value = function () { return hidden.value; };
     }
 
     // Tipo de documento
@@ -458,11 +654,9 @@
 
     // Escuela asignada
     var cbEscuela = document.getElementById('doc-cb-escuela');
-    if (cbEscuela) {
-        initCombobox(cbEscuela);
-        cbEscuela.setOptions(['Salud','Cocina y Turismo','Administrativa',
-            'Educación e Idiomas','Deporte y Cultura','Ciencias','Belleza']);
-    }
+    initCombobox(cbEscuela);
+    // Escuelas reales del catálogo
+    cbEscuela.setOptions((window.DOC_ESCUELAS || []).map(function (e) { return { value: String(e.id), label: e.nombre }; }));
 
     // Tipo de vinculación
     var cbVinc = document.getElementById('doc-cb-vinculacion');
@@ -494,8 +688,9 @@
     if (docCbCiudad) initCombobox(docCbCiudad);
 
     var colombiaData = null;
+    var colombiaListo = Promise.resolve();
     if (docCbDepto) {
-        fetch('/assets/data/co-departamentos-ciudades.json')
+        colombiaListo = fetch('/assets/data/co-departamentos-ciudades.json')
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 colombiaData = data;

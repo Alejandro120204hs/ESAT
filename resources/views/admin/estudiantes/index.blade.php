@@ -26,12 +26,22 @@ $grupos = [
     ['id'=>11, 'codigo'=>'CUR-ADM-002-B','grupo'=>'Grupo B','programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa','docente'=>'Patricia López Castro','jornada'=>'Mañana','horario'=>['Finalizado en junio de 2026'],'cupo'=>25,'inscritos'=>25,'estado'=>'finalizado'],
 ];
 
-/* ── Acudientes registrados (ficticios) ── */
+/* ── Acudientes registrados (ficticios; los mismos de la pantalla Acudientes) ── */
 $acudientes = [
     ['id'=>1,'nombres'=>'Gloria Inés','apellidos'=>'Cárdenas Mora','documento'=>'39645218','telefono'=>'3125550141','email'=>'gloria.cardenas@example.com'],
     ['id'=>2,'nombres'=>'Hernán','apellidos'=>'Pérez Gutiérrez','documento'=>'79884310','telefono'=>'3105550187','email'=>'hernan.perez@example.com'],
     ['id'=>3,'nombres'=>'Rosalba','apellidos'=>'Ospina de Vargas','documento'=>'20554936','telefono'=>'3145550122','email'=>''],
     ['id'=>4,'nombres'=>'Claudia','apellidos'=>'Martínez Gil','documento'=>'52310477','telefono'=>'3205550163','email'=>'claudia.martinez@example.com'],
+    ['id'=>5,'nombres'=>'Martha Lucía','apellidos'=>'Quintero Rojas','documento'=>'35412987','telefono'=>'3115550109','email'=>'martha.quintero@example.com'],
+    ['id'=>6,'nombres'=>'Luis Alberto','apellidos'=>'Díaz Ruiz','documento'=>'80234561','telefono'=>'3165550178','email'=>''],
+    ['id'=>7,'nombres'=>'Ana Milena','apellidos'=>'Restrepo Galeano','documento'=>'1070456223','telefono'=>'3005550134','email'=>'ana.restrepo@example.com'],
+    ['id'=>8,'nombres'=>'Jairo','apellidos'=>'Ortiz Cárdenas','documento'=>'79556120','telefono'=>'3135550156','email'=>'jairo.ortiz@example.com'],
+    ['id'=>9,'nombres'=>'Nelly','apellidos'=>'Gómez Patiño','documento'=>'39782045','telefono'=>'3185550117','email'=>'nelly.gomez@example.com'],
+    ['id'=>10,'nombres'=>'Fabio','apellidos'=>'Herrera Salcedo','documento'=>'80765432','telefono'=>'3215550190','email'=>'fabio.herrera@example.com'],
+    ['id'=>11,'nombres'=>'Blanca Cecilia','apellidos'=>'Rincón de Beltrán','documento'=>'41687320','telefono'=>'3175550125','email'=>''],
+    ['id'=>12,'nombres'=>'Diego Fernando','apellidos'=>'Pineda Rojas','documento'=>'1069552781','telefono'=>'3045550148','email'=>'diego.pineda@example.com'],
+    ['id'=>13,'nombres'=>'Teresa','apellidos'=>'Mendoza Soto','documento'=>'20887612','telefono'=>'3195550103','email'=>'teresa.mendoza@example.com'],
+    ['id'=>14,'nombres'=>'Orlando','apellidos'=>'Castro Mejía','documento'=>'79310845','telefono'=>'3155550172','email'=>'orlando.castro@example.com'],
 ];
 
 /* ── Estudiantes (ficticios). La edad nunca se guarda: se calcula de la fecha de nacimiento. ── */
@@ -50,27 +60,27 @@ $e = fn($id,$nom,$ape,$tipo,$doc,$nac,$gen,$grupo,$estado,$extra=[]) => array_me
 
 $estudiantes = [
     $e(1,'Valentina','Ríos Cárdenas','TI','1031456782','2009-03-14','Femenino',1,'activo',['acudiente_id'=>1,'parentesco'=>'Madre','asistencia'=>96]),
-    $e(2,'Juan Sebastián','Gómez Patiño','CC','1070958341','2001-07-22','Masculino',1,'activo',['pago'=>'pendiente','cuotas_pagadas'=>7,'saldo'=>210000,'ultimo_pago'=>'2026-08-04','asistencia'=>88]),
-    $e(3,'Luisa Fernanda','Castro Mejía','CC','1072645903','1998-11-03','Femenino',1,'activo',['pago'=>'vencido','cuotas_pagadas'=>6,'saldo'=>420000,'ultimo_pago'=>'2026-07-06','asistencia'=>91]),
+    $e(2,'Juan Sebastián','Gómez Patiño','CC','1070958341','2001-07-22','Masculino',1,'activo',['acudiente_id'=>9,'parentesco'=>'Madre','pago'=>'pendiente','cuotas_pagadas'=>7,'saldo'=>210000,'ultimo_pago'=>'2026-08-04','asistencia'=>88]),
+    $e(3,'Luisa Fernanda','Castro Mejía','CC','1072645903','1998-11-03','Femenino',1,'activo',['acudiente_id'=>14,'parentesco'=>'Padre','pago'=>'vencido','cuotas_pagadas'=>6,'saldo'=>420000,'ultimo_pago'=>'2026-07-06','asistencia'=>91]),
     $e(4,'Camilo Andrés','Herrera Vélez','TI','1031512096','2009-09-30','Masculino',2,'activo',['pago'=>'pendiente','cuotas_pagadas'=>7,'saldo'=>210000,'ultimo_pago'=>'2026-08-08','asistencia'=>79]),
     $e(5,'Daniela','Moreno Suárez','CC','1069235117','1995-02-17','Femenino',2,'aplazado',['estado_fecha'=>'2026-08-12','estado_motivo'=>'Viaje laboral por tres meses; retoma en el siguiente periodo.','pago'=>'pendiente','cuotas_pagadas'=>6,'saldo'=>210000,'ultimo_pago'=>'2026-07-02','asistencia'=>70]),
-    $e(6,'Brayan Steven','Quintero Rojas','CC','1073520448','2003-05-09','Masculino',3,'activo',['asistencia'=>94]),
+    $e(6,'Brayan Steven','Quintero Rojas','CC','1073520448','2003-05-09','Masculino',3,'activo',['acudiente_id'=>5,'parentesco'=>'Madre','asistencia'=>94]),
     $e(7,'Paula Andrea','Salazar Torres','CC','52987341','1988-12-01','Femenino',3,'activo',['asistencia'=>98]),
     $e(8,'Santiago','Pérez Londoño','TI','1032087654','2010-01-25','Masculino',4,'activo',['acudiente_id'=>2,'parentesco'=>'Padre','pago'=>'vencido','cuotas_pagadas'=>6,'saldo'=>420000,'ultimo_pago'=>'2026-07-10','asistencia'=>85]),
-    $e(9,'María José','Rincón Beltrán','CC','1071330902','2000-08-14','Femenino',4,'activo',['documentos_pendientes'=>['Certificado de estudios'],'asistencia'=>92]),
-    $e(10,'Kevin Alexis','Díaz Moreno','CC','1070884215','2004-04-02','Masculino',5,'retirado',['estado_fecha'=>'2026-07-03','estado_motivo'=>'Cambio de ciudad de residencia.','cuotas_pagadas'=>5,'ultimo_pago'=>'2026-06-04','asistencia'=>60]),
+    $e(9,'María José','Rincón Beltrán','CC','1071330902','2000-08-14','Femenino',4,'activo',['acudiente_id'=>11,'parentesco'=>'Madre','documentos_pendientes'=>['Certificado de estudios'],'asistencia'=>92]),
+    $e(10,'Kevin Alexis','Díaz Moreno','CC','1070884215','2004-04-02','Masculino',5,'retirado',['acudiente_id'=>6,'parentesco'=>'Padre','estado_fecha'=>'2026-07-03','estado_motivo'=>'Cambio de ciudad de residencia.','cuotas_pagadas'=>5,'ultimo_pago'=>'2026-06-04','asistencia'=>60]),
     $e(11,'Natalia','Vargas Ospina','TI','1031904377','2009-06-11','Femenino',5,'activo',['acudiente_id'=>3,'parentesco'=>'Abuela','asistencia'=>90]),
     $e(12,'Andrés Felipe','Muñoz Cano','CC','1072118560','1997-10-19','Masculino',6,'activo',['pago'=>'pendiente','cuotas_pagadas'=>7,'saldo'=>210000,'ultimo_pago'=>'2026-08-06','asistencia'=>87]),
-    $e(13,'Laura Camila','Pineda Rojas','CC','1069774230','1999-03-27','Femenino',6,'activo',['asistencia'=>95]),
+    $e(13,'Laura Camila','Pineda Rojas','CC','1069774230','1999-03-27','Femenino',6,'activo',['acudiente_id'=>12,'parentesco'=>'Hermano','asistencia'=>95]),
     $e(14,'Jorge Eliécer','Bautista León','CC','80456912','1979-09-05','Masculino',7,'activo',['pago'=>'vencido','cuotas_pagadas'=>5,'saldo'=>630000,'ultimo_pago'=>'2026-06-03','asistencia'=>83]),
     $e(15,'Diana Marcela','Acosta Ruiz','CC','1071009884','1996-01-30','Femenino',7,'activo',['documentos_pendientes'=>['Copia del documento de identidad','Certificado de afiliación a salud'],'asistencia'=>97]),
     $e(16,'Sergio Alejandro','Niño Parra','TI','1032245618','2010-11-08','Masculino',7,'activo',['pago'=>'pendiente','cuotas_pagadas'=>7,'saldo'=>210000,'ultimo_pago'=>'2026-08-12','asistencia'=>74]),
-    $e(17,'Yuliana','Restrepo Galeano','CC','1073661025','2002-12-12','Femenino',8,'activo',['asistencia'=>93]),
-    $e(18,'Cristian David','Ortiz Sánchez','CC','1070312779','2001-02-28','Masculino',8,'aplazado',['estado_fecha'=>'2026-09-01','estado_motivo'=>'Incapacidad médica de 60 días.','asistencia'=>81]),
+    $e(17,'Yuliana','Restrepo Galeano','CC','1073661025','2002-12-12','Femenino',8,'activo',['acudiente_id'=>7,'parentesco'=>'Hermana','asistencia'=>93]),
+    $e(18,'Cristian David','Ortiz Sánchez','CC','1070312779','2001-02-28','Masculino',8,'aplazado',['acudiente_id'=>8,'parentesco'=>'Padre','estado_fecha'=>'2026-09-01','estado_motivo'=>'Incapacidad médica de 60 días.','asistencia'=>81]),
     $e(19,'Karen Lizeth','Gil Martínez','TI','1031778403','2009-08-19','Femenino',9,'activo',['acudiente_id'=>4,'parentesco'=>'Tía','asistencia'=>99]),
     $e(20,'Mónica Patricia','Cárdenas Vela','CC','39567204','1985-06-23','Femenino',9,'activo',['pago'=>'vencido','cuotas_pagadas'=>6,'saldo'=>420000,'ultimo_pago'=>'2026-07-08','asistencia'=>89]),
     $e(21,'Edwin Fabián','Rodríguez Peña','CC','1072901336','1994-04-15','Masculino',10,'activo',['fecha_ingreso'=>'2026-09-21','cuotas_pagadas'=>1,'ultimo_pago'=>'2026-09-21','asistencia'=>null,'documentos_pendientes'=>['Certificado de estudios']]),
-    $e(22,'Luz Ángela','Mendoza Soto','CC','1069880147','1990-10-10','Femenino',11,'graduado',['estado_fecha'=>'2026-06-20','fecha_ingreso'=>'2025-02-03','cuotas_pagadas'=>10,'ultimo_pago'=>'2026-05-04','asistencia'=>95]),
+    $e(22,'Luz Ángela','Mendoza Soto','CC','1069880147','1990-10-10','Femenino',11,'graduado',['acudiente_id'=>13,'parentesco'=>'Madre','estado_fecha'=>'2026-06-20','fecha_ingreso'=>'2025-02-03','cuotas_pagadas'=>10,'ultimo_pago'=>'2026-05-04','asistencia'=>95]),
     $e(23,'Óscar Iván','Téllez Ramírez','CC','1071445209','1993-07-07','Masculino',11,'graduado',['estado_fecha'=>'2026-06-20','fecha_ingreso'=>'2025-02-03','cuotas_pagadas'=>10,'ultimo_pago'=>'2026-05-06','asistencia'=>92]),
     $e(24,'Érica Johana','Ríos Cárdenas','TI','1032310995','2009-12-03','Femenino',2,'activo',['acudiente_id'=>1,'parentesco'=>'Madre','asistencia'=>94]),
 ];

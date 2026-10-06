@@ -1,4 +1,4 @@
-{{-- mock --}}
+{{-- Programas y escuelas: datos reales desde Admin\Programas\ProgramaController. --}}
 @extends('admin.layout')
 
 @section('title', 'Programas')
@@ -11,343 +11,14 @@
 @endpush
 
 @php
-$sedeName = auth()->user()->sede?->nombre ?? 'Sede';
-$escMap = [
-    'Salud'              => 'sal',
-    'Cocina y Turismo'   => 'tur',
-    'Administrativa'     => 'adm',
-    'Educación e Idiomas'=> 'edu',
-    'Deporte y Cultura'  => 'dep',
-    'Ciencias'           => 'cie',
-    'Belleza'            => 'bel',
-];
-
-/* ---- mock data ---- */
-$programas = [
-    [
-        'id'=>1,'codigo'=>'ESA-SAL-001',
-        'nombre'=>'Técnico Laboral en Servicios Geriátricos',
-        'escuela'=>'Salud','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1800,'meses'=>12,'resolucion'=>'Res. 4521-2022 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde'],'cupo'=>25,'matricula'=>350000,'valor_programa'=>2030000,'valor_mensual'=>140000,
-        'estudiantes'=>45,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos laborales con competencias para la atención integral del adulto mayor en instituciones geriátricas, hogares y residencias de cuidado.',
-        'perfil_egreso'=>'Atender con calidad al adulto mayor, aplicar protocolos de cuidado básico y apoyar al equipo interdisciplinario de salud.',
-        'modulos'=>[
-            ['nombre'=>'Fundamentos de gerontología','horas'=>160,'docente'=>'Dra. Sandra Moreno'],
-            ['nombre'=>'Cuidado básico de enfermería','horas'=>240,'docente'=>'Enf. Lucía Vargas'],
-            ['nombre'=>'Nutrición en el adulto mayor','horas'=>120,'docente'=>'Nutr. Carlos Díaz'],
-            ['nombre'=>'Actividades terapéuticas','horas'=>160,'docente'=>'T.O. María Suárez'],
-            ['nombre'=>'Ética y legislación en salud','horas'=>80,'docente'=>'Dr. Andrés Gil'],
-            ['nombre'=>'Primeros auxilios','horas'=>80,'docente'=>'Enf. Lucía Vargas'],
-            ['nombre'=>'Práctica clínica','horas'=>960,'docente'=>'Coordinación clínica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>25,'inscritos'=>22,'inicio'=>'03 Feb 2026','fin'=>'30 Ene 2027'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>25,'inscritos'=>23,'inicio'=>'03 Feb 2026','fin'=>'30 Ene 2027'],
-        ],
-    ],
-    [
-        'id'=>2,'codigo'=>'ESA-SAL-002',
-        'nombre'=>'Técnico Laboral en Auxiliar de Psiquiatría',
-        'escuela'=>'Salud','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1800,'meses'=>12,'resolucion'=>'Res. 3876-2021 · SED Bogotá',
-        'jornadas'=>['Mañana','Noche'],'cupo'=>20,'matricula'=>380000,'valor_programa'=>2120000,'valor_mensual'=>145000,
-        'estudiantes'=>38,'estado'=>'activo',
-        'descripcion'=>'Capacita al estudiante para asistir al equipo de salud mental en la atención a personas con trastornos psiquiátricos en clínicas y hospitales.',
-        'perfil_egreso'=>'Brindar atención básica a pacientes psiquiátricos, aplicar técnicas de contención y apoyo terapéutico bajo supervisión profesional.',
-        'modulos'=>[
-            ['nombre'=>'Introducción a la salud mental','horas'=>160,'docente'=>'Psic. Ana Torres'],
-            ['nombre'=>'Psicopatología básica','horas'=>200,'docente'=>'Dr. Rodrigo Muñoz'],
-            ['nombre'=>'Cuidado al paciente psiquiátrico','horas'=>240,'docente'=>'Enf. Beatriz Lara'],
-            ['nombre'=>'Farmacología en psiquiatría','horas'=>80,'docente'=>'Dr. Rodrigo Muñoz'],
-            ['nombre'=>'Ética y derechos del paciente','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica clínica','horas'=>1040,'docente'=>'Coordinación clínica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>20,'inscritos'=>19,'inicio'=>'01 Mar 2026','fin'=>'28 Feb 2027'],
-            ['nombre'=>'Grupo B — Noche','jornada'=>'Noche','cupo'=>20,'inscritos'=>19,'inicio'=>'01 Mar 2026','fin'=>'28 Feb 2027'],
-        ],
-    ],
-    [
-        'id'=>3,'codigo'=>'ESA-TUR-001',
-        'nombre'=>'Técnico Laboral en Cocina Nacional e Internacional',
-        'escuela'=>'Cocina y Turismo','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1600,'meses'=>10,'resolucion'=>'Res. 2210-2023 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde','Noche'],'cupo'=>20,'matricula'=>420000,'valor_programa'=>2020000,'valor_mensual'=>160000,
-        'estudiantes'=>52,'estado'=>'activo',
-        'descripcion'=>'Desarrolla habilidades culinarias en gastronomía nacional e internacional, manejo de cocina profesional, higiene alimentaria y montaje de platos.',
-        'perfil_egreso'=>'Elaborar preparaciones culinarias nacionales e internacionales, gestionar procesos de cocina y aplicar normas de higiene y seguridad alimentaria.',
-        'modulos'=>[
-            ['nombre'=>'Técnicas básicas de cocina','horas'=>200,'docente'=>'Chef Mauricio Ríos'],
-            ['nombre'=>'Gastronomía colombiana','horas'=>160,'docente'=>'Chef Mauricio Ríos'],
-            ['nombre'=>'Cocina internacional','horas'=>200,'docente'=>'Chef Isabel Peralta'],
-            ['nombre'=>'Panadería y repostería','horas'=>160,'docente'=>'Chef Isabel Peralta'],
-            ['nombre'=>'Higiene y seguridad alimentaria','horas'=>80,'docente'=>'Ing. Claudia Mesa'],
-            ['nombre'=>'Práctica en cocina profesional','horas'=>800,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>20,'inscritos'=>18,'inicio'=>'13 Ene 2026','fin'=>'10 Nov 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>20,'inscritos'=>18,'inicio'=>'13 Ene 2026','fin'=>'10 Nov 2026'],
-            ['nombre'=>'Grupo C — Noche','jornada'=>'Noche','cupo'=>20,'inscritos'=>16,'inicio'=>'13 Ene 2026','fin'=>'10 Nov 2026'],
-        ],
-    ],
-    [
-        'id'=>4,'codigo'=>'ESA-ADM-001',
-        'nombre'=>'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas',
-        'escuela'=>'Administrativa','nivel'=>'Técnico Laboral','modalidad'=>'Mixta',
-        'horas'=>1600,'meses'=>10,'resolucion'=>'Res. 1895-2020 · SED Bogotá',
-        'jornadas'=>['Tarde','Fines de semana'],'cupo'=>25,'matricula'=>300000,'valor_programa'=>1600000,'valor_mensual'=>130000,
-        'estudiantes'=>29,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos en codificación y auditoría de cuentas médicas para el sistema de salud colombiano, con énfasis en SOAT, EPS e IPS.',
-        'perfil_egreso'=>'Codificar y auditar cuentas médicas según la normativa colombiana, gestionar procesos de facturación en IPS, EPS y aseguradoras.',
-        'modulos'=>[
-            ['nombre'=>'Sistema de salud colombiano','horas'=>120,'docente'=>'Adm. Rosa Jiménez'],
-            ['nombre'=>'Codificación CIE-10 y CUPS','horas'=>200,'docente'=>'Adm. Rosa Jiménez'],
-            ['nombre'=>'Facturación y glosas','horas'=>160,'docente'=>'Cont. Hernán Ospina'],
-            ['nombre'=>'Auditoría de cuentas médicas','horas'=>160,'docente'=>'Dr. Víctor Ángel'],
-            ['nombre'=>'Normativa SOAT y PGSS','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica supervisada','horas'=>880,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Tarde','jornada'=>'Tarde','cupo'=>25,'inscritos'=>14,'inicio'=>'16 Feb 2026','fin'=>'11 Dic 2026'],
-            ['nombre'=>'Grupo B — Fines de semana','jornada'=>'Fines de semana','cupo'=>25,'inscritos'=>15,'inicio'=>'21 Feb 2026','fin'=>'19 Dic 2026'],
-        ],
-    ],
-    [
-        'id'=>5,'codigo'=>'ESA-ADM-002',
-        'nombre'=>'Técnico Laboral en Auxiliar Contable y Administrativo',
-        'escuela'=>'Administrativa','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1440,'meses'=>9,'resolucion'=>'Res. 3102-2019 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde','Noche'],'cupo'=>25,'matricula'=>280000,'valor_programa'=>1288000,'valor_mensual'=>112000,
-        'estudiantes'=>41,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos para apoyar procesos contables y administrativos en empresas, manejando herramientas ofimáticas, nómina, facturación y contabilidad básica.',
-        'perfil_egreso'=>'Asistir en procesos contables, elaborar estados financieros básicos, gestionar nómina y manejar software contable.',
-        'modulos'=>[
-            ['nombre'=>'Contabilidad general','horas'=>200,'docente'=>'Cont. Hernán Ospina'],
-            ['nombre'=>'Ofimática avanzada','horas'=>120,'docente'=>'Ing. Patricia Mora'],
-            ['nombre'=>'Nómina y prestaciones sociales','horas'=>160,'docente'=>'Cont. Hernán Ospina'],
-            ['nombre'=>'Tributaria básica','horas'=>120,'docente'=>'Adm. Rosa Jiménez'],
-            ['nombre'=>'Gestión documental','horas'=>80,'docente'=>'Adm. Rosa Jiménez'],
-            ['nombre'=>'Práctica empresarial','horas'=>760,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>25,'inscritos'=>14,'inicio'=>'13 Ene 2026','fin'=>'08 Oct 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>25,'inscritos'=>15,'inicio'=>'13 Ene 2026','fin'=>'08 Oct 2026'],
-            ['nombre'=>'Grupo C — Noche','jornada'=>'Noche','cupo'=>25,'inscritos'=>12,'inicio'=>'13 Ene 2026','fin'=>'08 Oct 2026'],
-        ],
-    ],
-    [
-        'id'=>6,'codigo'=>'ESA-EDU-001',
-        'nombre'=>'Técnico Laboral en Asistente de Preescolar',
-        'escuela'=>'Educación e Idiomas','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1600,'meses'=>10,'resolucion'=>'Res. 2750-2022 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde'],'cupo'=>22,'matricula'=>290000,'valor_programa'=>1490000,'valor_mensual'=>120000,
-        'estudiantes'=>23,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos para apoyar procesos pedagógicos en educación inicial y desarrollar actividades lúdicas para el desarrollo integral de niños de 0 a 6 años.',
-        'perfil_egreso'=>'Asistir al docente en preescolar, diseñar actividades lúdico-pedagógicas y apoyar el desarrollo integral de la primera infancia.',
-        'modulos'=>[
-            ['nombre'=>'Desarrollo infantil y psicología educativa','horas'=>200,'docente'=>'Psic. Ana Torres'],
-            ['nombre'=>'Pedagogía para la primera infancia','horas'=>200,'docente'=>'Lic. Gloria Pinto'],
-            ['nombre'=>'Lúdica y expresión artística','horas'=>160,'docente'=>'Lic. Gloria Pinto'],
-            ['nombre'=>'Nutrición y salud infantil','horas'=>80,'docente'=>'Nutr. Carlos Díaz'],
-            ['nombre'=>'Legislación educativa colombiana','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica pedagógica','horas'=>880,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>22,'inscritos'=>12,'inicio'=>'01 Mar 2026','fin'=>'26 Dic 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>22,'inscritos'=>11,'inicio'=>'01 Mar 2026','fin'=>'26 Dic 2026'],
-        ],
-    ],
-    [
-        'id'=>7,'codigo'=>'ESA-SAL-003',
-        'nombre'=>'Técnico Laboral en Seguridad Ocupacional y Laboral',
-        'escuela'=>'Salud','nivel'=>'Técnico Laboral','modalidad'=>'Mixta',
-        'horas'=>1800,'meses'=>12,'resolucion'=>'Res. 5104-2023 · SED Bogotá',
-        'jornadas'=>['Noche','Fines de semana'],'cupo'=>25,'matricula'=>370000,'valor_programa'=>2110000,'valor_mensual'=>145000,
-        'estudiantes'=>31,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos para identificar, evaluar y controlar riesgos laborales, implementar programas de SST y gestionar la seguridad en ambientes de trabajo.',
-        'perfil_egreso'=>'Implementar programas de SST, aplicar la normativa colombiana de seguridad laboral y gestionar riesgos en empresas.',
-        'modulos'=>[
-            ['nombre'=>'Fundamentos de SST','horas'=>160,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Identificación y control de riesgos','horas'=>200,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Normativa colombiana SST','horas'=>120,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Ergonomía y bienestar laboral','horas'=>120,'docente'=>'T.O. María Suárez'],
-            ['nombre'=>'Primeros auxilios y emergencias','horas'=>80,'docente'=>'Enf. Lucía Vargas'],
-            ['nombre'=>'Práctica empresarial SST','horas'=>1120,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Noche','jornada'=>'Noche','cupo'=>25,'inscritos'=>16,'inicio'=>'16 Feb 2026','fin'=>'30 Ene 2027'],
-            ['nombre'=>'Grupo B — Fines de semana','jornada'=>'Fines de semana','cupo'=>25,'inscritos'=>15,'inicio'=>'21 Feb 2026','fin'=>'06 Feb 2027'],
-        ],
-    ],
-    [
-        'id'=>8,'codigo'=>'ESA-TUR-002',
-        'nombre'=>'Técnico Laboral en Servicios Hoteleros y Turísticos',
-        'escuela'=>'Cocina y Turismo','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1440,'meses'=>9,'resolucion'=>'En trámite · SED Bogotá',
-        'jornadas'=>['Mañana'],'cupo'=>20,'matricula'=>310000,'valor_programa'=>1390000,'valor_mensual'=>120000,
-        'estudiantes'=>15,'estado'=>'en_aprobacion',
-        'descripcion'=>'Forma técnicos para laborar en hoteles, agencias de viaje y operadoras turísticas, con énfasis en servicio al cliente y operaciones hoteleras.',
-        'perfil_egreso'=>'Desempeñarse en áreas de recepción, alojamiento y agencias de viaje, brindando servicio de excelencia al viajero.',
-        'modulos'=>[
-            ['nombre'=>'Fundamentos de turismo y hotelería','horas'=>160,'docente'=>'Adm. Diana Salcedo'],
-            ['nombre'=>'Servicio al cliente turístico','horas'=>160,'docente'=>'Adm. Diana Salcedo'],
-            ['nombre'=>'Operaciones hoteleras','horas'=>200,'docente'=>'Adm. Diana Salcedo'],
-            ['nombre'=>'Inglés para turismo','horas'=>120,'docente'=>'Lic. Carlos Hoyos'],
-            ['nombre'=>'Geografía turística de Colombia','horas'=>80,'docente'=>'Geogr. Patricia Vela'],
-            ['nombre'=>'Práctica hotelera','horas'=>720,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>20,'inscritos'=>15,'inicio'=>'13 Abr 2026','fin'=>'08 Ene 2027'],
-        ],
-    ],
-    [
-        'id'=>9,'codigo'=>'ESA-DEP-001',
-        'nombre'=>'Técnico Laboral en Salvamento Acuático',
-        'escuela'=>'Deporte y Cultura','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1440,'meses'=>9,'resolucion'=>'Res. 1122-2021 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde'],'cupo'=>20,'matricula'=>260000,'valor_programa'=>1400000,'valor_mensual'=>126000,
-        'estudiantes'=>28,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos en salvamento acuático, primeros auxilios y prevención de riesgos en piscinas, playas y entornos acuáticos.',
-        'perfil_egreso'=>'Realizar rescates acuáticos, aplicar maniobras de reanimación y gestionar la seguridad en espacios acuáticos.',
-        'modulos'=>[
-            ['nombre'=>'Técnicas de natación avanzada','horas'=>200,'docente'=>'Lic. Juan Giraldo'],
-            ['nombre'=>'Rescate y salvamento','horas'=>240,'docente'=>'Lic. Juan Giraldo'],
-            ['nombre'=>'Primeros auxilios acuáticos','horas'=>160,'docente'=>'Enf. Lucía Vargas'],
-            ['nombre'=>'Normativa y legislación acuática','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica en instalaciones acuáticas','horas'=>760,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>20,'inscritos'=>14,'inicio'=>'01 Mar 2026','fin'=>'27 Nov 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>20,'inscritos'=>14,'inicio'=>'01 Mar 2026','fin'=>'27 Nov 2026'],
-        ],
-    ],
-    [
-        'id'=>10,'codigo'=>'ESA-CIE-001',
-        'nombre'=>'Técnico Laboral en Electricista',
-        'escuela'=>'Ciencias','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1600,'meses'=>10,'resolucion'=>'Res. 4410-2022 · SED Bogotá',
-        'jornadas'=>['Mañana','Noche'],'cupo'=>22,'matricula'=>310000,'valor_programa'=>1710000,'valor_mensual'=>140000,
-        'estudiantes'=>35,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos para instalar, mantener y reparar sistemas eléctricos residenciales e industriales cumpliendo el Reglamento Técnico de Instalaciones Eléctricas (RETIE).',
-        'perfil_egreso'=>'Ejecutar instalaciones eléctricas, leer planos eléctricos y aplicar normas de seguridad RETIE en ambientes residenciales e industriales.',
-        'modulos'=>[
-            ['nombre'=>'Fundamentos de electricidad','horas'=>200,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Instalaciones eléctricas residenciales','horas'=>240,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Instalaciones industriales','horas'=>200,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'RETIE y normativa eléctrica','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica en campo','horas'=>880,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>22,'inscritos'=>18,'inicio'=>'16 Feb 2026','fin'=>'11 Dic 2026'],
-            ['nombre'=>'Grupo B — Noche','jornada'=>'Noche','cupo'=>22,'inscritos'=>17,'inicio'=>'16 Feb 2026','fin'=>'11 Dic 2026'],
-        ],
-    ],
-    [
-        'id'=>11,'codigo'=>'ESA-CIE-002',
-        'nombre'=>'Técnico Laboral en Electromecánica',
-        'escuela'=>'Ciencias','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1600,'meses'=>10,'resolucion'=>'Res. 3320-2021 · SED Bogotá',
-        'jornadas'=>['Tarde','Noche'],'cupo'=>20,'matricula'=>320000,'valor_programa'=>1720000,'valor_mensual'=>140000,
-        'estudiantes'=>22,'estado'=>'activo',
-        'descripcion'=>'Capacita en el mantenimiento y reparación de equipos electromecánicos, motores eléctricos y sistemas automatizados en entornos industriales.',
-        'perfil_egreso'=>'Mantener y reparar equipos electromecánicos, operar tableros de control y aplicar técnicas de mantenimiento preventivo y correctivo.',
-        'modulos'=>[
-            ['nombre'=>'Electricidad y magnetismo aplicada','horas'=>160,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Motores eléctricos y transformadores','horas'=>200,'docente'=>'Ing. Fabián Castro'],
-            ['nombre'=>'Automatización industrial básica','horas'=>200,'docente'=>'Ing. Patricia Mora'],
-            ['nombre'=>'Mantenimiento preventivo y correctivo','horas'=>160,'docente'=>'Ing. Patricia Mora'],
-            ['nombre'=>'Práctica industrial','horas'=>880,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Tarde','jornada'=>'Tarde','cupo'=>20,'inscritos'=>11,'inicio'=>'13 Abr 2026','fin'=>'08 Feb 2027'],
-            ['nombre'=>'Grupo B — Noche','jornada'=>'Noche','cupo'=>20,'inscritos'=>11,'inicio'=>'13 Abr 2026','fin'=>'08 Feb 2027'],
-        ],
-    ],
-    [
-        'id'=>12,'codigo'=>'ESA-CIE-003',
-        'nombre'=>'Técnico Laboral en Criminalística e Investigación Judicial',
-        'escuela'=>'Ciencias','nivel'=>'Técnico Laboral','modalidad'=>'Mixta',
-        'horas'=>1800,'meses'=>12,'resolucion'=>'Res. 2890-2023 · SED Bogotá',
-        'jornadas'=>['Noche','Fines de semana'],'cupo'=>25,'matricula'=>380000,'valor_programa'=>2140000,'valor_mensual'=>147000,
-        'estudiantes'=>19,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos en recolección de evidencias, cadena de custodia y apoyo a procesos de investigación judicial conforme a la normativa colombiana.',
-        'perfil_egreso'=>'Apoyar investigaciones judiciales, manejar evidencias criminales y elaborar informes periciales bajo supervisión.',
-        'modulos'=>[
-            ['nombre'=>'Fundamentos de criminalística','horas'=>200,'docente'=>'Crim. Elsa Rondón'],
-            ['nombre'=>'Cadena de custodia','horas'=>160,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Medicina legal básica','horas'=>160,'docente'=>'Dr. Víctor Ángel'],
-            ['nombre'=>'Fotografía forense','horas'=>120,'docente'=>'Crim. Elsa Rondón'],
-            ['nombre'=>'Derecho penal colombiano','horas'=>80,'docente'=>'Abg. Pedro Cano'],
-            ['nombre'=>'Práctica supervisada','horas'=>1080,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Noche','jornada'=>'Noche','cupo'=>25,'inscritos'=>10,'inicio'=>'01 Mar 2026','fin'=>'26 Feb 2027'],
-            ['nombre'=>'Grupo B — Fines de semana','jornada'=>'Fines de semana','cupo'=>25,'inscritos'=>9,'inicio'=>'07 Mar 2026','fin'=>'07 Mar 2027'],
-        ],
-    ],
-    [
-        'id'=>13,'codigo'=>'ESA-BEL-001',
-        'nombre'=>'Técnico Laboral en Barbería Profesional',
-        'escuela'=>'Belleza','nivel'=>'Técnico Laboral','modalidad'=>'Presencial',
-        'horas'=>1200,'meses'=>8,'resolucion'=>'Res. 0987-2022 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde','Noche'],'cupo'=>20,'matricula'=>240000,'valor_programa'=>1160000,'valor_mensual'=>115000,
-        'estudiantes'=>33,'estado'=>'activo',
-        'descripcion'=>'Forma técnicos en corte, afeitado, colorimetría y tratamientos capilares masculinos con énfasis en tendencias y atención al cliente.',
-        'perfil_egreso'=>'Realizar cortes, afeitados y tratamientos capilares masculinos, gestionar una barbería y brindar servicio al cliente de calidad.',
-        'modulos'=>[
-            ['nombre'=>'Historia y tendencias de barbería','horas'=>80,'docente'=>'Barbero Iván Peña'],
-            ['nombre'=>'Técnicas de corte masculino','horas'=>240,'docente'=>'Barbero Iván Peña'],
-            ['nombre'=>'Afeitado clásico y cuidado de barba','horas'=>160,'docente'=>'Barbero Iván Peña'],
-            ['nombre'=>'Colorimetría y tratamientos','horas'=>120,'docente'=>'Est. Diana Rueda'],
-            ['nombre'=>'Práctica en salón','horas'=>600,'docente'=>'Coordinación académica'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>20,'inscritos'=>12,'inicio'=>'13 Ene 2026','fin'=>'05 Sep 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>20,'inscritos'=>12,'inicio'=>'13 Ene 2026','fin'=>'05 Sep 2026'],
-            ['nombre'=>'Grupo C — Noche','jornada'=>'Noche','cupo'=>20,'inscritos'=>9,'inicio'=>'13 Ene 2026','fin'=>'05 Sep 2026'],
-        ],
-    ],
-    [
-        'id'=>14,'codigo'=>'ESA-EDU-002',
-        'nombre'=>'Técnico Laboral en Inglés A1–B2',
-        'escuela'=>'Educación e Idiomas','nivel'=>'Técnico Laboral','modalidad'=>'Mixta',
-        'horas'=>960,'meses'=>6,'resolucion'=>'Res. 1560-2020 · SED Bogotá',
-        'jornadas'=>['Mañana','Tarde','Noche','Fines de semana'],'cupo'=>25,'matricula'=>200000,'valor_programa'=>980000,'valor_mensual'=>130000,
-        'estudiantes'=>47,'estado'=>'activo',
-        'descripcion'=>'Desarrolla competencias comunicativas en inglés desde nivel básico hasta intermedio-alto, con enfoque en conversación, gramática y preparación para certificaciones internacionales.',
-        'perfil_egreso'=>'Comunicarse en inglés en contextos laborales y cotidianos, alcanzar nivel B2 del Marco Común Europeo y apoyar procesos bilingües.',
-        'modulos'=>[
-            ['nombre'=>'Inglés A1 — Básico','horas'=>160,'docente'=>'Lic. Carlos Hoyos'],
-            ['nombre'=>'Inglés A2 — Elemental','horas'=>160,'docente'=>'Lic. Carlos Hoyos'],
-            ['nombre'=>'Inglés B1 — Intermedio','horas'=>200,'docente'=>'Lic. Carlos Hoyos'],
-            ['nombre'=>'Inglés B2 — Intermedio alto','horas'=>200,'docente'=>'Lic. Ana Bernal'],
-            ['nombre'=>'Conversación y práctica oral','horas'=>240,'docente'=>'Lic. Ana Bernal'],
-        ],
-        'grupos'=>[
-            ['nombre'=>'Grupo A — Mañana','jornada'=>'Mañana','cupo'=>25,'inscritos'=>12,'inicio'=>'13 Ene 2026','fin'=>'10 Jul 2026'],
-            ['nombre'=>'Grupo B — Tarde','jornada'=>'Tarde','cupo'=>25,'inscritos'=>12,'inicio'=>'13 Ene 2026','fin'=>'10 Jul 2026'],
-            ['nombre'=>'Grupo C — Fines de semana','jornada'=>'Fines de semana','cupo'=>25,'inscritos'=>23,'inicio'=>'17 Ene 2026','fin'=>'18 Jul 2026'],
-        ],
-    ],
-];
-
-$totalEst   = array_sum(array_column($programas,'estudiantes'));
-$totalGrupos= array_sum(array_map(fn($p)=>count($p['grupos']),$programas));
-$activos    = count(array_filter($programas,fn($p)=>$p['estado']==='activo'));
-$escuelas   = array_unique(array_column($programas,'escuela'));
-
-/* ---- mock escuelas ---- */
-$escuelasData = [
-    ['id'=>1,'slug'=>'sal','nombre'=>'Salud',               'programas'=>7],
-    ['id'=>2,'slug'=>'tur','nombre'=>'Cocina y Turismo',    'programas'=>3],
-    ['id'=>3,'slug'=>'adm','nombre'=>'Administrativa',      'programas'=>2],
-    ['id'=>4,'slug'=>'edu','nombre'=>'Educación e Idiomas', 'programas'=>2],
-    ['id'=>5,'slug'=>'dep','nombre'=>'Deporte y Cultura',   'programas'=>1],
-    ['id'=>6,'slug'=>'cie','nombre'=>'Ciencias',            'programas'=>3],
-    ['id'=>7,'slug'=>'bel','nombre'=>'Belleza',             'programas'=>1],
-];
+/* Datos reales (ProgramaController@index): programas ofertados en la sede del admin. */
+$programas   = collect($programas);
+$totalEst    = $programas->sum('estudiantes');
+$totalGrupos = $programas->sum(fn ($p) => count($p['grupos']));
+$escFiltro   = $programas->pluck('escuela')->unique()->sort()->values();
+$escuelasData = $escuelas->map(fn ($e) => [
+    'id' => $e->id, 'nombre' => $e->nombre, 'slug' => mb_strtolower($e->sigla), 'programas' => $e->programas_sede,
+])->values();
 @endphp
 
 @section('content')
@@ -387,7 +58,7 @@ $escuelasData = [
                 <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </div>
             <div>
-                <div class="prg-kpi-val">{{ count($programas) }}</div>
+                <div class="prg-kpi-val">{{ $programas->count() }}</div>
                 <div class="prg-kpi-lbl">Programas</div>
             </div>
         </div>
@@ -414,7 +85,7 @@ $escuelasData = [
                 <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </div>
             <div>
-                <div class="prg-kpi-val">{{ count($escuelas) }}</div>
+                <div class="prg-kpi-val">{{ $escuelas->count() }}</div>
                 <div class="prg-kpi-lbl">Escuelas</div>
             </div>
         </div>
@@ -427,7 +98,7 @@ $escuelasData = [
             <input type="search" id="prg-search" placeholder="Buscar programa..." autocomplete="off">
         </div>
         <div class="app-combobox" id="prg-cb-filter-escuela" data-position="absolute"
-             data-options='@json(array_values($escuelas))'>
+             data-options='@json($escFiltro)'>
             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                 <span data-combobox-label>Todas las escuelas</span>
                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -447,7 +118,7 @@ $escuelasData = [
             </div>
             <input type="hidden" id="prg-filter-estado" data-combobox-value>
         </div>
-        <span class="prg-count-badge" id="prg-count">{{ count($programas) }} programas</span>
+        <span class="prg-count-badge" id="prg-count">{{ $programas->count() }} programas</span>
     </div>
 
     {{-- Tabla --}}
@@ -466,7 +137,7 @@ $escuelasData = [
             </thead>
             <tbody>
                 @foreach($programas as $p)
-                @php $esc = $escMap[$p['escuela']] ?? 'adm'; @endphp
+                @php $esc = $p['sigla']; @endphp
                 <tr class="prg-row"
                     data-nombre="{{ strtolower($p['nombre']) }}"
                     data-escuela="{{ $p['escuela'] }}"
@@ -493,7 +164,7 @@ $escuelasData = [
                         <div class="prg-est-cell">
                             <strong>{{ $p['estudiantes'] }}</strong>
                             <div class="prg-est-bar">
-                                <div class="prg-est-fill" style="width:{{ min(100, round($p['estudiantes']/$p['cupo']/count($p['grupos'])*100)) }}%"></div>
+                                <div class="prg-est-fill" style="width:{{ min(100, round($p['estudiantes'] / max(1, $p['cupo'] * max(1, count($p['grupos']))) * 100)) }}%"></div>
                             </div>
                         </div>
                     </td>
@@ -520,7 +191,7 @@ $escuelasData = [
         </table>
         <div class="prg-empty" id="prg-empty" style="display:none">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <p>No hay programas que coincidan con la búsqueda</p>
+            <p>{{ $programas->isEmpty() ? 'Tu sede todavía no ofrece programas. Crea el primero con «Nuevo programa».' : 'No hay programas que coincidan con la búsqueda' }}</p>
         </div>
     </div>
 
@@ -654,10 +325,14 @@ $escuelasData = [
                 <div class="prg-planes-section">
                     <div class="prg-planes-title">Valor mensual del sistema</div>
                     <div class="prg-plan-row">
-                        <span class="prg-plan-nombre">Cuota mensual</span>
+                        <span class="prg-plan-nombre">Cuota mensual (igual para todos los programas)</span>
                         <span class="prg-plan-detalle" id="dw-valor-mensual"></span>
                     </div>
-                    <div class="prg-planes-nota">El estudiante elige si paga mensual o semestral al matricularse.</div>
+                    <div class="prg-plan-row">
+                        <span class="prg-plan-nombre">Periodos del programa</span>
+                        <span class="prg-plan-detalle" id="dw-periodos"></span>
+                    </div>
+                    <div class="prg-planes-nota">El estudiante elige si paga mensual o por periodo al matricularse.</div>
                 </div>
             </div>
 
@@ -783,16 +458,16 @@ $escuelasData = [
             <div class="prg-mstep is-active" data-step="1">
                 <div class="prg-form-grid">
                     <div class="prg-field prg-field-full">
-                        <label>Nombre del programa <span class="prg-req">*</span></label>
-                        <input type="text" placeholder="Ej. Técnico Laboral en Servicios Geriátricos">
+                        <label for="prg-inp-nombre">Nombre del programa <span class="prg-req">*</span></label>
+                        <input type="text" id="prg-inp-nombre" maxlength="150" autocomplete="off" placeholder="Ej. Técnico Laboral en Servicios Geriátricos">
                     </div>
                     <div class="prg-field">
-                        <label>Código interno</label>
-                        <input type="text" placeholder="Ej. ESA-SAL-001">
+                        <label for="prg-inp-codigo">Código interno</label>
+                        <input type="text" id="prg-inp-codigo" maxlength="20" autocomplete="off" placeholder="Se genera solo si lo dejas vacío">
                     </div>
                     <div class="prg-field">
-                        <label>Nº Resolución de aprobación</label>
-                        <input type="text" placeholder="Ej. Res. 4521-2022 · SED Bogotá">
+                        <label for="prg-inp-resolucion">Nº Resolución de aprobación</label>
+                        <input type="text" id="prg-inp-resolucion" maxlength="255" autocomplete="off" placeholder="Ej. Res. 4521-2022 · SED Bogotá">
                     </div>
                     <div class="prg-field">
                         <label>Nivel <span class="prg-req">*</span></label>
@@ -838,16 +513,16 @@ $escuelasData = [
                         </div>
                     </div>
                     <div class="prg-field">
-                        <label>Duración en horas <span class="prg-req">*</span></label>
-                        <input type="number" placeholder="Ej. 1800" min="160">
+                        <label for="prg-inp-horas">Duración en horas <span class="prg-req">*</span></label>
+                        <input type="number" id="prg-inp-horas" placeholder="Ej. 1800" min="1">
                     </div>
                     <div class="prg-field prg-field-full">
-                        <label>Descripción del programa</label>
-                        <textarea rows="3" placeholder="Describe brevemente el programa, su enfoque y objetivos..."></textarea>
+                        <label for="prg-inp-descripcion">Descripción del programa</label>
+                        <textarea id="prg-inp-descripcion" rows="3" maxlength="2000" placeholder="Describe brevemente el programa, su enfoque y objetivos..."></textarea>
                     </div>
                     <div class="prg-field prg-field-full">
-                        <label>Perfil del egresado</label>
-                        <textarea rows="2" placeholder="Competencias y habilidades al finalizar el programa..."></textarea>
+                        <label for="prg-inp-perfil">Perfil del egresado</label>
+                        <textarea id="prg-inp-perfil" rows="2" maxlength="2000" placeholder="Competencias y habilidades al finalizar el programa..."></textarea>
                     </div>
                 </div>
             </div>
@@ -857,7 +532,7 @@ $escuelasData = [
                 <div class="prg-form-grid">
                     <div class="prg-field prg-field-full">
                         <label>Jornadas disponibles <span class="prg-req">*</span></label>
-                        <div class="prg-checks">
+                        <div class="prg-checks" id="prg-inp-jornadas">
                             <label class="prg-chk"><input type="checkbox" value="Mañana"><span>Mañana</span></label>
                             <label class="prg-chk"><input type="checkbox" value="Tarde"><span>Tarde</span></label>
                             <label class="prg-chk"><input type="checkbox" value="Noche"><span>Noche</span></label>
@@ -865,16 +540,26 @@ $escuelasData = [
                         </div>
                     </div>
                     <div class="prg-field">
-                        <label>Cupo máximo por grupo <span class="prg-req">*</span></label>
-                        <input type="number" placeholder="Ej. 25" min="1" max="60">
+                        <label for="prg-inp-cupo">Cupo máximo por grupo <span class="prg-req">*</span></label>
+                        <input type="number" id="prg-inp-cupo" placeholder="Ej. 25" min="1" max="60">
                     </div>
                     <div class="prg-field">
-                        <label>Fecha de inicio</label>
-                        <input type="date">
+                        <label for="prg-inp-meses">Duración en meses <span class="prg-req">*</span></label>
+                        <input type="number" id="prg-inp-meses" placeholder="Ej. 12" min="1" max="60">
                     </div>
                     <div class="prg-field">
-                        <label>Duración en meses</label>
-                        <input type="number" placeholder="Ej. 12" min="1">
+                        <label>Tipo de periodo <span class="prg-req">*</span></label>
+                        <div class="app-combobox" id="prg-cb-periodo">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Seleccionar...</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="prg-inp-periodo" data-combobox-value>
+                        </div>
+                        <span class="prg-field-hint" id="prg-periodos-hint" aria-live="polite"></span>
                     </div>
                     <div class="prg-field prg-field-full">
                         <label>Estado del programa <span class="prg-req">*</span></label>
@@ -902,27 +587,21 @@ $escuelasData = [
                             <input type="number" id="prg-inp-valor-programa" placeholder="2000000" min="0">
                         </div>
                     </div>
-                    <div class="prg-field">
+                    <div class="prg-field prg-field-full">
                         <label>Matrícula (pago inicial) <span class="prg-req">*</span></label>
                         <div class="prg-input-pfx">
                             <span>$</span>
                             <input type="number" id="prg-inp-matricula" placeholder="350000" min="0">
                         </div>
                     </div>
-                    <div class="prg-field">
-                        <label>Valor mensual del sistema <span class="prg-req">*</span></label>
-                        <div class="prg-input-pfx">
-                            <span>$</span>
-                            <input type="number" id="prg-inp-valor-mensual" placeholder="140000" min="0">
-                        </div>
-                    </div>
                 </div>
                 <div class="prg-costo-aviso">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    El estudiante elige si paga mensual o semestral al momento de matricularse. El sistema calcula el total según su elección.
+                    <span>El estudiante elige si paga mensual o por periodo al matricularse. A cada cuota se le suma la cuota del sistema (<strong>$ {{ number_format($cuotaSistema, 0, ',', '.') }}</strong> al mes), que define el Superadmin en Configuración.</span>
                 </div>
             </div>
 
+            <div class="prg-form-error" id="prg-form-error" role="alert" hidden></div>
         </div>{{-- /prg-modal-body --}}
 
         <div class="prg-modal-foot">
@@ -945,20 +624,29 @@ $escuelasData = [
                 <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <div>
+        <div id="esc-form">
             <label class="esc-modal-label" for="esc-inp-nombre">Nombre de la escuela</label>
-            <input type="text" class="esc-modal-input" id="esc-inp-nombre" placeholder="Ej: Tecnología">
+            <input type="text" class="esc-modal-input" id="esc-inp-nombre" maxlength="80" autocomplete="off" placeholder="Ej: Tecnología">
         </div>
+        <p class="esc-modal-texto" id="esc-confirm" hidden></p>
+        <div class="prg-form-error" id="esc-error" role="alert" hidden></div>
         <div class="esc-modal-foot">
             <button class="prg-btn prg-btn-ghost" id="esc-btn-cancel">Cancelar</button>
             <button class="prg-btn prg-btn-primary" id="esc-btn-save">Guardar</button>
         </div>
     </div>
 </div>
+{{-- Aviso al guardar --}}
+<div class="prg-toast" id="prg-toast" role="status" aria-live="polite" hidden></div>
 @endsection
 
 @push('scripts')
-<script>var PRG_DATA = @json($programas); var ESC_DATA = @json($escuelasData);</script>
+<script>
+    var PRG_DATA = @json($programas);
+    var ESC_DATA = @json($escuelasData);
+    var PRG_CUOTA = {{ (float) $cuotaSistema }};
+    var PRG_OPC = @json($opciones);
+</script>
 <script src="{{ asset('assets/js/admin/programas.js') }}?v={{ filemtime(public_path('assets/js/admin/programas.js')) }}" defer></script>
 <script src="{{ asset('assets/js/admin/escuelas.js') }}?v={{ filemtime(public_path('assets/js/admin/escuelas.js')) }}" defer></script>
 @endpush
