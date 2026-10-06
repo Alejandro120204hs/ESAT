@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\Docentes\DocenteController;
+use App\Http\Controllers\Admin\Grupos\GrupoController;
+use App\Http\Controllers\Admin\Programas\EscuelaController;
+use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Superadmin\AdministradorController;
-use App\Http\Controllers\Superadmin\SedeController;
+use App\Http\Controllers\Superadmin\Administradores\AdministradorController;
+use App\Http\Controllers\Superadmin\Sedes\SedeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -192,17 +196,25 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         return view('admin.dashboard');
     })->name('dashboard');
 
-    Route::get('programas', function () {
-        return view('admin.programas.index');
-    })->name('programas');
+    Route::get('programas', [ProgramaController::class, 'index'])->name('programas');
+    Route::post('programas', [ProgramaController::class, 'store'])->name('programas.store');
+    Route::put('programas/{programa}', [ProgramaController::class, 'update'])->name('programas.update');
+    Route::patch('programas/{programa}/estado', [ProgramaController::class, 'cambiarEstado'])->name('programas.estado');
 
-    Route::get('docentes', function () {
-        return view('admin.docentes.index');
-    })->name('docentes');
+    Route::post('escuelas', [EscuelaController::class, 'store'])->name('escuelas.store');
+    Route::put('escuelas/{escuela}', [EscuelaController::class, 'update'])->name('escuelas.update');
+    Route::delete('escuelas/{escuela}', [EscuelaController::class, 'destroy'])->name('escuelas.destroy');
 
-    Route::get('cursos', function () {
-        return view('admin.cursos.index');
-    })->name('cursos');
+    Route::get('docentes', [DocenteController::class, 'index'])->name('docentes');
+    Route::post('docentes', [DocenteController::class, 'store'])->name('docentes.store');
+    Route::put('docentes/{docente}', [DocenteController::class, 'update'])->name('docentes.update');
+    Route::patch('docentes/{docente}/estado', [DocenteController::class, 'cambiarEstado'])->name('docentes.estado');
+
+    // Panel "Grupos" (la tabla y la ruta se llaman cursos)
+    Route::get('cursos', [GrupoController::class, 'index'])->name('cursos');
+    Route::post('cursos', [GrupoController::class, 'store'])->name('cursos.store');
+    Route::put('cursos/{curso}', [GrupoController::class, 'update'])->name('cursos.update');
+    Route::patch('cursos/{curso}/estado', [GrupoController::class, 'cambiarEstado'])->name('cursos.estado');
 
     Route::get('horarios', function () {
         return view('admin.horarios.index');
@@ -211,6 +223,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('estudiantes', function () {
         return view('admin.estudiantes.index');
     })->name('estudiantes');
+
+    Route::get('acudientes', function () {
+        return view('admin.acudientes.index');
+    })->name('acudientes');
 });
 
 Route::middleware('auth')->group(function () {

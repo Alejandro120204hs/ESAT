@@ -112,8 +112,9 @@
     display: flex; align-items: center; justify-content: center;
     font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.82rem;
     color: var(--white);
+    background: #64748B; /* escuelas nuevas sin color propio */
 }
-.doc-person-name  { font-weight: 700; font-size: 0.87rem; color: var(--navy-3); }
+.doc-person-name { font-weight: 700; font-size: 0.87rem; color: var(--navy-3); }
 .doc-person-cedula{ font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
 
 /* Especialidad truncada */
@@ -150,6 +151,7 @@
 .doc-esc-tag {
     display: inline-block; padding: 3px 10px; border-radius: 999px;
     font-size: 0.73rem; font-weight: 700; white-space: nowrap;
+    background: #F1F5F9; color: #475569;
 }
 .doc-esc-sal,.doc-avatar.doc-esc-sal { background: rgba(239,68,68,0.12);   color: #991B1B; }
 .doc-esc-tur,.doc-avatar.doc-esc-tur { background: rgba(249,115,22,0.12);  color: #9A3412; }
@@ -392,3 +394,29 @@
     .doc-table thead th:nth-child(3),
     .doc-table .doc-esp-cell { display: none; }
 }
+
+/* ── Nota de contraseña (mismo estilo que Estudiantes) ── */
+.doc-nota { display: flex; gap: 10px; align-items: flex-start; margin: 0 20px 16px; padding: 12px 14px; border-radius: 12px; background: #EEF3FA; color: var(--navy-2); }
+.doc-nota[hidden] { display: none; }
+.doc-nota svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.doc-nota p { margin: 0; font-size: 0.84rem; line-height: 1.5; }
+
+/* ── Errores del formulario ── */
+.doc-form-error {
+    margin: 0 20px 20px; padding: 10px 12px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FECACA;
+    color: var(--red); font-size: 0.84rem; font-weight: 600; line-height: 1.45;
+}
+.doc-form-error[hidden] { display: none; }
+.doc-field input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,.1); }
+.doc-btn:disabled { opacity: 0.55; cursor: progress; }
+
+/* ── Aviso al guardar ── */
+.doc-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: #fff;
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.doc-toast.is-visible { opacity: 1; transform: none; }
+.doc-toast[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .doc-toast { transition: none; } }
