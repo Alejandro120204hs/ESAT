@@ -23,7 +23,7 @@ class DocenteController extends Controller
         $docentes = User::where('role', RolUsuario::Docente)
             ->where('sede_id', $this->sedeId())
             ->whereHas('docentePerfil')
-            ->with(['docentePerfil.escuela', 'cursosComoDocente.programa'])
+            ->with(['docentePerfil.escuela', 'cursosComoDocente' => fn ($q) => $q->where('estado', '!=', 'finalizado')->with(['programa', 'sesiones'])])
             ->orderBy('apellidos')
             ->orderBy('nombres')
             ->get();
@@ -171,13 +171,16 @@ class DocenteController extends Controller
             'especialidad'   => $d->titulo_academico,
             'vinculacion'    => $perfil->vinculacion,
             'estado'         => $perfil->estado,
-            // Programas y cursos salen de curso_docente (se llenan con el módulo de Cursos)
+            // Grupos vigentes (no finalizados) que tiene asignados en Grupos
             'programas'      => $d->cursosComoDocente->pluck('programa.nombre')->filter()->unique()->values(),
             'cursos'         => $d->cursosComoDocente->map(fn ($c) => [
-                'nombre'   => $c->nombre,
-                'programa' => $c->programa?->nombre ?? '—',
-                'grupo'    => '—',
-                'horario'  => '—',
+                'nombre'   => $c->codigo,
+                'programa' => str_replace('Técnico Laboral en ', '', $c->programa?->nombre ?? '—'),
+                'grupo'    => "{$c->nombre} — {$c->jornada}",
+                'horario'  => $c->sesiones->isEmpty() ? 'Sin horario' : $c->sesiones
+                    ->groupBy(fn ($s) => $s->inicio().'–'.$s->fin())
+                    ->map(fn ($ses, $rango) => $ses->map(fn ($s) => mb_substr($s->dia, 0, 3))->implode('-').' '.$rango)
+                    ->implode(' · '),
             ])->values(),
         ];
     }

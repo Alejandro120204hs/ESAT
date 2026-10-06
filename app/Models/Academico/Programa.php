@@ -31,7 +31,6 @@ class Programa extends Model
         'perfil_egreso',
         'jornadas',
         'cupo_grupo',
-        'fecha_inicio',
         'precio_total',
         'matricula',
         'duracion_meses',
@@ -50,7 +49,6 @@ class Programa extends Model
             'horas' => 'integer',
             'cupo_grupo' => 'integer',
             'jornadas' => 'array',
-            'fecha_inicio' => 'date',
         ];
     }
 

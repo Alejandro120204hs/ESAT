@@ -301,7 +301,7 @@ $escFiltro     = $docentes->pluck('escuela')->unique()->sort()->values();
                     <table class="doc-cursos-table">
                         <thead>
                             <tr>
-                                <th>Módulo</th>
+                                <th>Código</th>
                                 <th>Programa</th>
                                 <th>Grupo</th>
                                 <th>Horario</th>

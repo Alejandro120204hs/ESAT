@@ -1,4 +1,4 @@
-{{-- mock --}}
+{{-- Grupos: datos reales desde Admin\Grupos\GrupoController. --}}
 @extends('admin.layout')
 
 @section('title', 'Grupos')
@@ -10,173 +10,13 @@
 @endpush
 
 @php
-/* ---- mock data ---- */
-$cursos = [
-    [
-        'id'=>1,'codigo'=>'CUR-SAL-001-A','nombre'=>'Servicios Geriátricos','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-        'docente'=>'María González Ruiz','modalidad'=>'Presencial','jornada'=>'Mañana',
-        'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'08:00','hora_fin'=>'12:00',
-        'fecha_inicio'=>'15 Ene 2026','fecha_fin'=>'15 Ene 2027','cupo_max'=>25,'inscritos'=>22,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Laura Ospina Reyes','cedula'=>'1.020.456.789'],
-            ['nombre'=>'Carlos Mendez Rios','cedula'=>'1.030.234.567'],
-            ['nombre'=>'Ana Torres Peña','cedula'=>'52.340.123'],
-            ['nombre'=>'Jorge Morales Gil','cedula'=>'71.890.234'],
-            ['nombre'=>'Sandra Ruiz Cano','cedula'=>'43.120.890'],
-        ],
-    ],
-    [
-        'id'=>2,'codigo'=>'CUR-SAL-001-B','nombre'=>'Servicios Geriátricos','grupo'=>'Grupo B',
-        'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-        'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','jornada'=>'Tarde',
-        'dias'=>['Martes','Jueves'],'hora_inicio'=>'14:00','hora_fin'=>'18:00',
-        'fecha_inicio'=>'01 Feb 2026','fecha_fin'=>'01 Feb 2027','cupo_max'=>25,'inscritos'=>18,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'David Castro Lara','cedula'=>'1.015.678.901'],
-            ['nombre'=>'Valentina Suárez Mora','cedula'=>'1.022.345.678'],
-            ['nombre'=>'Felipe Jiménez Cruz','cedula'=>'80.456.789'],
-        ],
-    ],
-    [
-        'id'=>3,'codigo'=>'CUR-SAL-002-A','nombre'=>'Auxiliar de Psiquiatría','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Auxiliar de Psiquiatría','escuela'=>'Salud',
-        'docente'=>'María González Ruiz','modalidad'=>'Presencial','jornada'=>'Tarde',
-        'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'14:00','hora_fin'=>'18:00',
-        'fecha_inicio'=>'10 Mar 2026','fecha_fin'=>'10 Mar 2027','cupo_max'=>20,'inscritos'=>19,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Paola Herrera Díaz','cedula'=>'43.678.901'],
-            ['nombre'=>'Ricardo Gómez Villa','cedula'=>'71.234.890'],
-            ['nombre'=>'Camila Rojas Pinto','cedula'=>'1.018.456.234'],
-        ],
-    ],
-    [
-        'id'=>4,'codigo'=>'CUR-TUR-001-A','nombre'=>'Cocina Nacional e Internacional','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-        'docente'=>'Laura Martínez Peña','modalidad'=>'Presencial','jornada'=>'Mañana',
-        'dias'=>['Lunes','Martes','Jueves'],'hora_inicio'=>'07:00','hora_fin'=>'11:00',
-        'fecha_inicio'=>'20 Ene 2026','fecha_fin'=>'20 Ene 2027','cupo_max'=>20,'inscritos'=>20,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Sofía Vargas León','cedula'=>'1.019.345.678'],
-            ['nombre'=>'Miguel Ángel Ríos','cedula'=>'80.789.012'],
-            ['nombre'=>'Isabella Torres Cruz','cedula'=>'1.025.678.901'],
-        ],
-    ],
-    [
-        'id'=>5,'codigo'=>'CUR-TUR-001-B','nombre'=>'Cocina Nacional e Internacional','grupo'=>'Grupo B',
-        'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-        'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','jornada'=>'Tarde',
-        'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'13:00','hora_fin'=>'17:00',
-        'fecha_inicio'=>'03 Feb 2026','fecha_fin'=>'03 Feb 2027','cupo_max'=>20,'inscritos'=>17,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Daniela Pérez Mora','cedula'=>'1.023.456.789'],
-            ['nombre'=>'Sebastián López Gil','cedula'=>'1.031.234.567'],
-        ],
-    ],
-    [
-        'id'=>6,'codigo'=>'CUR-TUR-002-A','nombre'=>'Sommelier y Enología','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Sommelier y Enología','escuela'=>'Cocina y Turismo',
-        'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','jornada'=>'Noche',
-        'dias'=>['Martes','Jueves','Sábado'],'hora_inicio'=>'18:00','hora_fin'=>'21:00',
-        'fecha_inicio'=>'15 Feb 2026','fecha_fin'=>'15 Feb 2027','cupo_max'=>15,'inscritos'=>12,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Andrés Moreno Cárdenas','cedula'=>'79.890.123'],
-            ['nombre'=>'Natalia Soto Reyes','cedula'=>'43.901.234'],
-        ],
-    ],
-    [
-        'id'=>7,'codigo'=>'CUR-ADM-001-A','nombre'=>'Auditoría y Facturación Médica','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas','escuela'=>'Administrativa',
-        'docente'=>'Patricia López Castro','modalidad'=>'Mixta','jornada'=>'Mañana',
-        'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'08:00','hora_fin'=>'12:00',
-        'fecha_inicio'=>'12 Ene 2026','fecha_fin'=>'12 Ene 2027','cupo_max'=>30,'inscritos'=>28,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Juan Pablo Cárdenas','cedula'=>'80.123.456'],
-            ['nombre'=>'Luisa Fernanda Niño','cedula'=>'52.890.123'],
-            ['nombre'=>'Ernesto Salcedo Vega','cedula'=>'79.345.678'],
-        ],
-    ],
-    [
-        'id'=>8,'codigo'=>'CUR-ADM-002-A','nombre'=>'Auxiliar Contable y Administrativo','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa',
-        'docente'=>'Roberto Díaz Sierra','modalidad'=>'Presencial','jornada'=>'Tarde',
-        'dias'=>['Martes','Jueves'],'hora_inicio'=>'14:00','hora_fin'=>'18:00',
-        'fecha_inicio'=>'05 Feb 2026','fecha_fin'=>'05 Nov 2026','cupo_max'=>25,'inscritos'=>21,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'María Camila Torres','cedula'=>'1.021.789.012'],
-            ['nombre'=>'Óscar Pineda Ruiz','cedula'=>'80.678.901'],
-        ],
-    ],
-    [
-        'id'=>9,'codigo'=>'CUR-EDU-001-A','nombre'=>'Auxiliar de Preescolar','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Asistente de Preescolar','escuela'=>'Educación e Idiomas',
-        'docente'=>'Diana Vargas Nieto','modalidad'=>'Presencial','jornada'=>'Mañana',
-        'dias'=>['Lunes','Martes','Miércoles','Jueves','Viernes'],'hora_inicio'=>'07:00','hora_fin'=>'10:00',
-        'fecha_inicio'=>'20 Ene 2026','fecha_fin'=>'20 Oct 2026','cupo_max'=>20,'inscritos'=>16,
-        'estado'=>'activo',
-        'estudiantes'=>[
-            ['nombre'=>'Alejandra Bernal Lozano','cedula'=>'1.024.567.890'],
-            ['nombre'=>'Tatiana Guzmán Pardo','cedula'=>'52.456.789'],
-        ],
-    ],
-    [
-        'id'=>10,'codigo'=>'CUR-SAL-003-A','nombre'=>'Seguridad Ocupacional','grupo'=>'Grupo A',
-        'programa'=>'Técnico Laboral en Seguridad Ocupacional y Laboral','escuela'=>'Salud',
-        'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','jornada'=>'Noche',
-        'dias'=>['Lunes','Miércoles','Viernes'],'hora_inicio'=>'18:00','hora_fin'=>'22:00',
-        'fecha_inicio'=>'01 Mar 2026','fecha_fin'=>'01 Mar 2027','cupo_max'=>20,'inscritos'=>8,
-        'estado'=>'planificacion',
-        'estudiantes'=>[],
-    ],
-    [
-        'id'=>11,'codigo'=>'CUR-ADM-002-B','nombre'=>'Auxiliar Contable y Administrativo','grupo'=>'Grupo B',
-        'programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa',
-        'docente'=>'Patricia López Castro','modalidad'=>'Virtual','jornada'=>'Noche',
-        'dias'=>['Sábado'],'hora_inicio'=>'08:00','hora_fin'=>'14:00',
-        'fecha_inicio'=>'10 Ene 2025','fecha_fin'=>'10 Oct 2025','cupo_max'=>25,'inscritos'=>25,
-        'estado'=>'finalizado',
-        'estudiantes'=>[
-            ['nombre'=>'Rodrigo Herrera Ossa','cedula'=>'8.765.432'],
-            ['nombre'=>'Marcela Salazar Forero','cedula'=>'43.234.567'],
-        ],
-    ],
-];
-
-$totalInscritos = array_sum(array_column($cursos, 'inscritos'));
-$totalCupo      = array_sum(array_column($cursos, 'cupo_max'));
-$activos        = count(array_filter($cursos, fn($c)=>$c['estado']==='activo'));
-$cupoDisponible = $totalCupo - $totalInscritos;
-$programasUnicos = array_values(array_unique(array_column($cursos, 'programa')));
-
-$escuelasConProgramas = [
-    ['id'=>1,'nombre'=>'Salud','programas'=>[
-        'Técnico Laboral en Servicios Geriátricos',
-        'Técnico Laboral en Auxiliar de Psiquiatría',
-        'Técnico Laboral en Seguridad Ocupacional y Laboral',
-    ]],
-    ['id'=>2,'nombre'=>'Cocina y Turismo','programas'=>[
-        'Técnico Laboral en Cocina Nacional e Internacional',
-        'Técnico Laboral en Sommelier y Enología',
-    ]],
-    ['id'=>3,'nombre'=>'Administrativa','programas'=>[
-        'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas',
-        'Técnico Laboral en Auxiliar Contable y Administrativo',
-    ]],
-    ['id'=>4,'nombre'=>'Educación e Idiomas','programas'=>[
-        'Técnico Laboral en Asistente de Preescolar',
-    ]],
-    ['id'=>5,'nombre'=>'Deporte y Cultura','programas'=>[]],
-    ['id'=>6,'nombre'=>'Ciencias','programas'=>[]],
-    ['id'=>7,'nombre'=>'Belleza','programas'=>[]],
-];
+/* Datos reales (Admin\Grupos\GrupoController@index): grupos de la sede del admin. */
+$grupos          = collect($grupos);
+$totalInscritos  = $grupos->sum('inscritos');
+$activos         = $grupos->where('estado', 'activo')->count();
+$cupoDisponible  = $grupos->where('estado', '!=', 'finalizado')->sum(fn ($g) => max(0, $g['cupo_max'] - $g['inscritos']));
+$programasUnicos = $grupos->pluck('programa')->unique()->sort()->values();
+$diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'=>'Jue','Viernes'=>'Vie','Sábado'=>'Sáb'];
 @endphp
 
 @section('content')
@@ -201,7 +41,7 @@ $escuelasConProgramas = [
                 <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             </div>
             <div>
-                <div class="cur-kpi-val">{{ count($cursos) }}</div>
+                <div class="cur-kpi-val">{{ $grupos->count() }}</div>
                 <div class="cur-kpi-lbl">Total grupos</div>
             </div>
         </div>
@@ -266,7 +106,7 @@ $escuelasConProgramas = [
             <input type="hidden" id="cur-filter-estado" data-combobox-value>
         </div>
 
-        <span class="cur-count-badge" id="cur-count">{{ count($cursos) }} grupos</span>
+        <span class="cur-count-badge" id="cur-count">{{ $grupos->count() }} grupos</span>
     </div>
 
     {{-- Tabla --}}
@@ -284,15 +124,11 @@ $escuelasConProgramas = [
                 </tr>
             </thead>
             <tbody>
-                @foreach($cursos as $c)
+                @foreach($grupos as $c)
                 @php
                     $pct = $c['cupo_max'] > 0 ? round(($c['inscritos'] / $c['cupo_max']) * 100) : 0;
                     $fillClass = $pct >= 100 ? 'is-full' : ($pct < 50 ? 'is-low' : '');
-                    $escCls = match($c['escuela']) {
-                        'Salud' => 'sal', 'Cocina y Turismo' => 'tur',
-                        'Administrativa' => 'adm', 'Educación e Idiomas' => 'edu',
-                        'Deporte y Cultura' => 'dep', 'Ciencias' => 'cie', default => 'bel'
-                    };
+                    $escCls = $c['sigla'];
                     $estadoCls = match($c['estado']) {
                         'activo' => 'cur-estado-activo',
                         'planificacion' => 'cur-estado-planificacion',
@@ -301,11 +137,13 @@ $escuelasConProgramas = [
                     $estadoLbl = match($c['estado']) {
                         'activo' => 'Activo', 'planificacion' => 'En planificación', default => 'Finalizado'
                     };
-                    $diasStr = implode(' · ', array_map(fn($d) => mb_substr($d,0,3), $c['dias']));
+                    $ses     = collect($c['sesiones']);
+                    $diasStr = $ses->pluck('dia')->unique()->map(fn ($d) => $diaCorto[$d])->implode(' · ');
+                    $rangos  = $ses->map(fn ($x) => $x['hora_inicio'].' – '.$x['hora_fin'])->unique();
                 @endphp
                 <tr class="cur-row"
                     data-id="{{ $c['id'] }}"
-                    data-nombre="{{ strtolower($c['grupo'] . ' ' . $c['programa']) }}"
+                    data-nombre="{{ mb_strtolower($c['grupo'].' '.$c['codigo'].' '.$c['programa'].' '.$c['docente']) }}"
                     data-programa="{{ $c['programa'] }}"
                     data-estado="{{ $c['estado'] }}">
                     <td>
@@ -323,8 +161,13 @@ $escuelasConProgramas = [
                     <td><span class="cur-docente-txt">{{ $c['docente'] }}</span></td>
                     <td>
                         <div class="cur-horario-cell">
-                            <span class="cur-dias-txt">{{ $diasStr }}</span>
-                            <span class="cur-hora-txt">{{ $c['hora_inicio'] }} – {{ $c['hora_fin'] }}</span>
+                            @if($ses->isEmpty())
+                                <span class="cur-dias-txt">Sin horario</span>
+                                <span class="cur-hora-txt">Asígnalo en Horarios</span>
+                            @else
+                                <span class="cur-dias-txt">{{ $diasStr }}</span>
+                                <span class="cur-hora-txt">{{ $rangos->count() === 1 ? $rangos->first() : 'Varios horarios · '.$c['horas_semana'].' h/sem' }}</span>
+                            @endif
                             <span class="cur-jornada-tag">{{ $c['jornada'] }}</span>
                         </div>
                     </td>
@@ -355,7 +198,7 @@ $escuelasConProgramas = [
         <div id="cur-empty" class="cur-empty" style="display:none;">
             <div class="cur-empty-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
             <div class="cur-empty-ttl">Sin grupos</div>
-            <div class="cur-empty-sub">No se encontraron grupos con ese filtro.</div>
+            <div class="cur-empty-sub">{{ $grupos->isEmpty() ? 'Tu sede todavía no tiene grupos. Crea el primero con «Nuevo grupo».' : 'No se encontraron grupos con ese filtro.' }}</div>
         </div>
 
         <div id="cur-pagination" class="cur-pagination" style="display:none;">
@@ -445,11 +288,11 @@ $escuelasConProgramas = [
             <div class="cur-horario-block">
                 <div class="cur-horario-dias" id="dw-dias"></div>
                 <div class="cur-horario-row">
-                    <span class="cur-horario-row-lbl">Hora</span>
+                    <span class="cur-horario-row-lbl">Por semana</span>
                     <span class="cur-horario-row-val" id="dw-hora"></span>
                 </div>
                 <div class="cur-horario-row" style="margin-top:8px;">
-                    <span class="cur-horario-row-lbl">Duración</span>
+                    <span class="cur-horario-row-lbl">En todo el grupo</span>
                     <span class="cur-horario-row-val" id="dw-duracion"></span>
                 </div>
             </div>
@@ -500,12 +343,12 @@ $escuelasConProgramas = [
             <div class="cur-mstep is-active" data-step="1">
                 <div class="cur-form-grid">
                     <div class="cur-form-group">
-                        <label class="cur-form-lbl">Código</label>
-                        <input type="text" class="cur-form-input" placeholder="Ej: CUR-SAL-001-A">
+                        <label class="cur-form-lbl" for="cur-inp-codigo">Código</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-codigo" maxlength="30" autocomplete="off" placeholder="Se genera solo">
                     </div>
                     <div class="cur-form-group">
-                        <label class="cur-form-lbl">Grupo</label>
-                        <input type="text" class="cur-form-input" placeholder="Ej: Grupo A">
+                        <label class="cur-form-lbl" for="cur-inp-grupo">Grupo</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-grupo" maxlength="60" autocomplete="off" placeholder="Siguiente letra libre">
                     </div>
                     <div class="cur-form-group full">
                         <label class="cur-form-lbl">Escuela / Área <span class="cur-form-req">*</span></label>
@@ -537,27 +380,24 @@ $escuelasConProgramas = [
                             <input type="hidden" id="cur-val-programa" data-combobox-value>
                         </div>
                     </div>
-                    <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Modalidad</label>
-                        <div class="app-combobox" id="cur-cb-modalidad">
-                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                                <span data-combobox-label>Presencial</span>
-                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-                            </button>
-                            <div class="app-combobox-panel" data-combobox-panel hidden>
-                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
-                            </div>
-                            <input type="hidden" id="cur-val-modalidad" data-combobox-value>
-                        </div>
+                    {{-- Modalidad y cupo son los del programa: se editan solo en Programas --}}
+                    <div class="cur-form-group">
+                        <label class="cur-form-lbl" for="cur-inp-modalidad">Modalidad</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-modalidad" readonly tabindex="-1" placeholder="Elige el programa">
                     </div>
+                    <div class="cur-form-group">
+                        <label class="cur-form-lbl" for="cur-inp-cupo">Cupo máximo</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-cupo" readonly tabindex="-1" placeholder="Elige el programa">
+                    </div>
+                    <p class="cur-form-hint full">La modalidad y el cupo son los del programa. Para cambiarlos, edita el programa en Programas.</p>
                 </div>
             </div>
 
-            {{-- Paso 2 --}}
+            {{-- Paso 2 (días y horas de clase se asignan en Horarios) --}}
             <div class="cur-mstep" data-step="2">
                 <div class="cur-form-grid">
                     <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Docente</label>
+                        <label class="cur-form-lbl">Docente <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-docente">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Seleccionar docente</span>
@@ -574,10 +414,10 @@ $escuelasConProgramas = [
                         </div>
                     </div>
                     <div class="cur-form-group">
-                        <label class="cur-form-lbl">Jornada</label>
+                        <label class="cur-form-lbl">Jornada <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-jornada">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                                <span data-combobox-label>Mañana</span>
+                                <span data-combobox-label>Elige el programa primero</span>
                                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <div class="app-combobox-panel" data-combobox-panel hidden>
@@ -586,21 +426,18 @@ $escuelasConProgramas = [
                             <input type="hidden" id="cur-val-jornada" data-combobox-value>
                         </div>
                     </div>
-                    <div class="cur-form-group">
-                        <label class="cur-form-lbl">Cupo máximo</label>
-                        <input type="number" class="cur-form-input" placeholder="Ej: 25" min="1">
-                    </div>
 
                     <div class="cur-form-group">
-                        <label class="cur-form-lbl">Fecha inicio</label>
-                        <input type="date" class="cur-form-input">
+                        <label class="cur-form-lbl" for="cur-inp-inicio">Fecha inicio <span class="cur-form-req">*</span></label>
+                        <input type="date" class="cur-form-input" id="cur-inp-inicio">
                     </div>
                     <div class="cur-form-group">
-                        <label class="cur-form-lbl">Fecha fin</label>
-                        <input type="date" class="cur-form-input">
+                        <label class="cur-form-lbl" for="cur-inp-fin">Fecha fin</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-fin" readonly tabindex="-1" placeholder="Se calcula sola">
+                        <span class="cur-form-hint" id="cur-fin-hint"></span>
                     </div>
                     <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Estado</label>
+                        <label class="cur-form-lbl">Estado <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-estado">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Activo</span>
@@ -617,6 +454,8 @@ $escuelasConProgramas = [
 
         </div>
 
+        <div class="cur-form-error" id="cur-form-error" role="alert" hidden></div>
+
         <div class="cur-modal-foot">
             <span class="cur-step-lbl" id="cur-step-lbl">Paso 1 de 2</span>
             <div class="cur-modal-foot-btns">
@@ -628,12 +467,15 @@ $escuelasConProgramas = [
     </div>
 </div>
 
+{{-- Aviso al guardar --}}
+<div class="cur-toast" id="cur-toast" role="status" aria-live="polite" hidden></div>
 @endsection
 
 @push('scripts')
 <script>
-var CUR_DATA = @json($cursos);
-var CUR_ESC_PRG = @json($escuelasConProgramas);
+var CUR_DATA = @json($grupos);
+var CUR_ESC_PRG = @json($escuelas);
+var CUR_DOCENTES = @json($docentes);
 </script>
 <script src="{{ asset('assets/js/admin/cursos.js') }}?v={{ filemtime(public_path('assets/js/admin/cursos.js')) }}" defer></script>
 @endpush

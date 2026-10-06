@@ -94,8 +94,18 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   nuevas de `users`. Título profesional = `users.profesion`, especialidad =
   `users.titulo_academico`. Residencia = `departamento_residencia` /
   `ciudad_residencia` (distinto del lugar de nacimiento).
+- Grupos = tabla `cursos` (`nombre` = "Grupo A"). Modalidad y cupo NO se
+  guardan en el grupo: son siempre los del programa (se editan en Programas).
+  El programa no tiene fecha de inicio: la tiene cada grupo, y su `fecha_fin`
+  no se escribe, es `Curso::finPara()` = inicio + duración del programa (si
+  cambia la duración del programa se recalculan sus grupos). Editar un
+  programa no puede invalidar sus grupos vigentes (cupo, jornadas, horas).
+  Docente vía `curso_docente`
+  (uno por grupo); horario semanal en `curso_sesiones`. Las reglas de horario
+  (tope de horas del programa, cruces de docente) viven en
+  `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos). El resto del panel Admin sigue siendo maqueta.
 
 ## Bug recurrente a tener en cuenta
 
@@ -106,6 +116,12 @@ navegador (el `display` de un autor gana sobre el `display:none` del
 user-agent). Ya pasó varias veces (paginación, lista de combobox, panel de
 combobox). Siempre que se le ponga `display:` a algo que también se oculta
 vía `hidden`, agregar explícitamente `.clase[hidden] { display: none; }`.
+
+Otro del combobox: se recoloca con `window.addEventListener('scroll', …, true)`,
+que también captura el scroll de **su propia lista**; como `posicionar()`
+reinicia `list.style.maxHeight`, la lista volvía al inicio y no dejaba bajar.
+El listener debe ser `alScroll(e)`, que ignora `e.target` dentro del panel.
+Al copiar el combobox a otra pantalla, copiar también `alScroll`.
 
 ## Combobox propio (departamento/ciudad de Colombia)
 

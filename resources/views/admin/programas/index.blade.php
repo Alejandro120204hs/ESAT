@@ -544,10 +544,6 @@ $escuelasData = $escuelas->map(fn ($e) => [
                         <input type="number" id="prg-inp-cupo" placeholder="Ej. 25" min="1" max="60">
                     </div>
                     <div class="prg-field">
-                        <label for="prg-inp-fecha">Fecha de inicio</label>
-                        <input type="date" id="prg-inp-fecha">
-                    </div>
-                    <div class="prg-field">
                         <label for="prg-inp-meses">Duración en meses <span class="prg-req">*</span></label>
                         <input type="number" id="prg-inp-meses" placeholder="Ej. 12" min="1" max="60">
                     </div>

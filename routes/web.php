@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\Docentes\DocenteController;
+use App\Http\Controllers\Admin\Grupos\GrupoController;
 use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
@@ -209,9 +210,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('docentes/{docente}', [DocenteController::class, 'update'])->name('docentes.update');
     Route::patch('docentes/{docente}/estado', [DocenteController::class, 'cambiarEstado'])->name('docentes.estado');
 
-    Route::get('cursos', function () {
-        return view('admin.cursos.index');
-    })->name('cursos');
+    // Panel "Grupos" (la tabla y la ruta se llaman cursos)
+    Route::get('cursos', [GrupoController::class, 'index'])->name('cursos');
+    Route::post('cursos', [GrupoController::class, 'store'])->name('cursos.store');
+    Route::put('cursos/{curso}', [GrupoController::class, 'update'])->name('cursos.update');
+    Route::patch('cursos/{curso}/estado', [GrupoController::class, 'cambiarEstado'])->name('cursos.estado');
 
     Route::get('horarios', function () {
         return view('admin.horarios.index');

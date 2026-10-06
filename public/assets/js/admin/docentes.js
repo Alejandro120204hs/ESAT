@@ -549,12 +549,18 @@
             list.style.maxHeight = Math.max(Math.min(tope, espacio - extra), 40) + 'px';
         }
         var esAbsoluto = root.dataset.position === 'absolute';
+        /* Se recoloca cuando la página se desplaza, pero no con el scroll de su propia
+           lista: recolocar reinicia el alto de la lista y la devolvía al inicio. */
+        function alScroll(e) {
+            if (panel.contains(e.target)) return;
+            posicionar();
+        }
         function abrir() {
             panel.hidden = false;
             root.classList.add('is-open');
             if (!esAbsoluto) {
                 posicionar();
-                window.addEventListener('scroll', posicionar, true);
+                window.addEventListener('scroll', alScroll, true);
                 window.addEventListener('resize', posicionar);
             }
             if (searchInput) {
@@ -567,7 +573,7 @@
             panel.hidden = true;
             root.classList.remove('is-open');
             if (!esAbsoluto) {
-                window.removeEventListener('scroll', posicionar, true);
+                window.removeEventListener('scroll', alScroll, true);
                 window.removeEventListener('resize', posicionar);
             }
         }

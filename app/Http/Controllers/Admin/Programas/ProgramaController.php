@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Programas;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Programas\ProgramaRequest;
+use App\Models\Academico\Curso;
 use App\Models\Academico\Escuela;
 use App\Models\Academico\Programa;
 use App\Models\Sistema\Auditoria;
@@ -18,11 +19,13 @@ class ProgramaController extends Controller
         $sedeId = $this->sedeId();
 
         $programas = Programa::deSede($sedeId)
-            ->with(['escuela', 'modulos'])
-            ->withCount([
-                'matriculas as estudiantes' => fn ($q) => $q->where('sede_id', $sedeId),
-                'cursos as grupos'          => fn ($q) => $q->where('sede_id', $sedeId),
+            ->with([
+                'escuela', 'modulos',
+                // Grupos vigentes del programa en esta sede
+                'cursos' => fn ($q) => $q->where('sede_id', $sedeId)->where('estado', '!=', 'finalizado')
+                    ->withCount('estudiantes')->orderBy('nombre'),
             ])
+            ->withCount(['matriculas as estudiantes' => fn ($q) => $q->where('sede_id', $sedeId)])
             ->orderBy('nombre')
             ->get();
 
@@ -66,7 +69,14 @@ class ProgramaController extends Controller
 
         $datos = $this->datos($request);
         $datos['codigo'] ??= $programa->codigo;
-        $programa->update($datos);
+
+        DB::transaction(function () use ($programa, $datos) {
+            $programa->update($datos);
+            // La fecha de fin de cada grupo es su inicio + la duración del programa
+            if ($programa->wasChanged('duracion_meses')) {
+                $programa->cursos->each(fn (Curso $c) => $c->update(['fecha_fin' => Curso::finPara($c->fecha_inicio, $programa)]));
+            }
+        });
 
         Auditoria::registrar('editar', $programa, "Editó el programa {$programa->nombre} ({$programa->codigo}).");
 
@@ -152,7 +162,6 @@ class ProgramaController extends Controller
             'perfil_egreso'  => $p->perfil_egreso,
             'jornadas'       => $p->jornadas ?? [],
             'cupo'           => $p->cupo_grupo,
-            'fecha_inicio'   => $p->fecha_inicio?->format('Y-m-d'),
             'valor_programa' => (float) $p->precio_total,
             'matricula'      => (float) $p->matricula,
             'estado'         => $p->estado,
@@ -163,8 +172,14 @@ class ProgramaController extends Controller
                 // Se asigna cuando exista el módulo de Docentes/Cursos
                 'docente' => 'Sin asignar',
             ])->values(),
-            // Los grupos llegan con el módulo de Cursos (cursos de la sede)
-            'grupos'         => [],
+            'grupos'         => $p->cursos->map(fn ($c) => [
+                'nombre'    => "{$c->nombre} — {$c->jornada}",
+                'jornada'   => $c->jornada,
+                'cupo'      => $p->cupo_grupo,
+                'inscritos' => $c->estudiantes_count,
+                'inicio'    => $c->fecha_inicio->format('d/m/Y'),
+                'fin'       => $c->fecha_fin->format('d/m/Y'),
+            ])->values(),
         ];
     }
 }

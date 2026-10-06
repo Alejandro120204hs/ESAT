@@ -365,7 +365,6 @@
         campo('prg-inp-descripcion').value = p ? (p.descripcion || '') : '';
         campo('prg-inp-perfil').value      = p ? (p.perfil_egreso || '') : '';
         campo('prg-inp-cupo').value        = p ? p.cupo : '';
-        campo('prg-inp-fecha').value       = p ? (p.fecha_inicio || '') : '';
         campo('prg-inp-meses').value       = p ? p.meses : '';
         campo('prg-inp-valor-programa').value = p ? p.valor_programa : '';
         campo('prg-inp-matricula').value   = p ? p.matricula : '';
@@ -472,7 +471,7 @@
         nombre: ['prg-inp-nombre', 1], codigo: ['prg-inp-codigo', 1], resolucion: ['prg-inp-resolucion', 1],
         nivel: ['prg-cb-nivel', 1], escuela_id: ['prg-cb-escuela', 1], modalidad: ['prg-cb-modalidad', 1],
         horas: ['prg-inp-horas', 1], descripcion: ['prg-inp-descripcion', 1], perfil_egreso: ['prg-inp-perfil', 1],
-        jornadas: ['prg-inp-jornadas', 2], cupo_grupo: ['prg-inp-cupo', 2], fecha_inicio: ['prg-inp-fecha', 2],
+        jornadas: ['prg-inp-jornadas', 2], cupo_grupo: ['prg-inp-cupo', 2],
         duracion_meses: ['prg-inp-meses', 2], tipo_periodo: ['prg-cb-periodo', 2], estado: ['prg-cb-estado', 2],
         precio_total: ['prg-inp-valor-programa', 3], matricula: ['prg-inp-matricula', 3]
     };
@@ -482,7 +481,7 @@
             nombre: valor('prg-inp-nombre'), codigo: valor('prg-inp-codigo'), resolucion: valor('prg-inp-resolucion'),
             nivel: cbNivel.value(), escuela_id: cbEscuela.value(), modalidad: cbModalidad.value(),
             horas: valor('prg-inp-horas'), descripcion: valor('prg-inp-descripcion'), perfil_egreso: valor('prg-inp-perfil'),
-            jornadas: jornadasMarcadas(), cupo_grupo: valor('prg-inp-cupo'), fecha_inicio: valor('prg-inp-fecha') || null,
+            jornadas: jornadasMarcadas(), cupo_grupo: valor('prg-inp-cupo'),
             duracion_meses: valor('prg-inp-meses'), tipo_periodo: cbPeriodo.value(), estado: cbEstado.value(),
             precio_total: valor('prg-inp-valor-programa'), matricula: valor('prg-inp-matricula')
         };
@@ -568,12 +567,18 @@
             list.style.maxHeight = Math.max(Math.min(tope, espacio - extra), 40) + 'px';
         }
         var esAbsoluto = root.dataset.position === 'absolute';
+        /* Se recoloca cuando la página se desplaza, pero no con el scroll de su propia
+           lista: recolocar reinicia el alto de la lista y la devolvía al inicio. */
+        function alScroll(e) {
+            if (panel.contains(e.target)) return;
+            posicionar();
+        }
         function abrir() {
             panel.hidden = false;
             root.classList.add('is-open');
             if (!esAbsoluto) {
                 posicionar();
-                window.addEventListener('scroll', posicionar, true);
+                window.addEventListener('scroll', alScroll, true);
                 window.addEventListener('resize', posicionar);
             }
             if (searchInput) {
@@ -586,7 +591,7 @@
             panel.hidden = true;
             root.classList.remove('is-open');
             if (!esAbsoluto) {
-                window.removeEventListener('scroll', posicionar, true);
+                window.removeEventListener('scroll', alScroll, true);
                 window.removeEventListener('resize', posicionar);
             }
         }
