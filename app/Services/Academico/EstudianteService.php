@@ -76,6 +76,28 @@ class EstudianteService
     }
 
     /**
+     * Matrícula que se muestra: la activa o, si no hay, la más reciente.
+     * Se consulta en Estudiantes y Acudientes, pero se gestiona en Matrículas.
+     * Espera cargada la relación matriculas.
+     */
+    public function matriculaVigente(User $estudiante): ?Matricula
+    {
+        return $estudiante->matriculas->sortByDesc(fn (Matricula $m) => [$m->estado === 'activo', $m->id])->first();
+    }
+
+    /** Grupo de esa matrícula (espera cargada la relación cursosComoEstudiante). */
+    public function grupoDeMatricula(User $estudiante, ?Matricula $matricula): ?Curso
+    {
+        if (! $matricula) {
+            return null;
+        }
+
+        return $estudiante->cursosComoEstudiante->first(
+            fn (Curso $c) => $c->programa_id === $matricula->programa_id && $c->sede_id === $matricula->sede_id
+        );
+    }
+
+    /**
      * Resumen de pagos de la matrícula. Sin plan elegido no hay cuotas.
      * vencido > pendiente > al día (lo más grave manda).
      */

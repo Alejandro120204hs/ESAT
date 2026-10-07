@@ -91,6 +91,7 @@ class User extends Authenticatable
             'role' => RolUsuario::class,
             'fecha_nacimiento' => 'date',
             'activo'           => 'boolean',
+            'ultimo_acceso'    => 'datetime',
         ];
     }
 

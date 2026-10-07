@@ -1067,6 +1067,8 @@
             if (!cbCiudadNac.value()) return errorIns('Selecciona la ciudad de nacimiento.', 'ins-cb-ciudad-nac');
             if (tipo === 'TI' && ed >= 18) return errorIns('Con ' + ed + ' años el documento es la cédula de ciudadanía, no la tarjeta de identidad.', 'ins-cb-tipo');
             if (tipo === 'CC' && ed < 18) return errorIns('Un menor de edad se identifica con tarjeta de identidad.', 'ins-cb-tipo');
+            // Corregir la fecha no puede dejar a un menor sin acudiente
+            if (editando && ed < 18 && !editando.acudiente_id) return errorIns('Con esa fecha tendría ' + ed + ' años y no tiene acudiente. Vincúlale uno desde su ficha (pestaña Acudiente) antes de cambiar la fecha.', 'ins-nacimiento');
         }
         if (paso === 2) {
             var tel = val('ins-telefono').replace(/\D/g, '');

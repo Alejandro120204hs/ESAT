@@ -603,6 +603,8 @@
     .est-wa-sm svg { width: 15px; height: 15px; }
 }
 @media (max-width: 640px) {
+    /* El título ocupa toda la fila y el botón baja (antes el botón tapaba el título) */
+    .est-header > div { flex-basis: 100%; }
     /* Los nombres de los pasos no caben: solo el del paso actual (mismo criterio que Docentes) */
     .est-wstep:not(.is-active) span { display: none; }
     .est-grid { grid-template-columns: 1fr; }

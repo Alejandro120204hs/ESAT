@@ -5,6 +5,41 @@
     var data        = window.ACU_DATA || [];
     var estudiantes = window.ACU_ESTUDIANTES || [];
     var grupos      = window.ACU_GRUPOS || [];
+    var opciones    = window.ACU_OPCIONES || {};
+    var csrf        = (document.querySelector('meta[name="csrf-token"]') || {}).content;
+    var FLASH       = 'esat.admin.acudientes.aviso';
+    var ABRIR       = 'esat.admin.acudientes.abrir';   // ficha a reabrir tras recargar: {id, tab} o {nuevo: id}
+
+    /* ── Backend ── */
+    function enviar(metodo, url, cuerpo) {
+        return fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok) {
+                    var err = new Error(j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = j.errors || null;
+                    throw err;
+                }
+                return j;
+            });
+        });
+    }
+    /* Primer mensaje de error del servidor (o el general) */
+    function primerError(err) {
+        var k = err.errores && Object.keys(err.errores)[0];
+        return { campo: k || null, mensaje: k ? err.errores[k][0] : err.message };
+    }
+    /* Guarda el aviso (y qué ficha reabrir) y recarga: tabla, KPI y vínculos salen del servidor */
+    function recargarConAviso(msg, abrir) {
+        try {
+            sessionStorage.setItem(FLASH, msg);
+            if (abrir) sessionStorage.setItem(ABRIR, JSON.stringify(abrir));
+        } catch (e) {}
+        location.reload();
+    }
 
     var PAGE_SIZE = 12;
     var CUENTAS = {
@@ -16,15 +51,19 @@
         activo:   { label: 'Activo',   cls: 'app-status-active' },
         aplazado: { label: 'Aplazado', cls: 'app-status-warn' },
         retirado: { label: 'Retirado', cls: 'app-status-muted' },
-        graduado: { label: 'Graduado', cls: 'app-status-muted' }
+        graduado: { label: 'Graduado', cls: 'app-status-muted' },
+        sin_matricula: { label: 'Sin matrícula', cls: 'app-status-muted' }
     };
+    /* Un estudiante sin matrícula no tiene grupo: se pinta con este "grupo vacío" */
+    var SIN_GRUPO = { id: null, codigo: '', grupo: 'Sin grupo', programa: 'Sin matrícula', escuela: 'Sin matrícula', jornada: '', estado: '' };
     var PAGOS = {
         al_dia:    { label: 'Al día',          cls: 'app-status-active' },
         pendiente: { label: 'Cuota pendiente', cls: 'app-status-warn' },
         vencido:   { label: 'Pago vencido',    cls: 'app-status-danger' }
     };
-    var TIPOS_DOC = { CC: 'Cédula de ciudadanía', CE: 'Cédula de extranjería', PPT: 'Permiso por Protección Temporal' };
-    var PARENTESCOS = ['Madre', 'Padre', 'Abuelo(a)', 'Tío(a)', 'Hermano(a)', 'Otro'];
+    // Mismos valores que valida el servidor (AcudienteRequest::TIPOS_DOCUMENTO y EstudianteService::PARENTESCOS)
+    var TIPOS_DOC = opciones.tipos || {};
+    var PARENTESCOS = opciones.parentescos || [];
     var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
     /* Íconos (mismo trazo que el resto del panel) */
@@ -42,8 +81,7 @@
     var ALERTA_INFO = {
         pago:       { titulo: 'Estudiante con pago vencido', nivel: 'alta' },
         asistencia: { titulo: 'Estudiante con asistencia baja', nivel: 'media' },
-        vinculo:    { titulo: 'Sin estudiantes vigentes', nivel: 'media' },
-        correo:     { titulo: 'Sin correo electrónico', nivel: 'media' }
+        vinculo:    { titulo: 'Sin estudiantes vigentes', nivel: 'media' }
     };
 
     /* ── Utilidades ── */
@@ -54,16 +92,13 @@
     }
     function escClass(e) {
         return { 'Salud':'sal','Cocina y Turismo':'tur','Administrativa':'adm','Educación e Idiomas':'edu',
-                 'Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel' }[e] || 'adm';
+                 'Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel','Sin matrícula':'sin' }[e] || 'adm';
     }
     function iniciales(p) { return ((p.nombres || '').charAt(0) + (p.apellidos || '').charAt(0)).toUpperCase(); }
     function nombreCompleto(p) { return p.nombres + ' ' + p.apellidos; }
     function primerNombre(p) { return p.nombres.split(' ')[0]; }
-    function hoyISO() {
-        var d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
     function edad(fecha) {
+        if (!fecha) return null;
         var n = new Date(fecha + 'T00:00:00'), h = new Date();
         var a = h.getFullYear() - n.getFullYear();
         var m = h.getMonth() - n.getMonth();
@@ -79,11 +114,13 @@
     }
     function fmtPesos(v) { return '$ ' + fmtDoc(v); }
     function corto(programa) { return programa.replace('Técnico Laboral en ', ''); }
-    function grupoDe(id) { return grupos.find(function (g) { return g.id === id; }); }
+    function grupoDe(id) { return grupos.find(function (g) { return g.id === id; }) || SIN_GRUPO; }
     function estDe(id) { return estudiantes.find(function (x) { return x.id === id; }); }
     function acuDe(id) { return data.find(function (x) { return x.id === id; }); }
     function waLink(tel, texto) { return 'https://wa.me/57' + tel + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
-    function vigente(e) { return e.estado === 'activo' || e.estado === 'aplazado'; }
+    // Vigente = sigue en ESAT (incluye al registrado que aún no se matricula)
+    function vigente(e) { return e.estado === 'activo' || e.estado === 'aplazado' || e.estado === 'sin_matricula'; }
+    function esMenor(e) { var ed = edad(e.fecha_nac); return ed !== null && ed < 18; }
     function aCargo(a) {
         return estudiantes.filter(function (x) { return x.acudiente_id === a.id; })
             .sort(function (x, y) { return (vigente(y) ? 1 : 0) - (vigente(x) ? 1 : 0) || x.nombres.localeCompare(y.nombres, 'es'); });
@@ -101,7 +138,6 @@
             if (e.asistencia !== null && e.asistencia < 80) out.push({ tipo: 'asistencia', texto: 'Asistencia de ' + primerNombre(e) + ' en ' + e.asistencia + ' %' });
         });
         if (!vig.length) out.push({ tipo: 'vinculo', texto: 'No tiene estudiantes vigentes a cargo' });
-        if (!a.email) out.push({ tipo: 'correo', texto: 'Sin correo electrónico registrado' });
         return out;
     }
 
@@ -225,12 +261,12 @@
     function opcionesEstudiantes(excluir) {
         return estudiantes.filter(function (e) { return vigente(e) && excluir.indexOf(e.id) < 0; })
             .sort(function (x, y) {
-                var px = edad(x.fecha_nac) < 18 && !x.acudiente_id ? 0 : 1;
-                var py = edad(y.fecha_nac) < 18 && !y.acudiente_id ? 0 : 1;
+                var px = esMenor(x) && !x.acudiente_id ? 0 : 1;
+                var py = esMenor(y) && !y.acudiente_id ? 0 : 1;
                 return px - py || x.nombres.localeCompare(y.nombres, 'es');
             })
             .map(function (e) {
-                var sinAcu = edad(e.fecha_nac) < 18 && !e.acudiente_id;
+                var sinAcu = esMenor(e) && !e.acudiente_id;
                 return { value: String(e.id), label: nombreCompleto(e) + ' · ' + e.documento + (sinAcu ? ' · menor sin acudiente' : '') };
             });
     }
@@ -316,7 +352,7 @@
         // KPIs (sobre todos los acudientes, como en Docentes)
         setTxt('acu-kpi-total', data.length);
         setTxt('acu-kpi-portal', data.filter(function (a) { return a.cuenta === 'activa'; }).length);
-        setTxt('acu-kpi-menores', estudiantes.filter(function (e) { return vigente(e) && edad(e.fecha_nac) < 18 && !e.acudiente_id; }).length);
+        setTxt('acu-kpi-menores', estudiantes.filter(function (e) { return vigente(e) && esMenor(e) && !e.acudiente_id; }).length);
         setTxt('acu-kpi-estudiantes', estudiantes.filter(function (e) { return vigente(e) && e.acudiente_id; }).length);
         opcionesAlerta();
 
@@ -372,7 +408,7 @@
 
     // Opciones de alerta con su conteo; se recalculan al cambiar los datos
     function opcionesAlerta() {
-        var conteo = { pago: 0, asistencia: 0, vinculo: 0, correo: 0 };
+        var conteo = { pago: 0, asistencia: 0, vinculo: 0 };
         data.forEach(function (a) {
             var tipos = [];
             alertasDe(a).forEach(function (x) { if (tipos.indexOf(x.tipo) < 0) tipos.push(x.tipo); });
@@ -498,19 +534,19 @@
 
     function estCardHTML(e) {
         var g = grupoDe(e.grupo_id), ed = edad(e.fecha_nac);
-        var vig = vigente(e);
+        var vig = vigente(e), conGrupo = !!g.id;
         return '<article class="acu-est-card acu-esc-' + escClass(g.escuela) + (vig ? '' : ' is-fuera') + '">' +
             '<div class="acu-est-top">' +
                 '<span class="acu-est-foto" aria-hidden="true">' + esc(iniciales(e)) + '</span>' +
                 '<div class="acu-est-info"><strong>' + esc(nombreCompleto(e)) + '</strong>' +
-                '<span>' + esc(e.parentesco) + ' · ' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + ' · ' + ed + ' años</span></div>' +
+                '<span>' + esc(e.parentesco) + ' · ' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + (ed !== null ? ' · ' + ed + ' años' : '') + '</span></div>' +
                 '<div class="acu-est-tags">' + tag(ESTADOS_EST[e.estado]) + '</div>' +
             '</div>' +
             '<div class="acu-est-datos">' +
-                dato('Programa', esc(corto(g.programa)), true) +
-                dato('Grupo', esc(g.grupo) + ' · ' + esc(g.jornada)) +
-                dato('Pago', vig ? tag(PAGOS[e.pago]) : '—') +
-                dato('Asistencia', !vig ? '—' : (e.asistencia === null ? 'Sin clases aún' : e.asistencia + ' %')) +
+                dato('Programa', conGrupo ? esc(corto(g.programa)) : 'Sin matrícula: se matricula en Matrículas', true) +
+                dato('Grupo', conGrupo ? esc(g.grupo) + ' · ' + esc(g.jornada) : '—') +
+                dato('Pago', vig && conGrupo ? tag(PAGOS[e.pago]) : '—') +
+                dato('Asistencia', !vig || !conGrupo ? '—' : (e.asistencia === null ? 'Sin clases aún' : e.asistencia + ' %')) +
             '</div>' +
             '<div class="acu-est-pie"><button type="button" class="acu-link-btn" data-accion="desvincular" data-est="' + e.id + '">' + ICONOS.quitar + 'Desvincular</button></div>' +
         '</article>';
@@ -554,13 +590,13 @@
                 html += '<div class="acu-callout acu-callout-alerta"><strong>La cuenta está desactivada</strong>' +
                     '<p>No puede ingresar al portal de acudientes. Sigue vinculado a sus estudiantes y puedes contactarlo normalmente.</p></div>';
             } else if (a.cuenta === 'sin_ingreso') {
-                var msg = 'Hola ' + primerNombre(a) + ', le escribimos de ESAT. Ya puede ingresar al portal de acudientes: su usuario y su contraseña inicial son su número de cédula, sin puntos.';
+                var msg = 'Hola ' + primerNombre(a) + ', le escribimos de ESAT. Ya puede ingresar al portal de acudientes con su correo ' + a.email + '. Su contraseña inicial es su número de cédula, sin puntos.';
                 html += '<div class="acu-callout acu-callout-aviso"><strong>Todavía no ha ingresado al portal</strong>' +
-                    '<p>Recuérdale que su usuario y su contraseña inicial son su número de cédula.</p></div>' +
+                    '<p>Recuérdale que ingresa con su correo y que su contraseña inicial es su número de cédula.</p></div>' +
                     '<div class="acu-sec-acc"><a class="acu-contacto acu-contacto-wa" href="' + waLink(a.telefono, msg) + '" target="_blank" rel="noopener">' + ICONOS.whatsapp + 'Enviar recordatorio por WhatsApp</a></div>';
             }
             html += '<div class="acu-info-grid">' +
-                dato('Usuario', '<span class="acu-num-inline">' + esc(a.documento) + '</span>') +
+                dato('Usuario', esc(a.email)) +
                 dato('Estado de la cuenta', cuentaTag(a)) +
                 dato('Último ingreso', a.ultimo_ingreso ? fmtFecha(a.ultimo_ingreso) : 'Nunca') +
                 dato('Cuenta creada', fmtFecha(a.fecha_registro)) +
@@ -588,6 +624,8 @@
         var a = actual;
         btnConfirmar.textContent = 'Confirmar';
         btnConfirmar.className = 'acu-btn acu-btn-primary';
+        btnConfirmar.hidden = false;
+        btnConfirmar.disabled = false;
 
         if (tipo === 'vincular') {
             accionTtl.textContent = 'Vincular estudiante';
@@ -614,22 +652,24 @@
             btnConfirmar.textContent = 'Vincular';
         }
         if (tipo === 'desvincular') {
-            var e = accionEst, menor = edad(e.fecha_nac) < 18 && vigente(e);
+            var e = accionEst, menor = esMenor(e);
             accionTtl.textContent = 'Desvincular estudiante';
             accionSub.textContent = '';
-            accionCuerpo.innerHTML = '<div class="acu-callout' + (menor ? ' acu-callout-alerta' : '') + '">' +
-                '<strong>' + esc(nombreCompleto(a)) + ' dejará de ser acudiente de ' + esc(nombreCompleto(e)) + '</strong>' +
-                '<p>' + (menor
-                    ? esc(primerNombre(e)) + ' tiene ' + edad(e.fecha_nac) + ' años y quedará sin acudiente. Aparecerá en las alertas de Estudiantes hasta que registres a otra persona responsable.'
-                    : 'Ya no verá las notas, la asistencia ni los pagos de ' + esc(primerNombre(e)) + ' en el portal.') + '</p></div>';
+            // Un menor de edad nunca queda sin acudiente: solo se cambia vinculándole otro
+            accionCuerpo.innerHTML = menor
+                ? '<div class="acu-callout acu-callout-aviso"><strong>' + esc(primerNombre(e)) + ' tiene ' + edad(e.fecha_nac) + ' años: no puede quedar sin acudiente</strong>' +
+                  '<p>Si la persona responsable cambió, ábrela en Acudientes (o regístrala) y vincúlale a ' + esc(primerNombre(e)) + '. Así ' + esc(primerNombre(a)) + ' deja de ser su acudiente automáticamente.</p></div>'
+                : '<div class="acu-callout"><strong>' + esc(nombreCompleto(a)) + ' dejará de ser acudiente de ' + esc(nombreCompleto(e)) + '</strong>' +
+                  '<p>Ya no verá las notas, la asistencia ni los pagos de ' + esc(primerNombre(e)) + ' en el portal.</p></div>';
             btnConfirmar.textContent = 'Desvincular';
             btnConfirmar.className = 'acu-btn acu-btn-danger';
+            btnConfirmar.hidden = menor;
         }
         if (tipo === 'clave') {
             accionTtl.textContent = 'Restablecer contraseña';
             accionSub.textContent = '';
             accionCuerpo.innerHTML = '<div class="acu-callout"><strong>La contraseña de ' + esc(primerNombre(a)) + ' volverá a ser su número de documento</strong>' +
-                '<p>Podrá ingresar con el usuario y la contraseña <strong class="acu-num-inline">' + esc(a.documento) + '</strong> (sin puntos) y el sistema le pedirá crear una nueva. Su contraseña actual dejará de funcionar.</p></div>';
+                '<p>Podrá ingresar con su correo <strong>' + esc(a.email) + '</strong> y la contraseña <strong class="acu-num-inline">' + esc(a.documento) + '</strong> (sin puntos), y cambiarla desde su perfil. Su contraseña actual dejará de funcionar.</p></div>';
             btnConfirmar.textContent = 'Restablecer contraseña';
         }
         if (tipo === 'cuenta') {
@@ -677,7 +717,7 @@
     });
 
     btnConfirmar.addEventListener('click', function () {
-        var a = actual, msg = '';
+        var a = actual, peticion, tab = tabActual;
         accionError.hidden = true;
 
         if (accionActual === 'vincular') {
@@ -685,34 +725,27 @@
             if (!estId) return errorAccion('Selecciona el estudiante.', 'acc-cb-est');
             var par = (accionCuerpo.querySelector('input[name="acc-par"]:checked') || {}).value;
             if (!par) return errorAccion('Selecciona el parentesco con el estudiante.');
-            var e = estDe(estId);
-            e.acudiente_id = a.id;
-            e.parentesco = par;
-            tabActual = 'estudiantes';
-            msg = nombreCompleto(a) + ' quedó como acudiente de ' + nombreCompleto(e) + '.';
+            peticion = enviar('POST', '/admin/acudientes/' + a.id + '/estudiantes', { estudiante_id: estId, parentesco: par });
+            tab = 'estudiantes';
         }
         if (accionActual === 'desvincular') {
-            accionEst.acudiente_id = null;
-            accionEst.parentesco = null;
-            tabActual = 'estudiantes';
-            msg = nombreCompleto(a) + ' ya no es acudiente de ' + nombreCompleto(accionEst) + '.';
+            peticion = enviar('DELETE', '/admin/acudientes/' + a.id + '/estudiantes/' + accionEst.id);
+            tab = 'estudiantes';
         }
-        if (accionActual === 'clave') {
-            msg = 'La contraseña de ' + nombreCompleto(a) + ' volvió a ser su número de documento.';
-        }
-        if (accionActual === 'cuenta') {
-            if (a.cuenta === 'inactiva') {
-                a.cuenta = a.ultimo_ingreso ? 'activa' : 'sin_ingreso';
-                msg = 'La cuenta de ' + nombreCompleto(a) + ' está activa de nuevo.';
-            } else {
-                a.cuenta = 'inactiva';
-                msg = 'La cuenta de ' + nombreCompleto(a) + ' quedó desactivada.';
-            }
-        }
+        if (accionActual === 'clave') peticion = enviar('PATCH', '/admin/acudientes/' + a.id + '/clave');
+        if (accionActual === 'cuenta') { peticion = enviar('PATCH', '/admin/acudientes/' + a.id + '/estado'); tab = 'cuenta'; }
+        if (!peticion) return;
 
-        render();
-        mostrarFicha();
-        toast(msg);
+        var texto = btnConfirmar.textContent;
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Guardando…';
+        peticion
+            .then(function (r) { recargarConAviso(r.mensaje, { id: a.id, tab: tab }); })
+            .catch(function (err) {
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = texto;
+                errorAccion(primerError(err).mensaje);
+            });
     });
 
     /* ══ Asistente: Registrar / editar acudiente ══ */
@@ -765,17 +798,18 @@
             setVal('reg-apellidos', editando.apellidos);
             cbTipo.setValue(editando.tipo_doc, TIPOS_DOC[editando.tipo_doc], { silent: true });
             setVal('reg-documento', editando.documento);
-            // El documento es el usuario del portal: no se cambia desde aquí
-            document.getElementById('reg-documento').disabled = true;
             setVal('reg-ocupacion', editando.ocupacion);
             setVal('reg-telefono', editando.telefono);
             setVal('reg-email', editando.email);
             setVal('reg-direccion', editando.direccion);
-            colombiaListo.then(function () {
-                cbDepto.setValue(editando.departamento, editando.departamento, { silent: true });
-                poblarCiudades(editando.departamento);
-                cbCiudad.setValue(editando.ciudad, editando.ciudad, { silent: true });
-            });
+            // Los acudientes registrados desde Estudiantes aún no tienen residencia: se completa aquí
+            if (editando.departamento) {
+                colombiaListo.then(function () {
+                    cbDepto.setValue(editando.departamento, editando.departamento, { silent: true });
+                    poblarCiudades(editando.departamento);
+                    if (editando.ciudad) cbCiudad.setValue(editando.ciudad, editando.ciudad, { silent: true });
+                });
+            }
             vinculos = aCargo(editando).map(function (e) { return { est_id: e.id, parentesco: e.parentesco }; });
         }
         pintarVinculos();
@@ -830,12 +864,15 @@
         ul.innerHTML = vinculos.map(function (v, i) {
             var e = estDe(v.est_id), g = grupoDe(e.grupo_id);
             var otro = e.acudiente_id && (!editando || e.acudiente_id !== editando.id) ? acuDe(e.acudiente_id) : null;
+            var fijo = editando && e.acudiente_id === editando.id && esMenor(e);
             return '<li class="acu-vinculo acu-esc-' + escClass(g.escuela) + '">' +
                 '<span class="acu-est-foto" aria-hidden="true">' + esc(iniciales(e)) + '</span>' +
                 '<span class="acu-est-info"><strong>' + esc(nombreCompleto(e)) + '</strong>' +
-                '<span>' + esc(v.parentesco) + ' · ' + esc(corto(g.programa)) + ' · ' + esc(g.grupo) + '</span>' +
+                '<span>' + esc(v.parentesco) + ' · ' + (g.id ? esc(corto(g.programa)) + ' · ' + esc(g.grupo) : 'Sin matrícula') + '</span>' +
                 (otro ? '<span class="acu-vinculo-aviso">Reemplaza a ' + esc(nombreCompleto(otro)) + ' como acudiente</span>' : '') + '</span>' +
-                '<button type="button" class="acu-icon-btn" data-quitar="' + i + '" aria-label="Quitar a ' + esc(nombreCompleto(e)) + '" title="Quitar">' + ICONOS.quitar + '</button>' +
+                (fijo
+                    ? '<button type="button" class="acu-icon-btn" disabled aria-label="' + esc(primerNombre(e)) + ' es menor de edad y no puede quedar sin acudiente" title="Es menor de edad: no puede quedar sin acudiente">' + ICONOS.quitar + '</button>'
+                    : '<button type="button" class="acu-icon-btn" data-quitar="' + i + '" aria-label="Quitar a ' + esc(nombreCompleto(e)) + '" title="Quitar">' + ICONOS.quitar + '</button>') +
             '</li>';
         }).join('');
     }
@@ -870,7 +907,8 @@
             dato('Celular', fmtTel(val('reg-telefono').replace(/\D/g, ''))) +
             dato('Ciudad', esc(cbCiudad.value() || '—')) +
             dato('Estudiantes a cargo', vinculos.map(function (v) { return esc(nombreCompleto(estDe(v.est_id))) + ' (' + esc(v.parentesco) + ')'; }).join(', '), true) +
-            (editando ? '' : dato('Usuario y contraseña inicial', '<span class="acu-num-inline">' + esc(val('reg-documento').replace(/\D/g, '')) + '</span>', true)) +
+            (editando ? '' : dato('Usuario del portal', esc(val('reg-email')))) +
+            (editando ? '' : dato('Contraseña inicial', '<span class="acu-num-inline">' + esc(val('reg-documento').replace(/\D/g, '')) + '</span>')) +
         '</div>';
         res.hidden = false;
     }
@@ -893,23 +931,22 @@
             if (val('reg-nombres').length < 2) return errorReg('Escribe los nombres del acudiente.', 'reg-nombres');
             if (val('reg-apellidos').length < 2) return errorReg('Escribe los apellidos del acudiente.', 'reg-apellidos');
             if (!cbTipo.value()) return errorReg('Selecciona el tipo de documento.', 'reg-cb-tipo');
-            if (!editando) {
-                var doc = val('reg-documento').replace(/\D/g, '');
-                if (doc.length < 6 || doc.length > 11) return errorReg('El número de documento debe tener entre 6 y 11 dígitos.', 'reg-documento');
-                var dup = data.find(function (x) { return x.documento === doc; });
-                if (dup) return errorReg('Ya existe un acudiente con ese documento: ' + nombreCompleto(dup) + '. Ábrelo desde la tabla para vincularle más estudiantes.', 'reg-documento');
-                var est = estudiantes.find(function (x) { return x.documento === doc; });
-                if (est) return errorReg('Ese documento pertenece a un estudiante (' + nombreCompleto(est) + '). Un estudiante no puede ser su propio acudiente.', 'reg-documento');
-            }
+            var doc = val('reg-documento').replace(/\D/g, '');
+            if (doc.length < 6 || doc.length > 11) return errorReg('El número de documento debe tener entre 6 y 11 dígitos.', 'reg-documento');
+            var dup = data.find(function (x) { return x.documento === doc && (!editando || x.id !== editando.id); });
+            if (dup) return errorReg('Ya existe un acudiente con ese documento: ' + nombreCompleto(dup) + '. Ábrelo desde la tabla para vincularle más estudiantes.', 'reg-documento');
+            var est = estudiantes.find(function (x) { return x.documento === doc; });
+            if (est) return errorReg('Ese documento pertenece a un estudiante (' + nombreCompleto(est) + '). Un estudiante no puede ser su propio acudiente.', 'reg-documento');
         }
         if (paso === 2) {
             var tel = val('reg-telefono').replace(/\D/g, '');
             var email = val('reg-email');
+            if (!email) return errorReg('Escribe el correo: es el usuario con el que ingresará al portal.', 'reg-email');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorReg('El correo no es válido. Revisa que tenga @ y un dominio.', 'reg-email');
             if (!/^3\d{9}$/.test(tel)) return errorReg('El celular debe tener 10 dígitos y empezar por 3.', 'reg-telefono');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorReg('El correo no es válido. Revisa que tenga @ y un dominio.', 'reg-email');
             if (val('reg-direccion').length < 5) return errorReg('Escribe la dirección de residencia.', 'reg-direccion');
-            if (!cbDepto.value()) return errorReg('Selecciona el departamento.', 'reg-cb-depto');
-            if (!cbCiudad.value()) return errorReg('Selecciona la ciudad o municipio.', 'reg-cb-ciudad');
+            if (!cbDepto.value()) return errorReg('Selecciona el departamento de residencia.', 'reg-cb-depto');
+            if (!cbCiudad.value()) return errorReg('Selecciona la ciudad de residencia.', 'reg-cb-ciudad');
         }
         if (paso === 3) {
             if (!editando && !vinculos.length) return errorReg('Agrega al menos un estudiante a cargo.', 'reg-cb-estudiante');
@@ -932,42 +969,36 @@
         regError.hidden = true;
     });
 
-    function guardar() {
-        var campos = {
-            nombres: val('reg-nombres'), apellidos: val('reg-apellidos'), tipo_doc: cbTipo.value(),
-            ocupacion: val('reg-ocupacion'), telefono: val('reg-telefono').replace(/\D/g, ''), email: val('reg-email'),
-            direccion: val('reg-direccion'), departamento: cbDepto.value(), ciudad: cbCiudad.value()
-        };
-        var acu;
-        if (editando) {
-            acu = editando;
-            Object.keys(campos).forEach(function (k) { acu[k] = campos[k]; });
-            // Los que ya no están en la lista quedan sin acudiente
-            estudiantes.forEach(function (e) {
-                if (e.acudiente_id === acu.id && !vinculos.some(function (v) { return v.est_id === e.id; })) { e.acudiente_id = null; e.parentesco = null; }
-            });
-        } else {
-            acu = campos;
-            acu.id = data.reduce(function (m, x) { return Math.max(m, x.id); }, 0) + 1;
-            acu.documento = val('reg-documento').replace(/\D/g, '');
-            acu.cuenta = 'sin_ingreso';
-            acu.ultimo_ingreso = null;
-            acu.fecha_registro = hoyISO();
-            acu.reciente = true;
-            data.unshift(acu);
-        }
-        vinculos.forEach(function (v) { var e = estDe(v.est_id); e.acudiente_id = acu.id; e.parentesco = v.parentesco; });
+    /* Paso del asistente donde está cada campo (para volver a él si el servidor lo rechaza) */
+    var PASO_DE = {
+        nombres: 1, apellidos: 1, tipo_documento: 1, numero_documento: 1, profesion: 1,
+        email: 2, telefono: 2, direccion: 2, departamento_residencia: 2, ciudad_residencia: 2,
+        estudiantes: 3
+    };
 
-        var eraEdicion = !!editando;
-        cerrarModal();
-        if (eraEdicion) {
-            render();
-            if (drawer.classList.contains('is-open')) mostrarFicha();
-            toast('Se guardaron los cambios de ' + nombreCompleto(acu) + '.');
-        } else {
-            limpiarFiltros();
-            toast('Se registró a ' + nombreCompleto(acu) + ' como acudiente de ' + vinculos.map(function (v) { return primerNombre(estDe(v.est_id)); }).join(' y ') + '. Usuario y contraseña inicial: ' + acu.documento + '.');
-        }
+    function guardar() {
+        var cuerpo = {
+            nombres: val('reg-nombres'), apellidos: val('reg-apellidos'),
+            tipo_documento: cbTipo.value(), numero_documento: val('reg-documento'), profesion: val('reg-ocupacion'),
+            email: val('reg-email'), telefono: val('reg-telefono'), direccion: val('reg-direccion'),
+            departamento_residencia: cbDepto.value(), ciudad_residencia: cbCiudad.value(),
+            estudiantes: vinculos.map(function (v) { return { id: v.est_id, parentesco: v.parentesco }; })
+        };
+
+        var textoBtn = btnSig.textContent;
+        btnSig.disabled = true;
+        btnSig.textContent = 'Guardando…';
+        var peticion = editando ? enviar('PUT', '/admin/acudientes/' + editando.id, cuerpo) : enviar('POST', '/admin/acudientes', cuerpo);
+        peticion
+            .then(function (r) { recargarConAviso(r.mensaje, editando ? { id: editando.id, tab: 'datos' } : { nuevo: r.id }); })
+            .catch(function (err) {
+                btnSig.disabled = false;
+                btnSig.textContent = textoBtn;
+                var pe = primerError(err);
+                var raiz = pe.campo ? pe.campo.split('.')[0] : null;
+                if (raiz && PASO_DE[raiz] && PASO_DE[raiz] !== paso) { paso = PASO_DE[raiz]; pintarPaso(); }
+                errorReg(pe.mensaje);
+            });
     }
 
     /* Escape: primero cierra listas abiertas, luego el asistente o la ficha */
@@ -979,5 +1010,22 @@
         }
     });
 
+    var reabrir = null;
+    try {
+        var aviso = sessionStorage.getItem(FLASH);
+        reabrir = JSON.parse(sessionStorage.getItem(ABRIR) || 'null');
+        sessionStorage.removeItem(FLASH);
+        sessionStorage.removeItem(ABRIR);
+        if (aviso) toast(aviso);
+    } catch (e) {}
+    // El recién registrado aparece primero en la tabla
+    if (reabrir && reabrir.nuevo) { var nuevo = acuDe(reabrir.nuevo); if (nuevo) nuevo.reciente = true; }
+
     render();
+
+    if (reabrir && reabrir.id) {
+        abrirFicha(reabrir.id);
+        tabActual = reabrir.tab || 'datos';
+        if (actual) mostrarFicha();
+    }
 }());

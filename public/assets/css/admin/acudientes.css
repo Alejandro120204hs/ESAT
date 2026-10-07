@@ -90,6 +90,8 @@
 .acu-esc-dep { --esc: #D97706; --esc-suave: rgba(234,179,8,0.12);  --esc-ink: #713F12; }
 .acu-esc-cie { --esc: #4F46E5; --esc-suave: rgba(99,102,241,0.12); --esc-ink: #312E81; }
 .acu-esc-bel { --esc: #DB2777; --esc-suave: rgba(236,72,153,0.12); --esc-ink: #9D174D; }
+/* Estudiante sin matrícula: todavía no tiene escuela */
+.acu-esc-sin { --esc: #94A3B8; --esc-suave: rgba(148,163,184,0.14); --esc-ink: #475569; }
 .acu-esc-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--esc-suave); color: var(--esc-ink); font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
 
 /* ═══ TABLA (mismos estilos que la tabla de Docentes) ═══ */
@@ -304,10 +306,10 @@
 .acu-fi-alertas .acu-alerta-media { background: #FEF4E0; color: #7A4300; }
 
 .acu-callout { padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg); border: 1.5px solid var(--line); }
-.acu-callout strong { display: block; font-size: 0.88rem; color: var(--navy-3); }
+.acu-callout > strong { display: block; font-size: 0.88rem; color: var(--navy-3); }
 .acu-callout p { margin: 4px 0 0; font-size: 0.84rem; line-height: 1.5; color: #4B5563; }
 .acu-callout-alerta { background: #FDF1F1; border-color: #F3CACA; }
-.acu-callout-alerta strong { color: #8F1717; }
+.acu-callout-alerta > strong { color: #8F1717; }
 .acu-callout-aviso { background: #FFF8EB; border-color: #F3DDB0; }
 .acu-num-inline { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
@@ -474,6 +476,8 @@
     .acu-est-datos { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) {
+    /* El título ocupa toda la fila y el botón baja (antes el botón tapaba el título) */
+    .acu-header > div { flex-basis: 100%; }
     .acu-form-row, .acu-info-grid { grid-template-columns: 1fr; }
     .acu-info-full { grid-column: 1; }
     .acu-lista th:nth-child(6), .acu-fila td:nth-child(6) { display: none; }

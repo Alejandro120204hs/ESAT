@@ -1,6 +1,7 @@
-{{-- mock: acudientes, estudiantes, documentos, teléfonos, correos, direcciones, pagos, asistencia e ingresos son datos de ejemplo ficticios.
-     Los grupos y estudiantes coinciden con los de Estudiantes y Grupos y Horarios (mismos códigos, nombres y vínculos).
-     Falta backend: migración de acudientes + tabla pivote acudiente_estudiante (parentesco), controlador, validación y cuentas de usuario rol acudiente. --}}
+{{-- Panel Admin › Acudientes (backend real: Admin/Acudientes/AcudienteController + AcudienteService).
+     La persona responsable y sus estudiantes a cargo. Usuario del portal = correo, clave inicial = documento.
+     Cada estudiante tiene un solo acudiente y ningún menor de edad queda sin acudiente.
+     Programa, grupo, pagos y asistencia de los estudiantes solo se consultan aquí. --}}
 @extends('admin.layout')
 
 @section('title', 'Acudientes')
@@ -11,82 +12,6 @@
     <link rel="stylesheet" href="{{ asset('assets/css/admin/acudientes.css') }}?v={{ filemtime(public_path('assets/css/admin/acudientes.css')) }}">
 @endpush
 
-@php
-/* ── Grupos de la sede (mismos de Grupos / Horarios y Estudiantes) ── */
-$grupos = [
-    ['id'=>1,  'codigo'=>'CUR-SAL-001-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud','jornada'=>'Mañana','estado'=>'activo'],
-    ['id'=>2,  'codigo'=>'CUR-SAL-001-B','grupo'=>'Grupo B','programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud','jornada'=>'Tarde','estado'=>'activo'],
-    ['id'=>3,  'codigo'=>'CUR-SAL-002-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Auxiliar de Psiquiatría','escuela'=>'Salud','jornada'=>'Tarde','estado'=>'activo'],
-    ['id'=>4,  'codigo'=>'CUR-TUR-001-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo','jornada'=>'Mañana','estado'=>'activo'],
-    ['id'=>5,  'codigo'=>'CUR-TUR-001-B','grupo'=>'Grupo B','programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo','jornada'=>'Tarde','estado'=>'activo'],
-    ['id'=>6,  'codigo'=>'CUR-TUR-002-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Sommelier y Enología','escuela'=>'Cocina y Turismo','jornada'=>'Noche','estado'=>'activo'],
-    ['id'=>7,  'codigo'=>'CUR-ADM-001-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas','escuela'=>'Administrativa','jornada'=>'Mañana','estado'=>'activo'],
-    ['id'=>8,  'codigo'=>'CUR-ADM-002-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa','jornada'=>'Tarde','estado'=>'activo'],
-    ['id'=>9,  'codigo'=>'CUR-EDU-001-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Asistente de Preescolar','escuela'=>'Educación e Idiomas','jornada'=>'Mañana','estado'=>'activo'],
-    ['id'=>10, 'codigo'=>'CUR-SAL-003-A','grupo'=>'Grupo A','programa'=>'Técnico Laboral en Seguridad Ocupacional y Laboral','escuela'=>'Salud','jornada'=>'Noche','estado'=>'planificacion'],
-    ['id'=>11, 'codigo'=>'CUR-ADM-002-B','grupo'=>'Grupo B','programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa','jornada'=>'Mañana','estado'=>'finalizado'],
-];
-
-/* ── Acudientes (ficticios). cuenta: activa | sin_ingreso (nunca ha entrado al portal) | inactiva ── */
-$a = fn($id,$nom,$ape,$doc,$tel,$email,$ciudad,$ocup,$cuenta,$ingreso,$registro) => [
-    'id'=>$id,'nombres'=>$nom,'apellidos'=>$ape,'tipo_doc'=>'CC','documento'=>$doc,'telefono'=>$tel,'email'=>$email,
-    'direccion'=>'Calle '.(($id*4)%25+3).' # '.(($id*7)%18+2).'-'.(($id*13)%70+11),
-    'departamento'=>'Cundinamarca','ciudad'=>$ciudad,'ocupacion'=>$ocup,
-    'cuenta'=>$cuenta,'ultimo_ingreso'=>$ingreso,'fecha_registro'=>$registro,
-];
-$acudientes = [
-    $a(1, 'Gloria Inés','Cárdenas Mora','39645218','3125550141','gloria.cardenas@example.com','Villeta','Comerciante','activa','2026-10-03','2025-02-03'),
-    $a(2, 'Hernán','Pérez Gutiérrez','79884310','3105550187','hernan.perez@example.com','Guaduas','Conductor','activa','2026-09-18','2026-02-02'),
-    $a(3, 'Rosalba','Ospina de Vargas','20554936','3145550122','','Sasaima','Pensionada','sin_ingreso',null,'2026-02-02'),
-    $a(4, 'Claudia','Martínez Gil','52310477','3205550163','claudia.martinez@example.com','Villeta','Docente','activa','2026-10-05','2026-02-02'),
-    $a(5, 'Martha Lucía','Quintero Rojas','35412987','3115550109','martha.quintero@example.com','La Vega','Auxiliar de enfermería','activa','2026-09-29','2026-02-02'),
-    $a(6, 'Luis Alberto','Díaz Ruiz','80234561','3165550178','','Facatativá','Agricultor','inactiva','2026-06-30','2026-02-02'),
-    $a(7, 'Ana Milena','Restrepo Galeano','1070456223','3005550134','ana.restrepo@example.com','Albán','Estilista','activa','2026-09-10','2026-02-02'),
-    $a(8, 'Jairo','Ortiz Cárdenas','79556120','3135550156','jairo.ortiz@example.com','Villeta','Mecánico','activa','2026-08-27','2026-02-02'),
-    $a(9, 'Nelly','Gómez Patiño','39782045','3185550117','nelly.gomez@example.com','Sasaima','Ama de casa','sin_ingreso',null,'2026-02-02'),
-    $a(10,'Fabio','Herrera Salcedo','80765432','3215550190','fabio.herrera@example.com','Guaduas','Contador','activa','2026-07-14','2026-02-02'),
-    $a(11,'Blanca Cecilia','Rincón de Beltrán','41687320','3175550125','','La Vega','Modista','activa','2026-09-02','2026-02-02'),
-    $a(12,'Diego Fernando','Pineda Rojas','1069552781','3045550148','diego.pineda@example.com','Facatativá','Técnico electricista','activa','2026-10-01','2026-02-02'),
-    $a(13,'Teresa','Mendoza Soto','20887612','3195550103','teresa.mendoza@example.com','Albán','Pensionada','activa','2026-06-21','2025-02-03'),
-    $a(14,'Orlando','Castro Mejía','79310845','3155550172','orlando.castro@example.com','Villeta','Ganadero','activa','2026-08-15','2026-02-02'),
-];
-
-/* ── Estudiantes (los mismos de la pantalla Estudiantes, con los campos que usa esta vista) ── */
-$e = fn($id,$nom,$ape,$tipo,$doc,$nac,$grupo,$estado,$extra=[]) => array_merge([
-    'id'=>$id,'codigo'=>'EST-2026-'.str_pad((string)(100+$id*7),4,'0',STR_PAD_LEFT),
-    'nombres'=>$nom,'apellidos'=>$ape,'tipo_doc'=>$tipo,'documento'=>$doc,'fecha_nac'=>$nac,
-    'grupo_id'=>$grupo,'estado'=>$estado,'acudiente_id'=>null,'parentesco'=>null,
-    'pago'=>'al_dia','saldo'=>0,'asistencia'=>92,
-], $extra);
-
-$estudiantes = [
-    $e(1,'Valentina','Ríos Cárdenas','TI','1031456782','2009-03-14',1,'activo',['acudiente_id'=>1,'parentesco'=>'Madre','asistencia'=>96]),
-    $e(2,'Juan Sebastián','Gómez Patiño','CC','1070958341','2001-07-22',1,'activo',['acudiente_id'=>9,'parentesco'=>'Madre','pago'=>'pendiente','saldo'=>210000,'asistencia'=>88]),
-    $e(3,'Luisa Fernanda','Castro Mejía','CC','1072645903','1998-11-03',1,'activo',['acudiente_id'=>14,'parentesco'=>'Padre','pago'=>'vencido','saldo'=>420000,'asistencia'=>91]),
-    $e(4,'Camilo Andrés','Herrera Vélez','TI','1031512096','2009-09-30',2,'activo',['pago'=>'pendiente','saldo'=>210000,'asistencia'=>79]),
-    $e(5,'Daniela','Moreno Suárez','CC','1069235117','1995-02-17',2,'aplazado',['pago'=>'pendiente','saldo'=>210000,'asistencia'=>70]),
-    $e(6,'Brayan Steven','Quintero Rojas','CC','1073520448','2003-05-09',3,'activo',['acudiente_id'=>5,'parentesco'=>'Madre','asistencia'=>94]),
-    $e(7,'Paula Andrea','Salazar Torres','CC','52987341','1988-12-01',3,'activo',['asistencia'=>98]),
-    $e(8,'Santiago','Pérez Londoño','TI','1032087654','2010-01-25',4,'activo',['acudiente_id'=>2,'parentesco'=>'Padre','pago'=>'vencido','saldo'=>420000,'asistencia'=>85]),
-    $e(9,'María José','Rincón Beltrán','CC','1071330902','2000-08-14',4,'activo',['acudiente_id'=>11,'parentesco'=>'Madre','asistencia'=>92]),
-    $e(10,'Kevin Alexis','Díaz Moreno','CC','1070884215','2004-04-02',5,'retirado',['acudiente_id'=>6,'parentesco'=>'Padre','asistencia'=>60]),
-    $e(11,'Natalia','Vargas Ospina','TI','1031904377','2009-06-11',5,'activo',['acudiente_id'=>3,'parentesco'=>'Abuela','asistencia'=>90]),
-    $e(12,'Andrés Felipe','Muñoz Cano','CC','1072118560','1997-10-19',6,'activo',['pago'=>'pendiente','saldo'=>210000,'asistencia'=>87]),
-    $e(13,'Laura Camila','Pineda Rojas','CC','1069774230','1999-03-27',6,'activo',['acudiente_id'=>12,'parentesco'=>'Hermano','asistencia'=>95]),
-    $e(14,'Jorge Eliécer','Bautista León','CC','80456912','1979-09-05',7,'activo',['pago'=>'vencido','saldo'=>630000,'asistencia'=>83]),
-    $e(15,'Diana Marcela','Acosta Ruiz','CC','1071009884','1996-01-30',7,'activo',['asistencia'=>97]),
-    $e(16,'Sergio Alejandro','Niño Parra','TI','1032245618','2010-11-08',7,'activo',['pago'=>'pendiente','saldo'=>210000,'asistencia'=>74]),
-    $e(17,'Yuliana','Restrepo Galeano','CC','1073661025','2002-12-12',8,'activo',['acudiente_id'=>7,'parentesco'=>'Hermana','asistencia'=>93]),
-    $e(18,'Cristian David','Ortiz Sánchez','CC','1070312779','2001-02-28',8,'aplazado',['acudiente_id'=>8,'parentesco'=>'Padre','asistencia'=>81]),
-    $e(19,'Karen Lizeth','Gil Martínez','TI','1031778403','2009-08-19',9,'activo',['acudiente_id'=>4,'parentesco'=>'Tía','asistencia'=>99]),
-    $e(20,'Mónica Patricia','Cárdenas Vela','CC','39567204','1985-06-23',9,'activo',['pago'=>'vencido','saldo'=>420000,'asistencia'=>89]),
-    $e(21,'Edwin Fabián','Rodríguez Peña','CC','1072901336','1994-04-15',10,'activo',['asistencia'=>null]),
-    $e(22,'Luz Ángela','Mendoza Soto','CC','1069880147','1990-10-10',11,'graduado',['acudiente_id'=>13,'parentesco'=>'Madre','asistencia'=>95]),
-    $e(23,'Óscar Iván','Téllez Ramírez','CC','1071445209','1993-07-07',11,'graduado',['asistencia'=>92]),
-    $e(24,'Érica Johana','Ríos Cárdenas','TI','1032310995','2009-12-03',2,'activo',['acudiente_id'=>1,'parentesco'=>'Madre','asistencia'=>94]),
-];
-@endphp
-
 @section('content')
 <div class="acu-wrap">
 
@@ -94,7 +19,7 @@ $estudiantes = [
     <div class="acu-header">
         <div>
             <h2 class="acu-title">Acudientes</h2>
-            <p class="acu-sub">Aquí podrás registrar a las personas responsables de los estudiantes, vincularlas con uno o varios estudiantes y consultar su ficha. Con su cédula ingresan al portal de acudientes para seguir notas, asistencia y pagos.</p>
+            <p class="acu-sub">Aquí podrás registrar a las personas responsables de los estudiantes, vincularlas con uno o varios estudiantes y consultar su ficha. Ingresan al portal de acudientes con su correo para seguir notas, asistencia y pagos.</p>
         </div>
         <button class="acu-btn acu-btn-primary" id="acu-btn-nuevo" type="button">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -310,11 +235,11 @@ $estudiantes = [
                 <div class="acu-form-row">
                     <div class="acu-field">
                         <label class="acu-lbl" for="reg-nombres">Nombres *</label>
-                        <input class="acu-input" id="reg-nombres" type="text" autocomplete="off" placeholder="Ej. Gloria Inés">
+                        <input class="acu-input" id="reg-nombres" type="text" autocomplete="off" maxlength="100" placeholder="Gloria Inés">
                     </div>
                     <div class="acu-field">
                         <label class="acu-lbl" for="reg-apellidos">Apellidos *</label>
-                        <input class="acu-input" id="reg-apellidos" type="text" autocomplete="off" placeholder="Ej. Cárdenas Mora">
+                        <input class="acu-input" id="reg-apellidos" type="text" autocomplete="off" maxlength="100" placeholder="Cárdenas Mora">
                     </div>
                 </div>
                 <div class="acu-form-row">
@@ -322,7 +247,7 @@ $estudiantes = [
                         <span class="acu-lbl">Tipo de documento *</span>
                         <div class="app-combobox" id="reg-cb-tipo">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                                <span data-combobox-label>Seleccionar</span>
+                                <span data-combobox-label>Selecciona un tipo</span>
                                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <div class="app-combobox-panel" data-combobox-panel hidden>
@@ -333,16 +258,12 @@ $estudiantes = [
                     </div>
                     <div class="acu-field">
                         <label class="acu-lbl" for="reg-documento">Número de documento *</label>
-                        <input class="acu-input acu-num" id="reg-documento" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+                        <input class="acu-input acu-num" id="reg-documento" type="text" inputmode="numeric" autocomplete="off" placeholder="39645218">
                     </div>
                 </div>
                 <div class="acu-field">
                     <label class="acu-lbl" for="reg-ocupacion">Ocupación <em>opcional</em></label>
-                    <input class="acu-input" id="reg-ocupacion" type="text" autocomplete="off" placeholder="Ej. Comerciante">
-                </div>
-                <div class="acu-nota" id="reg-nota-clave">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <p>El número de documento será el usuario y la contraseña inicial del acudiente en el portal. Podrá cambiarla al ingresar por primera vez.</p>
+                    <input class="acu-input" id="reg-ocupacion" type="text" maxlength="100" autocomplete="off" placeholder="Comerciante">
                 </div>
             </section>
 
@@ -350,21 +271,21 @@ $estudiantes = [
             <section class="acu-mstep" data-step="2">
                 <div class="acu-form-row">
                     <div class="acu-field">
-                        <label class="acu-lbl" for="reg-telefono">Celular *</label>
-                        <input class="acu-input acu-num" id="reg-telefono" type="tel" inputmode="numeric" autocomplete="off" placeholder="3XX XXX XXXX">
+                        <label class="acu-lbl" for="reg-email">Correo electrónico *</label>
+                        <input class="acu-input" id="reg-email" type="email" maxlength="255" autocomplete="off" placeholder="nombre@correo.com">
                     </div>
                     <div class="acu-field">
-                        <label class="acu-lbl" for="reg-email">Correo electrónico <em>opcional</em></label>
-                        <input class="acu-input" id="reg-email" type="email" autocomplete="off" placeholder="nombre@correo.com">
+                        <label class="acu-lbl" for="reg-telefono">Celular *</label>
+                        <input class="acu-input acu-num" id="reg-telefono" type="tel" inputmode="numeric" autocomplete="off" placeholder="3XX XXX XXXX">
                     </div>
                 </div>
                 <div class="acu-field">
                     <label class="acu-lbl" for="reg-direccion">Dirección de residencia *</label>
-                    <input class="acu-input" id="reg-direccion" type="text" autocomplete="off" placeholder="Ej. Calle 7 # 9-24">
+                    <input class="acu-input" id="reg-direccion" type="text" autocomplete="off" maxlength="255" placeholder="Ej. Calle 7 # 9-24">
                 </div>
                 <div class="acu-form-row">
                     <div class="acu-field">
-                        <span class="acu-lbl">Departamento *</span>
+                        <span class="acu-lbl">Departamento de residencia *</span>
                         <div class="app-combobox" id="reg-cb-depto">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Selecciona un departamento</span>
@@ -381,7 +302,7 @@ $estudiantes = [
                         </div>
                     </div>
                     <div class="acu-field">
-                        <span class="acu-lbl">Ciudad o municipio *</span>
+                        <span class="acu-lbl">Ciudad de residencia *</span>
                         <div class="app-combobox" id="reg-cb-ciudad">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                                 <span data-combobox-label>Elige el departamento primero</span>
@@ -397,6 +318,10 @@ $estudiantes = [
                             <input type="hidden" id="reg-ciudad" data-combobox-value>
                         </div>
                     </div>
+                </div>
+                <div class="acu-nota" id="reg-nota-clave">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <p>El correo será el usuario del acudiente en el portal y su contraseña inicial, el número de documento. Podrá cambiarla desde su perfil.</p>
                 </div>
             </section>
 
@@ -461,6 +386,7 @@ $estudiantes = [
     var ACU_DATA = @json($acudientes);
     var ACU_ESTUDIANTES = @json($estudiantes);
     var ACU_GRUPOS = @json($grupos);
+    var ACU_OPCIONES = @json($opciones);
 </script>
 <script src="{{ asset('assets/js/admin/acudientes.js') }}?v={{ filemtime(public_path('assets/js/admin/acudientes.js')) }}" defer></script>
 @endpush

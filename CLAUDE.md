@@ -105,7 +105,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes). El resto del panel Admin sigue siendo maqueta.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
   **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
@@ -115,6 +115,16 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
   motivo) y pagos. En la ficha del estudiante la matrícula es solo consulta.
   `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**.
+- **Acudientes** (`Admin/Acudientes/AcudienteController` + `AcudienteService`): cuenta rol
+  acudiente (**correo obligatorio** = usuario, clave = documento, ocupación en `users.profesion`),
+  residencia con el combobox de Colombia, estudiantes a cargo en `acudiente_estudiante`.
+  **Un solo acudiente por estudiante** (vincular reemplaza al anterior) y **ningún menor de edad
+  queda sin acudiente** (no se desvincula ni se quita al editar; se cambia vinculándole otro).
+  Estado de cuenta: `activo=0` → inactiva; `ultimo_acceso` null → "nunca ha ingresado".
+- **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
+  guarda `users.ultimo_acceso`.
+- `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
+  muestran de un estudiante (los usan Estudiantes y Acudientes; no duplicar en controladores).
 - **Cupos**: solo las matrículas activas ocupan cupo → usar `Curso::estudiantesActivos()`
   / `cuposLibres()`, nunca `estudiantes()->count()`. Un grupo con estudiantes no
   puede cambiar de programa.

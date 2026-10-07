@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\Acudientes\AcudienteController;
 use App\Http\Controllers\Admin\Docentes\DocenteController;
 use App\Http\Controllers\Admin\Estudiantes\EstudianteController;
 use App\Http\Controllers\Admin\Grupos\GrupoController;
@@ -229,9 +230,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('estudiantes/{estudiante}/acudiente', [EstudianteController::class, 'acudiente'])->name('estudiantes.acudiente');
     Route::patch('estudiantes/{estudiante}/documentos/{documento}', [EstudianteController::class, 'documento'])->name('estudiantes.documento');
 
-    Route::get('acudientes', function () {
-        return view('admin.acudientes.index');
-    })->name('acudientes');
+    // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
+    Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');
+    Route::post('acudientes', [AcudienteController::class, 'store'])->name('acudientes.store');
+    Route::put('acudientes/{acudiente}', [AcudienteController::class, 'update'])->name('acudientes.update');
+    Route::post('acudientes/{acudiente}/estudiantes', [AcudienteController::class, 'vincular'])->name('acudientes.vincular');
+    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [AcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
+    Route::patch('acudientes/{acudiente}/clave', [AcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
+    Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
 });
 
 Route::middleware('auth')->group(function () {

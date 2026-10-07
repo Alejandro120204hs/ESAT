@@ -95,6 +95,9 @@ class EstudianteRequest extends FormRequest
 
             if (! $this->editando()) {
                 $this->validarAcudiente($v, $this->input('numero_documento'));
+            } elseif ($edad < 18 && ! $this->route('estudiante')->acudientes()->exists()) {
+                // Corregir la fecha no puede dejar a un menor sin acudiente
+                $v->errors()->add('fecha_nacimiento', "Con esa fecha tendría {$edad} años y no tiene acudiente. Vincúlale uno desde su ficha (pestaña Acudiente) antes de cambiar la fecha.");
             }
         }];
     }

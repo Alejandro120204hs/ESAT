@@ -51,6 +51,18 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Una cuenta desactivada (docente, acudiente, admin…) no puede ingresar
+        $usuario = Auth::user();
+        if (! $usuario->activo) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.',
+            ]);
+        }
+
+        $usuario->forceFill(['ultimo_acceso' => now()])->saveQuietly();
     }
 
     /**

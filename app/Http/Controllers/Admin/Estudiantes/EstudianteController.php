@@ -142,20 +142,11 @@ class EstudianteController extends Controller
         abort_unless($u->role === RolUsuario::Estudiante && $u->sede_id === $this->sedeId(), 404);
     }
 
-    /**
-     * Matrícula que se muestra en la ficha: la activa o, si no hay, la más reciente.
-     * Se consulta aquí, pero se gestiona en Matrículas.
-     */
-    private function matriculaVigente(User $e): ?Matricula
-    {
-        return $e->matriculas->sortByDesc(fn (Matricula $m) => [$m->estado === 'activo', $m->id])->first();
-    }
-
     /** Forma que espera estudiantes.js (un estudiante = una persona). */
     private function paraVista(User $e): array
     {
-        $m     = $this->matriculaVigente($e);
-        $grupo = $m ? $e->cursosComoEstudiante->first(fn (Curso $c) => $c->programa_id === $m->programa_id && $c->sede_id === $m->sede_id) : null;
+        $m     = $this->estudiantes->matriculaVigente($e);
+        $grupo = $this->estudiantes->grupoDeMatricula($e, $m);
         $acudiente = $e->acudientes->first();
 
         $pagos = $m ? $this->estudiantes->resumenPagos($m)
