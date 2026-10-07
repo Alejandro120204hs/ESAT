@@ -320,8 +320,6 @@
         var c = id ? data.find(function (x) { return x.id === id; }) : null;
         if (modalTitle) modalTitle.textContent = c ? 'Editar grupo' : 'Nuevo grupo';
 
-        campo('cur-inp-codigo').value = c ? c.codigo : '';
-        campo('cur-inp-grupo').value  = c ? c.grupo : '';
         campo('cur-inp-inicio').value = c ? c.fecha_inicio_iso : '';
 
         cbEscuela.reset(); cbPrograma.reset(); cbPrograma.setOptions([]);
@@ -426,14 +424,14 @@
     }
 
     var CAMPOS = {
-        programa_id: ['cur-cb-programa', 1], codigo: ['cur-inp-codigo', 1], nombre: ['cur-inp-grupo', 1],
+        programa_id: ['cur-cb-programa', 1],
         docente_id: ['cur-cb-docente', 2], jornada: ['cur-cb-jornada', 2],
         fecha_inicio: ['cur-inp-inicio', 2], estado: ['cur-cb-estado', 2]
     };
 
     function guardar() {
         var cuerpo = {
-            programa_id: cbPrograma.value(), codigo: valor('cur-inp-codigo'), nombre: valor('cur-inp-grupo'),
+            programa_id: cbPrograma.value(),
             docente_id: cbDocente.value() || null, jornada: cbJornada.value(),
             fecha_inicio: valor('cur-inp-inicio'),
             estado: cbEstado.value()
@@ -619,6 +617,11 @@
     /* Modalidad y cupo: solo lectura, siempre los del programa elegido */
     function pintarDelPrograma() {
         var p = programaActual();
+        // Grupo y código: al editar sin cambiar de programa se conservan; si no, los del siguiente grupo del programa
+        var c = editandoId ? data.find(function (x) { return x.id === editandoId; }) : null;
+        var propio = c && p && c.programa_id === p.id;
+        campo('cur-inp-grupo').value  = propio ? c.grupo  : (p ? p.siguiente_grupo : '');
+        campo('cur-inp-codigo').value = propio ? c.codigo : (p ? p.siguiente_codigo : '');
         campo('cur-inp-modalidad').value = p ? p.modalidad : '';
         campo('cur-inp-cupo').value      = p ? p.cupo + ' estudiantes' : '';
     }

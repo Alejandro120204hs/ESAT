@@ -27,6 +27,17 @@ class Curso extends Model
 
     public const JORNADAS = ['Mañana', 'Tarde', 'Noche', 'Fines de semana'];
 
+    /**
+     * Horas y días que admite cada jornada: el horario de un grupo no puede salirse
+     * de la jornada que se le eligió en Grupos. 'dias' null = cualquier día.
+     */
+    public const RANGOS_JORNADA = [
+        'Mañana'          => ['desde' => '06:00', 'hasta' => '12:00', 'dias' => null],
+        'Tarde'           => ['desde' => '12:00', 'hasta' => '18:00', 'dias' => null],
+        'Noche'           => ['desde' => '18:00', 'hasta' => '24:00', 'dias' => null],
+        'Fines de semana' => ['desde' => '06:00', 'hasta' => '24:00', 'dias' => ['Sábado']],
+    ];
+
     protected $fillable = [
         'programa_id',
         'periodo_academico_id',

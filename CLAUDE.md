@@ -105,7 +105,17 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios). El resto del panel Admin sigue siendo maqueta.
+- Horarios (`Admin/Horarios/HorarioController`): `PUT /admin/horarios/{curso}`
+  reemplaza las sesiones del grupo y su docente. "Nuevo horario" solo ofrece
+  grupos sin sesiones; los finalizados no se listan ni se editan.
+- **Lo definido arriba se respeta abajo** (Programa → Grupo → Horario): la
+  jornada del horario es la del grupo (`Curso::RANGOS_JORNADA`: Mañana 6–12,
+  Tarde 12–18, Noche 18–24, Fines de semana solo sábado; sin horarios
+  "personalizados" por fuera de la jornada), nunca se deduce de
+  las horas; validar en frontend y en servidor (`HorarioService::fueraDeJornada`).
+  Y al revés: un cambio arriba no puede invalidar lo de abajo (cambiar jornada
+  o duración, reabrir un grupo, desactivar un docente con grupos vigentes).
 
 ## Bug recurrente a tener en cuenta
 

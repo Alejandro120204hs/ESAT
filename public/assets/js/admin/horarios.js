@@ -2,19 +2,27 @@
 (function () {
     'use strict';
 
-    var data = window.HOR_DATA || [];
+    var data     = window.HOR_DATA || [];       // grupos no finalizados de la sede
+    var docentes = window.HOR_DOCENTES || [];   // docentes activos de la sede: {id, nombre, escuela}
+    var rango    = window.HOR_RANGO || { min: '07:00', max: '22:00' };
+    var rangosJornada = window.HOR_JORNADAS || {};   // horas y días que admite cada jornada (Curso::RANGOS_JORNADA)
+    var csrf     = (document.querySelector('meta[name="csrf-token"]') || {}).content;
+    var FLASH    = 'esat.admin.horarios.aviso';
 
     var DIAS_FULL = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     var DIA_COD   = { 'Lunes':'L','Martes':'M','Miércoles':'Mi','Jueves':'J','Viernes':'V','Sábado':'S' };
     var JORNADAS  = ['Mañana','Tarde','Noche'];
-    var HORA_MIN  = 7;
-    var HORA_MAX  = 22;
+    var HORA_MIN  = parseInt(rango.min, 10);
+    var HORA_MAX  = parseInt(rango.max, 10);
+
+    /* Solo los grupos que ya tienen días de clase se listan como horario */
+    function horarios() { return data.filter(function (g) { return g.sesiones.length > 0; }); }
 
     /* ── Utilidades ── */
-    function escClass(esc) {
-        var m = { 'Salud':'sal','Cocina y Turismo':'tur','Administrativa':'adm',
-                  'Educación e Idiomas':'edu','Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel' };
-        return m[esc] || 'adm';
+    /* El color de la escuela sale de su sigla (sal, tur, adm...); sin color propio queda neutro */
+    function escClass(nombre) {
+        var g = data.find(function (x) { return x.escuela === nombre; });
+        return g ? g.sigla : '';
     }
 
     function jornadaDeHora(hora) {
@@ -24,7 +32,7 @@
         return 'Noche';
     }
 
-    function jornadaClass(j) { return j.toLowerCase().replace('ñ', 'n'); }
+    function jornadaClass(j) { return j === 'Fines de semana' ? 'fds' : j.toLowerCase().replace('ñ', 'n'); }
 
     function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -46,20 +54,6 @@
         return ses.slice().sort(function (a, b) {
             return DIAS_FULL.indexOf(a.dia) - DIAS_FULL.indexOf(b.dia) || toMin(a.hora_inicio) - toMin(b.hora_inicio);
         });
-    }
-
-    /* Jornadas presentes en las sesiones, en orden Mañana → Noche */
-    function jornadasDe(sesiones) {
-        var set = {};
-        sesiones.forEach(function (s) { set[jornadaDeHora(s.hora_inicio)] = true; });
-        return JORNADAS.filter(function (j) { return set[j]; });
-    }
-
-    function textoJornadas(js) {
-        if (!js.length) return '';
-        var low = js.map(function (j, i) { return i ? j.toLowerCase() : j; });
-        if (low.length === 1) return low[0];
-        return low.slice(0, -1).join(', ') + ' y ' + low[low.length - 1];
     }
 
     function minutosSemana(sesiones) {
@@ -109,12 +103,21 @@
             root.classList.toggle('is-up', haciaArriba);
         }
 
+        /* Se recoloca cuando la página se desplaza, pero no con el scroll de su propia
+           lista: recolocar reinicia el alto de la lista y la devolvía al inicio. */
+        function alScroll(e) {
+            if (panel.contains(e.target)) return;
+            posicionar();
+        }
         function open() {
             panel.hidden = false;
             root.classList.add('is-open');
             trigger.setAttribute('aria-expanded', 'true');
             posicionar();
-            window.addEventListener('scroll', posicionar, true);
+            // La opción elegida queda a la vista (listas largas como las de horas)
+            var sel = list.querySelector('li.is-selected');
+            if (sel) list.scrollTop = sel.offsetTop - list.clientHeight / 2 + sel.offsetHeight / 2;
+            window.addEventListener('scroll', alScroll, true);
             window.addEventListener('resize', posicionar);
         }
         function close() {
@@ -122,7 +125,7 @@
             panel.hidden = true;
             root.classList.remove('is-open');
             trigger.setAttribute('aria-expanded', 'false');
-            window.removeEventListener('scroll', posicionar, true);
+            window.removeEventListener('scroll', alScroll, true);
             window.removeEventListener('resize', posicionar);
         }
         root.close = close;
@@ -131,7 +134,12 @@
         trigger.setAttribute('aria-expanded', 'false');
         trigger.addEventListener('click', function () { panel.hidden ? open() : close(); });
         document.addEventListener('click', function (e) { if (!root.contains(e.target)) close(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        // Escape cierra solo la lista abierta, no el modal que la contiene
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape' || panel.hidden) return;
+            close();
+            e.stopImmediatePropagation();
+        });
 
         root.setOptions = function (opts) {
             list.innerHTML = '';
@@ -145,7 +153,15 @@
                 var svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.innerHTML = '<path d="M20 6 9 17l-5-5"/>';
-                li.appendChild(span); li.appendChild(svg);
+                li.appendChild(span);
+                // Nota opcional a la derecha (ej. la duración en la lista de hora fin)
+                if (typeof o === 'object' && o.nota) {
+                    var nota = document.createElement('small');
+                    nota.className = 'app-combobox-nota';
+                    nota.textContent = o.nota;
+                    li.appendChild(nota);
+                }
+                li.appendChild(svg);
                 li.addEventListener('click', function () { root.setValue(val, lab); close(); });
                 list.appendChild(li);
             });
@@ -185,7 +201,7 @@
 
     function coincide(g) {
         var matchEsc = !filtroEscuela || g.escuela === filtroEscuela;
-        var matchJor = !filtroJornada || jornadasDe(g.sesiones).indexOf(filtroJornada) >= 0;
+        var matchJor = !filtroJornada || g.jornada === filtroJornada;
         var matchTxt = !filtroTexto ||
             (g.grupo + ' ' + g.codigo).toLowerCase().indexOf(filtroTexto) >= 0 ||
             g.programa.toLowerCase().indexOf(filtroTexto) >= 0 ||
@@ -218,9 +234,8 @@
             '<span class="hor-duracion">' + fmtDuracion(minutosSemana(g.sesiones)) + ' semanales</span>';
         }
 
-        var jornadas = jornadasDe(g.sesiones).map(function (j) {
-            return '<span class="hor-jornada-tag hor-jornada-' + jornadaClass(j) + '">' + j + '</span>';
-        }).join('');
+        // La jornada es la del grupo (se elige en Grupos), no se deduce de las horas
+        var jornadas = '<span class="hor-jornada-tag hor-jornada-' + jornadaClass(g.jornada) + '">' + esc(g.jornada) + '</span>';
 
         var programa = g.programa.length > 42 ? g.programa.slice(0, 42).trim() + '...' : g.programa;
 
@@ -247,33 +262,99 @@
 
     function renderTabla() {
         if (!tbodyEl) return;
-        tbodyEl.innerHTML = data.map(filaHTML).join('');
+        tbodyEl.innerHTML = horarios().map(filaHTML).join('');
         applyFilters();
     }
 
+    /* ── Paginación: 10 por página, igual que las demás tablas ── */
+    var PAGE_SIZE    = 10;
+    var currentPage  = 1;
+    var filteredRows = [];
+    var paginationEl = document.getElementById('hor-pagination');
+    var pagesEl      = document.getElementById('hor-pg-pages');
+    var btnPgPrev    = document.getElementById('hor-pg-prev');
+    var btnPgNext    = document.getElementById('hor-pg-next');
+
     function applyFilters() {
         if (!tbodyEl) return;
-        var visible = 0;
-
+        filteredRows = [];
         data.forEach(function (g) {
             var row = tbodyEl.querySelector('.hor-row[data-id="' + g.id + '"]');
-            if (!row) return;
-            var show = coincide(g);
-            row.style.display = show ? '' : 'none';
-            if (show) visible++;
+            if (row && coincide(g)) filteredRows.push(row);
         });
-
-        if (emptyEl)    emptyEl.style.display = visible === 0 ? 'flex' : 'none';
-        if (countBadge) countBadge.textContent = visible + ' horario' + (visible !== 1 ? 's' : '');
+        currentPage = 1;
+        renderPage();
         if (vistaActual === 'grilla') buildGrilla();
     }
+
+    function renderPage() {
+        var total = filteredRows.length;
+        var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        var start = (currentPage - 1) * PAGE_SIZE;
+
+        tbodyEl.querySelectorAll('.hor-row').forEach(function (row) { row.style.display = 'none'; });
+        filteredRows.forEach(function (row, i) {
+            if (i >= start && i < start + PAGE_SIZE) row.style.display = '';
+        });
+
+        if (emptyEl)    emptyEl.style.display = total === 0 ? 'flex' : 'none';
+        if (countBadge) countBadge.textContent = total + ' horario' + (total !== 1 ? 's' : '');
+
+        if (!paginationEl) return;
+        paginationEl.hidden = pages <= 1;
+        if (pages <= 1) return;
+        btnPgPrev.disabled = currentPage === 1;
+        btnPgNext.disabled = currentPage === pages;
+        pagesEl.innerHTML = '';
+        buildPageRange(currentPage, pages).forEach(function (p) {
+            if (p === '...') {
+                var sp = document.createElement('span');
+                sp.className   = 'hor-pg-ellipsis';
+                sp.textContent = '…';
+                pagesEl.appendChild(sp);
+            } else {
+                var btn = document.createElement('button');
+                btn.type        = 'button';
+                btn.className   = 'hor-pg-num' + (p === currentPage ? ' is-active' : '');
+                btn.textContent = p;
+                btn.addEventListener('click', function () { goToPage(p); });
+                pagesEl.appendChild(btn);
+            }
+        });
+    }
+
+    function buildPageRange(current, total) {
+        if (total <= 7) {
+            var r = [];
+            for (var i = 1; i <= total; i++) r.push(i);
+            return r;
+        }
+        var range = [1];
+        if (current > 3) range.push('...');
+        for (var j = Math.max(2, current - 1); j <= Math.min(total - 1, current + 1); j++) range.push(j);
+        if (current < total - 2) range.push('...');
+        range.push(total);
+        return range;
+    }
+
+    function goToPage(p) {
+        currentPage = p;
+        renderPage();
+        var wrap = document.querySelector('.hor-table-wrap');
+        if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    if (btnPgPrev) btnPgPrev.addEventListener('click', function () { if (currentPage > 1) goToPage(currentPage - 1); });
+    if (btnPgNext) btnPgNext.addEventListener('click', function () {
+        if (currentPage < Math.ceil(filteredRows.length / PAGE_SIZE)) goToPage(currentPage + 1);
+    });
 
     /* ── KPIs ── */
     function renderKpis() {
         var cuenta = { 'Mañana': 0, 'Tarde': 0, 'Noche': 0 };
-        data.forEach(function (g) { jornadasDe(g.sesiones).forEach(function (j) { cuenta[j]++; }); });
+        horarios().forEach(function (g) { if (g.jornada in cuenta) cuenta[g.jornada]++; });
         var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
-        set('hor-kpi-total',  data.length);
+        set('hor-kpi-total',  horarios().length);
         set('hor-kpi-manana', cuenta['Mañana']);
         set('hor-kpi-tarde',  cuenta['Tarde']);
         set('hor-kpi-noche',  cuenta['Noche']);
@@ -283,7 +364,8 @@
     if (cbEscuela) {
         initCombobox(cbEscuela);
         var escuelas = [];
-        data.forEach(function (g) { if (g.escuela && escuelas.indexOf(g.escuela) < 0) escuelas.push(g.escuela); });
+        horarios().forEach(function (g) { if (g.escuela && escuelas.indexOf(g.escuela) < 0) escuelas.push(g.escuela); });
+        escuelas.sort();
         cbEscuela.setOptions([{value:'',label:'Todas las escuelas'}].concat(escuelas.map(function(e){ return {value:e,label:e}; })));
         cbEscuela.setValue('', 'Todas las escuelas');
         if (hidEsc) hidEsc.addEventListener('change', function () { filtroEscuela = hidEsc.value; applyFilters(); });
@@ -296,6 +378,7 @@
             {value:'Mañana',label:'Mañana'},
             {value:'Tarde',label:'Tarde'},
             {value:'Noche',label:'Noche'},
+            {value:'Fines de semana',label:'Fines de semana'}
         ]);
         cbJornada.setValue('', 'Todas las jornadas');
         if (hidJor) hidJor.addEventListener('change', function () { filtroJornada = hidJor.value; applyFilters(); });
@@ -338,7 +421,7 @@
     var RANGO_MIN_H   = 6;      // alto mínimo del horario, en horas
     var calModo       = 'grupo';
     var calSel        = '*';    // '*' = todos (horario general)
-    var JORNADA_RANGO = { 'Mañana': '07:00 – 12:00', 'Tarde': '12:00 – 18:00', 'Noche': '18:00 – 22:00' };
+    function rangoTexto(j) { var r = rangosJornada[j]; return r ? r.desde + ' – ' + r.hasta : ''; }
     var cbVer         = document.getElementById('hor-cb-ver');
     var hidVer        = document.getElementById('hor-val-ver');
     var calInfoEl     = document.getElementById('hor-cal-info');
@@ -348,7 +431,7 @@
 
     /* Opciones del selector según el modo y los filtros de la barra */
     function opcionesVer() {
-        var visibles = data.filter(coincide);
+        var visibles = horarios().filter(coincide);
         var opts;
         if (calModo === 'grupo') {
             opts = visibles.map(function (g) {
@@ -365,16 +448,15 @@
 
     /* Sesiones a pintar: [{g, s, ini, fin}] */
     function sesionesVer() {
+        var lista  = horarios();
         var grupos = calSel === '*'
-            ? data.filter(coincide)
+            ? lista.filter(coincide)
             : calModo === 'grupo'
-                ? data.filter(function (g) { return String(g.id) === calSel; })
-                : data.filter(function (g) { return g.docente === calSel && coincide(g); });
+                ? lista.filter(function (g) { return String(g.id) === calSel; })
+                : lista.filter(function (g) { return g.docente === calSel && coincide(g); });
         var out = [];
         grupos.forEach(function (g) {
             g.sesiones.forEach(function (s) {
-                // En el horario general el filtro de jornada aplica a cada clase, no solo al grupo
-                if (calSel === '*' && filtroJornada && jornadaDeHora(s.hora_inicio) !== filtroJornada) return;
                 out.push({ g: g, s: s, ini: toMin(s.hora_inicio), fin: toMin(s.hora_fin) });
             });
         });
@@ -532,19 +614,26 @@
         grillaEl.innerHTML = html;
     }
 
-    /* Horario general: tabla jornada × día; en cada celda las clases de esa
-       jornada ordenadas por hora (con muchos grupos simultáneos, bloques del
-       alto de la hora quedarían ilegibles). */
+    /* Horario general: tabla fila × día; en cada celda las clases de esa fila
+       ordenadas por hora (con muchos grupos simultáneos, bloques del alto de la
+       hora quedarían ilegibles). Por grupo las filas son las jornadas; por
+       docente, una fila por docente para ver de un vistazo quién da clase cuándo. */
     function pintarGeneral(sel) {
         var hoyIdx = new Date().getDay() - 1;
-        var celdas = {};   // 'Mañana|0' -> [sesiones]
+        var porDocente = calModo === 'docente';
+        var celdas = {};   // 'Mañana|0' o 'Docente|0' -> [sesiones]
+        var minDoc = {};   // minutos semanales de cada docente
         sel.sesiones.forEach(function (e) {
-            var k = jornadaDeHora(e.s.hora_inicio) + '|' + DIAS_FULL.indexOf(e.s.dia);
+            var fila = porDocente ? e.g.docente : jornadaDeHora(e.s.hora_inicio);
+            var k = fila + '|' + DIAS_FULL.indexOf(e.s.dia);
             (celdas[k] = celdas[k] || []).push(e);
+            minDoc[e.g.docente] = (minDoc[e.g.docente] || 0) + (e.fin - e.ini);
         });
-        var jornadas = JORNADAS.filter(function (j) {
-            return DIAS_FULL.some(function (d, i) { return celdas[j + '|' + i]; });
-        });
+        var filas = porDocente
+            ? Object.keys(minDoc).sort(function (a, b) { return a.localeCompare(b, 'es'); })
+            : JORNADAS.filter(function (j) {
+                return DIAS_FULL.some(function (d, i) { return celdas[j + '|' + i]; });
+            });
 
         var html = '<div class="hor-cal-corner"></div>';
         DIAS_FULL.forEach(function (d, i) {
@@ -553,11 +642,16 @@
                 d + (i === hoyIdx ? '<span class="hor-cal-hoy">Hoy</span>' : '') + '</div>';
         });
 
-        jornadas.forEach(function (j) {
-            html += '<div class="hor-cal-fila-jor hor-cal-jor-' + jornadaClass(j) + '">' +
-                '<span class="hor-cal-fila-jor-nombre">' + j + '</span>' +
-                '<span class="hor-cal-fila-jor-rango">' + JORNADA_RANGO[j] + '</span>' +
-            '</div>';
+        filas.forEach(function (j) {
+            html += porDocente
+                ? '<div class="hor-cal-fila-jor hor-cal-fila-doc">' +
+                    '<span class="hor-cal-fila-doc-nombre">' + esc(j) + '</span>' +
+                    '<span class="hor-cal-fila-jor-rango">' + fmtDuracion(minDoc[j]) + ' semanales</span>' +
+                  '</div>'
+                : '<div class="hor-cal-fila-jor hor-cal-jor-' + jornadaClass(j) + '">' +
+                    '<span class="hor-cal-fila-jor-nombre">' + j + '</span>' +
+                    '<span class="hor-cal-fila-jor-rango">' + rangoTexto(j) + '</span>' +
+                  '</div>';
             DIAS_FULL.forEach(function (d, i) {
                 var evs = (celdas[j + '|' + i] || []).sort(function (a, b) { return a.ini - b.ini || a.fin - b.fin; });
                 html += '<div class="hor-cal-celda' + (i === hoyIdx ? ' is-hoy' : '') + '">';
@@ -569,7 +663,8 @@
                             '<span class="hor-bloque-hora">' + e.s.hora_inicio + ' – ' + e.s.hora_fin + '<span class="hor-bloque-dur">' + fmtDuracion(e.fin - e.ini) + '</span></span>' +
                             '<span class="hor-bloque-nombre">' + esc(programaCorto(e.g)) + '</span>' +
                             '<span class="hor-bloque-meta">' + esc(e.g.grupo) + ' · <span class="hor-nowrap">' + esc(e.g.codigo) + '</span></span>' +
-                            '<span class="hor-bloque-meta">' + esc(e.g.docente) + '</span>' +
+                            // En la fila del docente su nombre sobra
+                            (porDocente ? '' : '<span class="hor-bloque-meta">' + esc(e.g.docente) + '</span>') +
                         '</div>';
                 });
                 html += '</div>';
@@ -594,8 +689,8 @@
             if (btn.dataset.modo === calModo) return;
             // Al cambiar de modo, conservar el contexto: grupo → su docente, docente → su primer grupo
             var g = calModo === 'grupo'
-                ? data.find(function (x) { return String(x.id) === calSel; })
-                : data.find(function (x) { return x.docente === calSel && coincide(x); });
+                ? horarios().find(function (x) { return String(x.id) === calSel; })
+                : horarios().find(function (x) { return x.docente === calSel && coincide(x); });
             var todos = calSel === '*';
             calModo = btn.dataset.modo;
             calSel  = todos ? '*' : (g ? (calModo === 'grupo' ? String(g.id) : g.docente) : '*');
@@ -635,6 +730,7 @@
     var modalCancel = document.getElementById('hor-modal-cancel');
     var btnNuevo    = document.getElementById('hor-btn-nuevo');
     var modalTitle  = document.getElementById('hor-modal-title');
+    var btnSave     = document.getElementById('hor-modal-save');
 
     var cbGrupoModal   = document.getElementById('hor-cb-grupo-modal');
     var hidGrupoModal  = document.getElementById('hor-val-grupo-modal');
@@ -642,9 +738,8 @@
     var hidDocente     = document.getElementById('hor-val-docente-modal');
     var inpPrograma    = document.getElementById('hor-inp-programa');
     var inpEscuela     = document.getElementById('hor-inp-escuela');
-    var inpHInicio     = document.getElementById('hor-inp-hinicio');
-    var inpHFin        = document.getElementById('hor-inp-hfin');
     var inpJornada     = document.getElementById('hor-inp-jornada');
+    var notaJornadaEl  = document.getElementById('hor-jornada-nota');
     var chkMismo       = document.getElementById('hor-mismo-horario');
     var boxComunes     = document.getElementById('hor-horas-comunes');
     var boxPorDia      = document.getElementById('hor-horas-por-dia');
@@ -653,6 +748,76 @@
     var resumenEl      = document.getElementById('hor-ses-resumen');
     var errorEl        = document.getElementById('hor-form-error');
     var diaCbs         = document.querySelectorAll('.hor-dia-cb');
+
+    /* ── Selector de horas: inicio y fin en pasos de 30 min dentro del rango de la sede.
+       La lista de fin solo ofrece horas posteriores al inicio y muestra la duración. ── */
+    var PASO = 30;
+
+    function aHora(min) { return pad(Math.floor(min / 60)) + ':' + pad(min % 60); }
+
+    function horasEntre(desde, hasta) {
+        var out = [];
+        for (var m = desde; m <= hasta; m += PASO) out.push(aHora(m));
+        return out;
+    }
+
+    /* Markup de un combobox de hora (para las filas de "Horas por día") */
+    function htmlHora(etiqueta) {
+        return '<div class="app-combobox hor-hora-cb">' +
+            '<button type="button" class="app-combobox-trigger" data-combobox-trigger aria-label="' + esc(etiqueta) + '">' +
+                '<span data-combobox-label>—</span>' +
+                '<svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>' +
+            '</button>' +
+            '<div class="app-combobox-panel" data-combobox-panel hidden><ul class="app-combobox-list" data-combobox-list role="listbox"></ul></div>' +
+            '<input type="hidden" data-combobox-value>' +
+        '</div>';
+    }
+
+    /* Une dos combobox (inicio y fin). onCambio(hi, hf) se llama cuando el usuario cambia algo. */
+    function crearParHoras(cbIni, cbFin, onCambio) {
+        initCombobox(cbIni);
+        initCombobox(cbFin);
+        var hidIni = cbIni.querySelector('[data-combobox-value]');
+        var hidFin = cbFin.querySelector('[data-combobox-value]');
+        var minR, maxR;
+        function ponerRango(desde, hasta) {
+            minR = toMin(desde); maxR = toMin(hasta);
+            cbIni.setOptions(horasEntre(minR, maxR - PASO));
+        }
+        ponerRango(rango.min, rango.max);
+
+        function opcionesFin(hi) {
+            var desde = hi ? toMin(hi) + PASO : minR + PASO;
+            cbFin.setOptions(horasEntre(desde, maxR).map(function (h) {
+                return { value: h, label: h, nota: hi ? fmtDuracion(toMin(h) - toMin(hi)) : '' };
+            }));
+        }
+
+        function poner(hi, hf) {
+            opcionesFin(hi);
+            cbIni.setValue(hi, hi, true);
+            cbFin.setValue(hf, hf, true);
+        }
+
+        // Al mover el inicio se conserva la duración (sin pasarse del cierre de la sede)
+        var iniPrevio = '';
+        hidIni.addEventListener('change', function () {
+            var hi = hidIni.value, hf = hidFin.value;
+            var dur = (iniPrevio && hf && toMin(hf) > toMin(iniPrevio)) ? toMin(hf) - toMin(iniPrevio) : 4 * 60;
+            var fin = Math.min(toMin(hi) + dur, maxR);
+            poner(hi, aHora(fin));
+            iniPrevio = hi;
+            onCambio(hi, hidFin.value);
+        });
+        hidFin.addEventListener('change', function () { onCambio(hidIni.value, hidFin.value); });
+
+        return {
+            get: function () { return { hi: hidIni.value, hf: hidFin.value }; },
+            rango: function (desde, hasta) { ponerRango(desde, hasta); },
+            set: function (hi, hf) { iniPrevio = hi; poner(hi, hf); },
+            invalido: function (si) { cbIni.classList.toggle('is-invalid', si); cbFin.classList.toggle('is-invalid', si); }
+        };
+    }
 
     /* Horas por día mientras se edita: { 'Lunes': {hi, hf}, ... }.
        Se conservan aunque se desmarque el día, por si se vuelve a marcar. */
@@ -671,7 +836,7 @@
     /* Sesiones según el estado actual del formulario */
     function sesionesForm() {
         return diasMarcados().map(function (d) {
-            var h = chkMismo.checked ? { hi: inpHInicio.value, hf: inpHFin.value } : horasDia[d];
+            var h = chkMismo.checked ? comunes.get() : horasDia[d];
             return { dia: d, hora_inicio: h.hi, hora_fin: h.hf };
         });
     }
@@ -680,22 +845,43 @@
         return s.hora_inicio && s.hora_fin && toMin(s.hora_fin) > toMin(s.hora_inicio);
     }
 
+    /* Una fila por día; se crean una sola vez y se reutilizan (cada una tiene sus combobox) */
+    var filasDia = {};
+
+    function filaDia(d) {
+        if (filasDia[d]) return filasDia[d];
+        var row = document.createElement('div');
+        row.className = 'hor-ses-row';
+        row.dataset.dia = d;
+        row.innerHTML =
+            '<span class="hor-ses-dia">' + d + '</span>' +
+            htmlHora('Hora inicio ' + d) +
+            '<span class="hor-ses-sep">a</span>' +
+            htmlHora('Hora fin ' + d) +
+            '<span class="hor-ses-info"></span>';
+        var cbs = row.querySelectorAll('.hor-hora-cb');
+        row.par = crearParHoras(cbs[0], cbs[1], function (hi, hf) {
+            horasDia[d] = { hi: hi, hf: hf };
+            row.classList.remove('is-invalid');
+            pintarInfoFila(row);
+            actualizarResumen();
+            limpiarError();
+        });
+        filasDia[d] = row;
+        return row;
+    }
+
     function renderSesList() {
         var dias = diasMarcados();
         sesListEl.innerHTML = '';
         sesVacioEl.hidden = dias.length > 0;
 
         dias.forEach(function (d) {
-            var h = horasDia[d];
-            var row = document.createElement('div');
-            row.className = 'hor-ses-row';
-            row.dataset.dia = d;
-            row.innerHTML =
-                '<span class="hor-ses-dia">' + d + '</span>' +
-                '<input class="hor-form-input hor-ses-time" type="time" data-campo="hi" value="' + h.hi + '" aria-label="Hora inicio ' + d + '">' +
-                '<span class="hor-ses-sep">a</span>' +
-                '<input class="hor-form-input hor-ses-time" type="time" data-campo="hf" value="' + h.hf + '" aria-label="Hora fin ' + d + '">' +
-                '<span class="hor-ses-info"></span>';
+            var row = filaDia(d);
+            row.classList.remove('is-invalid');
+            var r = rangoActual();
+            row.par.rango(r.desde, r.hasta);
+            row.par.set(horasDia[d].hi, horasDia[d].hf);
             sesListEl.appendChild(row);
             pintarInfoFila(row);
         });
@@ -705,18 +891,40 @@
         var h = horasDia[row.dataset.dia];
         var info = row.querySelector('.hor-ses-info');
         var ok = h.hi && h.hf && toMin(h.hf) > toMin(h.hi);
-        info.textContent = ok ? fmtDuracion(toMin(h.hf) - toMin(h.hi)) + ' · ' + jornadaDeHora(h.hi) : 'Revisar horas';
+        info.textContent = ok ? fmtDuracion(toMin(h.hf) - toMin(h.hi)) : 'Revisar horas';
         info.classList.toggle('is-error', !ok);
+    }
+
+    /* ── Tope de horas: el horario no puede sumar más horas que las del programa
+       durante las fechas del grupo (mismo cálculo que HorarioService) ── */
+    function semanasDe(g) {
+        var dias = (new Date(g.fecha_fin_iso + 'T00:00:00') - new Date(g.fecha_inicio_iso + 'T00:00:00')) / 864e5;
+        return Math.max(0, dias) / 7;
+    }
+    function horasTotales(g, ses) { return minutosSemana(ses) / 60 * semanasDe(g); }
+    function fmtNum(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+
+    function grupoForm() {
+        var id = parseInt(hidGrupoModal.value);
+        return data.find(function (x) { return x.id === id; }) || null;
     }
 
     function actualizarResumen() {
         var ses = sesionesForm();
         var validas = ses.filter(sesionValida);
-        inpJornada.value = textoJornadas(jornadasDe(validas));
+        resumenEl.classList.remove('is-error');
 
         if (!ses.length) { resumenEl.textContent = ''; return; }
-        resumenEl.textContent = ses.length + (ses.length === 1 ? ' sesión' : ' sesiones') +
+        var txt = ses.length + (ses.length === 1 ? ' sesión' : ' sesiones') +
             ' a la semana · ' + fmtDuracion(minutosSemana(validas)) + ' de clase';
+
+        var g = grupoForm();
+        if (g) {
+            var horas = horasTotales(g, validas);
+            txt += ' · ' + fmtNum(Math.round(horas)) + ' h de ' + fmtNum(g.horas_programa) + ' h del programa';
+            resumenEl.classList.toggle('is-error', horas > g.horas_programa);
+        }
+        resumenEl.textContent = txt;
     }
 
     function setModo(mismo) {
@@ -732,7 +940,7 @@
         cb.addEventListener('change', function () {
             if (cb.checked && !horasDia[cb.value]) {
                 var previos = diasMarcados().filter(function (d) { return d !== cb.value && horasDia[d]; });
-                var base = previos.length ? horasDia[previos[previos.length - 1]] : { hi: inpHInicio.value, hf: inpHFin.value };
+                var base = previos.length ? horasDia[previos[previos.length - 1]] : comunes.get();
                 horasDia[cb.value] = { hi: base.hi, hf: base.hf };
             }
             if (!chkMismo.checked) renderSesList();
@@ -746,37 +954,58 @@
     chkMismo.addEventListener('change', function () {
         var dias = diasMarcados();
         if (chkMismo.checked) {
-            if (dias.length && horasDia[dias[0]]) {
-                inpHInicio.value = horasDia[dias[0]].hi;
-                inpHFin.value    = horasDia[dias[0]].hf;
-            }
+            if (dias.length && horasDia[dias[0]]) comunes.set(horasDia[dias[0]].hi, horasDia[dias[0]].hf);
             comunesEditadas = false;
         } else {
             dias.forEach(function (d) {
-                if (comunesEditadas || !horasDia[d]) horasDia[d] = { hi: inpHInicio.value, hf: inpHFin.value };
+                if (comunesEditadas || !horasDia[d]) horasDia[d] = comunes.get();
             });
         }
         setModo(chkMismo.checked);
         limpiarError();
     });
 
-    sesListEl.addEventListener('input', function (e) {
-        var inp = e.target.closest('.hor-ses-time');
-        if (!inp) return;
-        var row = inp.closest('.hor-ses-row');
-        horasDia[row.dataset.dia][inp.dataset.campo] = inp.value;
-        row.classList.remove('is-invalid');
-        pintarInfoFila(row);
+    /* Horas comunes (interruptor encendido) */
+    var comunes = crearParHoras(document.getElementById('hor-cb-hinicio'), document.getElementById('hor-cb-hfin'), function () {
+        comunesEditadas = true;
+        comunes.invalido(false);
         actualizarResumen();
+        limpiarError();
     });
 
-    [inpHInicio, inpHFin].forEach(function (inp) {
-        inp.addEventListener('input', function () {
-            comunesEditadas = true;
-            inp.classList.remove('is-invalid');
-            actualizarResumen();
+    /* ── Jornada: es la del grupo (se elige en Grupos). Las horas y los días solo
+       se eligen dentro de ella; no hay horarios por fuera de la jornada. ── */
+    function rangoActual() {
+        var g = grupoForm();
+        return (g && rangosJornada[g.jornada]) || { desde: rango.min, hasta: rango.max, dias: null };
+    }
+
+    /* Ajusta el formulario a la jornada del grupo elegido */
+    function aplicarJornada(limpiar) {
+        var g = grupoForm();
+        var r = rangoActual();
+        inpJornada.value = g ? g.jornada : '';
+        comunes.rango(r.desde, r.hasta);
+        diaCbs.forEach(function (cb) {
+            var permitido = !r.dias || r.dias.indexOf(cb.value) >= 0;
+            if (!permitido && limpiar) cb.checked = false;
+            cb.disabled = !permitido && !cb.checked;
         });
-    });
+        // Si la jornada admite un solo día (fines de semana), se marca de una vez
+        if (limpiar && r.dias && r.dias.length === 1) {
+            diaCbs.forEach(function (cb) { if (cb.value === r.dias[0]) cb.checked = true; });
+        }
+        pintarNotaJornada();
+    }
+
+    /* Recuerda entre qué horas va la jornada del grupo */
+    function pintarNotaJornada() {
+        var g = grupoForm();
+        if (!g) { notaJornadaEl.textContent = 'Elige el grupo: las horas dependen de su jornada.'; return; }
+        var r = rangoActual();
+        notaJornadaEl.textContent = 'Jornada ' + g.jornada.toLowerCase() + ': las clases van de ' + r.desde + ' a ' + r.hasta +
+            (r.dias ? ', solo el ' + r.dias.join(' y el ').toLowerCase() : '') + '.';
+    }
 
     /* ── Errores ── */
     function mostrarError(msg) { errorEl.textContent = msg; errorEl.hidden = false; }
@@ -787,15 +1016,14 @@
 
     function marcarInvalida(dia) {
         if (chkMismo.checked) {
-            inpHInicio.classList.add('is-invalid');
-            inpHFin.classList.add('is-invalid');
+            comunes.invalido(true);
         } else {
             var row = sesListEl.querySelector('.hor-ses-row[data-dia="' + dia + '"]');
             if (row) row.classList.add('is-invalid');
         }
     }
 
-    function validar(grupoId, docente, ses) {
+    function validar(grupoId, docenteId, ses) {
         if (!grupoId) return 'Selecciona el grupo.';
         if (!ses.length) return 'Marca al menos un día de clase.';
 
@@ -805,18 +1033,45 @@
                 marcarInvalida(s.dia);
                 return 'El ' + s.dia.toLowerCase() + ': la hora fin debe ser posterior a la hora inicio.';
             }
-            if (toMin(s.hora_inicio) < HORA_MIN * 60 || toMin(s.hora_fin) > HORA_MAX * 60) {
+            if (toMin(s.hora_inicio) < toMin(rango.min) || toMin(s.hora_fin) > toMin(rango.max)) {
                 marcarInvalida(s.dia);
-                return 'El ' + s.dia.toLowerCase() + ': las clases deben estar entre las ' + pad(HORA_MIN) + ':00 y las ' + HORA_MAX + ':00.';
+                return 'El ' + s.dia.toLowerCase() + ': las clases deben estar entre las ' + rango.min + ' y las ' + rango.max + '.';
             }
         }
 
-        if (!docente) return 'Selecciona el docente.';
+        // Debe caber en la jornada del grupo (mismo mensaje que HorarioService::fueraDeJornada)
+        var gJ = data.find(function (x) { return x.id === grupoId; });
+        var r = rangoActual();
+        var nombreJ = gJ.jornada.toLowerCase();
+        for (var n = 0; n < ses.length; n++) {
+            var sj = ses[n];
+            if (r.dias && r.dias.indexOf(sj.dia) < 0) {
+                marcarInvalida(sj.dia);
+                return 'El grupo es de jornada ' + nombreJ + ': solo puede tener clase el ' + r.dias.join(' y el ').toLowerCase() + '.';
+            }
+            if (toMin(sj.hora_inicio) < toMin(r.desde) || toMin(sj.hora_fin) > toMin(r.hasta)) {
+                marcarInvalida(sj.dia);
+                return 'El grupo es de jornada ' + nombreJ + ': las clases van entre las ' + r.desde + ' y las ' + r.hasta +
+                    ' y el ' + sj.dia.toLowerCase() + ' quedó de ' + sj.hora_inicio + ' a ' + sj.hora_fin + '.';
+            }
+        }
 
-        /* Cruce: el docente no puede estar en dos grupos a la misma hora */
+        var g = data.find(function (x) { return x.id === grupoId; });
+        var horas = horasTotales(g, ses);
+        if (horas > g.horas_programa) {
+            var maxSemana = Math.floor(g.horas_programa / Math.max(0.01, semanasDe(g)) * 10) / 10;
+            return 'El horario suma ' + fmtNum(horas) + ' horas (' + fmtNum(minutosSemana(ses) / 60) + ' h por semana durante ' +
+                fmtNum(semanasDe(g)) + ' semanas) y el programa tiene ' + fmtNum(g.horas_programa) +
+                ' horas. Con estas fechas el máximo es ' + fmtNum(maxSemana) + ' h por semana.';
+        }
+
+        if (!docenteId) return 'Selecciona el docente.';
+
+        /* Cruce: el docente no puede estar en dos grupos a la misma hora si sus fechas se cruzan */
         for (var j = 0; j < data.length; j++) {
             var otro = data[j];
-            if (otro.id === grupoId || otro.docente !== docente) continue;
+            if (otro.id === grupoId || otro.docente_id !== docenteId) continue;
+            if (otro.fecha_inicio_iso > g.fecha_fin_iso || otro.fecha_fin_iso < g.fecha_inicio_iso) continue;
             for (var k = 0; k < ses.length; k++) {
                 var a = ses[k];
                 var choque = otro.sesiones.find(function (b) {
@@ -825,8 +1080,8 @@
                 });
                 if (choque) {
                     marcarInvalida(a.dia);
-                    return docente + ' ya tiene clase el ' + a.dia.toLowerCase() + ' de ' +
-                        choque.hora_inicio + ' a ' + choque.hora_fin + ' con ' + otro.grupo + ' (' + otro.codigo + ').';
+                    return otro.docente + ' ya tiene clase el ' + a.dia.toLowerCase() + ' de ' +
+                        choque.hora_inicio + ' a ' + choque.hora_fin + ' con el ' + otro.grupo + ' (' + otro.codigo + ').';
                 }
             }
         }
@@ -834,7 +1089,15 @@
     }
 
     /* ── Abrir / cerrar ── */
-    function cargarSesiones(sesiones) {
+    /* Horas por defecto: la jornada completa (fines de semana: las primeras 6 horas) */
+    function horasPorDefecto() {
+        var r = rangoActual();
+        return { hi: r.desde, hf: aHora(Math.min(toMin(r.desde) + 6 * 60, toMin(r.hasta))) };
+    }
+
+    /* limpiar: en un horario nuevo se desmarcan los días que la jornada no admite;
+       al editar no se toca lo guardado (si algo no cabe, lo marca la validación). */
+    function cargarSesiones(sesiones, limpiar) {
         horasDia = {};
         var ses = ordenarSesiones(sesiones || []);
         ses.forEach(function (s) { horasDia[s.dia] = { hi: s.hora_inicio, hf: s.hora_fin }; });
@@ -842,8 +1105,9 @@
 
         var tramos = tramosDe(ses);
         var mismo  = tramos.length <= 1;
-        inpHInicio.value = tramos.length ? tramos[0].hi : '07:00';
-        inpHFin.value    = tramos.length ? tramos[0].hf : '11:00';
+        var f = horasPorDefecto();
+        comunes.set(tramos.length ? tramos[0].hi : f.hi, tramos.length ? tramos[0].hf : f.hf);
+        aplicarJornada(limpiar);
         comunesEditadas = false;
         setModo(mismo);
     }
@@ -856,19 +1120,29 @@
         var g = id ? data.find(function (x) { return x.id === id; }) : null;
         if (g) {
             modalTitle.textContent = 'Editar horario';
-            cbGrupoModal.setValue(String(g.id), g.grupo + ' — ' + g.codigo);
+            cbGrupoModal.setOptions([opcionGrupo(g)]);
+            cbGrupoModal.setValue(String(g.id), opcionGrupo(g).label, true);
             inpPrograma.value = g.programa;
             inpEscuela.value  = g.escuela;
+            ponerDocente(g);
             cargarSesiones(g.sesiones);
-            cbDocenteModal.setValue(g.docente, g.docente);
         } else {
+            // Nuevo: solo los grupos que todavía no tienen días de clase
+            var libres = data.filter(function (x) { return !x.sesiones.length; });
+            if (!libres.length) {
+                toast('Todos los grupos ya tienen horario. Crea un grupo nuevo en Grupos para asignarle uno.');
+                return;
+            }
             modalTitle.textContent = 'Nuevo horario';
+            cbGrupoModal.setOptions(libres.map(opcionGrupo));
             cbGrupoModal.reset();
             inpPrograma.value = '';
             inpEscuela.value  = '';
-            cargarSesiones([]);
             cbDocenteModal.reset();
+            cargarSesiones([], true);
         }
+        btnSave.disabled = false;
+        btnSave.textContent = 'Guardar horario';
 
         overlay.classList.add('is-open');
         document.body.style.overflow = 'hidden';
@@ -910,57 +1184,94 @@
         toastTimer = setTimeout(function () {
             toastEl.classList.remove('is-visible');
             setTimeout(function () { toastEl.hidden = true; }, 200);
-        }, 3200);
+        }, 5000);
     }
+    try {
+        var aviso = sessionStorage.getItem(FLASH);
+        if (aviso) { sessionStorage.removeItem(FLASH); toast(aviso); }
+    } catch (e) {}
 
-    /* Guardar (mock: solo en memoria, se pierde al recargar) */
-    var btnSave = document.getElementById('hor-modal-save');
-    if (btnSave) {
-        btnSave.addEventListener('click', function () {
-            limpiarError();
-            var grupoId = parseInt(hidGrupoModal.value) || null;
-            var docente = hidDocente.value;
-            var ses     = ordenarSesiones(sesionesForm());
-
-            var err = validar(grupoId, docente, ses);
-            if (err) { mostrarError(err); return; }
-
-            var g = data.find(function (x) { return x.id === grupoId; });
-            g.sesiones = ses;
-            g.docente  = docente;
-
-            renderTabla();
-            renderKpis();
-            closeModal();
-            toast('Horario de ' + g.grupo + ' (' + g.codigo + ') guardado.');
+    /* ── Backend ── */
+    function enviar(metodo, url, cuerpo) {
+        return fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok) {
+                    var err = new Error(j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = j.errors || null;
+                    throw err;
+                }
+                return j;
+            });
         });
     }
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(FLASH, msg); } catch (e) {}
+        location.reload();
+    }
+
+    /* Guardar */
+    btnSave.addEventListener('click', function () {
+        limpiarError();
+        var grupoId   = parseInt(hidGrupoModal.value) || null;
+        var docenteId = parseInt(hidDocente.value) || null;
+        var ses       = ordenarSesiones(sesionesForm());
+
+        var err = validar(grupoId, docenteId, ses);
+        if (err) { mostrarError(err); return; }
+
+        btnSave.disabled = true;
+        btnSave.textContent = 'Guardando…';
+        enviar('PUT', '/admin/horarios/' + grupoId, { docente_id: docenteId, sesiones: ses })
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (e) {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Guardar horario';
+                var clave = e.errores && Object.keys(e.errores)[0];
+                // sesiones.2.hora_fin → marcar la fila de ese día
+                var m = clave && clave.match(/^sesiones\.(\d+)\./);
+                if (m && ses[+m[1]]) marcarInvalida(ses[+m[1]].dia);
+                mostrarError(clave ? e.errores[clave][0] : e.message);
+            });
+    });
 
     /* ── Init comboboxes modal ── */
+    function opcionGrupo(g) {
+        return { value: String(g.id), label: g.grupo + ' — ' + g.codigo + ' · ' + g.programa.replace('Técnico Laboral en ', '') };
+    }
+
+    /* "Nombre · Escuela", igual que en Grupos: así se ve si el docente es de otra escuela */
+    function etiquetaDocente(d) { return d.nombre + ' · ' + d.escuela; }
+
+    /* Docente del grupo; si ya no está activo no aparece en la lista y hay que elegir otro */
+    function ponerDocente(g) {
+        var d = docentes.find(function (x) { return x.id === g.docente_id; });
+        if (d) cbDocenteModal.setValue(String(d.id), etiquetaDocente(d), true);
+        else cbDocenteModal.reset();
+    }
+
     if (cbGrupoModal) {
         initCombobox(cbGrupoModal);
-        cbGrupoModal.setOptions(data.map(function (g) {
-            return { value: String(g.id), label: g.grupo + ' — ' + g.codigo };
-        }));
-
-        if (hidGrupoModal) {
-            hidGrupoModal.addEventListener('change', function () {
-                var gId = parseInt(hidGrupoModal.value);
-                var g   = data.find(function (x) { return x.id === gId; });
-                if (g) {
-                    if (inpPrograma) inpPrograma.value = g.programa;
-                    if (inpEscuela)  inpEscuela.value  = g.escuela;
-                    cbDocenteModal.setValue(g.docente, g.docente);
-                }
-            });
-        }
+        hidGrupoModal.addEventListener('change', function () {
+            var g = grupoForm();
+            if (!g) return;
+            inpPrograma.value = g.programa;
+            inpEscuela.value  = g.escuela;
+            ponerDocente(g);
+            // Las horas pasan a las de la jornada del grupo; los días marcados se conservan si la jornada los admite
+            var f = horasPorDefecto();
+            cargarSesiones(diasMarcados().map(function (d) { return { dia: d, hora_inicio: f.hi, hora_fin: f.hf }; }), true);
+            limpiarError();
+        });
     }
 
     if (cbDocenteModal) {
         initCombobox(cbDocenteModal);
-        var docentes = [];
-        data.forEach(function (g) { if (g.docente && docentes.indexOf(g.docente) < 0) docentes.push(g.docente); });
-        cbDocenteModal.setOptions(docentes.map(function (d) { return { value: d, label: d }; }));
+        cbDocenteModal.setOptions(docentes.map(function (d) { return { value: String(d.id), label: etiquetaDocente(d) }; }));
+        hidDocente.addEventListener('change', limpiarError);
     }
 
     /* ── Init ── */

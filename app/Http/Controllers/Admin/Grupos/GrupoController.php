@@ -46,6 +46,9 @@ class GrupoController extends Controller
                 'cupo'      => $p->cupo_grupo,
                 'meses'     => $p->duracion_meses,
                 'horas'     => $p->horas,
+                // Lo que tendría un grupo nuevo de este programa (se muestra en el asistente)
+                'siguiente_grupo'  => $siguiente = $this->siguienteNombre($p->id),
+                'siguiente_codigo' => $this->codigoPara($p, $siguiente),
             ])->values(),
         ])->filter(fn ($e) => $e['programas']->isNotEmpty())->values();
 
@@ -68,11 +71,12 @@ class GrupoController extends Controller
         [$inicio, $fin] = $request->fechas($programa);
 
         $curso = DB::transaction(function () use ($request, $programa, $inicio, $fin) {
-            $nombre = $request->input('nombre') ?: $this->siguienteNombre($programa->id);
+            // El grupo y el código no se escriben: salen del programa
+            $nombre = $this->siguienteNombre($programa->id);
             $curso = Curso::create([
                 'programa_id'  => $programa->id,
                 'sede_id'      => $this->sedeId(),
-                'codigo'       => $request->input('codigo') ?: $this->codigoPara($programa, $nombre),
+                'codigo'       => $this->codigoPara($programa, $nombre),
                 'nombre'       => $nombre,
                 'jornada'      => $request->input('jornada'),
                 'fecha_inicio' => $inicio,
@@ -92,14 +96,22 @@ class GrupoController extends Controller
     public function update(GrupoRequest $request, Curso $curso): JsonResponse
     {
         $this->asegurarSede($curso);
-        $programa = Programa::findOrFail($request->integer('programa_id'));
+        $programa = Programa::with('escuela')->findOrFail($request->integer('programa_id'));
         [$inicio, $fin] = $request->fechas($programa);
 
-        DB::transaction(function () use ($request, $curso, $programa, $inicio, $fin) {
+        // Si cambia de programa, el grupo y el código se vuelven a calcular para el programa nuevo
+        $nombre = $curso->nombre;
+        $codigo = $curso->codigo;
+        if ($programa->id !== $curso->programa_id) {
+            $nombre = $this->siguienteNombre($programa->id);
+            $codigo = $this->codigoPara($programa, $nombre);
+        }
+
+        DB::transaction(function () use ($request, $curso, $programa, $inicio, $fin, $nombre, $codigo) {
             $curso->update([
                 'programa_id'  => $programa->id,
-                'codigo'       => $request->input('codigo') ?: $curso->codigo,
-                'nombre'       => $request->input('nombre') ?: $curso->nombre,
+                'codigo'       => $codigo,
+                'nombre'       => $nombre,
                 'jornada'      => $request->input('jornada'),
                 'fecha_inicio' => $inicio,
                 'fecha_fin'    => $fin,
@@ -119,8 +131,8 @@ class GrupoController extends Controller
         $this->asegurarSede($curso);
 
         $nuevo = $curso->estado === 'activo' ? 'finalizado' : 'activo';
-        if ($nuevo === 'activo' && ! $curso->docentes()->exists()) {
-            return response()->json(['ok' => false, 'message' => 'Asigna un docente antes de activar el grupo.'], 422);
+        if ($nuevo === 'activo' && $error = $this->impedimentoParaActivar($curso)) {
+            return response()->json(['ok' => false, 'message' => $error], 422);
         }
         $curso->update(['estado' => $nuevo]);
 
@@ -148,6 +160,38 @@ class GrupoController extends Controller
     private function asegurarSede(Curso $curso): void
     {
         abort_unless($curso->sede_id === $this->sedeId(), 404);
+    }
+
+    /**
+     * Al activar (o reabrir un finalizado) lo ya definido debe seguir valiendo: mientras
+     * estuvo cerrado pudieron cambiar el docente, las jornadas del programa u otros horarios.
+     */
+    private function impedimentoParaActivar(Curso $curso): ?string
+    {
+        $docente = $curso->docente();
+        if (! $docente) {
+            return 'Asigna un docente antes de activar el grupo.';
+        }
+        if ($docente->docentePerfil?->estado !== 'activo') {
+            return "{$docente->name} ya no está activo como docente: asígnale otro docente al grupo antes de activarlo.";
+        }
+
+        $programa = $curso->programa;
+        if (! in_array($curso->jornada, $programa->jornadas ?? [], true)) {
+            return 'El programa ya no se ofrece en jornada '.mb_strtolower($curso->jornada).': cambia la jornada del grupo antes de activarlo.';
+        }
+
+        $sesiones = $curso->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()])->all();
+        if ($sesiones) {
+            $error = $this->horario->fueraDeJornada($curso->jornada, $sesiones)
+                ?? $this->horario->excedeTope($programa, $sesiones, $curso->fecha_inicio, $curso->fecha_fin)
+                ?? $this->horario->cruceDocente($docente->id, $sesiones, $curso->fecha_inicio, $curso->fecha_fin, $curso->id);
+            if ($error) {
+                return "No se puede activar: {$error} Ajusta el horario en Horarios.";
+            }
+        }
+
+        return null;
     }
 
     /** Siguiente letra libre del programa en la sede: Grupo A, Grupo B... */
