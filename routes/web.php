@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\Docentes\DocenteController;
+use App\Http\Controllers\Admin\Estudiantes\EstudianteController;
 use App\Http\Controllers\Admin\Grupos\GrupoController;
 use App\Http\Controllers\Admin\Horarios\HorarioController;
 use App\Http\Controllers\Admin\Programas\EscuelaController;
@@ -220,9 +221,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('horarios', [HorarioController::class, 'index'])->name('horarios');
     Route::put('horarios/{curso}', [HorarioController::class, 'update'])->name('horarios.update');
 
-    Route::get('estudiantes', function () {
-        return view('admin.estudiantes.index');
-    })->name('estudiantes');
+    // Panel "Estudiantes": la persona (datos, acudiente, documentos). Matricular es de Matrículas.
+    Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes');
+    Route::post('estudiantes', [EstudianteController::class, 'store'])->name('estudiantes.store');
+    Route::put('estudiantes/{estudiante}', [EstudianteController::class, 'update'])->name('estudiantes.update');
+    Route::patch('estudiantes/{estudiante}/clave', [EstudianteController::class, 'restablecerClave'])->name('estudiantes.clave');
+    Route::put('estudiantes/{estudiante}/acudiente', [EstudianteController::class, 'acudiente'])->name('estudiantes.acudiente');
+    Route::patch('estudiantes/{estudiante}/documentos/{documento}', [EstudianteController::class, 'documento'])->name('estudiantes.documento');
 
     Route::get('acudientes', function () {
         return view('admin.acudientes.index');

@@ -54,9 +54,9 @@ class GrupoRequest extends FormRequest
             if (! in_array($this->input('jornada'), $programa->jornadas ?? [], true)) {
                 $v->errors()->add('jornada', 'El programa solo se ofrece en jornada '.mb_strtolower(implode(', ', $programa->jornadas ?? [])).'.');
             }
-            // El cupo es el del programa: al cambiar de programa no puede quedar por debajo de los inscritos
-            if ($curso && $programa->cupo_grupo < $curso->estudiantes()->count()) {
-                $v->errors()->add('programa_id', "El cupo de ese programa ({$programa->cupo_grupo}) es menor que los estudiantes ya inscritos en el grupo.");
+            // Sus estudiantes están matriculados en el programa del grupo: con inscritos no se cambia de programa
+            if ($curso && $programa->id !== $curso->programa_id && $curso->estudiantes()->exists()) {
+                $v->errors()->add('programa_id', 'El grupo ya tiene estudiantes inscritos en su programa: no se puede pasar a otro programa.');
             }
 
             [$inicio, $fin] = $this->fechas($programa);

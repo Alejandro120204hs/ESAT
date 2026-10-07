@@ -5,20 +5,59 @@
     var data       = window.EST_DATA || [];
     var grupos     = window.EST_GRUPOS || [];
     var acudientes = window.EST_ACUDIENTES || [];
+    var opciones   = window.EST_OPCIONES || {};
+    var csrf       = (document.querySelector('meta[name="csrf-token"]') || {}).content;
+    var FLASH      = 'esat.admin.estudiantes.aviso';
+    var ABRIR      = 'esat.admin.estudiantes.abrir';   // ficha a reabrir tras recargar: {id, tab} o {nuevo: id}
+
+    /* ── Backend ── */
+    function enviar(metodo, url, cuerpo) {
+        return fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok) {
+                    var err = new Error(j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = j.errors || null;
+                    throw err;
+                }
+                return j;
+            });
+        });
+    }
+    /* Primer mensaje de error del servidor (o el general) */
+    function primerError(err) {
+        var k = err.errores && Object.keys(err.errores)[0];
+        return { campo: k || null, mensaje: k ? err.errores[k][0] : err.message };
+    }
+    /* Guarda el aviso (y qué ficha reabrir) y recarga: tabla, KPI y cupos salen del servidor */
+    function recargarConAviso(msg, abrir) {
+        try {
+            sessionStorage.setItem(FLASH, msg);
+            if (abrir) sessionStorage.setItem(ABRIR, JSON.stringify(abrir));
+        } catch (e) {}
+        location.reload();
+    }
 
     var PAGE_SIZE = 12;
     var ESTADOS = {
         activo:   { label: 'Activo',   desc: 'Asiste a clases y ocupa un cupo en su grupo.' },
         aplazado: { label: 'Aplazado', desc: 'Suspende sus estudios por un tiempo y libera el cupo. Puede retomar después.' },
         retirado: { label: 'Retirado', desc: 'Deja el programa de forma definitiva y libera el cupo.' },
-        graduado: { label: 'Graduado', desc: 'Terminó el programa. Solo aplica cuando su grupo ya finalizó.' }
+        graduado: { label: 'Graduado', desc: 'Terminó el programa. Solo aplica cuando su grupo ya finalizó.' },
+        sin_matricula: { label: 'Sin matrícula', desc: 'Registrado, pero todavía no está matriculado en un programa.' }
     };
+    /* Un estudiante sin matrícula no tiene grupo: se usa este "grupo vacío" para pintarlo */
+    var SIN_GRUPO = { id: null, codigo: '', grupo: 'Sin grupo', programa: 'Sin matrícula', escuela: 'Sin matrícula',
+                      docente: '', jornada: '', horario: [], cupo: 0, inscritos: 0, estado: '' };
     var ESCUELA_NOMBRE = {
         'Salud': 'Escuela de Salud', 'Cocina y Turismo': 'Escuela de Cocina y Turismo',
         'Administrativa': 'Escuela Administrativa', 'Educación e Idiomas': 'Escuela de Educación e Idiomas',
         'Deporte y Cultura': 'Escuela Deporte y Cultura', 'Ciencias': 'Escuela Ciencias', 'Belleza': 'Escuela de Belleza'
     };
-    var PARENTESCOS = ['Madre', 'Padre', 'Abuelo(a)', 'Tío(a)', 'Hermano(a)', 'Otro'];
+    var PARENTESCOS = opciones.parentescos || ['Madre', 'Padre', 'Abuelo(a)', 'Tío(a)', 'Hermano(a)', 'Otro'];
     var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
     /* Íconos (mismo trazo que el resto del panel) */
@@ -47,7 +86,7 @@
     }
     function escClass(e) {
         return { 'Salud':'sal','Cocina y Turismo':'tur','Administrativa':'adm','Educación e Idiomas':'edu',
-                 'Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel' }[e] || 'adm';
+                 'Deporte y Cultura':'dep','Ciencias':'cie','Belleza':'bel', 'Sin matrícula':'sin' }[e] || 'adm';
     }
     function iniciales(e) {
         return ((e.nombres || '').charAt(0) + (e.apellidos || '').charAt(0)).toUpperCase();
@@ -74,7 +113,7 @@
         return parseInt(p[2]) + ' ' + MESES[parseInt(p[1]) - 1] + ' ' + p[0];
     }
     function fmtPesos(v) { return '$ ' + fmtDoc(v); }
-    function grupoDe(id) { return grupos.find(function (g) { return g.id === id; }); }
+    function grupoDe(id) { return (id && grupos.find(function (g) { return g.id === id; })) || SIN_GRUPO; }
     function corto(programa) { return programa.replace('Técnico Laboral en ', ''); }
     function acudienteDe(e) { return e.acudiente_id ? acudientes.find(function (a) { return a.id === e.acudiente_id; }) : null; }
     function waLink(tel) { return 'https://wa.me/57' + tel; }
@@ -237,7 +276,7 @@
         var okTexto = !q ||
             nombreCompleto(e).toLowerCase().indexOf(q) >= 0 ||
             String(e.documento).indexOf(q.replace(/\D/g, '') || '§') >= 0 ||
-            e.codigo.toLowerCase().indexOf(q) >= 0;
+            (e.codigo || '').toLowerCase().indexOf(q) >= 0;
         return okTexto &&
             (!filtro.programa || g.programa === filtro.programa) &&
             (!filtro.grupo || String(e.grupo_id) === filtro.grupo);
@@ -265,7 +304,7 @@
         return '<' + tag + ' class="est-carne est-esc-' + escClass(g.escuela) + ' is-' + e.estado + (grande ? ' est-carne--grande' : '') + (e.id === nuevoId ? ' is-nuevo' : '') + '" data-id="' + e.id + '"' + interactivo + '>' +
             '<div class="est-carne-banda">' +
                 '<span class="est-carne-escuela">' + esc(ESCUELA_NOMBRE[g.escuela] || g.escuela) + '</span>' +
-                '<span class="est-carne-codigo">' + esc(e.codigo) + '</span>' +
+                '<span class="est-carne-codigo">' + esc(e.codigo || '') + '</span>' +
             '</div>' +
             '<div class="est-carne-cuerpo">' +
                 '<div class="est-carne-foto" aria-hidden="true">' + esc(iniciales(e)) + '</div>' +
@@ -274,7 +313,7 @@
                     '<p class="est-carne-doc">' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + '<span class="est-carne-sep" aria-hidden="true"></span>' + ed + ' años' +
                         (ed < 18 ? '<span class="est-menor">Menor</span>' : '') + '</p>' +
                     '<p class="est-carne-prog">' + esc(corto(g.programa)) + '</p>' +
-                    '<p class="est-carne-grupo">' + esc(g.grupo) + ' · ' + esc(g.jornada) + '</p>' +
+                    '<p class="est-carne-grupo">' + (g.id ? esc(g.grupo) + ' · ' + esc(g.jornada) : 'Se matricula en Matrículas') + '</p>' +
                 '</div>' +
             '</div>' +
             '<div class="est-carne-pie">' +
@@ -286,7 +325,7 @@
     }
     /* Estado con la misma pastilla que Docentes (app-status-tag del layout) */
     function estadoTagHTML(estado) {
-        var cls = { activo: 'app-status-active', aplazado: 'app-status-warn', retirado: 'app-status-muted', graduado: 'est-status-graduado' }[estado];
+        var cls = { activo: 'app-status-active', aplazado: 'app-status-warn', retirado: 'app-status-muted', graduado: 'est-status-graduado', sin_matricula: 'app-status-muted' }[estado];
         return '<span class="app-status-tag ' + cls + '">' + ESTADOS[estado].label + '</span>';
     }
 
@@ -300,13 +339,14 @@
                 '<span class="est-fila-doc">' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + ' · ' + ed + ' años' +
                 (ed < 18 ? '<span class="est-menor">Menor</span>' : '') + '</span>' +
                 // En pantallas angostas las columnas se pliegan aquí: escuela, programa y grupo, alertas y WhatsApp
-                '<span class="est-fila-movil"><span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>' +
-                '<span class="est-fila-movil-prog">' + esc(corto(g.programa)) + ' · ' + esc(g.grupo) + '</span>' +
+                '<span class="est-fila-movil">' + (g.id ? '<span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>' : '') +
+                '<span class="est-fila-movil-prog">' + esc(corto(g.programa)) + (g.id ? ' · ' + esc(g.grupo) : '') + '</span>' +
                 '<span class="est-fila-movil-acc"><span class="est-carne-alertas">' + alertasIconos(e) + '</span>' +
                 '<a class="est-wa est-wa-sm" href="' + waLink(e.telefono) + '" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp a ' + esc(primerNombre(e)) + '">' + ICONOS.whatsapp + '</a></span></span>' +
                 '</span></div></td>' +
-            '<td><span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span></td>' +
-            '<td><span class="est-fila-prog">' + esc(corto(g.programa)) + '</span><span class="est-fila-sub">' + esc(g.grupo) + ' · ' + esc(g.codigo) + ' · ' + esc(g.jornada) + '</span></td>' +
+            '<td>' + (g.id ? '<span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>' : '<span class="est-sin-alertas">—</span>') + '</td>' +
+            '<td><span class="est-fila-prog">' + esc(corto(g.programa)) + '</span><span class="est-fila-sub">' +
+                (g.id ? esc(g.grupo) + ' · ' + esc(g.codigo) + ' · ' + esc(g.jornada) : 'Matricúlalo en Matrículas') + '</span></td>' +
             '<td>' + estadoTagHTML(e.estado) + '</td>' +
             '<td><span class="est-carne-alertas">' + (al.length ? alertasIconos(e) : '<span class="est-sin-alertas">—</span>') + '</span></td>' +
             '<td><a class="est-fila-wa" href="' + waLink(e.telefono) + '" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp a ' + esc(primerNombre(e)) + '">' + ICONOS.whatsapp + fmtTel(e.telefono) + '</a></td>' +
@@ -326,7 +366,7 @@
         // KPIs (sobre todos los estudiantes, como en Docentes)
         var conAlerta = data.filter(function (e) { return alertasDe(e).length > 0; }).length;
         var progs = [];
-        data.forEach(function (e) { var pr = grupoDe(e.grupo_id).programa; if (progs.indexOf(pr) < 0) progs.push(pr); });
+        data.forEach(function (e) { var g = grupoDe(e.grupo_id); if (g.id && progs.indexOf(g.programa) < 0) progs.push(g.programa); });
         setTxt('est-kpi-total', data.length);
         setTxt('est-kpi-activos', data.filter(function (e) { return e.estado === 'activo'; }).length);
         setTxt('est-kpi-alertas', conAlerta);
@@ -522,8 +562,6 @@
             t.setAttribute('aria-selected', t.dataset.tab === tabActual ? 'true' : 'false');
         });
         fiPanel.innerHTML = panelFicha(tabActual);
-        // "Cambiar de grupo" no aplica a retirados ni graduados
-        fichaFoot.querySelector('[data-accion="grupo"]').disabled = actual.estado === 'retirado' || actual.estado === 'graduado';
     }
     function pintarCabecera(e) {
         var g = grupoDe(e.grupo_id), ed = edad(e.fecha_nac);
@@ -531,9 +569,9 @@
         av.textContent = iniciales(e);
         av.className = 'est-drawer-avatar est-esc-' + escClass(g.escuela) + (e.estado === 'retirado' ? ' is-retirado' : '');
         document.getElementById('est-fi-nombre').textContent = nombreCompleto(e);
-        document.getElementById('est-fi-doc').textContent = e.tipo_doc + ' ' + fmtDoc(e.documento) + ' · ' + ed + ' años · ' + e.codigo;
+        document.getElementById('est-fi-doc').textContent = e.tipo_doc + ' ' + fmtDoc(e.documento) + ' · ' + ed + ' años' + (e.codigo ? ' · ' + e.codigo : '');
         document.getElementById('est-fi-badges').innerHTML = estadoTagHTML(e.estado) +
-            '<span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>' +
+            (g.id ? '<span class="est-esc-tag est-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>' : '') +
             (ed < 18 ? '<span class="est-menor">Menor de edad</span>' : '');
     }
 
@@ -567,7 +605,7 @@
                     return '<li class="est-alerta-' + ALERTA_INFO[a.tipo].nivel + '">' + ICONOS[a.tipo] + esc(a.texto) + '</li>';
                 }).join('') + '</ul>';
             }
-            if (e.estado !== 'activo' && e.estado_fecha) {
+            if (e.estado !== 'activo' && e.estado !== 'sin_matricula' && e.estado_fecha) {
                 html += '<div class="est-callout est-callout-' + e.estado + '"><strong>' + ESTADOS[e.estado].label + ' desde el ' + fmtFecha(e.estado_fecha) + '</strong>' +
                     (e.estado_motivo ? '<p>' + esc(e.estado_motivo) + '</p>' : '') + '</div>';
             }
@@ -578,9 +616,10 @@
                 dato('Número de documento', fmtDoc(e.documento)) +
                 dato('Fecha de nacimiento', fmtFecha(e.fecha_nac) + ' · ' + ed + ' años') +
                 dato('Género', esc(e.genero)) +
-                dato('Dirección', esc(e.direccion) + ', ' + esc(e.ciudad) + ' (' + esc(e.departamento) + ')', true) +
-                dato('Código estudiantil', esc(e.codigo)) +
-                dato('Ingreso a ESAT', fmtFecha(e.fecha_ingreso)) +
+                dato('Lugar de nacimiento', e.ciudad_nac ? esc(e.ciudad_nac) + ' (' + esc(e.depto_nac) + ')' : '—') +
+                dato('Residencia', esc(e.direccion) + ', ' + esc(e.ciudad) + ' (' + esc(e.departamento) + ')') +
+                dato('Matrícula', e.codigo ? esc(e.codigo) : 'Sin matrícula') +
+                dato('Registrado en ESAT', fmtFecha(e.fecha_ingreso)) +
             '</div>' +
             seccion('Contacto rápido', '<div class="est-contactos">' + contactoHTML(e.telefono, e.email) + '</div>');
         }
@@ -607,10 +646,16 @@
             }
         }
 
-        if (tab === 'grupo') {
+        if (tab === 'grupo' && !g.id) {
+            html += '<div class="est-callout"><strong>Todavía no está matriculado</strong>' +
+                '<p>Matricúlalo en un programa y un grupo desde <strong>Matrículas</strong>. Allí también se cambian el grupo, el estado y los pagos.</p></div>';
+        }
+        if (tab === 'grupo' && g.id) {
             var libres = cuposLibres(g);
             var pct = Math.round(g.inscritos / g.cupo * 100);
-            html += '<div class="est-info-grid">' +
+            html += '<p class="est-sec-nota">Solo consulta: el grupo, el estado y los pagos se cambian en Matrículas.</p>' +
+            '<div class="est-info-grid">' +
+                dato('Matrícula', esc(e.codigo) + ' ' + estadoTagHTML(e.estado)) +
                 dato('Grupo', esc(g.grupo)) +
                 dato('Código', esc(g.codigo)) +
                 dato('Programa', esc(g.programa), true) +
@@ -628,25 +673,45 @@
         if (tab === 'seguimiento') {
             var pagoCls = { al_dia: 'app-status-active', pendiente: 'app-status-warn', vencido: 'app-status-danger' }[e.pago];
             var pagoLbl = { al_dia: 'Al día', pendiente: 'Cuota pendiente', vencido: 'Pago vencido' }[e.pago];
-            var segs = '';
-            for (var i = 1; i <= e.cuotas_total; i++) segs += '<span class="' + (i <= e.cuotas_pagadas ? 'is-paga' : '') + '"></span>';
-            html += seccion('Pagos',
-                '<div class="est-cuotas" role="img" aria-label="' + e.cuotas_pagadas + ' de ' + e.cuotas_total + ' cuotas pagadas">' + segs + '</div>' +
-                '<div class="est-info-grid">' +
-                    dato('Cuotas pagadas', e.cuotas_pagadas + ' de ' + e.cuotas_total) +
-                    dato('Saldo pendiente', e.saldo ? fmtPesos(e.saldo) : '$ 0') +
-                    dato('Último pago', fmtFecha(e.ultimo_pago)) +
-                '</div>',
-                '<span class="app-status-tag ' + pagoCls + '">' + pagoLbl + '</span>') +
+            var pagosHTML;
+            if (e.estado === 'sin_matricula') {
+                pagosHTML = seccion('Pagos', '<p class="est-sec-nota">Sin matrícula: sus pagos aparecen cuando se matricule.</p>',
+                    '<span class="app-status-tag app-status-muted">Sin matrícula</span>');
+            } else if (!e.plan_pago) {
+                // El plan (mensual o por periodo) lo elige el estudiante desde su panel
+                pagosHTML = seccion('Pagos',
+                    '<p class="est-sec-nota">Todavía no ha elegido su plan de pago (mensual o por periodo). Lo elige ' + esc(primerNombre(e)) + ' desde su panel; mientras tanto no tiene cuotas.</p>',
+                    '<span class="app-status-tag app-status-muted">Plan por elegir</span>');
+            } else {
+                var segs = '';
+                for (var i = 1; i <= e.cuotas_total; i++) segs += '<span class="' + (i <= e.cuotas_pagadas ? 'is-paga' : '') + '"></span>';
+                pagosHTML = seccion('Pagos',
+                    '<div class="est-cuotas" role="img" aria-label="' + e.cuotas_pagadas + ' de ' + e.cuotas_total + ' cuotas pagadas">' + segs + '</div>' +
+                    '<div class="est-info-grid">' +
+                        dato('Plan de pago', e.plan_pago === 'mensual' ? 'Mensual' : 'Por periodo') +
+                        dato('Cuotas pagadas', e.cuotas_pagadas + ' de ' + e.cuotas_total) +
+                        dato('Saldo pendiente', e.saldo ? fmtPesos(e.saldo) : '$ 0') +
+                        dato('Último pago', fmtFecha(e.ultimo_pago)) +
+                    '</div>',
+                    '<span class="app-status-tag ' + pagoCls + '">' + pagoLbl + '</span>');
+            }
+            var pendientes = e.documentos.filter(function (d) { return !d.entregado; }).length;
+            html += pagosHTML +
             seccion('Asistencia',
-                e.asistencia === null ? '<p class="est-sec-nota">Su grupo todavía no ha iniciado clases.</p>'
+                e.asistencia === null ? '<p class="est-sec-nota">Todavía no hay asistencia registrada en su grupo.</p>'
                     : '<p class="est-sec-nota">' + (e.asistencia < 80 ? 'Por debajo del 80 % esperado. Conviene contactar al estudiante' + (acudienteDe(e) ? ' y a su acudiente' : '') + '.' : 'Asistencia en el periodo actual.') + '</p>',
                 e.asistencia === null ? '<span class="app-status-tag app-status-muted">Sin clases aún</span>'
                     : '<span class="app-status-tag ' + (e.asistencia < 80 ? 'app-status-warn' : 'app-status-active') + '">' + e.asistencia + ' %</span>') +
+            // Lista de chequeo: se marca cada documento cuando el estudiante lo entrega
             seccion('Documentos',
-                e.documentos_pendientes.length
-                    ? '<ul class="est-docs">' + e.documentos_pendientes.map(function (d) { return '<li>' + ICONOS.documentos + esc(d) + '</li>'; }).join('') + '</ul>'
-                    : '<p class="est-sec-nota est-docs-ok">' + ICONOS.check + 'Documentación completa.</p>');
+                '<ul class="est-docs-check">' + e.documentos.map(function (d) {
+                    return '<li><label class="est-doc-check' + (d.entregado ? ' is-entregado' : '') + '">' +
+                        '<input type="checkbox" data-doc="' + d.id + '"' + (d.entregado ? ' checked' : '') + '>' +
+                        '<span>' + esc(d.nombre) + '</span>' +
+                        '<em>' + (d.entregado ? 'Entregado' : 'Pendiente') + '</em></label></li>';
+                }).join('') + '</ul>',
+                pendientes ? '<span class="app-status-tag app-status-warn">' + pendientes + (pendientes === 1 ? ' pendiente' : ' pendientes') + '</span>'
+                           : '<span class="app-status-tag app-status-active">Completa</span>');
         }
         return html;
     }
@@ -663,40 +728,15 @@
         fichaEl.hidden = true; fichaFoot.hidden = true; fiTabs.hidden = true;
         accionEl.hidden = false; accionFoot.hidden = false;
         accionError.hidden = true;
-        var e = actual, g = grupoDe(e.grupo_id);
+        var e = actual;
         btnConfirmar.textContent = 'Confirmar';
         btnConfirmar.className = 'est-btn est-btn-primary';
 
-        if (tipo === 'grupo') {
-            accionTtl.textContent = 'Cambiar de grupo';
-            accionSub.textContent = 'Grupos de ' + corto(g.programa) + '. Solo se muestran grupos con cupo o en planificación.';
-            var opciones = grupos.filter(function (x) { return x.programa === g.programa && x.estado !== 'finalizado'; });
-            accionCuerpo.innerHTML = '<div class="est-grupos-opc" role="radiogroup" aria-label="Nuevo grupo">' + opciones.map(function (x) {
-                return grupoOpcionHTML(x, x.id === g.id, 'acc-grupo');
-            }).join('') + '</div>';
-        }
-        if (tipo === 'estado') {
-            accionTtl.textContent = 'Cambiar estado';
-            accionSub.textContent = 'Estado actual: ' + ESTADOS[e.estado].label + '.';
-            accionCuerpo.innerHTML = '<div class="est-estado-opc" role="radiogroup" aria-label="Nuevo estado">' + Object.keys(ESTADOS).map(function (k) {
-                return '<label class="est-radio-card' + (k === e.estado ? ' is-actual' : '') + '"><input type="radio" name="acc-estado" value="' + k + '"' + (k === e.estado ? ' checked' : '') + '>' +
-                    '<span class="est-radio-card-main"><span class="est-radio-card-ttl">' + estadoTagHTML(k) + (k === e.estado ? '<em>Actual</em>' : '') + '</span>' +
-                    '<span class="est-radio-card-desc">' + ESTADOS[k].desc + '</span></span></label>';
-            }).join('') + '</div>' +
-            '<div class="est-field"><label class="est-lbl" for="acc-fecha">Fecha del cambio</label><input class="est-input" type="date" id="acc-fecha" value="' + hoyISO() + '" max="' + hoyISO() + '"></div>' +
-            '<div class="est-field" id="acc-motivo-wrap"><label class="est-lbl" for="acc-motivo">Motivo</label><textarea class="est-input est-textarea" id="acc-motivo" rows="3" placeholder="Ej. Incapacidad médica, viaje, cambio de ciudad"></textarea></div>';
-            var actualizarMotivo = function () {
-                var v = (accionCuerpo.querySelector('input[name="acc-estado"]:checked') || {}).value;
-                document.getElementById('acc-motivo-wrap').hidden = !(v === 'aplazado' || v === 'retirado');
-            };
-            accionCuerpo.querySelectorAll('input[name="acc-estado"]').forEach(function (r) { r.addEventListener('change', actualizarMotivo); });
-            actualizarMotivo();
-        }
         if (tipo === 'clave') {
             accionTtl.textContent = 'Restablecer contraseña';
             accionSub.textContent = '';
             accionCuerpo.innerHTML = '<div class="est-callout"><strong>La contraseña de ' + esc(primerNombre(e)) + ' volverá a ser su número de documento</strong>' +
-                '<p>Podrá ingresar con el usuario y la contraseña <strong class="est-num-inline">' + fmtDoc(e.documento) + '</strong> (sin puntos) y el sistema le pedirá crear una nueva. Su contraseña actual dejará de funcionar.</p></div>';
+                '<p>Podrá ingresar con su correo <strong>' + esc(e.email) + '</strong> y la contraseña <strong class="est-num-inline">' + esc(e.documento) + '</strong> (sin puntos), y cambiarla desde su perfil. Su contraseña actual dejará de funcionar.</p></div>';
             btnConfirmar.textContent = 'Restablecer contraseña';
         }
         if (tipo === 'acudiente') {
@@ -712,7 +752,7 @@
                     '<div class="est-field"><label class="est-lbl" for="acc-acu-nom">Nombres</label><input class="est-input" id="acc-acu-nom" autocomplete="off"></div>' +
                     '<div class="est-field"><label class="est-lbl" for="acc-acu-ape">Apellidos</label><input class="est-input" id="acc-acu-ape" autocomplete="off"></div></div>' +
                     '<div class="est-form-row"><div class="est-field"><label class="est-lbl" for="acc-acu-tel">Celular</label><input class="est-input est-num" id="acc-acu-tel" inputmode="numeric" autocomplete="off" placeholder="3XX XXX XXXX"></div>' +
-                    '<div class="est-field"><label class="est-lbl" for="acc-acu-email">Correo <em>opcional</em></label><input class="est-input" id="acc-acu-email" type="email" autocomplete="off"></div></div></div>' +
+                    '<div class="est-field"><label class="est-lbl" for="acc-acu-email">Correo</label><input class="est-input" id="acc-acu-email" type="email" autocomplete="off"></div></div></div>' +
                 '<div class="est-field" id="acc-acu-par-wrap" hidden><span class="est-lbl">Parentesco con el estudiante</span><div class="est-chips" id="acc-acu-par" role="radiogroup" aria-label="Parentesco"></div></div>';
             pintarChips(document.getElementById('acc-acu-par'), 'acc-par');
             var buscar = function () { buscarAcudiente('acc-acu-doc', 'acc-acu-res', 'acc-acu-nuevo', 'acc-acu-par-wrap', function (a) { acuSel = a; }); };
@@ -721,22 +761,6 @@
         }
         accionEl.scrollTop = 0;
         setTimeout(function () { document.getElementById('est-accion-volver').focus(); }, 30);
-    }
-
-    function grupoOpcionHTML(g, actualSel, name) {
-        var libres = cuposLibres(g);
-        var lleno = libres <= 0 && !actualSel;
-        var pct = Math.min(100, Math.round(g.inscritos / g.cupo * 100));
-        return '<label class="est-grupo-opc' + (lleno ? ' is-lleno' : '') + (actualSel ? ' is-actual' : '') + '">' +
-            '<input type="radio" name="' + name + '" value="' + g.id + '"' + (lleno ? ' disabled' : '') + (actualSel ? ' checked' : '') + '>' +
-            '<span class="est-grupo-opc-main">' +
-                '<span class="est-grupo-opc-top"><strong>' + esc(g.grupo) + '</strong><span>' + esc(g.codigo) + '</span>' +
-                    (actualSel ? '<em>Grupo actual</em>' : (g.estado === 'planificacion' ? '<em>En planificación</em>' : '')) + '</span>' +
-                '<span class="est-grupo-opc-meta">' + esc(g.jornada) + ' · ' + esc(g.horario.join(' / ')) + '</span>' +
-                '<span class="est-grupo-opc-meta">' + esc(g.docente) + '</span>' +
-                '<span class="est-cupo-barra" aria-hidden="true"><span style="width:' + pct + '%"></span></span>' +
-                '<span class="est-grupo-opc-cupo">' + (lleno ? 'Sin cupos libres' : libres + (libres === 1 ? ' cupo libre' : ' cupos libres') + ' de ' + g.cupo) + '</span>' +
-            '</span></label>';
     }
 
     function pintarChips(cont, name) {
@@ -786,8 +810,9 @@
         if (nom.length < 2) return { error: 'Escribe los nombres del acudiente.', campo: ids.nom };
         if (ape.length < 2) return { error: 'Escribe los apellidos del acudiente.', campo: ids.ape };
         if (!/^3\d{9}$/.test(tel)) return { error: 'El celular del acudiente debe tener 10 dígitos y empezar por 3.', campo: ids.tel };
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'El correo del acudiente no es válido.', campo: ids.email };
-        return { acudiente: { id: acudientes.reduce(function (m, a) { return Math.max(m, a.id); }, 0) + 1, nombres: nom, apellidos: ape, documento: doc, telefono: tel, email: email } };
+        if (!email) return { error: 'Escribe el correo del acudiente: con él ingresa al sistema.', campo: ids.email };
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'El correo del acudiente no es válido.', campo: ids.email };
+        return { acudiente: { documento: doc, nombres: nom, apellidos: ape, telefono: tel, email: email } };
     }
 
     function errorAccion(msg, campoId) {
@@ -796,7 +821,28 @@
         if (campoId) { var c = document.getElementById(campoId); if (c) { c.classList.add('is-invalid'); c.focus(); } }
     }
 
-    fichaFoot.addEventListener('click', function (e) { var b = e.target.closest('[data-accion]'); if (b && !b.disabled) mostrarAccion(b.dataset.accion); });
+    fiPanel.addEventListener('change', function (ev) {
+        var cb = ev.target.closest('input[data-doc]');
+        if (!cb) return;
+        var e = actual, docId = parseInt(cb.dataset.doc);
+        cb.disabled = true;
+        enviar('PATCH', '/admin/estudiantes/' + e.id + '/documentos/' + docId)
+            .then(function (r) {
+                var d = e.documentos.find(function (x) { return x.id === docId; });
+                d.entregado = r.entregado;
+                e.documentos_pendientes = e.documentos.filter(function (x) { return !x.entregado; }).map(function (x) { return x.nombre; });
+                mostrarFicha();
+                render();
+            })
+            .catch(function (err) { cb.disabled = false; cb.checked = !cb.checked; toast(primerError(err).mensaje); });
+    });
+
+    fichaFoot.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-accion]');
+        if (!b || b.disabled) return;
+        if (b.dataset.accion === 'editar') abrirModal(actual);
+        else mostrarAccion(b.dataset.accion);
+    });
     fiPanel.addEventListener('click', function (e) { var b = e.target.closest('[data-accion]'); if (b) mostrarAccion(b.dataset.accion); });
     document.getElementById('est-accion-volver').addEventListener('click', mostrarFicha);
     document.getElementById('est-accion-cancelar').addEventListener('click', mostrarFicha);
@@ -804,45 +850,19 @@
     accionEl.addEventListener('change', function () { accionError.hidden = true; });
 
     btnConfirmar.addEventListener('click', function () {
-        var e = actual, g = grupoDe(e.grupo_id), msg = '';
+        var e = actual;
+        var url = '/admin/estudiantes/' + e.id, metodo = 'PATCH', cuerpo = null, tab = tabActual;
         accionError.hidden = true;
 
-        if (accionActual === 'grupo') {
-            var sel = accionCuerpo.querySelector('input[name="acc-grupo"]:checked');
-            if (!sel || parseInt(sel.value) === g.id) return errorAccion('Selecciona un grupo diferente al actual.');
-            var nuevo = grupoDe(parseInt(sel.value));
-            if (ocupaCupo(e.estado)) { g.inscritos--; nuevo.inscritos++; }
-            e.grupo_id = nuevo.id;
-            msg = nombreCompleto(e) + ' pasó al ' + nuevo.grupo + ' (' + nuevo.codigo + ').';
-        }
-
-        if (accionActual === 'estado') {
-            var est = (accionCuerpo.querySelector('input[name="acc-estado"]:checked') || {}).value;
-            var fecha = document.getElementById('acc-fecha').value;
-            var motivo = document.getElementById('acc-motivo').value.trim();
-            if (est === e.estado) return errorAccion('Selecciona un estado diferente al actual.');
-            if (!fecha) return errorAccion('Indica la fecha del cambio.', 'acc-fecha');
-            if (fecha > hoyISO()) return errorAccion('La fecha del cambio no puede ser futura.', 'acc-fecha');
-            if ((est === 'aplazado' || est === 'retirado') && motivo.length < 5) return errorAccion('Escribe el motivo del ' + (est === 'aplazado' ? 'aplazamiento' : 'retiro') + '.', 'acc-motivo');
-            if (est === 'graduado' && g.estado !== 'finalizado') return errorAccion('Solo se puede graduar cuando su grupo haya finalizado. ' + g.codigo + ' sigue en curso.');
-            if (est === 'activo' && !ocupaCupo(e.estado) && cuposLibres(g) <= 0) return errorAccion('El ' + g.grupo + ' (' + g.codigo + ') no tiene cupos libres. Cámbialo de grupo antes de reactivarlo.');
-            if (ocupaCupo(e.estado) && !ocupaCupo(est)) g.inscritos--;
-            if (!ocupaCupo(e.estado) && ocupaCupo(est)) g.inscritos++;
-            e.estado = est;
-            e.estado_fecha = est === 'activo' ? null : fecha;
-            e.estado_motivo = (est === 'aplazado' || est === 'retirado') ? motivo : null;
-            msg = nombreCompleto(e) + ' ahora está ' + ESTADOS[est].label.toLowerCase() + '.';
-        }
-
         if (accionActual === 'clave') {
-            msg = 'La contraseña de ' + nombreCompleto(e) + ' volvió a ser su número de documento.';
+            url += '/clave';
         }
 
         if (accionActual === 'acudiente') {
             if (!acuSel) return errorAccion('Busca al acudiente por su cédula.', 'acc-acu-doc');
             var docAcu = acuSel.existente ? acuSel.existente.documento : acuSel.nuevo;
             if (docAcu === String(e.documento)) return errorAccion('El acudiente no puede ser el mismo estudiante.', 'acc-acu-doc');
-            var acu = acuSel.existente;
+            var acu = acuSel.existente ? { id: acuSel.existente.id } : null;
             if (!acu) {
                 var r = leerNuevoAcudiente(CAMPOS_ACU_ACC, acuSel.nuevo);
                 if (r.error) return errorAccion(r.error, r.campo);
@@ -850,22 +870,28 @@
             }
             var par = (accionCuerpo.querySelector('input[name="acc-par"]:checked') || {}).value;
             if (!par) return errorAccion('Selecciona el parentesco con el estudiante.');
-            if (!acuSel.existente) acudientes.push(acu);
-            e.acudiente_id = acu.id;
-            e.parentesco = par;
-            tabActual = 'acudiente';
-            msg = nombreCompleto(acu) + ' quedó como acudiente de ' + primerNombre(e) + '.';
+            metodo = 'PUT';
+            url += '/acudiente';
+            cuerpo = { acudiente: acu, parentesco: par };
+            tab = 'acudiente';
         }
 
-        render();
-        mostrarFicha();
-        toast(msg);
+        btnConfirmar.disabled = true;
+        enviar(metodo, url, cuerpo)
+            .then(function (resp) { recargarConAviso(resp.mensaje, { id: e.id, tab: tab }); })
+            .catch(function (err) {
+                btnConfirmar.disabled = false;
+                errorAccion(primerError(err).mensaje);
+            });
     });
 
-    /* ══ Asistente: Inscribir estudiante ══ */
+    /* ══ Asistente: Registrar / Editar estudiante ══
+       Solo la persona: datos personales, contacto y (al registrar) acudiente.
+       Programa y grupo se asignan en Matrículas. */
     var modal     = document.getElementById('est-modal');
     var paso      = 1;
-    var TOTAL     = 5;
+    var TOTAL     = 3;
+    var editando  = null;   // estudiante que se edita (null = registrar)
     var insError  = document.getElementById('ins-error');
     var btnSig    = document.getElementById('est-btn-siguiente');
     var btnAtras  = document.getElementById('est-btn-atras');
@@ -875,29 +901,35 @@
     var cbTipo     = document.getElementById('ins-cb-tipo');
     var cbDepto    = document.getElementById('ins-cb-depto');
     var cbCiudad   = document.getElementById('ins-cb-ciudad');
-    var cbProgIns  = document.getElementById('ins-cb-programa');
-    [cbGenero, cbTipo, cbDepto, cbCiudad, cbProgIns].forEach(initCombobox);
+    var cbDeptoNac  = document.getElementById('ins-cb-depto-nac');
+    var cbCiudadNac = document.getElementById('ins-cb-ciudad-nac');
+    [cbGenero, cbTipo, cbDepto, cbCiudad, cbDeptoNac, cbCiudadNac].forEach(initCombobox);
 
-    cbGenero.setOptions(['Femenino', 'Masculino', 'No binario', 'Prefiere no decirlo']);
-    cbTipo.setOptions([
-        { value: 'TI', label: 'Tarjeta de identidad' },
-        { value: 'CC', label: 'Cédula de ciudadanía' },
-        { value: 'CE', label: 'Cédula de extranjería' },
-        { value: 'PPT', label: 'Permiso por Protección Temporal' }
-    ]);
-    cbProgIns.setOptions(programas.map(function (p) { return { value: p, label: corto(p) }; }));
+    // Mismos valores que valida el servidor (EstudianteRequest::GENEROS y TIPOS_DOCUMENTO)
+    function aOpciones(obj) { return Object.keys(obj || {}).map(function (k) { return { value: k, label: obj[k] }; }); }
+    cbGenero.setOptions(aOpciones(opciones.generos));
+    cbTipo.setOptions(aOpciones(opciones.tipos));
     pintarChips(document.getElementById('ins-parentesco'), 'ins-par');
 
-    // Departamentos y municipios reales de Colombia
+    // Departamentos y municipios reales de Colombia (nacimiento y residencia)
     var colombia = null;
     fetch('/assets/data/co-departamentos-ciudades.json')
         .then(function (r) { return r.json(); })
-        .then(function (d) { colombia = d; cbDepto.setOptions(d.map(function (x) { return x.departamento; })); });
-    document.getElementById('ins-depto').addEventListener('change', function (e) {
-        var dep = colombia && colombia.find(function (x) { return x.departamento === e.target.value; });
-        cbCiudad.reset(dep ? 'Selecciona un municipio' : 'Elige el departamento primero');
-        cbCiudad.setOptions(dep ? dep.ciudades : []);
-    });
+        .then(function (d) {
+            colombia = d;
+            var deptos = d.map(function (x) { return x.departamento; });
+            cbDepto.setOptions(deptos);
+            cbDeptoNac.setOptions(deptos);
+        });
+    function poblarCiudades(cbCiudadDe) {
+        return function (e) {
+            var dep = colombia && colombia.find(function (x) { return x.departamento === e.target.value; });
+            cbCiudadDe.reset(dep ? 'Selecciona un municipio' : 'Elige el departamento primero');
+            cbCiudadDe.setOptions(dep ? dep.ciudades : []);
+        };
+    }
+    document.getElementById('ins-depto').addEventListener('change', poblarCiudades(cbCiudad));
+    document.getElementById('ins-depto-nac').addEventListener('change', poblarCiudades(cbCiudadNac));
 
     function val(id) { return document.getElementById(id).value.trim(); }
     function edadIns() { return edad(val('ins-nacimiento')); }
@@ -908,23 +940,51 @@
     document.getElementById('ins-nacimiento').addEventListener('input', function () {
         var ed = edadIns();
         if (ed === null || isNaN(ed) || ed < 0) { edadEl.textContent = ''; edadEl.className = 'est-edad'; return; }
-        edadEl.textContent = ed + ' años' + (ed < 18 ? ' · menor de edad: necesitará acudiente' : '');
+        edadEl.textContent = ed + ' años' + (ed < 18 ? ' · menor de edad' : '');
         edadEl.className = 'est-edad' + (ed < 18 ? ' is-menor' : '');
     });
 
-    function abrirModal() {
+    /* e = estudiante a editar (precarga sus datos) o nada para registrar uno nuevo */
+    function abrirModal(e) {
+        editando = e && e.id ? e : null;
+        TOTAL = editando ? 2 : 3;
         paso = 1;
         modal.querySelectorAll('input.est-input').forEach(function (i) { i.value = ''; i.classList.remove('is-invalid'); });
         modal.querySelectorAll('input[type=radio]').forEach(function (r) { r.checked = false; });
         edadEl.textContent = ''; edadEl.className = 'est-edad';
-        cbGenero.reset(); cbTipo.reset(); cbDepto.reset(); cbCiudad.reset('Elige el departamento primero'); cbCiudad.setOptions([]); cbProgIns.reset();
+        cbGenero.reset(); cbTipo.reset(); cbDepto.reset(); cbCiudad.reset('Elige el departamento primero'); cbCiudad.setOptions([]);
+        cbDeptoNac.reset(); cbCiudadNac.reset('Elige el departamento primero'); cbCiudadNac.setOptions([]);
         document.getElementById('ins-acu-agregar').checked = false;
         document.getElementById('ins-acu-resultado').innerHTML = '';
         document.getElementById('ins-acu-nuevo').hidden = true;
         document.getElementById('ins-acu-parentesco-wrap').hidden = true;
-        document.getElementById('ins-grupos').innerHTML = '<p class="est-campo-ayuda">Primero elige el programa.</p>';
-        document.getElementById('ins-resumen').hidden = true;
         insAcu = null;
+
+        // Al editar no hay paso de acudiente: se cambia desde la ficha
+        modal.querySelectorAll('.est-wstep[data-step="3"], .est-wstep-line.is-paso-acu').forEach(function (el) { el.hidden = !!editando; });
+        document.getElementById('est-modal-ttl').textContent = editando ? 'Editar estudiante' : 'Registrar estudiante';
+
+        if (editando) {
+            document.getElementById('ins-nombres').value = editando.nombres;
+            document.getElementById('ins-apellidos').value = editando.apellidos;
+            document.getElementById('ins-nacimiento').value = editando.fecha_nac || '';
+            document.getElementById('ins-nacimiento').dispatchEvent(new Event('input'));
+            if (editando.depto_nac) {
+                cbDeptoNac.setValue(editando.depto_nac, editando.depto_nac);   // carga sus municipios
+                if (editando.ciudad_nac) cbCiudadNac.setValue(editando.ciudad_nac, editando.ciudad_nac, { silent: true });
+            }
+            cbGenero.setValue(editando.genero_valor, (opciones.generos || {})[editando.genero_valor], { silent: true });
+            cbTipo.setValue(editando.tipo_doc, (opciones.tipos || {})[editando.tipo_doc], { silent: true });
+            document.getElementById('ins-documento').value = editando.documento;
+            document.getElementById('ins-telefono').value = editando.telefono;
+            document.getElementById('ins-email').value = editando.email || '';
+            document.getElementById('ins-direccion').value = editando.direccion || '';
+            if (editando.departamento) {
+                cbDepto.setValue(editando.departamento, editando.departamento);   // carga sus municipios
+                if (editando.ciudad) cbCiudad.setValue(editando.ciudad, editando.ciudad, { silent: true });
+            }
+        }
+
         pintarPaso();
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
@@ -934,9 +994,9 @@
         if (!modal.classList.contains('is-open')) return;
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
-        document.getElementById('est-btn-inscribir').focus();
+        if (!editando) document.getElementById('est-btn-registrar').focus();
     }
-    document.getElementById('est-btn-inscribir').addEventListener('click', abrirModal);
+    document.getElementById('est-btn-registrar').addEventListener('click', function () { abrirModal(null); });
     document.getElementById('est-modal-close').addEventListener('click', cerrarModal);
     document.getElementById('est-modal-overlay').addEventListener('click', cerrarModal);
 
@@ -950,9 +1010,9 @@
         });
         document.getElementById('est-modal-paso').textContent = 'Paso ' + paso + ' de ' + TOTAL;
         btnAtras.style.visibility = paso === 1 ? 'hidden' : 'visible';
-        btnSig.textContent = paso === TOTAL ? 'Inscribir estudiante' : 'Siguiente';
+        btnSig.textContent = paso === TOTAL ? (editando ? 'Guardar cambios' : 'Registrar estudiante') : 'Siguiente';
         insError.hidden = true;
-        if (paso === 4) prepararAcudiente();
+        if (paso === 3) prepararAcudiente();
         modal.querySelector('.est-modal-body').scrollTop = 0;
     }
 
@@ -974,36 +1034,6 @@
     document.getElementById('ins-acu-btn-buscar').addEventListener('click', buscarIns);
     document.getElementById('ins-acu-buscar').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); buscarIns(); } });
 
-    // Paso 5: grupos del programa elegido
-    document.getElementById('ins-programa').addEventListener('change', function (e) {
-        var gs = grupos.filter(function (g) { return g.programa === e.target.value && g.estado !== 'finalizado'; });
-        document.getElementById('ins-grupos').innerHTML = gs.map(function (g) { return grupoOpcionHTML(g, false, 'ins-grupo'); }).join('');
-        document.getElementById('ins-resumen').hidden = true;
-    });
-    document.getElementById('ins-grupos').addEventListener('change', pintarResumen);
-
-    function pintarResumen() {
-        var sel = modal.querySelector('input[name="ins-grupo"]:checked');
-        var res = document.getElementById('ins-resumen');
-        if (!sel) { res.hidden = true; return; }
-        var g = grupoDe(parseInt(sel.value));
-        var acuTxt = insAcuNombre();
-        res.innerHTML = '<h4>Resumen de la inscripción</h4><div class="est-info-grid">' +
-            dato('Estudiante', esc(val('ins-nombres') + ' ' + val('ins-apellidos'))) +
-            dato('Documento', esc(cbTipo.value()) + ' ' + fmtDoc(val('ins-documento').replace(/\D/g, ''))) +
-            dato('Edad', edadIns() + ' años') +
-            dato('Acudiente', acuTxt ? esc(acuTxt) : 'Sin acudiente') +
-            dato('Programa y grupo', esc(corto(g.programa)) + ' · ' + esc(g.grupo) + ' (' + esc(g.codigo) + ')', true) +
-            dato('Usuario y contraseña inicial', '<span class="est-num-inline">' + esc(val('ins-documento').replace(/\D/g, '')) + '</span>', true) +
-        '</div>';
-        res.hidden = false;
-    }
-    function insAcuNombre() {
-        if (!insAcu) return '';
-        if (insAcu.existente) return nombreCompleto(insAcu.existente);
-        return (val('ins-acu-nombres') + ' ' + val('ins-acu-apellidos')).trim();
-    }
-
     function errorIns(msg, campo) {
         insError.textContent = msg;
         insError.hidden = false;
@@ -1022,32 +1052,33 @@
         if (paso === 1) {
             if (val('ins-nombres').length < 2) return errorIns('Escribe los nombres del estudiante.', 'ins-nombres');
             if (val('ins-apellidos').length < 2) return errorIns('Escribe los apellidos del estudiante.', 'ins-apellidos');
+            var tipo = cbTipo.value();
+            var doc = val('ins-documento').replace(/\D/g, '');
+            if (!tipo) return errorIns('Selecciona el tipo de documento.', 'ins-cb-tipo');
+            if (doc.length < 6 || doc.length > 11) return errorIns('El número de documento debe tener entre 6 y 11 dígitos.', 'ins-documento');
+            var dup = data.find(function (x) { return String(x.documento) === doc && (!editando || x.id !== editando.id); });
+            if (dup) return errorIns('Ya existe un estudiante con ese documento: ' + nombreCompleto(dup) + '.', 'ins-documento');
             if (!val('ins-nacimiento')) return errorIns('Indica la fecha de nacimiento.', 'ins-nacimiento');
             var ed = edadIns();
             if (val('ins-nacimiento') > hoyISO() || ed < 0) return errorIns('La fecha de nacimiento no puede ser futura.', 'ins-nacimiento');
             if (ed > 99) return errorIns('Revisa el año de nacimiento.', 'ins-nacimiento');
             if (!cbGenero.value()) return errorIns('Selecciona el género.', 'ins-cb-genero');
+            if (!cbDeptoNac.value()) return errorIns('Selecciona el departamento de nacimiento.', 'ins-cb-depto-nac');
+            if (!cbCiudadNac.value()) return errorIns('Selecciona la ciudad de nacimiento.', 'ins-cb-ciudad-nac');
+            if (tipo === 'TI' && ed >= 18) return errorIns('Con ' + ed + ' años el documento es la cédula de ciudadanía, no la tarjeta de identidad.', 'ins-cb-tipo');
+            if (tipo === 'CC' && ed < 18) return errorIns('Un menor de edad se identifica con tarjeta de identidad.', 'ins-cb-tipo');
         }
         if (paso === 2) {
-            var tipo = cbTipo.value(), ed2 = edadIns();
-            var doc = val('ins-documento').replace(/\D/g, '');
-            if (!tipo) return errorIns('Selecciona el tipo de documento.', 'ins-cb-tipo');
-            if (tipo === 'TI' && ed2 >= 18) return errorIns('Con ' + ed2 + ' años el documento es la cédula de ciudadanía, no la tarjeta de identidad.', 'ins-cb-tipo');
-            if (tipo === 'CC' && ed2 < 18) return errorIns('Un menor de edad se identifica con tarjeta de identidad.', 'ins-cb-tipo');
-            if (doc.length < 6 || doc.length > 11) return errorIns('El número de documento debe tener entre 6 y 11 dígitos.', 'ins-documento');
-            var dup = data.find(function (x) { return String(x.documento) === doc; });
-            if (dup) return errorIns('Ya existe un estudiante con ese documento: ' + nombreCompleto(dup) + ' (' + dup.codigo + ').', 'ins-documento');
-        }
-        if (paso === 3) {
             var tel = val('ins-telefono').replace(/\D/g, '');
             var email = val('ins-email');
+            if (!email) return errorIns('Escribe el correo: es el usuario con el que ingresará al sistema.', 'ins-email');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorIns('El correo no es válido. Revisa que tenga @ y un dominio.', 'ins-email');
             if (!/^3\d{9}$/.test(tel)) return errorIns('El celular debe tener 10 dígitos y empezar por 3.', 'ins-telefono');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorIns('El correo no es válido. Revisa que tenga @ y un dominio.', 'ins-email');
             if (val('ins-direccion').length < 5) return errorIns('Escribe la dirección de residencia.', 'ins-direccion');
-            if (!cbDepto.value()) return errorIns('Selecciona el departamento.', 'ins-cb-depto');
-            if (!cbCiudad.value()) return errorIns('Selecciona la ciudad o municipio.', 'ins-cb-ciudad');
+            if (!cbDepto.value()) return errorIns('Selecciona el departamento de residencia.', 'ins-cb-depto');
+            if (!cbCiudad.value()) return errorIns('Selecciona la ciudad de residencia.', 'ins-cb-ciudad');
         }
-        if (paso === 4) {
+        if (paso === 3) {
             var requiere = edadIns() < 18 || document.getElementById('ins-acu-agregar').checked;
             if (requiere) {
                 if (!insAcu) return errorIns('Busca al acudiente por su cédula.', 'ins-acu-buscar');
@@ -1060,10 +1091,6 @@
                 if (!modal.querySelector('input[name="ins-par"]:checked')) return errorIns('Selecciona el parentesco con el estudiante.');
             }
         }
-        if (paso === 5) {
-            if (!cbProgIns.value()) return errorIns('Selecciona el programa.', 'ins-cb-programa');
-            if (!modal.querySelector('input[name="ins-grupo"]:checked')) return errorIns('Selecciona un grupo con cupo.');
-        }
         return true;
     }
 
@@ -1071,7 +1098,7 @@
         insError.hidden = true;
         if (!validarPaso()) return;
         if (paso < TOTAL) { paso++; pintarPaso(); return; }
-        inscribir();
+        guardarEstudiante();
     });
     btnAtras.addEventListener('click', function () { if (paso > 1) { paso--; pintarPaso(); } });
     modal.addEventListener('input', function (e) { e.target.classList.remove('is-invalid'); insError.hidden = true; });
@@ -1081,39 +1108,48 @@
         insError.hidden = true;
     });
 
-    function inscribir() {
-        var g = grupoDe(parseInt(modal.querySelector('input[name="ins-grupo"]:checked').value));
-        var requiere = edadIns() < 18 || document.getElementById('ins-acu-agregar').checked;
-        var acuId = null, parentesco = null;
-        if (requiere && insAcu) {
-            var acu = insAcu.existente;
-            if (!acu) { acu = leerNuevoAcudiente(CAMPOS_ACU_INS, insAcu.nuevo).acudiente; acudientes.push(acu); }
-            acuId = acu.id;
-            parentesco = modal.querySelector('input[name="ins-par"]:checked').value;
-        }
-        var id = data.reduce(function (m, x) { return Math.max(m, x.id); }, 0) + 1;
-        var nuevo = {
-            id: id, codigo: 'EST-2026-' + String(100 + id * 7).padStart(4, '0'),
-            nombres: val('ins-nombres'), apellidos: val('ins-apellidos'),
-            tipo_doc: cbTipo.value(), documento: val('ins-documento').replace(/\D/g, ''),
-            fecha_nac: val('ins-nacimiento'), genero: cbGenero.value(),
-            telefono: val('ins-telefono').replace(/\D/g, ''), email: val('ins-email'),
-            direccion: val('ins-direccion'), departamento: cbDepto.value(), ciudad: cbCiudad.value(),
-            grupo_id: g.id, estado: 'activo', estado_fecha: null, estado_motivo: null,
-            fecha_ingreso: hoyISO(), acudiente_id: acuId, parentesco: parentesco,
-            pago: 'al_dia', cuotas_pagadas: 0, cuotas_total: 10, saldo: 0, ultimo_pago: null,
-            asistencia: null, documentos_pendientes: ['Copia del documento de identidad', 'Certificado de estudios'],
-            reciente: true
-        };
-        data.unshift(nuevo);
-        g.inscritos++;
-        cerrarModal();
+    /* Paso del asistente donde está cada campo (para volver a él si el servidor lo rechaza) */
+    var PASO_DE = {
+        nombres: 1, apellidos: 1, fecha_nacimiento: 1, genero: 1, tipo_documento: 1, numero_documento: 1,
+        departamento_nacimiento: 1, lugar_nacimiento: 1,
+        telefono: 2, email: 2, direccion: 2, departamento_residencia: 2, ciudad_residencia: 2,
+        acudiente: 3, parentesco: 3
+    };
 
-        // Mostrar el carné nuevo de primero, sin filtros que lo oculten
-        document.getElementById('est-limpiar').click();
-        nuevoId = id;
-        render();
-        toast(nombreCompleto(nuevo) + ' quedó ' + (nuevo.genero === 'Femenino' ? 'inscrita' : 'inscrito') + ' en el ' + g.grupo + ' (' + g.codigo + '). Usuario y contraseña inicial: ' + nuevo.documento + '.');
+    function guardarEstudiante() {
+        var cuerpo = {
+            nombres: val('ins-nombres'), apellidos: val('ins-apellidos'),
+            fecha_nacimiento: val('ins-nacimiento'), genero: cbGenero.value(),
+            departamento_nacimiento: cbDeptoNac.value(), lugar_nacimiento: cbCiudadNac.value(),
+            tipo_documento: cbTipo.value(), numero_documento: val('ins-documento'),
+            telefono: val('ins-telefono'), email: val('ins-email'),
+            direccion: val('ins-direccion'), departamento_residencia: cbDepto.value(), ciudad_residencia: cbCiudad.value()
+        };
+        if (!editando) {
+            var conAcu = edadIns() < 18 || document.getElementById('ins-acu-agregar').checked;
+            cuerpo.con_acudiente = conAcu;
+            cuerpo.acudiente = null;
+            cuerpo.parentesco = null;
+            if (conAcu && insAcu) {
+                cuerpo.acudiente = insAcu.existente ? { id: insAcu.existente.id } : leerNuevoAcudiente(CAMPOS_ACU_INS, insAcu.nuevo).acudiente;
+                cuerpo.parentesco = modal.querySelector('input[name="ins-par"]:checked').value;
+            }
+        }
+
+        var textoBtn = btnSig.textContent;
+        btnSig.disabled = true;
+        btnSig.textContent = 'Guardando…';
+        var peticion = editando ? enviar('PUT', '/admin/estudiantes/' + editando.id, cuerpo) : enviar('POST', '/admin/estudiantes', cuerpo);
+        peticion
+            .then(function (r) { recargarConAviso(r.mensaje, editando ? { id: editando.id, tab: 'datos' } : { nuevo: r.id }); })
+            .catch(function (err) {
+                btnSig.disabled = false;
+                btnSig.textContent = textoBtn;
+                var pe = primerError(err);
+                var raiz = pe.campo ? pe.campo.split('.')[0] : null;
+                if (raiz && PASO_DE[raiz] && PASO_DE[raiz] !== paso) { paso = PASO_DE[raiz]; pintarPaso(); }
+                errorIns(pe.mensaje);
+            });
     }
 
     /* Escape: primero cierra listas abiertas, luego el asistente o la ficha */
@@ -1125,5 +1161,21 @@
         }
     });
 
+    var reabrir = null;
+    try {
+        var aviso = sessionStorage.getItem(FLASH);
+        reabrir = JSON.parse(sessionStorage.getItem(ABRIR) || 'null');
+        sessionStorage.removeItem(FLASH);
+        sessionStorage.removeItem(ABRIR);
+        if (aviso) toast(aviso);
+    } catch (e) {}
+    if (reabrir && reabrir.nuevo) nuevoId = reabrir.nuevo;
+
     render();
+
+    if (reabrir && reabrir.id) {
+        abrirFicha(reabrir.id);
+        tabActual = reabrir.tab || 'datos';
+        if (actual) mostrarFicha();
+    }
 }());

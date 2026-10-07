@@ -84,6 +84,27 @@ class Curso extends Model
         return $this->belongsToMany(User::class, 'curso_estudiante', 'curso_id', 'estudiante_id')->withTimestamps();
     }
 
+    /**
+     * Solo los que ocupan cupo: inscritos en el grupo cuya matrícula en el programa
+     * del grupo está activa (aplazados, retirados y graduados liberan el cupo).
+     * Sirve igual para $curso->estudiantesActivos y para withCount('estudiantesActivos').
+     */
+    public function estudiantesActivos(): BelongsToMany
+    {
+        return $this->estudiantes()->whereExists(fn ($q) => $q->selectRaw('1')
+            ->from('matriculas')
+            ->join('cursos as curso_cupo', 'curso_cupo.programa_id', '=', 'matriculas.programa_id')
+            ->whereColumn('curso_cupo.id', 'curso_estudiante.curso_id')
+            ->whereColumn('matriculas.estudiante_id', 'curso_estudiante.estudiante_id')
+            ->where('matriculas.estado', 'activo'));
+    }
+
+    /** Cupos que quedan: el cupo es siempre el del programa. */
+    public function cuposLibres(): int
+    {
+        return max(0, $this->programa->cupo_grupo - $this->estudiantesActivos()->count());
+    }
+
     /** Horario semanal: una sesión por día de clase. */
     public function sesiones(): HasMany
     {

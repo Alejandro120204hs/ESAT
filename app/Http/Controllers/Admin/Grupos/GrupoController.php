@@ -28,7 +28,7 @@ class GrupoController extends Controller
         $sedeId = $this->sedeId();
 
         $grupos = Curso::deSede($sedeId)
-            ->with(['programa.escuela', 'sesiones', 'docentes', 'estudiantes'])
+            ->with(['programa.escuela', 'sesiones', 'docentes', 'estudiantesActivos'])
             ->orderBy('codigo')
             ->get();
 
@@ -257,9 +257,10 @@ class GrupoController extends Controller
             'fecha_inicio'     => $this->fecha($c->fecha_inicio),
             'fecha_fin'        => $this->fecha($c->fecha_fin),
             'cupo_max'         => $c->programa->cupo_grupo,
-            'inscritos'        => $c->estudiantes->count(),
+            // Solo los activos ocupan cupo (aplazados, retirados y graduados lo liberan)
+            'inscritos'        => $c->estudiantesActivos->count(),
             'estado'           => $c->estado,
-            'estudiantes'      => $c->estudiantes->map(fn ($e) => [
+            'estudiantes'      => $c->estudiantesActivos->map(fn ($e) => [
                 'nombre' => $e->name,
                 'cedula' => ctype_digit((string) $e->numero_documento) ? number_format((int) $e->numero_documento, 0, ',', '.') : $e->numero_documento,
             ])->values(),

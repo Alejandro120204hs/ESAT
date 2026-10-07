@@ -7,6 +7,7 @@ use App\Models\Academico\Asistencia;
 use App\Models\Academico\Curso;
 use App\Models\Academico\DocentePerfil;
 use App\Models\Academico\Entrega;
+use App\Models\Academico\EstudianteDocumento;
 use App\Models\Academico\Evaluacion;
 use App\Models\Finanzas\Matricula;
 use App\Models\Institucional\Sede;
@@ -177,6 +178,12 @@ class User extends Authenticatable
     public function evaluacionesCreadas(): HasMany
     {
         return $this->hasMany(Evaluacion::class, 'docente_id');
+    }
+
+    /** Lista de chequeo de documentos de este usuario (como estudiante). */
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(EstudianteDocumento::class, 'estudiante_id')->orderBy('id');
     }
 
     /** Registros de asistencia de este usuario (como estudiante). */

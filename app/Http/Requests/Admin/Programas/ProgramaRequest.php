@@ -60,9 +60,10 @@ class ProgramaRequest extends FormRequest
                 return;
             }
             $grupos = $programa->cursos()->where('estado', '!=', 'finalizado')
-                ->with(['sesiones', 'docentes'])->withCount('estudiantes')->get();
+                ->with(['sesiones', 'docentes'])->withCount('estudiantesActivos')->get();
 
-            $max = $grupos->max('estudiantes_count') ?? 0;
+            // Solo los activos ocupan cupo
+            $max = $grupos->max('estudiantes_activos_count') ?? 0;
             if ($this->integer('cupo_grupo') < $max) {
                 $v->errors()->add('cupo_grupo', "Uno de los grupos de este programa ya tiene {$max} estudiantes inscritos: el cupo no puede ser menor.");
             }

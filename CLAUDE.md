@@ -105,7 +105,19 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes). El resto del panel Admin sigue siendo maqueta.
+- **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
+  `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
+  **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
+  `acudiente_estudiante` con parentesco; obligatorio si es menor), lista de documentos
+  (`estudiante_documentos`, del estudiante, `EstudianteDocumento::REQUERIDOS`) y restablecer
+  clave. **No matricula.** Matrículas (pendiente) = programa + grupo (`curso_estudiante`),
+  cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
+  motivo) y pagos. En la ficha del estudiante la matrícula es solo consulta.
+  `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**.
+- **Cupos**: solo las matrículas activas ocupan cupo → usar `Curso::estudiantesActivos()`
+  / `cuposLibres()`, nunca `estudiantes()->count()`. Un grupo con estudiantes no
+  puede cambiar de programa.
 - Horarios (`Admin/Horarios/HorarioController`): `PUT /admin/horarios/{curso}`
   reemplaza las sesiones del grupo y su docente. "Nuevo horario" solo ofrece
   grupos sin sesiones; los finalizados no se listan ni se editan.
@@ -116,6 +128,15 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   las horas; validar en frontend y en servidor (`HorarioService::fueraDeJornada`).
   Y al revés: un cambio arriba no puede invalidar lo de abajo (cambiar jornada
   o duración, reabrir un grupo, desactivar un docente con grupos vigentes).
+
+## Pruebas automáticas
+
+`php artisan test` (SQLite en memoria, no toca la BD `esat`). `tests/TestCase.php`
+registra `FIELD()` para SQLite. Las reglas de horarios (jornada, tope, cruces,
+y lo que las protege desde Grupos/Docentes/Programas) están en
+`tests/Feature/Admin/HorariosTest.php`: al cambiar una regla, correrlas; al
+agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
+(no hay columna `name`).
 
 ## Bug recurrente a tener en cuenta
 
