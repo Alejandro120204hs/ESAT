@@ -105,7 +105,121 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia). El resto del panel Admin sigue siendo maqueta.
+- **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
+  `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
+  **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
+  `acudiente_estudiante` con parentesco; obligatorio si es menor), lista de documentos
+  (`estudiante_documentos`, del estudiante, `EstudianteDocumento::REQUERIDOS`) y restablecer
+  clave. **No matricula.** Matrículas = programa + grupo (`curso_estudiante`),
+  cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
+  motivo) y pagos. **Sin todos los documentos requeridos entregados no se matricula**
+  (`EstudianteDocumento::pendientesDe`, en frontend y en `MatriculaRequest`). En la ficha del estudiante la matrícula es solo consulta.
+  `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**.
+- **Acudientes** (`Admin/Acudientes/AcudienteController` + `AcudienteService`): cuenta rol
+  acudiente (**correo obligatorio** = usuario, clave = documento, ocupación en `users.profesion`),
+  residencia con el combobox de Colombia, estudiantes a cargo en `acudiente_estudiante`.
+  **Un solo acudiente por estudiante** (vincular reemplaza al anterior) y **ningún menor de edad
+  queda sin acudiente** (no se desvincula ni se quita al editar; se cambia vinculándole otro).
+  Estado de cuenta: `activo=0` → inactiva; `ultimo_acceso` null → "nunca ha ingresado".
+- **Matrículas** (`Admin/Matriculas/MatriculaController` + `PagoController`, `Academico/MatriculaService`,
+  `Finanzas/PagoService`): la matrícula **guarda su grupo** (`matriculas.curso_id`; `curso_estudiante`
+  sigue siendo la lista del grupo y se mantiene sincronizada). Una matrícula **vigente** (activa o
+  aplazada) por estudiante; el cupo se revisa con el grupo bloqueado. Estados por
+  `Matricula::TRANSICIONES` (activo → aplazado/retirado/graduado; aplazado → activo/retirado;
+  retirado y graduado son finales). Aplazar/retirar anula las cuotas futuras; reintegrar las
+  regenera; graduar exige grupo terminado y paz y salvo.
+- **Pagos**: cada fila de `pagos` es un cobro (`matricula` = derecho de matrícula, o cuota
+  `mensual`/`periodo` con `numero_cuota` y `fecha_vencimiento` el día `Pago::DIA_VENCIMIENTO`=10).
+  Lo que se paga se registra en recaudos (ver abajo). `vencido` lo calcula `Pago::estadoActual()` por
+  fecha y lo guarda el comando diario `pagos:vencer`. El resumen de pagos (Matrículas, Estudiantes y
+  Acudientes) sale solo de `PagoService::resumen()`. El historial de una matrícula es la auditoría
+  con `entidad_tipo = 'Matricula'` (registrar ahí también los pagos).
+  - **Pagos = recaudos** (`Finanzas/Recaudo`, tabla `recaudos` + pivote `recaudo_pago.monto`): la
+    admin escribe un **monto libre** y `PagoService::registrarPago` lo aplica **en orden** (lo más viejo
+    primero; el derecho en espera al final): completa cobros y lo que sobra queda **abonado**
+    (`pagos.abonado`, `Pago::restante()`). Un recibo por recaudo (`RC-AAAA-NNNNN`, imprimible en
+    `admin.matriculas.recibo`). Anular un pago anula el recaudo entero (`anularRecaudo`): devuelve lo
+    abonado y el recibo queda marcado como anulado. No se paga más de lo que se debe. Lo atrasado se
+    acumula con lo del mes ("A pagar este mes" = vencido + del mes).
+  - **Descuento** (beca/convenio): `matriculas.descuento_pct` + motivo; rebaja solo el valor del
+    programa (`pagos.descuento`; no el derecho ni la cuota del sistema), en las cuotas **sin abonos** y
+    en las que se generen después. 0 lo quita.
+  - **Anular matrícula** (estado `anulado`, por `TRANSICIONES`, con motivo): solo si no tiene recaudos
+    vigentes; anula sus cobros, sale de la lista del grupo, no cuenta en trayectoria ni en la
+    matrícula que muestran Estudiantes/Acudientes; queda en Finalizadas. El estudiante vuelve a
+    "Por matricular".
+  - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). Desde ese día,
+    si no está pagado, **el estudiante no puede ingresar** (`LoginRequest` + `derechoVencido`); sin
+    matrícula o antes de vencer sí entra. Al **aplazar** sin haberlo pagado queda **en espera**
+    (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
+    guarda. Al **retirarse** antes de que venza, se anula. (Cuando exista el panel Estudiante,
+    aplicar la misma regla a las sesiones abiertas, no solo al login.)
+  - **Graduar** exige grupo terminado, plan elegido con todas sus cuotas pagadas y paz y salvo.
+    Los pagos de una matrícula graduada no se anulan.
+  - Un cambio de estado no puede tener fecha anterior a la matrícula ni al último cambio de estado.
+  - El consecutivo de recibos vive en `configuraciones` (`ultimo_recibo_AAAA`) y nunca retrocede:
+    un recibo anulado no se reutiliza.
+  - Si cambia la fecha de inicio del grupo (cambio de grupo o edición en Grupos), el derecho de
+    matrícula sin pagar vence el nuevo día de inicio (`reprogramarDerecho`).
+  - **Dinero adelantado** (`PagoService::adelantado`): en una matrícula aplazada o retirada, las cuotas
+    pagadas que vencen después del cambio y los abonos que quedaron en cobros anulados. Siempre se
+    usa **primero para cubrir lo vencido** de la misma matrícula; el resto:
+    - **Devolución** (`registrarDevolucion`, tabla `devoluciones`, comprobante `DV-AAAA-NNNNN`).
+    - **Cambio de programa** (`MatriculaService::cambiarPrograma`, opción de "Cambiar estado"): la vieja
+      queda retirada ("Cambio de programa a…"), la nueva guarda `origen_id`; el derecho no se cobra otra
+      vez si ya lo pagó; lo adelantado pasa a `matriculas.saldo_favor` de la nueva.
+    - **Reintegro**: lo abonado a cuotas anuladas vuelve como saldo a favor.
+    El saldo a favor se aplica solo, en orden, cuando hay cobros (`aplicarSaldoFavor`, también al generar
+    cuotas). `pagos.reembolsado` = lo que salió de ese cobro; lo que realmente queda pagado es
+    `Pago::disponible()` (abonado − reembolsado). Un recaudo con dinero ya devuelto/trasladado no se anula.
+  - **Documentos imprimibles** (`DocumentoController`, plantilla `admin/matriculas/documento.blade.php` +
+    `documento.css/js`): recibo, comprobante de devolución, constancia de matrícula (solo vigente) y paz y
+    salvo (nada por pagar en ninguna de sus matrículas y ninguna vigente sin plan).
+- **Asistencia** (`Admin/Asistencia/AsistenciaController` + `Academico/AsistenciaService`): el Admin **solo
+  consulta**; la asistencia la toma el **docente** (panel Docente, pendiente) y es **informativa: no bloquea
+  nada** (ni grados ni matrículas; 80 % es solo referencia). Clases = días del horario entre el inicio del grupo
+  y su fin (la de hoy cuenta cuando termina). Clase **sin registrar** = clase dictada sin ningún registro del
+  grupo; no cuenta en el %. % = (presente + tarde) / (presente + tarde + ausente): la excusa no cuenta como falla
+  (`AsistenciaService::porcentaje`, la misma regla en las fichas de Estudiantes/Acudientes/Matrículas). De cada
+  estudiante cuentan las clases desde su matrícula hasta que se aplazó/retiró. `asistencias.motivo` (excusa) y
+  `registrado_por` (docente). Pruebas en `tests/Feature/Admin/AsistenciaTest.php`.
+- **Exportar a Excel**: Matrículas, Docentes, Estudiantes y Acudientes tienen un botón "Exportar" que
+  descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
+  navegador (`exportar()` + `celdaCsv()` en el JS de cada página; neutraliza celdas que empiezan con
+  `= + - @` para que Excel no las tome como fórmulas). Al agregarlo a otra pantalla, copiar ese patrón.
+  - La app corre en hora de Colombia (`config/app.php` → `America/Bogota`).
+- **Trayectoria**: un estudiante puede tener varias matrículas en el tiempo (se gradúa o se retira y
+  vuelve con una matrícula nueva; la vieja queda como historial). `EstudianteService::trayectoria()`
+  las lista (ficha de Estudiantes › Matrícula › "Trayectoria en ESAT"); en Matrículas la ficha muestra
+  "Otras matrículas de X". Matrículas tiene 3 pestañas: vigentes (activas/aplazadas), Por matricular
+  (nunca matriculados) y Finalizadas (graduadas/retiradas, solo consulta).
+- **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
+  guarda `users.ultimo_acceso`.
+- `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
+  muestran de un estudiante (los usan Estudiantes y Acudientes; no duplicar en controladores).
+- **Cupos**: solo las matrículas activas ocupan cupo → usar `Curso::estudiantesActivos()`
+  / `cuposLibres()`, nunca `estudiantes()->count()`. Un grupo con estudiantes no
+  puede cambiar de programa.
+- Horarios (`Admin/Horarios/HorarioController`): `PUT /admin/horarios/{curso}`
+  reemplaza las sesiones del grupo y su docente. "Nuevo horario" solo ofrece
+  grupos sin sesiones; los finalizados no se listan ni se editan.
+- **Lo definido arriba se respeta abajo** (Programa → Grupo → Horario): la
+  jornada del horario es la del grupo (`Curso::RANGOS_JORNADA`: Mañana 6–12,
+  Tarde 12–18, Noche 18–24, Fines de semana solo sábado; sin horarios
+  "personalizados" por fuera de la jornada), nunca se deduce de
+  las horas; validar en frontend y en servidor (`HorarioService::fueraDeJornada`).
+  Y al revés: un cambio arriba no puede invalidar lo de abajo (cambiar jornada
+  o duración, reabrir un grupo, desactivar un docente con grupos vigentes).
+
+## Pruebas automáticas
+
+`php artisan test` (SQLite en memoria, no toca la BD `esat`). `tests/TestCase.php`
+registra `FIELD()` para SQLite. Las reglas de horarios (jornada, tope, cruces,
+y lo que las protege desde Grupos/Docentes/Programas) están en
+`tests/Feature/Admin/HorariosTest.php`: al cambiar una regla, correrlas; al
+agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
+(no hay columna `name`).
 
 ## Bug recurrente a tener en cuenta
 

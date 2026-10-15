@@ -1,7 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\Acudientes\AcudienteController;
+use App\Http\Controllers\Admin\Asistencia\AsistenciaController;
 use App\Http\Controllers\Admin\Docentes\DocenteController;
+use App\Http\Controllers\Admin\Estudiantes\EstudianteController;
 use App\Http\Controllers\Admin\Grupos\GrupoController;
+use App\Http\Controllers\Admin\Horarios\HorarioController;
+use App\Http\Controllers\Admin\Matriculas\DocumentoController;
+use App\Http\Controllers\Admin\Matriculas\MatriculaController;
+use App\Http\Controllers\Admin\Matriculas\PagoController;
 use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
@@ -216,17 +223,43 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('cursos/{curso}', [GrupoController::class, 'update'])->name('cursos.update');
     Route::patch('cursos/{curso}/estado', [GrupoController::class, 'cambiarEstado'])->name('cursos.estado');
 
-    Route::get('horarios', function () {
-        return view('admin.horarios.index');
-    })->name('horarios');
+    Route::get('horarios', [HorarioController::class, 'index'])->name('horarios');
+    Route::put('horarios/{curso}', [HorarioController::class, 'update'])->name('horarios.update');
 
-    Route::get('estudiantes', function () {
-        return view('admin.estudiantes.index');
-    })->name('estudiantes');
+    // Panel "Estudiantes": la persona (datos, acudiente, documentos). Matricular es de Matrículas.
+    Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes');
+    Route::post('estudiantes', [EstudianteController::class, 'store'])->name('estudiantes.store');
+    Route::put('estudiantes/{estudiante}', [EstudianteController::class, 'update'])->name('estudiantes.update');
+    Route::patch('estudiantes/{estudiante}/clave', [EstudianteController::class, 'restablecerClave'])->name('estudiantes.clave');
+    Route::put('estudiantes/{estudiante}/acudiente', [EstudianteController::class, 'acudiente'])->name('estudiantes.acudiente');
+    Route::patch('estudiantes/{estudiante}/documentos/{documento}', [EstudianteController::class, 'documento'])->name('estudiantes.documento');
 
-    Route::get('acudientes', function () {
-        return view('admin.acudientes.index');
-    })->name('acudientes');
+    // Panel "Matrículas": programa + grupo, cambio de grupo, estado de la matrícula y pagos
+    Route::get('matriculas', [MatriculaController::class, 'index'])->name('matriculas');
+    Route::post('matriculas', [MatriculaController::class, 'store'])->name('matriculas.store');
+    Route::patch('matriculas/{matricula}/grupo', [MatriculaController::class, 'cambiarGrupo'])->name('matriculas.grupo');
+    Route::patch('matriculas/{matricula}/estado', [MatriculaController::class, 'cambiarEstado'])->name('matriculas.estado');
+    Route::patch('matriculas/{matricula}/descuento', [MatriculaController::class, 'descuento'])->name('matriculas.descuento');
+    Route::post('matriculas/{matricula}/pagos', [PagoController::class, 'store'])->name('matriculas.pagos.store');
+    Route::patch('matriculas/{matricula}/recaudos/{recaudo}/anular', [PagoController::class, 'anular'])->name('matriculas.pagos.anular');
+    Route::get('matriculas/recibos/{recaudo}', [PagoController::class, 'recibo'])->name('matriculas.recibo');
+    Route::patch('matriculas/{matricula}/programa', [MatriculaController::class, 'cambiarPrograma'])->name('matriculas.programa');
+    Route::post('matriculas/{matricula}/devoluciones', [PagoController::class, 'devolucion'])->name('matriculas.devoluciones.store');
+    Route::get('matriculas/devoluciones/{devolucion}', [PagoController::class, 'comprobanteDevolucion'])->name('matriculas.devolucion');
+    Route::get('matriculas/{matricula}/constancia', [DocumentoController::class, 'constancia'])->name('matriculas.constancia');
+    Route::get('matriculas/{matricula}/paz-y-salvo', [DocumentoController::class, 'pazYSalvo'])->name('matriculas.paz-y-salvo');
+
+    // Panel "Asistencia": solo consulta (la toma el docente)
+    Route::get('asistencia', [AsistenciaController::class, 'index'])->name('asistencia');
+
+    // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
+    Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');
+    Route::post('acudientes', [AcudienteController::class, 'store'])->name('acudientes.store');
+    Route::put('acudientes/{acudiente}', [AcudienteController::class, 'update'])->name('acudientes.update');
+    Route::post('acudientes/{acudiente}/estudiantes', [AcudienteController::class, 'vincular'])->name('acudientes.vincular');
+    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [AcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
+    Route::patch('acudientes/{acudiente}/clave', [AcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
+    Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
 });
 
 Route::middleware('auth')->group(function () {

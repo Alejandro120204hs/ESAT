@@ -2,6 +2,7 @@
 
 namespace App\Models\Academico;
 
+use App\Models\Finanzas\Matricula;
 use App\Models\Institucional\Sede;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -26,6 +27,17 @@ class Curso extends Model
     ];
 
     public const JORNADAS = ['Mañana', 'Tarde', 'Noche', 'Fines de semana'];
+
+    /**
+     * Horas y días que admite cada jornada: el horario de un grupo no puede salirse
+     * de la jornada que se le eligió en Grupos. 'dias' null = cualquier día.
+     */
+    public const RANGOS_JORNADA = [
+        'Mañana'          => ['desde' => '06:00', 'hasta' => '12:00', 'dias' => null],
+        'Tarde'           => ['desde' => '12:00', 'hasta' => '18:00', 'dias' => null],
+        'Noche'           => ['desde' => '18:00', 'hasta' => '24:00', 'dias' => null],
+        'Fines de semana' => ['desde' => '06:00', 'hasta' => '24:00', 'dias' => ['Sábado']],
+    ];
 
     protected $fillable = [
         'programa_id',
@@ -71,6 +83,49 @@ class Curso extends Model
     public function estudiantes(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'curso_estudiante', 'curso_id', 'estudiante_id')->withTimestamps();
+    }
+
+    /**
+     * Solo los que ocupan cupo: inscritos en el grupo cuya matrícula EN ESTE GRUPO está activa
+     * (aplazados, retirados y graduados liberan el cupo; una matrícula vieja del mismo
+     * programa en otro grupo no cuenta). Sirve para $curso->estudiantesActivos y withCount.
+     */
+    public function estudiantesActivos(): BelongsToMany
+    {
+        return $this->estudiantes()->whereExists(fn ($q) => $q->selectRaw('1')
+            ->from('matriculas')
+            ->whereColumn('matriculas.curso_id', 'curso_estudiante.curso_id')
+            ->whereColumn('matriculas.estudiante_id', 'curso_estudiante.estudiante_id')
+            ->where('matriculas.estado', 'activo'));
+    }
+
+    public const DIA_CORTO = ['Lunes' => 'Lun', 'Martes' => 'Mar', 'Miércoles' => 'Mié', 'Jueves' => 'Jue', 'Viernes' => 'Vie', 'Sábado' => 'Sáb'];
+
+    /** "Lun · Mié · Vie  08:00 – 12:00", una línea por cada rango de horas distinto (espera cargadas las sesiones). */
+    public function horarioTexto(): array
+    {
+        return $this->sesiones
+            ->groupBy(fn ($s) => $s->inicio().'–'.$s->fin())
+            ->map(fn ($ses) => $ses->map(fn ($s) => self::DIA_CORTO[$s->dia])->implode(' · ').'  '.$ses->first()->inicio().' – '.$ses->first()->fin())
+            ->values()
+            ->all();
+    }
+
+    public function matriculas(): HasMany
+    {
+        return $this->hasMany(Matricula::class);
+    }
+
+    /** Se puede matricular (o pasar) a alguien: no ha terminado y le quedan cupos. */
+    public function recibeEstudiantes(): bool
+    {
+        return $this->estado !== 'finalizado' && $this->cuposLibres() > 0;
+    }
+
+    /** Cupos que quedan: el cupo es siempre el del programa. */
+    public function cuposLibres(): int
+    {
+        return max(0, $this->programa->cupo_grupo - $this->estudiantesActivos()->count());
     }
 
     /** Horario semanal: una sesión por día de clase. */

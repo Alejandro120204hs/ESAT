@@ -60,9 +60,10 @@ class ProgramaRequest extends FormRequest
                 return;
             }
             $grupos = $programa->cursos()->where('estado', '!=', 'finalizado')
-                ->with('sesiones')->withCount('estudiantes')->get();
+                ->with(['sesiones', 'docentes'])->withCount('estudiantesActivos')->get();
 
-            $max = $grupos->max('estudiantes_count') ?? 0;
+            // Solo los activos ocupan cupo
+            $max = $grupos->max('estudiantes_activos_count') ?? 0;
             if ($this->integer('cupo_grupo') < $max) {
                 $v->errors()->add('cupo_grupo', "Uno de los grupos de este programa ya tiene {$max} estudiantes inscritos: el cupo no puede ser menor.");
             }
@@ -77,8 +78,14 @@ class ProgramaRequest extends FormRequest
             $horario = app(HorarioService::class);
             foreach ($grupos->filter(fn ($g) => $g->sesiones->isNotEmpty()) as $g) {
                 $sesiones = $g->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()]);
-                if ($error = $horario->excedeTope($nuevo, $sesiones, $g->fecha_inicio, Curso::finPara($g->fecha_inicio, $nuevo))) {
+                $fin = Curso::finPara($g->fecha_inicio, $nuevo);
+                if ($error = $horario->excedeTope($nuevo, $sesiones, $g->fecha_inicio, $fin)) {
                     $v->errors()->add('horas', "Con esos cambios el horario del {$g->nombre} ({$g->codigo}) ya no cabe. {$error}");
+                    break;
+                }
+                // Al alargarse, el grupo puede empezar a coincidir en fechas con otro del mismo docente
+                if (($docente = $g->docentes->first()) && $error = $horario->cruceDocente($docente->id, $sesiones, $g->fecha_inicio, $fin, $g->id)) {
+                    $v->errors()->add('duracion_meses', "Con esa duración el {$g->nombre} ({$g->codigo}) se cruza con otro grupo: {$error}");
                     break;
                 }
             }

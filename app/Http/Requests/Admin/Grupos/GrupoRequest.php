@@ -19,22 +19,10 @@ class GrupoRequest extends FormRequest
         return true;
     }
 
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'codigo' => $this->filled('codigo') ? mb_strtoupper(trim($this->input('codigo'))) : null,
-            'nombre' => $this->filled('nombre') ? trim($this->input('nombre')) : null,
-        ]);
-    }
-
     public function rules(): array
     {
-        $curso = $this->route('curso');
-
         return [
             'programa_id'  => ['required', 'integer', 'exists:programas,id'],
-            'codigo'       => ['nullable', 'string', 'max:30', Rule::unique('cursos')->ignore($curso)],
-            'nombre'       => ['nullable', 'string', 'max:60'],
             'docente_id'   => ['nullable', 'integer'],
             'jornada'      => ['required', Rule::in(Curso::JORNADAS)],
             'fecha_inicio' => ['required', 'date'],
@@ -63,16 +51,12 @@ class GrupoRequest extends FormRequest
                 $v->errors()->add('programa_id', 'Solo se pueden abrir grupos en programas activos.');
                 return;
             }
-            if ($this->filled('nombre') && Curso::where('programa_id', $programa->id)->where('sede_id', $sedeId)
-                    ->where('nombre', $this->input('nombre'))->when($curso, fn ($q) => $q->where('id', '!=', $curso->id))->exists()) {
-                $v->errors()->add('nombre', "Ya existe el {$this->input('nombre')} en este programa.");
-            }
             if (! in_array($this->input('jornada'), $programa->jornadas ?? [], true)) {
                 $v->errors()->add('jornada', 'El programa solo se ofrece en jornada '.mb_strtolower(implode(', ', $programa->jornadas ?? [])).'.');
             }
-            // El cupo es el del programa: al cambiar de programa no puede quedar por debajo de los inscritos
-            if ($curso && $programa->cupo_grupo < $curso->estudiantes()->count()) {
-                $v->errors()->add('programa_id', "El cupo de ese programa ({$programa->cupo_grupo}) es menor que los estudiantes ya inscritos en el grupo.");
+            // Sus estudiantes están matriculados en el programa del grupo: con inscritos no se cambia de programa
+            if ($curso && $programa->id !== $curso->programa_id && $curso->estudiantes()->exists()) {
+                $v->errors()->add('programa_id', 'El grupo ya tiene estudiantes inscritos en su programa: no se puede pasar a otro programa.');
             }
 
             [$inicio, $fin] = $this->fechas($programa);
@@ -99,6 +83,9 @@ class GrupoRequest extends FormRequest
                 $horario  = app(HorarioService::class);
                 $sesiones = $curso->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()])->all();
 
+                if ($error = $horario->fueraDeJornada($this->input('jornada'), $sesiones)) {
+                    $v->errors()->add('jornada', "Su horario actual no cabe en esa jornada. {$error} Ajusta primero el horario en Horarios.");
+                }
                 if ($error = $horario->excedeTope($programa, $sesiones, $inicio, $fin)) {
                     $v->errors()->add('fecha_inicio', $error);
                 }
@@ -121,17 +108,8 @@ class GrupoRequest extends FormRequest
     {
         return [
             'programa_id'  => 'programa',
-            'codigo'       => 'código',
-            'nombre'       => 'grupo',
             'docente_id'   => 'docente',
             'fecha_inicio' => 'fecha de inicio',
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'codigo.unique'   => 'Ya existe un grupo con ese código.',
         ];
     }
 }

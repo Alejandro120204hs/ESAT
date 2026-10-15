@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Docentes;
 
 use App\Models\Academico\DocentePerfil;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -49,6 +50,31 @@ class DocenteRequest extends FormRequest
             'vinculacion'             => ['required', Rule::in(array_keys(DocentePerfil::VINCULACIONES))],
             'estado'                  => ['required', Rule::in(array_keys(DocentePerfil::ESTADOS))],
         ];
+    }
+
+    /** Un docente que deja de estar activo no puede quedarse con grupos vigentes. */
+    public function after(): array
+    {
+        return [function ($v) {
+            $docente = $this->route('docente');
+            if ($docente && $this->input('estado') !== 'activo' && $error = self::gruposACargo($docente)) {
+                $v->errors()->add('estado', $error);
+            }
+        }];
+    }
+
+    /** Mensaje si el docente tiene grupos sin finalizar; null si no tiene. */
+    public static function gruposACargo(User $docente): ?string
+    {
+        $grupos = $docente->cursosComoDocente()->where('estado', '!=', 'finalizado')->orderBy('codigo')->get();
+        if ($grupos->isEmpty()) {
+            return null;
+        }
+        $lista = $grupos->map(fn ($g) => "{$g->nombre} ({$g->codigo})")->implode(', ');
+
+        $asignar = $grupos->count() === 1 ? 'Asígnale' : 'Asígnales';
+
+        return "{$docente->name} tiene a cargo: {$lista}. {$asignar} otro docente en Grupos antes de dejarlo inactivo.";
     }
 
     public function attributes(): array

@@ -59,6 +59,32 @@ class HorarioService
     }
 
     /**
+     * Las sesiones deben caber en la jornada del grupo (Curso::RANGOS_JORNADA).
+     * Devuelve el mensaje del primer día que se sale o null.
+     */
+    public function fueraDeJornada(string $jornada, iterable $sesiones): ?string
+    {
+        $rango = Curso::RANGOS_JORNADA[$jornada] ?? null;
+        if (! $rango) {
+            return null;
+        }
+        $nombre = mb_strtolower($jornada);
+
+        foreach ($sesiones as $s) {
+            if ($rango['dias'] && ! in_array($s['dia'], $rango['dias'], true)) {
+                return "El grupo es de jornada {$nombre}: solo puede tener clase el ".mb_strtolower(implode(' y el ', $rango['dias'])).'.';
+            }
+            if (CursoSesion::aMinutos($s['hora_inicio']) < CursoSesion::aMinutos($rango['desde'])
+                || CursoSesion::aMinutos($s['hora_fin']) > CursoSesion::aMinutos($rango['hasta'])) {
+                return "El grupo es de jornada {$nombre}: las clases van entre las {$rango['desde']} y las {$rango['hasta']}"
+                    ." y el ".mb_strtolower($s['dia'])." quedó de {$s['hora_inicio']} a {$s['hora_fin']}.";
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Un docente no puede tener dos clases a la misma hora en grupos cuyas
      * fechas se cruzan. Devuelve el mensaje del primer cruce o null.
      */

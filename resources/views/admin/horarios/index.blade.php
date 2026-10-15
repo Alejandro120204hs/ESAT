@@ -1,4 +1,3 @@
-{{-- mock --}}
 @extends('admin.layout')
 
 @section('title', 'Horarios')
@@ -10,63 +9,16 @@
 @endpush
 
 @php
-/* ── Datos mock (ficticios): cada grupo tiene sus sesiones semanales.
-      Una sesión = día + hora inicio + hora fin, así un grupo puede tener
-      horas distintas según el día (p. ej. lunes mañana, jueves tarde). ── */
-$ses = fn(array $dias, string $hi, string $hf) => array_map(
-    fn($d) => ['dia' => $d, 'hora_inicio' => $hi, 'hora_fin' => $hf], $dias
-);
+/* $grupos, $docentes, $horaMin y $horaMax vienen de HorarioController.
+   Un grupo sin sesiones todavía no tiene horario: se elige en "Nuevo horario". */
+$conHorario = $grupos->filter(fn ($g) => $g['sesiones']->isNotEmpty());
+// La jornada es la que se le eligió al grupo en Grupos
+$cuenta     = fn (string $j) => $conHorario->where('jornada', $j)->count();
 
-$grupos = [
-    ['id'=>1,'codigo'=>'CUR-SAL-001-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-     'docente'=>'María González Ruiz','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'08:00','12:00')],
-    ['id'=>2,'codigo'=>'CUR-SAL-001-B','grupo'=>'Grupo B',
-     'programa'=>'Técnico Laboral en Servicios Geriátricos','escuela'=>'Salud',
-     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>$ses(['Martes','Jueves'],'14:00','18:00')],
-    ['id'=>3,'codigo'=>'CUR-SAL-002-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Auxiliar de Psiquiatría','escuela'=>'Salud',
-     'docente'=>'María González Ruiz','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'14:00','18:00')],
-    ['id'=>4,'codigo'=>'CUR-TUR-001-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-     'docente'=>'Laura Martínez Peña','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>array_merge($ses(['Lunes','Martes'],'07:00','11:00'), $ses(['Jueves'],'14:00','17:00'))],
-    ['id'=>5,'codigo'=>'CUR-TUR-001-B','grupo'=>'Grupo B',
-     'programa'=>'Técnico Laboral en Cocina Nacional e Internacional','escuela'=>'Cocina y Turismo',
-     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'13:00','17:00')],
-    ['id'=>6,'codigo'=>'CUR-TUR-002-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Sommelier y Enología','escuela'=>'Cocina y Turismo',
-     'docente'=>'Andrés Zapata Villa','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>array_merge($ses(['Martes','Jueves'],'18:00','21:00'), $ses(['Sábado'],'08:00','12:00'))],
-    ['id'=>7,'codigo'=>'CUR-ADM-001-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas','escuela'=>'Administrativa',
-     'docente'=>'Patricia López Castro','modalidad'=>'Mixta','estado'=>'activo',
-     'sesiones'=>$ses(['Lunes','Miércoles','Viernes'],'08:00','12:00')],
-    ['id'=>8,'codigo'=>'CUR-ADM-002-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Auxiliar Contable y Administrativo','escuela'=>'Administrativa',
-     'docente'=>'Roberto Díaz Sierra','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>array_merge($ses(['Martes'],'14:00','18:00'), $ses(['Jueves'],'18:00','21:00'))],
-    ['id'=>9,'codigo'=>'CUR-EDU-001-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Asistente de Preescolar','escuela'=>'Educación e Idiomas',
-     'docente'=>'Diana Vargas Nieto','modalidad'=>'Presencial','estado'=>'activo',
-     'sesiones'=>$ses(['Lunes','Martes','Miércoles','Jueves','Viernes'],'07:00','10:00')],
-    ['id'=>10,'codigo'=>'CUR-SAL-003-A','grupo'=>'Grupo A',
-     'programa'=>'Técnico Laboral en Seguridad Ocupacional y Laboral','escuela'=>'Salud',
-     'docente'=>'Alejandro Ríos Mora','modalidad'=>'Presencial','estado'=>'planificacion',
-     'sesiones'=>array_merge($ses(['Lunes','Miércoles'],'18:00','22:00'), $ses(['Sábado'],'07:00','11:00'))],
-];
-
-$jornadaDe = fn(string $h) => ((int) $h < 12) ? 'Mañana' : (((int) $h < 18) ? 'Tarde' : 'Noche');
-$tieneJornada = fn(array $g, string $j) => count(array_filter($g['sesiones'], fn($s) => $jornadaDe($s['hora_inicio']) === $j)) > 0;
-
-$total   = count($grupos);
-$manana  = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Mañana')));
-$tarde   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Tarde')));
-$noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
+$total  = $conHorario->count();
+$manana = $cuenta('Mañana');
+$tarde  = $cuenta('Tarde');
+$noche  = $cuenta('Noche');
 @endphp
 
 @section('content')
@@ -198,6 +150,19 @@ $noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
                 <span class="hor-empty-sub">No hay horarios que coincidan con los filtros.</span>
             </div>
         </div>
+
+        {{-- Paginación (10 por página, igual que las demás tablas) --}}
+        <div class="hor-pagination" id="hor-pagination">
+            <button class="hor-pg-btn hor-pg-prev" id="hor-pg-prev" type="button" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                Anterior
+            </button>
+            <div class="hor-pg-pages" id="hor-pg-pages"></div>
+            <button class="hor-pg-btn hor-pg-next" id="hor-pg-next" type="button">
+                Siguiente
+                <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+            </button>
+        </div>
     </div>
 
     {{-- ── Vista HORARIO: horario clásico de un grupo o de un docente ── --}}
@@ -304,15 +269,39 @@ $noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
                 </div>
             </div>
 
-            {{-- Modo 1: un solo rango de horas para todos los días marcados --}}
-            <div class="hor-form-row" id="hor-horas-comunes">
-                <div class="hor-form-group">
-                    <label class="hor-form-lbl" for="hor-inp-hinicio">Hora inicio</label>
-                    <input class="hor-form-input" id="hor-inp-hinicio" type="time" value="07:00">
-                </div>
-                <div class="hor-form-group">
-                    <label class="hor-form-lbl" for="hor-inp-hfin">Hora fin</label>
-                    <input class="hor-form-input" id="hor-inp-hfin" type="time" value="11:00">
+            {{-- Entre qué horas va la jornada del grupo (se ve en los dos modos) --}}
+            <p class="hor-jornada-nota" id="hor-jornada-nota"></p>
+
+            {{-- Modo 1: un solo rango de horas para todos los días marcados.
+                 Solo se eligen horas dentro de la jornada del grupo. --}}
+            <div class="hor-form-group" id="hor-horas-comunes">
+                <div class="hor-form-row">
+                    <div class="hor-form-group">
+                        <span class="hor-form-lbl" id="hor-lbl-hinicio">Hora inicio</span>
+                        <div class="app-combobox" id="hor-cb-hinicio">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-labelledby="hor-lbl-hinicio">
+                                <span data-combobox-label>—</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="hor-inp-hinicio" data-combobox-value>
+                        </div>
+                    </div>
+                    <div class="hor-form-group">
+                        <span class="hor-form-lbl" id="hor-lbl-hfin">Hora fin</span>
+                        <div class="app-combobox" id="hor-cb-hfin">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-labelledby="hor-lbl-hfin">
+                                <span data-combobox-label>—</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="hor-inp-hfin" data-combobox-value>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -329,7 +318,7 @@ $noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
             <div class="hor-form-row">
                 <div class="hor-form-group">
                     <label class="hor-form-lbl">Jornada</label>
-                    <input class="hor-form-input" id="hor-inp-jornada" type="text" placeholder="Se calcula automáticamente" readonly style="background:#F8FAFC; cursor:default;">
+                    <input class="hor-form-input" id="hor-inp-jornada" type="text" placeholder="La del grupo" readonly style="background:#F8FAFC; cursor:default;">
                 </div>
                 <div class="hor-form-group">
                     <label class="hor-form-lbl">Docente</label>
@@ -363,6 +352,11 @@ $noche   = count(array_filter($grupos, fn($g) => $tieneJornada($g, 'Noche')));
 @endsection
 
 @push('scripts')
-<script>var HOR_DATA = @json($grupos);</script>
+<script>
+var HOR_DATA = @json($grupos);
+var HOR_DOCENTES = @json($docentes);
+var HOR_RANGO = { min: @json($horaMin), max: @json($horaMax) };
+var HOR_JORNADAS = @json($rangosJornada);
+</script>
 <script src="{{ asset('assets/js/admin/horarios.js') }}?v={{ filemtime(public_path('assets/js/admin/horarios.js')) }}" defer></script>
 @endpush

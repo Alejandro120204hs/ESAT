@@ -25,7 +25,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            // "name" no es columna: se arma con nombres + apellidos (ver User::name())
+            'nombres' => fake()->firstName(),
+            'apellidos' => fake()->lastName().' '.fake()->lastName(),
+            'tipo_documento' => 'CC',
+            'numero_documento' => (string) fake()->unique()->numberBetween(10000000, 1099999999),
+            'role' => 'estudiante',
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

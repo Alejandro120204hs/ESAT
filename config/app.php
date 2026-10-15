@@ -65,7 +65,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Hora de Colombia: vencimientos, "hoy", historial y el comando pagos:vencer dependen de ella
+    'timezone' => 'America/Bogota',
 
     /*
     |--------------------------------------------------------------------------
