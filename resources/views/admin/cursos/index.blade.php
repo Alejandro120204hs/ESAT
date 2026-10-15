@@ -342,14 +342,6 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
             {{-- Paso 1 --}}
             <div class="cur-mstep is-active" data-step="1">
                 <div class="cur-form-grid">
-                    <div class="cur-form-group">
-                        <label class="cur-form-lbl" for="cur-inp-codigo">Código</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-codigo" maxlength="30" autocomplete="off" placeholder="Se genera solo">
-                    </div>
-                    <div class="cur-form-group">
-                        <label class="cur-form-lbl" for="cur-inp-grupo">Grupo</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-grupo" maxlength="60" autocomplete="off" placeholder="Siguiente letra libre">
-                    </div>
                     <div class="cur-form-group full">
                         <label class="cur-form-lbl">Escuela / Área <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-escuela" data-list-max-height="160">
@@ -380,6 +372,15 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                             <input type="hidden" id="cur-val-programa" data-combobox-value>
                         </div>
                     </div>
+                    {{-- Grupo y código se asignan solos según el programa: no se escriben --}}
+                    <div class="cur-form-group">
+                        <label class="cur-form-lbl" for="cur-inp-grupo">Grupo</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-grupo" readonly tabindex="-1" placeholder="Elige el programa">
+                    </div>
+                    <div class="cur-form-group">
+                        <label class="cur-form-lbl" for="cur-inp-codigo">Código</label>
+                        <input type="text" class="cur-form-input" id="cur-inp-codigo" readonly tabindex="-1" placeholder="Elige el programa">
+                    </div>
                     {{-- Modalidad y cupo son los del programa: se editan solo en Programas --}}
                     <div class="cur-form-group">
                         <label class="cur-form-lbl" for="cur-inp-modalidad">Modalidad</label>
@@ -389,7 +390,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                         <label class="cur-form-lbl" for="cur-inp-cupo">Cupo máximo</label>
                         <input type="text" class="cur-form-input" id="cur-inp-cupo" readonly tabindex="-1" placeholder="Elige el programa">
                     </div>
-                    <p class="cur-form-hint full">La modalidad y el cupo son los del programa. Para cambiarlos, edita el programa en Programas.</p>
+                    <p class="cur-form-hint full">El grupo y el código se asignan solos según el programa. La modalidad y el cupo son los del programa; para cambiarlos, edita el programa en Programas.</p>
                 </div>
             </div>
 

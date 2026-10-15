@@ -25,6 +25,7 @@
 .doc-btn-secondary:hover{ border-color: var(--orange); color: var(--orange); }
 .doc-btn-ghost    { background: transparent; color: var(--navy-3); border: 1.5px solid var(--line); }
 .doc-btn-ghost:hover{ background: var(--bg); }
+.doc-btn-sm       { padding: 7px 14px; font-size: 0.82rem; gap: 6px; }
 .doc-btn-danger   { background: rgba(239,68,68,0.08); color: #b91c1c; border: 1.5px solid rgba(239,68,68,0.2); }
 .doc-btn-danger:hover { background: rgba(239,68,68,0.15); }
 

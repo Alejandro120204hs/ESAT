@@ -76,7 +76,7 @@
 .hor-programa-txt  { font-size: 0.82rem; color: var(--text); font-weight: 500; }
 
 /* Escuela badge */
-.hor-esc-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; }
+.hor-esc-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; background: #F1F5F9; color: #475569; /* escuelas nuevas sin color propio */ }
 .hor-esc-sal { background: #FEE2E2; color: #991B1B; }
 .hor-esc-tur { background: #FEF3C7; color: #92400E; }
 .hor-esc-adm { background: #DBEAFE; color: #1E40AF; }
@@ -109,6 +109,7 @@
 .hor-jornada-manana  { background: #FFF7ED; color: #C05621; }
 .hor-jornada-tarde   { background: #EFF6FF; color: #1E40AF; }
 .hor-jornada-noche   { background: #F5F3FF; color: #5B21B6; }
+.hor-jornada-fds     { background: #ECFDF5; color: #047857; }
 
 /* Acciones */
 .hor-action-btn {
@@ -124,15 +125,6 @@
 .hor-empty svg { width: 40px; height: 40px; opacity: 0.35; fill: none; stroke: currentColor; stroke-width: 1.5; }
 .hor-empty-ttl { font-size: 0.95rem; font-weight: 700; }
 .hor-empty-sub { font-size: 0.82rem; }
-
-/* Paginación */
-.hor-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 14px; border-top: 1px solid #F1F5F9; }
-.hor-pg-btn { width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E2E8F0; background: var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); }
-.hor-pg-btn:disabled { opacity: 0.4; cursor: default; }
-.hor-pg-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.hor-pg-num { width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E2E8F0; background: var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
-.hor-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: #fff; }
-.hor-pg-ellipsis { font-size: 0.8rem; color: var(--muted); padding: 0 4px; }
 
 /* ═══ VISTA HORARIO (horario clásico de un grupo o docente) ═══ */
 .hor-cal-card {
@@ -185,6 +177,7 @@
 .hor-cal-stat-lbl { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 
 /* Colores por escuela: acento, fondo, borde y texto */
+#hor-cal-card { --c: #475569; --bg: #F1F5F9; --bd: #E2E8F0; --ink: #334155; } /* escuelas nuevas sin color propio */
 .hor-c-sal { --c: #BE123C; --bg: #FFE4E6; --bd: #FECDD3; --ink: #7F1D1D; }
 .hor-c-tur { --c: #B45309; --bg: #FEF3C7; --bd: #FDE68A; --ink: #713F12; }
 .hor-c-adm { --c: #1D4ED8; --bg: #DBEAFE; --bd: #BFDBFE; --ink: #1E3A8A; }
@@ -266,6 +259,7 @@
     border-bottom: 1px solid #E2E8F0;
 }
 .hor-cal-fila-jor-nombre { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.hor-cal-fila-doc-nombre { font-size: 0.78rem; font-weight: 800; color: var(--navy-3); line-height: 1.25; }
 .hor-cal-fila-jor-rango  { font-size: 0.68rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
 .hor-cal-celda {
     display: flex; flex-direction: column; gap: 6px; padding: 8px 5px;
@@ -284,6 +278,7 @@
 
 /* Pantallas angostas: lista por día */
 @media (max-width: 860px) {
+    .hor-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .hor-cal { display: block; padding: 0 16px 16px; }
     .hor-cal-corner, .hor-cal-horas, .hor-cal-head.is-libre { display: none; }
     .hor-cal-fila-jor { padding: 14px 0 6px; border-bottom: none; flex-direction: row; gap: 8px; align-items: baseline; }
@@ -299,6 +294,30 @@
     .hor-bloque { transition: none; }
     .hor-bloque:hover { transform: none; }
 }
+
+/* ── Paginación ── */
+.hor-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 20px 0 4px; }
+.hor-pagination[hidden] { display: none; }
+.hor-pg-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: var(--radius-md); border: 1.5px solid var(--line);
+    background: var(--white); font-family: "Archivo", system-ui;
+    font-weight: 700; font-size: 0.8rem; color: var(--navy-3);
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.hor-pg-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.hor-pg-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+.hor-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.hor-pg-pages { display: flex; align-items: center; gap: 4px; }
+.hor-pg-num {
+    width: 34px; height: 34px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.82rem;
+    color: var(--navy-3); cursor: pointer; transition: all 0.15s;
+}
+.hor-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.hor-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.hor-pg-ellipsis { width: 28px; text-align: center; color: var(--muted); font-size: 0.85rem; }
 
 /* ── Modal ── */
 .hor-modal-overlay {
@@ -333,6 +352,8 @@
 }
 .hor-form-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,.12); }
 .hor-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Un texto largo (ej. docente · escuela) se corta con … en vez de ensanchar su columna */
+.hor-form-row > * { min-width: 0; }
 
 /* Checkbox días */
 .hor-dias-grid { display: flex; gap: 6px; }
@@ -344,6 +365,8 @@
     user-select: none;
 }
 .hor-dia-cb:checked + .hor-dia-lbl { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
+/* Días que la jornada del grupo no admite */
+.hor-dia-cb:disabled + .hor-dia-lbl { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
 
 /* Ghost btn */
 .hor-btn-ghost { background: #F1F5F9; color: var(--navy-3); }
@@ -379,12 +402,24 @@
 .hor-ses-row.is-invalid { border-color: var(--red); background: #FEF2F2; }
 .hor-ses-dia  { font-size: 0.82rem; font-weight: 700; color: var(--navy-3); }
 .hor-ses-sep  { font-size: 0.75rem; color: var(--muted); }
-.hor-ses-time { padding: 6px 8px; min-width: 0; }
+.hor-hora-cb { min-width: 0; }
+.hor-hora-cb .app-combobox-trigger { padding: 6px 10px; font-size: 0.85rem; background: var(--white); }
+
+/* Nota de la jornada + selectores de inicio y fin */
+#hor-horas-comunes { gap: 10px; }
+#hor-horas-comunes .hor-form-row .hor-form-group { margin-bottom: 0; }
+.hor-jornada-nota { margin: -6px 0 12px; padding: 8px 12px; border-radius: 8px; background: #F8FAFC; font-size: 0.78rem; font-weight: 600; color: var(--navy-3); }
+
+/* Duración al lado de cada hora fin en la lista */
+.app-combobox-nota { margin-left: auto; font-size: 0.74rem; font-weight: 600; color: var(--muted); }
+.app-combobox-list li.is-selected .app-combobox-nota { color: var(--orange-2); }
+.app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,.1); }
 .hor-ses-info { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-align: right; white-space: nowrap; }
 .hor-ses-info.is-error { color: var(--red); }
 .hor-ses-vacio { margin: 0; padding: 14px; border: 1px dashed #CBD5E1; border-radius: 10px; font-size: 0.8rem; color: var(--muted); text-align: center; }
 .hor-ses-resumen { margin: -6px 0 16px; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .hor-ses-resumen:empty { display: none; }
+.hor-ses-resumen.is-error { color: var(--red); }
 
 .hor-form-input.is-invalid { border-color: var(--red); }
 

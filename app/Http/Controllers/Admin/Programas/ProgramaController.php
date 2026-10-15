@@ -23,9 +23,9 @@ class ProgramaController extends Controller
                 'escuela', 'modulos',
                 // Grupos vigentes del programa en esta sede
                 'cursos' => fn ($q) => $q->where('sede_id', $sedeId)->where('estado', '!=', 'finalizado')
-                    ->withCount('estudiantes')->orderBy('nombre'),
+                    ->withCount('estudiantesActivos')->orderBy('nombre'),
             ])
-            ->withCount(['matriculas as estudiantes' => fn ($q) => $q->where('sede_id', $sedeId)])
+            ->withCount(['matriculas as estudiantes' => fn ($q) => $q->where('sede_id', $sedeId)->where('estado', 'activo')])
             ->orderBy('nombre')
             ->get();
 
@@ -176,7 +176,7 @@ class ProgramaController extends Controller
                 'nombre'    => "{$c->nombre} — {$c->jornada}",
                 'jornada'   => $c->jornada,
                 'cupo'      => $p->cupo_grupo,
-                'inscritos' => $c->estudiantes_count,
+                'inscritos' => $c->estudiantes_activos_count,
                 'inicio'    => $c->fecha_inicio->format('d/m/Y'),
                 'fin'       => $c->fecha_fin->format('d/m/Y'),
             ])->values(),

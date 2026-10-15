@@ -79,6 +79,9 @@ class DocenteController extends Controller
         $this->asegurarDocenteDeSede($docente);
 
         $nuevo = $docente->docentePerfil->estado === 'activo' ? 'inactivo' : 'activo';
+        if ($nuevo === 'inactivo' && $error = DocenteRequest::gruposACargo($docente)) {
+            return response()->json(['ok' => false, 'message' => $error], 422);
+        }
         DB::transaction(function () use ($docente, $nuevo) {
             $docente->docentePerfil->update(['estado' => $nuevo]);
             $docente->update(['activo' => $nuevo === 'activo']);

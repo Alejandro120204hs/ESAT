@@ -175,6 +175,38 @@
         var pages = Math.ceil(filteredRows.length / PAGE_SIZE);
         if (currentPage < pages) goToPage(currentPage + 1);
     });
+
+    /* ── Exportar la lista filtrada a un archivo que abre Excel (CSV con ; y BOM para las tildes) ── */
+    function celdaCsv(v) {
+        var t = v == null ? '' : String(v);
+        // Una celda que empieza con = + - @ se toma como fórmula en Excel: se neutraliza
+        if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+        return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    function exportar() {
+        var VINC = { tiempo_completo: 'Tiempo completo', medio_tiempo: 'Medio tiempo', hora_catedra: 'Hora cátedra' };
+        var EST  = { activo: 'Activo', en_proceso: 'En proceso', inactivo: 'Inactivo' };
+        var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Escuela', 'Título profesional', 'Especialidad', 'Vinculación', 'Estado',
+            'Programas que dicta', 'Celular', 'Correo', 'Departamento', 'Ciudad', 'Dirección', 'Fecha de nacimiento']]
+            .concat(filteredRows.map(function (row) {
+                var d = data.find(function (x) { return String(x.id) === row.dataset.id; }) || {};
+                return [d.nombres, d.apellidos, d.tipo_doc, d.documento, d.escuela, d.titulo, d.especialidad, VINC[d.vinculacion] || d.vinculacion,
+                    EST[d.estado] || d.estado, (d.programas || []).join(', '), d.telefono_raw, d.email, d.depto, d.ciudad, d.direccion_raw, d.fecha_nac_iso];
+            }));
+        var csv = '\ufeff' + filas.map(function (f) { return f.map(celdaCsv).join(';'); }).join('\r\n');
+        var hoy = new Date(), dd = function (n) { return (n < 10 ? '0' : '') + n; };
+        var nombre = 'docentes-' + hoy.getFullYear() + '-' + dd(hoy.getMonth() + 1) + '-' + dd(hoy.getDate()) + '.csv';
+        var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        var a = document.createElement('a');
+        a.href = url; a.download = nombre;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        var n = filteredRows.length;
+        toast('Se descargó ' + nombre + ' con ' + n + (n === 1 ? ' fila.' : ' filas.'));
+    }
+    var btnExportar = document.getElementById('doc-exportar');
+    if (btnExportar) btnExportar.addEventListener('click', exportar);
+
     if (search)  search.addEventListener('input',  applyFilters);
     if (selEsc)  selEsc.addEventListener('change', applyFilters);
     if (selVinc) selVinc.addEventListener('change', applyFilters);
