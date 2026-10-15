@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\RolUsuario;
+use App\Services\Finanzas\PagoService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -59,6 +61,16 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.',
+            ]);
+        }
+
+        // El derecho de matrícula se paga antes de empezar clases: desde ese día, sin pagarlo no se ingresa
+        if ($usuario->role === RolUsuario::Estudiante && ($derecho = app(PagoService::class)->derechoVencido($usuario))) {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu acceso está bloqueado porque el derecho de matrícula venció el '
+                    .$derecho->fecha_vencimiento->format('d/m/Y').' sin pagarse. Págalo en la sede de ESAT para volver a ingresar.',
             ]);
         }
 

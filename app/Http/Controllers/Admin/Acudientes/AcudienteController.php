@@ -34,7 +34,7 @@ class AcudienteController extends Controller
             ->orderBy('apellidos')->get();
 
         $estudiantes = User::where('role', RolUsuario::Estudiante)->where('sede_id', $sedeId)
-            ->with(['acudientes', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos'])])
+            ->with(['acudientes', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos', 'recaudos'])])
             ->orderBy('nombres')->get();
 
         $grupos = Curso::deSede($sedeId)->with('programa.escuela')->orderBy('codigo')->get();

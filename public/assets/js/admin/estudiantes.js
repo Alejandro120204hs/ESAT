@@ -256,6 +256,7 @@
     try { if (localStorage.getItem('esat.admin.estudiantes.vista') === 'carnes') vista = 'carnes'; } catch (err) {}
     var pagina = 1;
     var nuevoId = null;
+    var listaActual = [];   // lo que se ve con los filtros: es lo que se exporta
 
     var gridEl      = document.getElementById('est-grid');
     var listaWrap   = document.getElementById('est-lista-wrap');
@@ -355,6 +356,38 @@
         '</tr>';
     }
 
+
+    /* ── Exportar la lista filtrada a un archivo que abre Excel (CSV con ; y BOM para las tildes) ── */
+    function celdaCsv(v) {
+        var t = v == null ? '' : String(v);
+        // Una celda que empieza con = + - @ se toma como fórmula en Excel: se neutraliza
+        if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+        return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    function exportar() {
+        var PAGO = { al_dia: 'Al día', pendiente: 'Cuota del mes', vencido: 'Pago vencido' };
+        var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Edad', 'Género', 'Celular', 'Correo', 'Departamento', 'Ciudad', 'Dirección',
+            'Estado', 'Programa', 'Grupo', 'Jornada', 'Acudiente', 'Parentesco', 'Celular del acudiente', 'Asistencia %', 'Pago', 'A pagar este mes', 'Por pagar en total', 'Documentos pendientes']]
+            .concat(listaActual.map(function (e) {
+                var g = grupoDe(e.grupo_id), a = acudienteDe(e);
+                return [e.nombres, e.apellidos, e.tipo_doc, e.documento, edad(e.fecha_nac), e.genero, e.telefono, e.email, e.departamento, e.ciudad, e.direccion,
+                    (ESTADOS[e.estado] || {}).label || e.estado, g.id ? g.programa : '', g.id ? g.grupo + ' · ' + g.codigo : '', g.jornada,
+                    a ? nombreCompleto(a) : '', a ? e.parentesco : '', a ? a.telefono : '', e.asistencia,
+                    e.estado === 'sin_matricula' ? '' : (PAGO[e.pago] || e.pago), e.saldo || 0, e.por_pagar || 0, (e.documentos_pendientes || []).join(', ')];
+            }));
+        var csv = '\ufeff' + filas.map(function (f) { return f.map(celdaCsv).join(';'); }).join('\r\n');
+        var hoy = new Date(), dd = function (n) { return (n < 10 ? '0' : '') + n; };
+        var nombre = 'estudiantes-' + hoy.getFullYear() + '-' + dd(hoy.getMonth() + 1) + '-' + dd(hoy.getDate()) + '.csv';
+        var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        var a = document.createElement('a');
+        a.href = url; a.download = nombre;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        var n = listaActual.length;
+        toast('Se descargó ' + nombre + ' con ' + n + (n === 1 ? ' fila.' : ' filas.'));
+    }
+    document.getElementById('est-exportar').addEventListener('click', exportar);
+
     /* ── Render principal ── */
     function render() {
         var base = data.filter(coincideBase);
@@ -362,6 +395,7 @@
         var lista = data.filter(coincide).sort(function (a, b) {
             return (b.reciente ? 1 : 0) - (a.reciente ? 1 : 0) || a.apellidos.localeCompare(b.apellidos, 'es');
         });
+        listaActual = lista;
 
         // KPIs (sobre todos los estudiantes, como en Docentes)
         var conAlerta = data.filter(function (e) { return alertasDe(e).length > 0; }).length;
@@ -585,6 +619,31 @@
     function dato(lbl, valor, completo) {
         return '<div class="est-info-item' + (completo ? ' est-info-full' : '') + '"><span class="est-info-lbl">' + lbl + '</span><span class="est-info-val">' + valor + '</span></div>';
     }
+    /* Todas las matrículas de la persona (la más reciente primero): programas terminados, retiros y la actual */
+    function trayectoriaHTML(e) {
+        var t = e.trayectoria || [];
+        if (t.length < 2) return '';
+        var n = { graduado: 0, curso: 0, retirado: 0 };
+        t.forEach(function (x) { if (x.estado === 'graduado') n.graduado++; else if (x.estado === 'retirado') n.retirado++; else n.curso++; });
+        var resumen = [];
+        if (n.graduado) resumen.push(n.graduado + (n.graduado === 1 ? ' terminado' : ' terminados'));
+        if (n.curso) resumen.push(n.curso + ' en curso');
+        if (n.retirado) resumen.push(n.retirado + (n.retirado === 1 ? ' retiro' : ' retiros'));
+        var cuando = { activo: 'Activa desde el ', aplazado: 'Aplazada desde el ', retirado: 'Retirada el ', graduado: 'Graduada el ' };
+        return seccion('Trayectoria en ESAT', '<ol class="est-tray">' + t.map(function (x) {
+            var actual = x.codigo === e.codigo;
+            return '<li class="est-tray-item is-' + x.estado + '"><span class="est-tray-punto" aria-hidden="true"></span><div class="est-tray-main">' +
+                '<div class="est-tray-top"><strong>' + esc(corto(x.programa)) + '</strong>' + estadoTagHTML(x.estado) +
+                    (actual ? '<span class="est-tray-actual">La que ves arriba</span>' : '') + '</div>' +
+                '<span class="est-tray-meta">' + esc(x.codigo) + (x.grupo ? ' · ' + esc(x.grupo) + ' · ' + esc(x.jornada) : '') + '</span>' +
+                '<span class="est-tray-meta">' + cuando[x.estado] + fmtFecha(x.estado_fecha || x.inicio) + ' · matriculado el ' + fmtFecha(x.inicio) + '</span>' +
+                (x.estado === 'retirado' && x.estado_motivo ? '<span class="est-tray-meta">Motivo: ' + esc(x.estado_motivo) + '</span>' : '') +
+                (x.estado === 'graduado' || x.estado === 'retirado'
+                    ? '<span class="est-tray-deuda' + (x.debe > 0 ? ' is-deuda' : '') + '">' + (x.debe > 0 ? 'Quedó debiendo ' + fmtPesos(x.debe) : 'A paz y salvo') + '</span>' : '') +
+            '</div></li>';
+        }).join('') + '</ol>', '<span class="est-sec-dato">' + resumen.join(' · ') + '</span>');
+    }
+
     function seccion(titulo, cuerpo, extra) {
         return '<section class="est-sec"><div class="est-sec-head"><h4 class="est-sec-title">' + titulo + '</h4>' + (extra || '') + '</div>' + cuerpo + '</section>';
     }
@@ -667,7 +726,8 @@
             seccion('Cupo del grupo',
                 '<div class="est-cupo-barra" role="img" aria-label="' + g.inscritos + ' de ' + g.cupo + ' cupos ocupados"><span style="width:' + pct + '%"></span></div>' +
                 '<p class="est-sec-nota">' + (g.estado === 'finalizado' ? 'Grupo finalizado' : (libres > 0 ? libres + (libres === 1 ? ' cupo libre' : ' cupos libres') : 'Sin cupos libres')) + '</p>',
-                '<span class="est-sec-dato">' + g.inscritos + ' de ' + g.cupo + '</span>');
+                '<span class="est-sec-dato">' + g.inscritos + ' de ' + g.cupo + '</span>') +
+            trayectoriaHTML(e);
         }
 
         if (tab === 'seguimiento') {
@@ -680,7 +740,7 @@
             } else if (!e.plan_pago) {
                 // El plan (mensual o por periodo) lo elige el estudiante desde su panel
                 pagosHTML = seccion('Pagos',
-                    '<p class="est-sec-nota">Todavía no ha elegido su plan de pago (mensual o por periodo). Lo elige ' + esc(primerNombre(e)) + ' desde su panel; mientras tanto no tiene cuotas.</p>',
+                    '<p class="est-sec-nota">Todavía no ha elegido su plan de pago (mensual o ' + (e.tipo_periodo === 'semestre' ? 'semestral' : 'trimestral') + '). Lo elige ' + esc(primerNombre(e)) + ' desde su panel; mientras tanto no tiene cuotas.</p>',
                     '<span class="app-status-tag app-status-muted">Plan por elegir</span>');
             } else {
                 var segs = '';
@@ -688,9 +748,9 @@
                 pagosHTML = seccion('Pagos',
                     '<div class="est-cuotas" role="img" aria-label="' + e.cuotas_pagadas + ' de ' + e.cuotas_total + ' cuotas pagadas">' + segs + '</div>' +
                     '<div class="est-info-grid">' +
-                        dato('Plan de pago', e.plan_pago === 'mensual' ? 'Mensual' : 'Por periodo') +
+                        dato('Plan de pago', e.plan_pago === 'mensual' ? 'Mensual' : (e.tipo_periodo === 'semestre' ? 'Semestral' : 'Trimestral')) +
                         dato('Cuotas pagadas', e.cuotas_pagadas + ' de ' + e.cuotas_total) +
-                        dato('Saldo pendiente', e.saldo ? fmtPesos(e.saldo) : '$ 0') +
+                        dato('A pagar este mes', e.saldo ? fmtPesos(e.saldo) : '$ 0') +
                         dato('Último pago', fmtFecha(e.ultimo_pago)) +
                     '</div>',
                     '<span class="app-status-tag ' + pagoCls + '">' + pagoLbl + '</span>');

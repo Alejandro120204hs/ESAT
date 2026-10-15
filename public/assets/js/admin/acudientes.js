@@ -342,12 +342,44 @@
         '</tr>';
     }
 
+    var listaActual = [];   // lo que se ve con los filtros: es lo que se exporta
+
+    /* ── Exportar la lista filtrada a un archivo que abre Excel (CSV con ; y BOM para las tildes) ── */
+    function celdaCsv(v) {
+        var t = v == null ? '' : String(v);
+        // Una celda que empieza con = + - @ se toma como fórmula en Excel: se neutraliza
+        if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+        return /[";\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    function exportar() {
+        var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Celular', 'Correo', 'Ocupación', 'Departamento', 'Ciudad', 'Dirección',
+            'Cuenta', 'Último ingreso', 'Registrado', 'Estudiantes a cargo']]
+            .concat(listaActual.map(function (a) {
+                var aCargo = estudiantes.filter(function (e) { return e.acudiente_id === a.id; })
+                    .map(function (e) { return nombreCompleto(e) + (e.parentesco ? ' (' + e.parentesco + ')' : ''); });
+                return [a.nombres, a.apellidos, a.tipo_doc, a.documento, a.telefono, a.email, a.ocupacion, a.departamento, a.ciudad, a.direccion,
+                    (CUENTAS[a.cuenta] || {}).label || a.cuenta, a.ultimo_ingreso || '', a.fecha_registro, aCargo.join(', ')];
+            }));
+        var csv = '\ufeff' + filas.map(function (f) { return f.map(celdaCsv).join(';'); }).join('\r\n');
+        var hoy = new Date(), dd = function (n) { return (n < 10 ? '0' : '') + n; };
+        var nombre = 'acudientes-' + hoy.getFullYear() + '-' + dd(hoy.getMonth() + 1) + '-' + dd(hoy.getDate()) + '.csv';
+        var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        var a = document.createElement('a');
+        a.href = url; a.download = nombre;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        var n = listaActual.length;
+        toast('Se descargó ' + nombre + ' con ' + n + (n === 1 ? ' fila.' : ' filas.'));
+    }
+    document.getElementById('acu-exportar').addEventListener('click', exportar);
+
     /* ── Render principal ── */
     function render() {
         // Orden alfabético por apellido; los registrados en esta sesión van primero
         var lista = data.filter(coincide).sort(function (x, y) {
             return (y.reciente ? 1 : 0) - (x.reciente ? 1 : 0) || x.apellidos.localeCompare(y.apellidos, 'es');
         });
+        listaActual = lista;
 
         // KPIs (sobre todos los acudientes, como en Docentes)
         setTxt('acu-kpi-total', data.length);

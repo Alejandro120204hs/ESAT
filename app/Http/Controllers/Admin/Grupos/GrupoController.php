@@ -11,6 +11,7 @@ use App\Models\Academico\Programa;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
 use App\Services\Academico\HorarioService;
+use App\Services\Finanzas\PagoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -118,6 +119,10 @@ class GrupoController extends Controller
                 'estado'       => $request->input('estado'),
             ]);
             $curso->docentes()->sync($request->filled('docente_id') ? [$request->integer('docente_id')] : []);
+            // Si se corrió el inicio, el derecho de matrícula de sus estudiantes vence el nuevo día
+            if ($curso->wasChanged('fecha_inicio')) {
+                app(PagoService::class)->reprogramarDerechosDelGrupo($curso);
+            }
         });
 
         Auditoria::registrar('editar', $curso, "Editó el {$curso->nombre} ({$curso->codigo}).");

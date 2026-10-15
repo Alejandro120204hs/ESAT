@@ -297,7 +297,7 @@ class EstudiantesTest extends TestCase
         $e = $this->estudiante($documento);
         $m = Matricula::create([
             'codigo' => Matricula::siguienteCodigo(), 'estudiante_id' => $e->id, 'programa_id' => $grupo->programa_id,
-            'sede_id' => $this->sede->id, 'estado' => 'activo', 'fecha_inicio' => now()->toDateString(),
+            'curso_id' => $grupo->id, 'sede_id' => $this->sede->id, 'estado' => 'activo', 'fecha_inicio' => now()->toDateString(),
         ]);
         $e->cursosComoEstudiante()->attach($grupo->id);
 

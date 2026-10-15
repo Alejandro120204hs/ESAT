@@ -18,6 +18,14 @@ class EstudianteDocumento extends Model
 
     protected $table = 'estudiante_documentos';
 
+    /** Requeridos que el estudiante todavía no ha entregado (sin todos, no se matricula). */
+    public static function pendientesDe(User $estudiante): array
+    {
+        $entregados = $estudiante->documentos->whereNotNull('entregado_en')->pluck('documento')->all();
+
+        return array_values(array_diff(self::REQUERIDOS, $entregados));
+    }
+
     protected $fillable = ['estudiante_id', 'documento', 'entregado_en'];
 
     protected function casts(): array

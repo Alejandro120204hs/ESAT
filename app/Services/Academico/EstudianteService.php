@@ -7,6 +7,7 @@ use App\Models\Academico\Curso;
 use App\Models\Academico\EstudianteDocumento;
 use App\Models\Finanzas\Matricula;
 use App\Models\User;
+use App\Services\Finanzas\PagoService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -76,25 +77,48 @@ class EstudianteService
     }
 
     /**
-     * Matrícula que se muestra: la activa o, si no hay, la más reciente.
+     * Matrícula que se muestra: la activa o, si no hay, la más reciente (las anuladas no cuentan).
      * Se consulta en Estudiantes y Acudientes, pero se gestiona en Matrículas.
      * Espera cargada la relación matriculas.
      */
     public function matriculaVigente(User $estudiante): ?Matricula
     {
-        return $estudiante->matriculas->sortByDesc(fn (Matricula $m) => [$m->estado === 'activo', $m->id])->first();
+        return $estudiante->matriculas->where('estado', '!=', 'anulado')->sortByDesc(fn (Matricula $m) => [$m->estado === 'activo', $m->id])->first();
+    }
+
+    /**
+     * Todas las matrículas del estudiante, de la más reciente a la más antigua: su recorrido
+     * en ESAT (programas terminados, retiros, la actual). Espera cargadas matriculas con
+     * programa, curso y pagos.
+     */
+    public function trayectoria(User $estudiante): array
+    {
+        $pagos = app(PagoService::class);
+
+        return $estudiante->matriculas->where('estado', '!=', 'anulado')->sortByDesc(fn (Matricula $m) => [$m->fecha_inicio->timestamp, $m->id])
+            ->map(fn (Matricula $m) => [
+                'id'            => $m->id,
+                'codigo'        => $m->codigo,
+                'programa'      => $m->programa->nombre,
+                'grupo'         => $m->curso ? $m->curso->nombre.' · '.$m->curso->codigo : null,
+                'jornada'       => $m->curso?->jornada,
+                'estado'        => $m->estado,
+                'estado_fecha'  => $m->estado_fecha?->format('Y-m-d'),
+                'estado_motivo' => $m->estado_motivo,
+                'inicio'        => $m->fecha_inicio->format('Y-m-d'),
+                'fin'           => $m->curso?->fecha_fin?->format('Y-m-d'),
+                'debe'          => $pagos->resumen($m)['por_pagar'],
+            ])->values()->all();
     }
 
     /** Grupo de esa matrícula (espera cargada la relación cursosComoEstudiante). */
     public function grupoDeMatricula(User $estudiante, ?Matricula $matricula): ?Curso
     {
-        if (! $matricula) {
+        if (! $matricula?->curso_id) {
             return null;
         }
 
-        return $estudiante->cursosComoEstudiante->first(
-            fn (Curso $c) => $c->programa_id === $matricula->programa_id && $c->sede_id === $matricula->sede_id
-        );
+        return $estudiante->cursosComoEstudiante->firstWhere('id', $matricula->curso_id);
     }
 
     /**
@@ -103,25 +127,8 @@ class EstudianteService
      */
     public function resumenPagos(Matricula $matricula): array
     {
-        $pagos = $matricula->pagos;
-        $programa = $matricula->programa;
-
-        $total = match ($matricula->plan_pago) {
-            'mensual' => $programa->duracion_meses,
-            'periodo' => $programa->duracion_periodos,
-            default   => null,
-        };
-        $estado = $pagos->contains('estado', 'vencido') ? 'vencido'
-            : ($pagos->contains('estado', 'pendiente') ? 'pendiente' : 'al_dia');
-
-        return [
-            'plan_pago'      => $matricula->plan_pago,
-            'pago'           => $estado,
-            'cuotas_total'   => $total,
-            'cuotas_pagadas' => $pagos->where('estado', 'pagado')->count(),
-            'saldo'          => (int) round($pagos->whereIn('estado', ['pendiente', 'vencido'])->sum('monto_total')),
-            'ultimo_pago'    => $pagos->where('estado', 'pagado')->max('fecha_pago')?->format('Y-m-d'),
-        ];
+        // Una sola regla de cobro para Matrículas, Estudiantes y Acudientes
+        return app(PagoService::class)->resumen($matricula);
     }
 
     /**
@@ -134,11 +141,11 @@ class EstudianteService
             return null;
         }
         $registros = $estudiante->asistencias->where('curso_id', $curso->id);
-        $validas   = $registros->where('estado', '!=', 'excusa');
-        if ($validas->isEmpty()) {
-            return null;
-        }
 
-        return (int) round($validas->whereIn('estado', ['presente', 'tarde'])->count() / $validas->count() * 100);
+        // Misma regla que el panel Asistencia
+        return AsistenciaService::porcentaje(
+            $registros->whereIn('estado', ['presente', 'tarde'])->count(),
+            $registros->where('estado', 'ausente')->count(),
+        );
     }
 }

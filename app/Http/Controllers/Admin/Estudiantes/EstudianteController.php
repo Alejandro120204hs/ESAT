@@ -23,7 +23,6 @@ use Illuminate\View\View;
  */
 class EstudianteController extends Controller
 {
-    private const DIA_CORTO = ['Lunes' => 'Lun', 'Martes' => 'Mar', 'Miércoles' => 'Mié', 'Jueves' => 'Jue', 'Viernes' => 'Vie', 'Sábado' => 'Sáb'];
     private const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
     public function __construct(private EstudianteService $estudiantes)
@@ -41,7 +40,7 @@ class EstudianteController extends Controller
             ->get();
 
         $estudiantes = User::where('role', RolUsuario::Estudiante)->where('sede_id', $sedeId)
-            ->with(['documentos', 'acudientes', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos'])])
+            ->with(['documentos', 'acudientes', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos', 'recaudos', 'curso'])])
             ->latest('id')
             ->get();
 
@@ -160,6 +159,7 @@ class EstudianteController extends Controller
             'tipo_doc'      => $e->tipo_documento,
             'documento'     => $e->numero_documento,
             'fecha_nac'     => $e->fecha_nacimiento?->format('Y-m-d'),
+            'tipo_periodo'  => $m?->programa->tipo_periodo,
             'depto_nac'     => $e->departamento_nacimiento,
             'ciudad_nac'    => $e->lugar_nacimiento,
             'genero'        => EstudianteRequest::GENEROS[$e->genero] ?? 'Otro',
@@ -180,6 +180,7 @@ class EstudianteController extends Controller
             'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $grupo),
             'documentos'    => $e->documentos->map(fn ($d) => ['id' => $d->id, 'nombre' => $d->documento, 'entregado' => (bool) $d->entregado_en])->values(),
             'documentos_pendientes' => $e->documentos->whereNull('entregado_en')->pluck('documento')->values(),
+            'trayectoria'   => $this->estudiantes->trayectoria($e),
         ], $pagos);
     }
 
@@ -187,7 +188,7 @@ class EstudianteController extends Controller
     {
         $horario = $c->estado === 'finalizado'
             ? ['Finalizado en '.self::MESES[$c->fecha_fin->month - 1].' de '.$c->fecha_fin->year]
-            : ($c->sesiones->isEmpty() ? ['Sin horario asignado'] : $this->horarioTexto($c));
+            : ($c->sesiones->isEmpty() ? ['Sin horario asignado'] : $c->horarioTexto());
 
         return [
             'id'        => $c->id,
@@ -202,15 +203,5 @@ class EstudianteController extends Controller
             'inscritos' => $c->estudiantes_activos_count,
             'estado'    => $c->estado,
         ];
-    }
-
-    /** "Lun · Mié · Vie  08:00 – 12:00", una línea por cada rango de horas distinto. */
-    private function horarioTexto(Curso $c): array
-    {
-        return $c->sesiones
-            ->groupBy(fn ($s) => $s->inicio().'–'.$s->fin())
-            ->map(fn ($ses) => $ses->map(fn ($s) => self::DIA_CORTO[$s->dia])->implode(' · ').'  '.$ses->first()->inicio().' – '.$ses->first()->fin())
-            ->values()
-            ->all();
     }
 }

@@ -423,6 +423,24 @@
 .est-doc-check.is-entregado { background: #ECFDF5; color: #065F46; }
 .est-doc-check:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(217,123,46,.25); }
 
+/* Trayectoria: todas las matrículas de la persona */
+.est-tray { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.est-tray-item { position: relative; display: grid; grid-template-columns: 14px 1fr; gap: 12px; padding-bottom: 16px; }
+.est-tray-item:last-child { padding-bottom: 0; }
+.est-tray-item::before { content: ''; position: absolute; left: 6px; top: 16px; bottom: 0; width: 2px; background: #DCE3EC; }
+.est-tray-item:last-child::before { display: none; }
+.est-tray-punto { width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; background: var(--white); border: 3px solid #94A3B8; }
+.est-tray-item.is-activo .est-tray-punto { border-color: #059669; }
+.est-tray-item.is-aplazado .est-tray-punto { border-color: #B45309; }
+.est-tray-item.is-graduado .est-tray-punto { border-color: var(--navy-2); background: var(--navy-2); }
+.est-tray-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.est-tray-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.est-tray-top strong { font-size: 0.9rem; color: var(--navy-3); }
+.est-tray-actual { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+.est-tray-meta { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.est-tray-deuda { align-self: flex-start; font-size: 0.74rem; font-weight: 700; color: #065F46; }
+.est-tray-deuda.is-deuda { color: #A61B1B; }
+
 /* Vista de acción */
 .est-back {
     display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
