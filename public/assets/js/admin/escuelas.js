@@ -63,9 +63,11 @@
         if (eliminar) {
             modalTitle.textContent = 'Eliminar escuela';
             btnSave.textContent = 'Eliminar';
+            // El nombre lo escribe cualquier admin (catálogo global): se escapa antes de pintarlo
+            const nombre = util.esc(esc.nombre);
             confirmEl.innerHTML = esc.programas > 0
-                ? '<strong>' + esc.nombre + '</strong> tiene ' + esc.programas + (esc.programas === 1 ? ' programa' : ' programas') + ' en tu sede. Para eliminarla, primero cambia esos programas a otra escuela.'
-                : '¿Eliminar la escuela <strong>' + esc.nombre + '</strong>? Esta acción no se puede deshacer.';
+                ? '<strong>' + nombre + '</strong> tiene ' + esc.programas + (esc.programas === 1 ? ' programa' : ' programas') + ' en tu sede. Para eliminarla, primero cambia esos programas a otra escuela.'
+                : '¿Eliminar la escuela <strong>' + nombre + '</strong>? Esta acción no se puede deshacer.';
             btnSave.disabled = esc.programas > 0;
         } else {
             modalTitle.textContent = id ? 'Editar escuela' : 'Nueva escuela';

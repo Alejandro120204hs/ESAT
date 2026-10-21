@@ -106,7 +106,9 @@
         return a;
     }
     function fmtDoc(d) { return String(d).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-    function fmtTel(t) { t = String(t); return t.length === 10 ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : t; }
+    // El teléfono puede venir de /profile: solo se formatea si son 10 dígitos, lo demás se escapa
+    function fmtTel(t) { t = String(t == null ? '' : t); return /^\d{10}$/.test(t) ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : esc(t); }
+    function digitos(t) { return String(t == null ? '' : t).replace(/\D/g, ''); }
     function fmtFecha(f) {
         if (!f) return '—';
         var p = f.split('-');
@@ -116,7 +118,7 @@
     function grupoDe(id) { return (id && grupos.find(function (g) { return g.id === id; })) || SIN_GRUPO; }
     function corto(programa) { return programa.replace('Técnico Laboral en ', ''); }
     function acudienteDe(e) { return e.acudiente_id ? acudientes.find(function (a) { return a.id === e.acudiente_id; }) : null; }
-    function waLink(tel) { return 'https://wa.me/57' + tel; }
+    function waLink(tel) { return 'https://wa.me/57' + digitos(tel); }
     function cuposLibres(g) { return g.cupo - g.inscritos; }
     function ocupaCupo(estado) { return estado === 'activo'; }
 
@@ -648,7 +650,7 @@
         return '<section class="est-sec"><div class="est-sec-head"><h4 class="est-sec-title">' + titulo + '</h4>' + (extra || '') + '</div>' + cuerpo + '</section>';
     }
     function contactoHTML(tel, email) {
-        return '<a class="est-contacto" href="tel:+57' + tel + '">' + ICONOS.telefono + fmtTel(tel) + '</a>' +
+        return '<a class="est-contacto" href="tel:+57' + digitos(tel) + '">' + ICONOS.telefono + fmtTel(tel) + '</a>' +
                '<a class="est-contacto est-contacto-wa" href="' + waLink(tel) + '" target="_blank" rel="noopener">' + ICONOS.whatsapp + 'WhatsApp</a>' +
                (email ? '<a class="est-contacto" href="mailto:' + esc(email) + '">' + ICONOS.correo + esc(email) + '</a>' : '');
     }

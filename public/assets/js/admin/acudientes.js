@@ -106,7 +106,9 @@
         return a;
     }
     function fmtDoc(d) { return String(d).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-    function fmtTel(t) { t = String(t); return t.length === 10 ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : t; }
+    // El teléfono puede venir de /profile: solo se formatea si son 10 dígitos, lo demás se escapa
+    function fmtTel(t) { t = String(t == null ? '' : t); return /^\d{10}$/.test(t) ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : esc(t); }
+    function digitos(t) { return String(t == null ? '' : t).replace(/\D/g, ''); }
     function fmtFecha(f) {
         if (!f) return '—';
         var p = f.split('-');
@@ -117,7 +119,7 @@
     function grupoDe(id) { return grupos.find(function (g) { return g.id === id; }) || SIN_GRUPO; }
     function estDe(id) { return estudiantes.find(function (x) { return x.id === id; }); }
     function acuDe(id) { return data.find(function (x) { return x.id === id; }); }
-    function waLink(tel, texto) { return 'https://wa.me/57' + tel + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
+    function waLink(tel, texto) { return 'https://wa.me/57' + digitos(tel) + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
     // Vigente = sigue en ESAT (incluye al registrado que aún no se matricula)
     function vigente(e) { return e.estado === 'activo' || e.estado === 'aplazado' || e.estado === 'sin_matricula'; }
     function esMenor(e) { var ed = edad(e.fecha_nac); return ed !== null && ed < 18; }
@@ -559,7 +561,7 @@
         return '<section class="acu-sec"><div class="acu-sec-head"><h4 class="acu-sec-title">' + titulo + '</h4>' + (extra || '') + '</div>' + cuerpo + '</section>';
     }
     function contactoHTML(a) {
-        return '<a class="acu-contacto" href="tel:+57' + a.telefono + '">' + ICONOS.telefono + fmtTel(a.telefono) + '</a>' +
+        return '<a class="acu-contacto" href="tel:+57' + digitos(a.telefono) + '">' + ICONOS.telefono + fmtTel(a.telefono) + '</a>' +
                '<a class="acu-contacto acu-contacto-wa" href="' + waLink(a.telefono) + '" target="_blank" rel="noopener">' + ICONOS.whatsapp + 'WhatsApp</a>' +
                (a.email ? '<a class="acu-contacto" href="mailto:' + esc(a.email) + '">' + ICONOS.correo + esc(a.email) + '</a>' : '');
     }

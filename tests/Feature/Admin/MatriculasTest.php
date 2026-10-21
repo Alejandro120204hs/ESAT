@@ -335,6 +335,17 @@ class MatriculasTest extends TestCase
         $this->assertAuthenticatedAs($e);
     }
 
+    public function test_con_el_derecho_vencido_tambien_pierde_la_sesion_abierta(): void
+    {
+        $e = $this->estudiante('1070000001');
+        $this->matricular($e, $this->grupoA)->assertOk();
+        $this->actingAs($e)->get('/profile')->assertOk();   // antes de empezar clases está adentro
+
+        Carbon::setTestNow('2026-11-04 09:00:00');   // las clases empezaron el 3 y no ha pagado
+        $this->actingAs($e)->get('/profile')->assertRedirect(route('login'))->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
     public function test_volver_al_mismo_programa_ocupa_cupo_solo_en_el_grupo_nuevo(): void
     {
         $e = $this->estudiante('1070000001');

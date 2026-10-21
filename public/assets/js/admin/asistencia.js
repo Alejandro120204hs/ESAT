@@ -30,7 +30,7 @@
     function iniciales(n, a) { return ((n || '').charAt(0) + (a || '').charAt(0)).toUpperCase(); }
     function primerNombre(n) { return (n || '').split(' ')[0]; }
     function fmtTel(t) { return t ? t.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : ''; }
-    function waLink(tel, texto) { return 'https://wa.me/57' + tel + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
+    function waLink(tel, texto) { return 'https://wa.me/57' + String(tel || '').replace(/\D/g, '') + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
     function tono(p) { return p == null ? 'none' : (p >= 90 ? 'ok' : (p >= 80 ? 'warn' : 'bad')); }
     function pctTxt(p) { return p == null ? '—' : p + ' %'; }
     function situacionTag(s) {

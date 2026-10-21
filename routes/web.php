@@ -274,7 +274,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Sin "eliminar mi cuenta": borraría en cascada matrículas, pagos y recibos. Desactivar es del admin.
 });
 
 require __DIR__.'/auth.php';

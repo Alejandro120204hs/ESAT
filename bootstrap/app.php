@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
+        // Cuenta desactivada o derecho de matrícula vencido: se corta también la sesión abierta
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureAccountIsEnabled::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
