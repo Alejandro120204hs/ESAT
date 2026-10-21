@@ -1,9 +1,7 @@
-{{-- Calificaciones — MAQUETA (solo frontend, sin controlador ni BD).
-     Reales: los grupos con clases de la sede 7, sus programas, módulos (malla con horas), horarios y docentes.
-     De ejemplo (ficticios): los estudiantes, sus documentos/teléfonos, las notas, las habilitaciones y el % de asistencia.
-     Reglas ya definidas: nota por módulo de 1.0 a 5.0 (aprueba 3.0); la pone el docente y el Admin solo consulta;
-     una sola habilitación por módulo perdido; las fechas de cada módulo se calculan con el horario del grupo y las
-     horas de cada módulo en orden (lo que hará el servicio cuando exista el backend). --}}
+{{-- Calificaciones: datos reales desde Admin\Calificaciones\CalificacionController (CalificacionService).
+     Solo consulta: la nota la pone el docente. Nota por módulo de 1,0 a 5,0 (aprueba 3,0), una sola
+     habilitación por módulo perdido; las fechas de cada módulo se calculan con el horario del grupo y
+     las horas de cada módulo en orden. --}}
 @extends('admin.layout')
 
 @section('title', 'Calificaciones')
@@ -15,172 +13,21 @@
 @endpush
 
 @php
-/* ── Datos reales de la sede 7 (programas, mallas, grupos, horarios, docentes) ── */
-$MALLAS = [
-    1  => [['Fundamentos de gerontología', 160], ['Cuidado básico de enfermería', 240], ['Nutrición en el adulto mayor', 120], ['Actividades terapéuticas', 160], ['Ética y legislación en salud', 80], ['Primeros auxilios', 80], ['Práctica clínica', 960]],
-    2  => [['Introducción a la salud mental', 160], ['Psicopatología básica', 200], ['Cuidado al paciente psiquiátrico', 240], ['Farmacología en psiquiatría', 80], ['Ética y derechos del paciente', 80], ['Práctica clínica', 1040]],
-    3  => [['Fundamentos de SST', 160], ['Identificación y control de riesgos', 200], ['Normativa colombiana SST', 120], ['Ergonomía y bienestar laboral', 120], ['Primeros auxilios y emergencias', 80], ['Práctica empresarial SST', 1120]],
-    4  => [['Técnicas básicas de cocina', 200], ['Gastronomía colombiana', 160], ['Cocina internacional', 200], ['Panadería y repostería', 160], ['Higiene y seguridad alimentaria', 80], ['Práctica en cocina profesional', 800]],
-    6  => [['Sistema de salud colombiano', 120], ['Codificación CIE-10 y CUPS', 200], ['Facturación y glosas', 160], ['Auditoría de cuentas médicas', 160], ['Normativa SOAT y PGSS', 80], ['Práctica supervisada', 880]],
-    7  => [['Contabilidad general', 200], ['Ofimática avanzada', 120], ['Nómina y prestaciones sociales', 160], ['Tributaria básica', 120], ['Gestión documental', 80], ['Práctica empresarial', 760]],
-    8  => [['Desarrollo infantil y psicología educativa', 200], ['Pedagogía para la primera infancia', 200], ['Lúdica y expresión artística', 160], ['Nutrición y salud infantil', 80], ['Legislación educativa colombiana', 80], ['Práctica pedagógica', 880]],
-    9  => [['Fundamentos de electricidad', 200], ['Instalaciones eléctricas residenciales', 240], ['Instalaciones industriales', 200], ['RETIE y normativa eléctrica', 80], ['Práctica en campo', 880]],
-    10 => [['Electricidad y magnetismo aplicada', 160], ['Motores eléctricos y transformadores', 200], ['Automatización industrial básica', 200], ['Mantenimiento preventivo y correctivo', 160], ['Práctica industrial', 880]],
-];
-$DOC = [
-    'gonzalez' => ['María González Ruiz', '3101234567'],   'rios'   => ['Alejandro Ríos Mora', '3159876543'],
-    'martinez' => ['Laura Martínez Peña', '3124567890'],   'zapata' => ['Andrés Zapata Villa', '3183216540'],
-    'lopez'    => ['Patricia López Castro', '3146543210'], 'diaz'   => ['Roberto Díaz Sierra', '3167890123'],
-    'vargas'   => ['Diana Vargas Nieto', '3135678901'],    'medina' => ['Fabián Medina', '3173456789'],
-    'mora'     => ['Adriana Mora Parra', '3154567890'],
-];
-// [id, programa_id, programa, grupo, jornada, sigla, escuela, inicio, meses, sesiones [día, inicio, fin], docente, módulo sin nota (índice) o null]
-$BASE = [
-    [1,  1,  'Técnico Laboral en Servicios Geriátricos', 'Grupo A', 'Mañana', 'sal', 'Salud', '2026-02-02', 12, [['Lunes', '08:00', '12:00'], ['Miércoles', '08:00', '12:00'], ['Viernes', '08:00', '12:00']], 'gonzalez', null],
-    [2,  1,  'Técnico Laboral en Servicios Geriátricos', 'Grupo B', 'Tarde', 'sal', 'Salud', '2026-02-02', 12, [['Martes', '14:00', '18:00'], ['Jueves', '14:00', '18:00']], 'rios', 5],
-    [3,  2,  'Técnico Laboral en Auxiliar de Psiquiatría', 'Grupo A', 'Mañana', 'sal', 'Salud', '2026-02-02', 12, [['Martes', '08:00', '12:00'], ['Jueves', '08:00', '12:00']], 'gonzalez', null],
-    [4,  2,  'Técnico Laboral en Auxiliar de Psiquiatría', 'Grupo B', 'Noche', 'sal', 'Salud', '2026-02-02', 12, [['Lunes', '18:00', '21:00'], ['Miércoles', '18:00', '21:00'], ['Viernes', '18:00', '21:00']], 'rios', null],
-    [5,  3,  'Técnico Laboral en Seguridad Ocupacional y Laboral', 'Grupo A', 'Fines de semana', 'sal', 'Salud', '2026-02-02', 12, [['Sábado', '07:00', '13:00']], 'rios', null],
-    [6,  4,  'Técnico Laboral en Cocina Nacional e Internacional', 'Grupo A', 'Mañana', 'tur', 'Cocina y Turismo', '2026-02-02', 10, [['Lunes', '07:00', '11:00'], ['Martes', '07:00', '11:00'], ['Jueves', '08:00', '12:00']], 'martinez', null],
-    [7,  4,  'Técnico Laboral en Cocina Nacional e Internacional', 'Grupo B', 'Tarde', 'tur', 'Cocina y Turismo', '2026-02-02', 10, [['Lunes', '13:00', '17:00'], ['Miércoles', '13:00', '17:00'], ['Viernes', '13:00', '17:00']], 'zapata', null],
-    [9,  6,  'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas', 'Grupo A', 'Tarde', 'adm', 'Administrativa', '2026-02-02', 10, [['Lunes', '14:00', '18:00'], ['Miércoles', '14:00', '18:00'], ['Jueves', '14:00', '18:00'], ['Viernes', '14:00', '18:00']], 'lopez', 4],
-    [10, 6,  'Técnico Laboral en Auditoría y Facturación de Cuentas Médicas', 'Grupo B', 'Fines de semana', 'adm', 'Administrativa', '2026-02-02', 10, [['Sábado', '08:00', '14:00']], 'diaz', null],
-    [11, 7,  'Técnico Laboral en Auxiliar Contable y Administrativo', 'Grupo A', 'Mañana', 'adm', 'Administrativa', '2026-02-02', 9, [['Lunes', '08:00', '11:00'], ['Miércoles', '08:00', '11:00'], ['Viernes', '08:00', '11:00']], 'diaz', null],
-    [12, 7,  'Técnico Laboral en Auxiliar Contable y Administrativo', 'Grupo B', 'Noche', 'adm', 'Administrativa', '2025-08-04', 9, [['Martes', '18:00', '21:00'], ['Jueves', '18:00', '21:00']], 'lopez', null],
-    [13, 8,  'Técnico Laboral en Asistente de Preescolar', 'Grupo A', 'Mañana', 'edu', 'Educación e Idiomas', '2026-02-02', 10, [['Lunes', '07:00', '10:00'], ['Martes', '07:00', '10:00'], ['Miércoles', '07:00', '10:00'], ['Jueves', '07:00', '10:00'], ['Viernes', '07:00', '10:00']], 'vargas', null],
-    [14, 9,  'Técnico Laboral en Electricista', 'Grupo A', 'Noche', 'cie', 'Ciencias', '2026-02-02', 10, [['Lunes', '18:00', '21:00'], ['Miércoles', '18:00', '21:00'], ['Viernes', '18:00', '22:00']], 'medina', 3],
-    [15, 10, 'Técnico Laboral en Electromecánica', 'Grupo A', 'Tarde', 'cie', 'Ciencias', '2026-02-02', 10, [['Martes', '14:00', '18:00'], ['Jueves', '14:00', '18:00']], 'mora', null],
-];
-
-/* ── Estudiantes y notas de ejemplo (ficticios, generados siempre iguales) ── */
-mt_srand(2026);
-$NOMBRES   = ['Valentina', 'Santiago', 'Camila', 'Sebastián', 'Daniela', 'Juan David', 'Mariana', 'Andrés Felipe', 'Laura Sofía', 'Kevin', 'Natalia', 'Brayan', 'Paula Andrea', 'Cristian', 'Yuliana', 'Jhon Fredy', 'Luisa Fernanda', 'Diego', 'Karen', 'Óscar', 'Angie', 'Miguel Ángel', 'Lina Marcela', 'Esteban', 'Leidy', 'Wilson', 'Tatiana', 'Jorge Iván', 'Sara', 'Nicolás', 'Ximena', 'Fredy', 'Yesica', 'Julián', 'Erika', 'Mauricio'];
-$APELLIDOS = ['Rodríguez', 'Gómez', 'Martínez', 'Herrera', 'Castro', 'Ramírez', 'Torres', 'Sánchez', 'Rojas', 'Moreno', 'Jiménez', 'Cárdenas', 'Ospina', 'Suárez', 'Pineda', 'Cifuentes', 'Garzón', 'Rincón', 'Parra', 'Bermúdez', 'Quintero', 'Salazar', 'Beltrán', 'Acosta', 'Velásquez', 'Patiño', 'Buitrago', 'Londoño', 'Ortiz', 'Murillo'];
-$rnd = fn (float $a, float $b) => $a + (mt_rand() / mt_getrandmax()) * ($b - $a);
-$nota = fn (float $x) => round(max(1.0, min(5.0, $x)), 1);
-
-$hoy      = now()->startOfDay();
-$DIA_ISO  = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
-$DIA_C    = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb'];
-$MES_C    = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-$corta    = fn ($f) => $f->day . ' ' . $MES_C[$f->month - 1] . ($f->year !== $hoy->year ? ' ' . $f->year : '');
-
-$grupos = []; $estudiantes = []; $eid = 1;
-foreach ($BASE as [$gid, $pid, $programa, $grupo, $jornada, $sigla, $escuela, $ini, $meses, $sesiones, $docKey, $sinNota]) {
-    $inicio = \Carbon\Carbon::parse($ini);
-    $fin    = $inicio->copy()->addMonthsNoOverflow($meses);   // Curso::finPara
-
-    // Días de clase entre el inicio y el fin del grupo, según su horario
-    $dias = array_map(fn ($s) => $DIA_ISO[$s[0]], $sesiones);
-    $clases = [];
-    for ($d = $inicio->copy(); $d->lt($fin); $d->addDay()) {
-        if (in_array($d->dayOfWeekIso, $dias, true)) $clases[] = $d->copy();
-    }
-    // Cada módulo ocupa, en orden, la parte de las clases que le toca por sus horas
-    $malla = $MALLAS[$pid]; $total = array_sum(array_column($malla, 1)); $n = count($clases); $acum = 0;
-    $modulos = [];
-    foreach ($malla as $i => [$nombre, $horas]) {
-        $desde = (int) floor($n * $acum / $total); $acum += $horas;
-        $hasta = max($desde, (int) floor($n * $acum / $total) - 1);
-        $mIni = $clases[$desde]; $mFin = $clases[min($hasta, $n - 1)];
-        $estado = $mFin->lt($hoy) ? 'terminado' : ($mIni->lte($hoy) ? 'en_curso' : 'por_iniciar');
-        $modulos[] = ['nombre' => $nombre, 'horas' => $horas, 'ini' => $mIni->toDateString(), 'fin' => $mFin->toDateString(),
-            'ini_txt' => $corta($mIni), 'fin_txt' => $corta($mFin), 'estado' => $estado, 'sin_nota' => $estado === 'terminado' && $sinNota === $i];
-    }
-
-    // Horario en texto: los días con la misma hora se juntan
-    $porHora = [];
-    foreach ($sesiones as [$dia, $h1, $h2]) $porHora["{$h1}–{$h2}"][] = $DIA_C[$DIA_ISO[$dia]];
-    $horario = collect($porHora)->map(fn ($ds, $h) => implode(', ', $ds) . ' · ' . $h)->implode("\n");
-
-    $g = ['id' => $gid, 'programa' => $programa, 'grupo' => $grupo, 'jornada' => $jornada, 'sigla' => $sigla, 'escuela' => $escuela,
-        'docente' => $DOC[$docKey][0], 'telefono' => $DOC[$docKey][1], 'horario' => $horario,
-        'inicio_txt' => $corta($inicio), 'fin_txt' => $corta($fin), 'terminado' => $fin->lte($hoy), 'modulos' => $modulos];
-
-    // Estudiantes del grupo con sus notas por módulo
-    $cuantos = mt_rand(7, 11);
-    for ($k = 0; $k < $cuantos; $k++) {
-        $nivel = $rnd(3.1, 4.7);
-        $notas = [];
-        foreach ($modulos as $m) {
-            if ($m['estado'] !== 'terminado' || $m['sin_nota']) { $notas[] = null; continue; }
-            $n1 = $nota($nivel + $rnd(-0.6, 0.5));
-            $h = null;
-            if ($n1 < 3.0 && mt_rand(1, 100) <= 65) $h = $nota($rnd(2.6, 4.2));
-            $notas[] = ['n' => $n1, 'h' => $h];
-        }
-        $menor = mt_rand(1, 100) <= 12;
-        $estudiantes[] = ['id' => $eid++, 'grupo_id' => $gid,
-            'nombres' => $NOMBRES[mt_rand(0, count($NOMBRES) - 1)],
-            'apellidos' => $APELLIDOS[mt_rand(0, count($APELLIDOS) - 1)] . ' ' . $APELLIDOS[mt_rand(0, count($APELLIDOS) - 1)],
-            'tipo_doc' => $menor ? 'TI' : 'CC', 'documento' => (string) ($menor ? mt_rand(1100000000, 1109999999) : mt_rand(1000000000, 1079999999)),
-            'telefono' => '3' . mt_rand(0, 2) . mt_rand(0, 9) . mt_rand(1000000, 9999999),
-            'asistencia' => mt_rand(72, 99), 'notas' => $notas];
-    }
-    $grupos[] = $g;
-}
-
-/* ── Resumen por estudiante (lo que hará el servicio): estado de cada módulo, promedio y situación ── */
-$gruposPorId = collect($grupos)->keyBy('id');
-foreach ($estudiantes as &$e) {
-    $g = $gruposPorId[$e['grupo_id']];
-    $estados = []; $finales = []; $porHab = 0; $reprob = 0; $aprob = 0;
-    foreach ($g['modulos'] as $i => $m) {
-        $x = $e['notas'][$i];
-        if ($x === null) { $estados[] = $m['estado'] === 'terminado' ? 'sin_nota' : $m['estado']; continue; }
-        $final = $x['h'] ?? $x['n']; $finales[] = $final;
-        if ($x['n'] >= 3.0)      { $estados[] = 'aprobado'; $aprob++; }
-        elseif ($x['h'] === null) { $estados[] = 'por_habilitar'; $porHab++; }
-        elseif ($x['h'] >= 3.0)  { $estados[] = 'habilito'; $aprob++; }
-        else                     { $estados[] = 'reprobado'; $reprob++; }
-    }
-    $e['estados']   = $estados;
-    $e['prom']      = $finales ? round(array_sum($finales) / count($finales), 1) : null;
-    $e['aprobados'] = $aprob;
-    $e['total']     = count($g['modulos']);
-    $e['por_habilitar'] = $porHab;
-    $e['reprobados']    = $reprob;
-    $e['situacion'] = $reprob ? 'reprobado' : ($porHab ? 'habilitar' : ($g['terminado'] && $aprob === $e['total'] ? 'listo' : ($finales ? 'al_dia' : 'sin_notas')));
-}
-unset($e);
-
-/* ── Resumen por grupo y de la sede ── */
-$estudiantes = collect($estudiantes);
-foreach ($grupos as &$g) {
-    $suyos = $estudiantes->where('grupo_id', $g['id']);
-    foreach ($g['modulos'] as $i => &$m) {
-        $fin = $suyos->map(fn ($e) => $e['notas'][$i] === null ? null : ($e['notas'][$i]['h'] ?? $e['notas'][$i]['n']))->filter(fn ($v) => $v !== null);
-        $m['prom'] = $fin->isEmpty() ? null : round($fin->avg(), 1);
-    }
-    unset($m);
-    $actual = collect($g['modulos'])->search(fn ($m) => $m['estado'] === 'en_curso');
-    $g['actual']     = $actual === false ? null : $actual;
-    $g['terminados'] = collect($g['modulos'])->where('estado', 'terminado')->count();
-    $g['activos']    = $suyos->count();
-    $proms           = $suyos->pluck('prom')->filter(fn ($v) => $v !== null);
-    $g['prom']       = $proms->isEmpty() ? null : round($proms->avg(), 1);
-    $g['por_habilitar'] = $suyos->where('situacion', 'habilitar')->count();
-    $g['reprobados']    = $suyos->where('situacion', 'reprobado')->count();
-    $g['listos']        = $suyos->where('situacion', 'listo')->count();
-    $g['sin_nota']      = collect($g['modulos'])->where('sin_nota', true)->keys()->values()->all();
-}
-unset($g);
-$grupos = collect($grupos);
-
-$promsSede   = $estudiantes->pluck('prom')->filter(fn ($v) => $v !== null);
-$promSede    = $promsSede->isEmpty() ? null : round($promsSede->avg(), 1);
-$porHabilitar = $estudiantes->where('situacion', 'habilitar')->count();
-$reprobados  = $estudiantes->where('situacion', 'reprobado')->count();
-$modSinNota  = $grupos->sum(fn ($g) => count($g['sin_nota']));
-$docSinNota  = $grupos->filter(fn ($g) => count($g['sin_nota']))->pluck('docente')->unique()->count();
-$listos      = $estudiantes->where('situacion', 'listo')->count();
-$jornadas    = $grupos->pluck('jornada')->unique()->sort()->values();
+/* Datos reales (CalificacionService::resumenSede): grupos con clases de la sede, sus estudiantes y notas. */
+$gruposPorId  = $grupos->keyBy('id');
+$promSede     = $resumen['prom_sede'];
+$listos       = $resumen['listos'];
+$porHabilitar = $resumen['por_habilitar'];
+$reprobados   = $resumen['reprobados'];
+$modSinNota   = $resumen['mod_sin_nota'];
+$docSinNota   = $resumen['doc_sin_nota'];
 
 $fmt       = fn ($v) => $v === null ? '—' : number_format($v, 1, ',', '');
 $tonoNota  = fn ($v) => $v === null ? 'none' : ($v >= 4.0 ? 'ok' : ($v >= 3.0 ? 'warn' : 'bad'));
 $iniciales = fn ($n, $a) => mb_strtoupper(mb_substr($n, 0, 1) . mb_substr($a, 0, 1));
 $SITUACION = [
     'listo'     => ['app-status-active', 'Listo para graduar'],
+    'graduado'  => ['app-status-active', 'Graduado'],
     'al_dia'    => ['app-status-muted',  'Al día'],
     'habilitar' => ['app-status-warn',   'Por habilitar'],
     'reprobado' => ['app-status-danger', 'Perdió la habilitación'],
@@ -312,7 +159,7 @@ $sede = auth()->user()->sede;
                                 <div class="cal-avatar cal-esc-{{ $g['sigla'] }}">{{ mb_substr($g['grupo'], -1) }}</div>
                                 <div>
                                     <div class="cal-person-name">{{ $g['programa'] }}</div>
-                                    <div class="cal-person-sub">{{ $g['grupo'] }} · {{ $g['jornada'] }} · {{ $g['activos'] }} estudiantes</div>
+                                    <div class="cal-person-sub">{{ $g['grupo'] }} · {{ $g['jornada'] }} · {{ $g['activos'] }} {{ $g['activos'] === 1 ? 'estudiante' : 'estudiantes' }}</div>
                                 </div>
                             </div>
                         </td>
@@ -348,7 +195,10 @@ $sede = auth()->user()->sede;
                                 @if($g['listos'])
                                     <span class="app-status-tag app-status-active">{{ $g['listos'] }} {{ $g['listos'] === 1 ? 'listo' : 'listos' }} para graduar</span>
                                 @endif
-                                @if(! count($g['sin_nota']) && ! $g['por_habilitar'] && ! $g['reprobados'] && ! $g['listos'])
+                                @if($g['graduados'])
+                                    <span class="app-status-tag app-status-muted">{{ $g['graduados'] }} {{ $g['graduados'] === 1 ? 'graduado' : 'graduados' }}</span>
+                                @endif
+                                @if(! count($g['sin_nota']) && ! $g['por_habilitar'] && ! $g['reprobados'] && ! $g['listos'] && ! $g['graduados'])
                                     <span class="cal-person-sub">Ninguno</span>
                                 @endif
                             </div>
@@ -466,7 +316,7 @@ $sede = auth()->user()->sede;
             </table>
             <div class="cal-empty" id="cal-e-empty" hidden>
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <p>{{ $estudiantes->isEmpty() ? 'Todavía no hay estudiantes activos en grupos con clases.' : 'No hay estudiantes que coincidan con la búsqueda.' }}</p>
+                <p>{{ $estudiantes->isEmpty() ? 'Todavía no hay estudiantes en grupos con clases.' : 'No hay estudiantes que coincidan con la búsqueda.' }}</p>
             </div>
         </div>
         <div class="cal-pagination" id="cal-e-pagination" hidden></div>
@@ -545,7 +395,7 @@ $sede = auth()->user()->sede;
 var CAL_DATA = {
     grupos: @json($grupos->values()),
     estudiantes: @json($estudiantes->values()),
-    hoy: @json($hoy->toDateString()),
+    hoy: @json($hoy),
     ciudad: @json($sede?->ciudad)
 };
 </script>

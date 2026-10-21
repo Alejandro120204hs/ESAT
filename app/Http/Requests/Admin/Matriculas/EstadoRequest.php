@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\Matriculas;
 
 use App\Models\Academico\Curso;
 use App\Models\Finanzas\Matricula;
+use App\Services\Academico\CalificacionService;
 use App\Services\Finanzas\PagoService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -12,7 +13,8 @@ use Illuminate\Validation\Validator;
 
 /**
  * Cambiar el estado de la matrícula siguiendo Matricula::TRANSICIONES:
- * aplazar/retirar (con motivo), graduar (grupo terminado, plan pagado completo y a paz y salvo) o
+ * aplazar/retirar (con motivo), graduar (grupo terminado, todos los módulos aprobados, plan pagado
+ * completo y a paz y salvo) o
  * reintegrar (con cupo). La fecha no puede ser anterior a la matrícula ni al último cambio de estado.
  */
 class EstadoRequest extends FormRequest
@@ -51,6 +53,14 @@ class EstadoRequest extends FormRequest
                 $g = $m->curso;
                 if ($g && $g->estado !== 'finalizado' && $g->fecha_fin->gt(today())) {
                     $v->errors()->add('estado', "Solo se gradúa cuando su grupo termina ({$g->fecha_fin->format('d/m/Y')}).");
+                    return;
+                }
+                // Todos los módulos de la malla aprobados (con nota o en habilitación)
+                $pendientes = app(CalificacionService::class)->pendientesParaGraduar($m);
+                if ($pendientes) {
+                    $n = count($pendientes);
+                    $v->errors()->add('estado', 'Para graduarse debe tener todos los módulos aprobados: '
+                        .($n === 1 ? 'le falta ' : "le faltan {$n}: ").implode(', ', $pendientes).'.');
                     return;
                 }
                 $m->load('pagos', 'programa');

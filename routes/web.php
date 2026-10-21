@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Acudientes\AcudienteController;
 use App\Http\Controllers\Admin\Asistencia\AsistenciaController;
+use App\Http\Controllers\Admin\Calificaciones\CalificacionController;
 use App\Http\Controllers\Admin\Docentes\DocenteController;
 use App\Http\Controllers\Admin\Estudiantes\EstudianteController;
 use App\Http\Controllers\Admin\Grupos\GrupoController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Admin\Horarios\HorarioController;
 use App\Http\Controllers\Admin\Matriculas\DocumentoController;
 use App\Http\Controllers\Admin\Matriculas\MatriculaController;
 use App\Http\Controllers\Admin\Matriculas\PagoController;
+use App\Http\Controllers\Admin\Pagos\CarteraController;
 use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
@@ -252,8 +254,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Panel "Asistencia": solo consulta (la toma el docente)
     Route::get('asistencia', [AsistenciaController::class, 'index'])->name('asistencia');
 
-    // Panel "Calificaciones": solo consulta (califica el docente). Maqueta: todavía sin controlador.
-    Route::view('calificaciones', 'admin.calificaciones.index')->name('calificaciones');
+    // Panel "Calificaciones": solo consulta (la nota la pone el docente)
+    Route::get('calificaciones', [CalificacionController::class, 'index'])->name('calificaciones');
+
+    // Panel "Pagos" (Finanzas): cartera, pagos recibidos, resumen de caja, por programa y devoluciones.
+    // Registrar y anular un pago usan las rutas de Matrículas (matriculas.pagos.store / matriculas.pagos.anular).
+    Route::get('pagos', [CarteraController::class, 'index'])->name('pagos');
 
     // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
     Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');

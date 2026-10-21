@@ -70,7 +70,8 @@ class MatriculaService
     /**
      * aplazado / retirado: libera el cupo y anula las cuotas que vencen después de $fecha. El derecho
      *   de matrícula sin pagar que aún no vencía queda en espera (aplazado) o se anula (retirado).
-     * graduado: termina el programa (el Request exige grupo finalizado, plan pagado y paz y salvo).
+     * graduado: termina el programa (el Request exige grupo finalizado, todos los módulos aprobados,
+     *   plan pagado y paz y salvo).
      * activo (reintegro desde aplazado): vuelve a $grupo (con cupo), el derecho en espera vence al
      *   iniciar ese grupo y se generan las cuotas que faltan.
      * anulado (se hizo por error, sin pagos): sale de la lista del grupo y no se cobra nada.
