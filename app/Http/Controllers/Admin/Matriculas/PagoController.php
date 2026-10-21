@@ -49,7 +49,7 @@ class PagoController extends Controller
         $this->pagos->anularRecaudo($recaudo, $request->input('motivo'));
 
         Auditoria::registrar('editar', $matricula,
-            "Anuló el pago de {$matricula->estudiante->name} por {$this->pesos($recaudo->valor)} (recibo {$recaudo->recibo}, {$detalle}): {$request->input('motivo')}.");
+            "Anuló el pago de {$matricula->estudiante->name} por {$this->pesos($recaudo->valor)} (recibo {$recaudo->recibo}, {$detalle}): ".rtrim($request->input('motivo'), '.').'.');
 
         return response()->json(['ok' => true, 'mensaje' => "Se anuló el recibo {$recaudo->recibo}. Lo que cubría vuelve a figurar como pendiente."]);
     }
@@ -92,7 +92,7 @@ class PagoController extends Controller
         }
 
         Auditoria::registrar('editar', $matricula,
-            "{$cubre}Devolvió a {$nombre} {$this->pesos($d->valor)} pagados por adelantado ({$d->metodo_pago}, comprobante {$d->comprobante}): {$d->motivo}.");
+            "{$cubre}Devolvió a {$nombre} {$this->pesos($d->valor)} pagados por adelantado ({$d->metodo_pago}, comprobante {$d->comprobante}): ".rtrim($d->motivo, '.').'.');
 
         return response()->json([
             'ok'          => true,

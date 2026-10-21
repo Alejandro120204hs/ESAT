@@ -2,6 +2,7 @@
 
 namespace App\Models\Finanzas;
 
+use App\Models\Academico\Calificacion;
 use App\Models\Academico\Curso;
 use App\Models\Academico\PeriodoAcademico;
 use App\Models\Academico\Programa;
@@ -122,6 +123,12 @@ class Matricula extends Model
     public function recaudos(): HasMany
     {
         return $this->hasMany(Recaudo::class);
+    }
+
+    /** Notas por módulo de la malla (las pone el docente; ver Calificacion). */
+    public function calificaciones(): HasMany
+    {
+        return $this->hasMany(Calificacion::class);
     }
 
     /** Grupo de la matrícula (en curso_estudiante está además la lista del grupo). */

@@ -29,7 +29,7 @@
         <div class="app-nav-flyout-header">Finanzas</div>
         <ul class="app-nav">
             <li>
-                <a href="#" class="app-nav-link {{ $activeSection === 'pagos' ? 'is-active' : '' }}">
+                <a href="{{ route('admin.pagos') }}" class="app-nav-link {{ $activeSection === 'pagos' ? 'is-active' : '' }}">
                     <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
                     Pagos
                 </a>

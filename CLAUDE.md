@@ -105,7 +105,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos). El resto del panel Admin sigue siendo maqueta.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
   **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
@@ -155,7 +155,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
     guarda. Al **retirarse** antes de que venza, se anula. (Cuando exista el panel Estudiante,
     aplicar la misma regla a las sesiones abiertas, no solo al login.)
-  - **Graduar** exige grupo terminado, plan elegido con todas sus cuotas pagadas y paz y salvo.
+  - **Graduar** exige grupo terminado, todos los módulos aprobados, plan elegido con todas sus cuotas pagadas y paz y salvo.
     Los pagos de una matrícula graduada no se anulan.
   - Un cambio de estado no puede tener fecha anterior a la matrícula ni al último cambio de estado.
   - El consecutivo de recibos vive en `configuraciones` (`ultimo_recibo_AAAA`) y nunca retrocede:
@@ -184,12 +184,25 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (`AsistenciaService::porcentaje`, la misma regla en las fichas de Estudiantes/Acudientes/Matrículas). De cada
   estudiante cuentan las clases desde su matrícula hasta que se aplazó/retiró. `asistencias.motivo` (excusa) y
   `registrado_por` (docente). Pruebas en `tests/Feature/Admin/AsistenciaTest.php`.
-- **Calificaciones** (`admin/calificaciones/index.blade.php` + `calificaciones.css/js`): **maqueta**
-  (solo frontend, `Route::view`, datos de ejemplo en el `@php` de la vista). Nota **por módulo** de la malla
-  (`programa_modulos`), escala 1.0–5.0, aprueba 3.0; la pone el **docente**, el Admin **solo consulta** (no
-  corrige). Una sola **habilitación** por módulo perdido. Las fechas de cada módulo se **calculan**: las clases
-  del grupo (horario, inicio → fin) se reparten en orden según las horas de cada módulo. Graduar exigirá todos
-  los módulos aprobados. Certificado de notas imprimible dentro de la misma página.
+- **Calificaciones** (`Admin/Calificaciones/CalificacionController` + `Academico/CalificacionService`, modelo
+  `Academico/Calificacion`, tabla `calificaciones`): nota **por módulo** de la malla (`programa_modulos`) y **por
+  matrícula** (sigue a la matrícula si cambia de grupo), escala 1.0–5.0, aprueba 3.0 (`Calificacion::APRUEBA`); la
+  pone el **docente** (`registrado_por`), el Admin **solo consulta**. Una sola **habilitación** por módulo perdido
+  (`Calificacion::estado()`: aprobado · habilito · por_habilitar · reprobado). Si pierde la habilitación repite el
+  módulo (con qué grupo / quién lo asigna / si cuesta: sin decidir). Las fechas de cada módulo se **calculan**
+  (`fechasModulos`: las clases del grupo se reparten en orden según las horas). Un módulo terminado sin nota es
+  pendiente del docente, salvo que terminara antes de la matrícula del estudiante (`no_cursado`). **Graduar exige
+  todos los módulos aprobados** (`pendientesParaGraduar`, en `EstadoRequest` y aviso en Matrículas). Certificado de
+  notas imprimible dentro de la misma página. Pruebas en `tests/Feature/Admin/CalificacionesTest.php`.
+- **Pagos (Finanzas)** (`Admin/Pagos/CarteraController` + `Finanzas/CarteraService`, vista `admin/pagos/index.blade.php`
+  + `pagos.css/js`): pestañas Por cobrar (vencido, este mes, por pagar, WhatsApp de recordatorio —al acudiente si es
+  menor—), Pagos recibidos (recibos: ver/imprimir/anular), **Resumen de caja por rango de fechas** (no por día: los
+  pagos llegan por mes/periodo; por medio de pago, quién registró, días con pagos; imprimible), Por programa y
+  Devoluciones (solo consulta; se registran en Matrículas). KPI de estudiantes sin plan. **Registrar y anular un pago
+  usan las rutas de Matrículas** (`matriculas.pagos.store` / `matriculas.pagos.anular`, `PagoRequest` /
+  `AnularPagoRequest` + `PagoService`): una sola regla de cobro y el historial queda en la matrícula. Con
+  transferencia/Nequi/Daviplata/Tarjeta la referencia es obligatoria. `anulable` del recibo sigue `AnularPagoRequest`.
+  Pruebas en `tests/Feature/Admin/PagosTest.php`. Contabilidad (pendiente) = ingresos vs. egresos del mes.
 - **Exportar a Excel**: Matrículas, Docentes, Estudiantes y Acudientes tienen un botón "Exportar" que
   descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
   navegador (`exportar()` + `celdaCsv()` en el JS de cada página; neutraliza celdas que empiezan con
