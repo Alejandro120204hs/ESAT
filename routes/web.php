@@ -252,6 +252,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Panel "Asistencia": solo consulta (la toma el docente)
     Route::get('asistencia', [AsistenciaController::class, 'index'])->name('asistencia');
 
+    // Panel "Calificaciones": solo consulta (califica el docente). Maqueta: todavía sin controlador.
+    Route::view('calificaciones', 'admin.calificaciones.index')->name('calificaciones');
+
     // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
     Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');
     Route::post('acudientes', [AcudienteController::class, 'store'])->name('acudientes.store');
