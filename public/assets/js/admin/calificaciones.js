@@ -40,7 +40,7 @@
     function iniciales(n, a) { return ((n || '').charAt(0) + (a || '').charAt(0)).toUpperCase(); }
     function primerNombre(n) { return (n || '').split(' ')[0]; }
     function fmtTel(t) { return t ? t.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : ''; }
-    function waLink(tel, texto) { return 'https://wa.me/57' + tel + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
+    function waLink(tel, texto) { return 'https://wa.me/57' + String(tel || '').replace(/\D/g, '') + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
     function lista(t) { return t.length > 1 ? t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1] : (t[0] || ''); }
     function final(x) { return x == null ? null : (x.h != null ? x.h : x.n); }
     function situacionTag(s) { return '<span class="app-status-tag ' + SITUACION[s][0] + '">' + SITUACION[s][1] + '</span>'; }

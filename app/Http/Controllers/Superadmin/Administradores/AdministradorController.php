@@ -62,6 +62,8 @@ class AdministradorController extends Controller
 
     public function update(Request $request, User $administrador)
     {
+        $this->asegurarAdmin($administrador);
+
         $data = $request->validate([
             'nombres'                 => ['required', 'string', 'max:100'],
             'apellidos'               => ['required', 'string', 'max:100'],
@@ -95,7 +97,15 @@ class AdministradorController extends Controller
 
     public function toggleActivo(User $administrador)
     {
+        $this->asegurarAdmin($administrador);
+
         $administrador->update(['activo' => !$administrador->activo]);
         return response()->json(['ok' => true, 'activo' => $administrador->activo]);
+    }
+
+    /** Estas rutas reciben cualquier id de users: solo se tocan cuentas de administrador (HALLAZGOS C4). */
+    private function asegurarAdmin(User $usuario): void
+    {
+        abort_unless($usuario->isAdmin(), 404);
     }
 }

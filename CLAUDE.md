@@ -27,7 +27,10 @@ Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
 Redirección post-login por rol vía `User::panelUrl()`. Solo superadmin y admin
 tienen panel: estudiante, docente y acudiente caen por ahora en el `/dashboard` de
-Breeze ("You're logged in!") y su `/profile` es el de Breeze.
+Breeze ("You're logged in!") y su `/profile` es el de Breeze. **Nadie elimina su propia
+cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
+El teléfono, también el de `/profile`, se guarda solo con dígitos y debe ser un celular
+(`^3\d{9}$`).
 
 **Convención de contraseña**: la clave inicial de cualquier cuenta creada
 (admin, estudiante, etc.) es su número de documento/cédula — no se pide
@@ -168,8 +171,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     si no está pagado, **el estudiante no puede ingresar** (`LoginRequest` + `derechoVencido`); sin
     matrícula o antes de vencer sí entra. Al **aplazar** sin haberlo pagado queda **en espera**
     (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
-    guarda. Al **retirarse** antes de que venza, se anula. (Cuando exista el panel Estudiante,
-    aplicar la misma regla a las sesiones abiertas, no solo al login.)
+    guarda. Al **retirarse** antes de que venza, se anula. La misma regla corta también la
+    sesión ya abierta (`EnsureAccountIsEnabled`, ver Login).
   - **Graduar** exige grupo terminado, todos los módulos aprobados, plan elegido con todas sus cuotas pagadas y paz y salvo.
     Los pagos de una matrícula graduada no se anulan.
   - Un cambio de estado no puede tener fecha anterior a la matrícula ni al último cambio de estado.
@@ -231,8 +234,13 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (sin matrícula vigente: nunca matriculados, o retirados/graduados que vuelven) y Finalizadas
   (graduadas/retiradas, solo consulta).
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
-  guarda `users.ultimo_acceso`. Hoy `activo` y el derecho vencido **solo se revisan al iniciar
-  sesión**: las sesiones abiertas y la cookie "Recordarme" no se cortan (HALLAZGOS C5).
+  guarda `users.ultimo_acceso`. El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
+  `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o al estudiante
+  se le vence el derecho, cierra la sesión abierta (y con ella la cookie "Recordarme") y vuelve al login
+  con el motivo; a un `fetch` le responde 401. La regla vive en un solo lugar,
+  `EnsureAccountIsEnabled::motivo()`, y `LoginRequest` usa la misma: si se agrega otra razón para
+  bloquear el acceso, va ahí. `User::$attributes` pone `activo = true` también en memoria; en
+  pruebas, un modelo que otra petición cambió hay que `refresh()`-arlo antes de `update()`.
   `pagos:vencer` está programado en `routes/console.php`, pero nada ejecuta el scheduler.
 - `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
   muestran de un estudiante (los usan Estudiantes y Acudientes; no duplicar en controladores).
@@ -259,7 +267,8 @@ y lo que las protege desde Grupos/Docentes/Programas) están en
 agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 (no hay columna `name`). Las demás reglas del Admin están en
 `tests/Feature/Admin/{Matriculas,Pagos,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
-(datos de apoyo en `DatosAcademicos.php`). El Superadmin no tiene pruebas.
+(datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
+(Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
 sin él fallan 139 de 140. Activarlo en el `php.ini` o correr
@@ -286,9 +295,10 @@ debe ignorar la tecla mientras haya un `.app-combobox.is-open` (como en
 `horarios.js`), o cierra la acción en vez de solo la lista.
 
 **Escapar todo lo que venga de la BD antes de pintarlo con `innerHTML`** (`esc()`
-de cada archivo), incluidos teléfonos y valores "que siempre son números":
-`fmtTel()` devuelve el texto tal cual si no tiene 10 dígitos, y el teléfono se
-puede editar desde `/profile` (HALLAZGOS C1).
+de cada archivo), incluidos teléfonos y valores "que siempre son números". En
+Estudiantes, Acudientes y Matrículas, `fmtTel()` formatea solo si son 10 dígitos y
+escapa todo lo demás, y `waLink()`/`tel:` usan solo dígitos (`digitos()`). Al copiar
+esas funciones a otra pantalla, copiar esta versión (HALLAZGOS C1).
 
 ## Combobox propio (departamento/ciudad de Colombia)
 
@@ -317,7 +327,8 @@ interruptor activo/inactivo en Administradores), ese control debe llamar
 
 Sedes y Administradores tienen backend real (`SedeController`,
 `AdministradorController`, `fetch` con CSRF), todavía sin Form Requests ni
-auditoría (HALLAZGOS M9). Inicio, Estudiantes, Auditoría y Configuración siguen
+auditoría (HALLAZGOS M9). Editar y activar/desactivar en Administradores solo
+aceptan cuentas con rol admin (`asegurarAdmin`, 404 para cualquier otra). Inicio, Estudiantes, Auditoría y Configuración siguen
 siendo maqueta con datos fijos en el Blade (rutas closure en `routes/web.php`),
 aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarlas.
 
@@ -358,8 +369,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 ## Pendiente
 
 - Paneles Estudiante, Docente y Acudiente: sin construir.
-  - Estudiante: elegir plan de pago (genera las cuotas). Aplicar ahí el bloqueo
-    por derecho vencido también a las sesiones abiertas.
+  - Estudiante: elegir plan de pago (genera las cuotas). El bloqueo por derecho
+    vencido ya corta también las sesiones abiertas (`EnsureAccountIsEnabled`).
   - Docente: tomar asistencia y poner notas. Validar el rango 1.0–5.0 de las
     notas, porque hoy no se valida en ningún lado.
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD

@@ -55,7 +55,7 @@
         var aviso = sessionStorage.getItem(FLASH);
         if (aviso) { sessionStorage.removeItem(FLASH); toast(aviso); }
     } catch (e) {}
-    window.PRG_UTIL = { enviar: enviar, recargarConAviso: recargarConAviso };
+    window.PRG_UTIL = { enviar: enviar, recargarConAviso: recargarConAviso, esc: esc };
     function badge(estado) {
         var map = {
             activo:         '<span class="app-status-tag app-status-active">Activo</span>',
@@ -250,8 +250,8 @@
                 var pct = Math.round((g.inscritos / g.cupo) * 100);
                 return '<div class="prg-grupo-card">'
                     + '<div>'
-                        + '<div class="prg-grupo-nombre">' + g.nombre + '</div>'
-                        + '<div class="prg-grupo-meta">Jornada ' + g.jornada + '</div>'
+                        + '<div class="prg-grupo-nombre">' + esc(g.nombre) + '</div>'
+                        + '<div class="prg-grupo-meta">Jornada ' + esc(g.jornada) + '</div>'
                     + '</div>'
                     + '<div class="prg-grupo-cupo">'
                         + '<div class="prg-grupo-cupo-num">' + g.inscritos + ' / ' + g.cupo + '</div>'
@@ -259,8 +259,8 @@
                     + '</div>'
                     + '<div class="prg-grupo-bar"><div class="prg-grupo-fill" style="width:' + pct + '%"></div></div>'
                     + '<div class="prg-grupo-fechas">'
-                        + '<span>Inicio: <strong>' + g.inicio + '</strong></span>'
-                        + '<span>Fin: <strong>' + g.fin + '</strong></span>'
+                        + '<span>Inicio: <strong>' + esc(g.inicio) + '</strong></span>'
+                        + '<span>Fin: <strong>' + esc(g.fin) + '</strong></span>'
                     + '</div>'
                     + '</div>';
             }).join('');

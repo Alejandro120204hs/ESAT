@@ -14,7 +14,7 @@ No se modificó código para hacer esta revisión.
 
 | Severidad | Cantidad | Qué agrupa |
 |---|---|---|
-| Crítico | 5 | Seguridad explotable hoy |
+| Crítico | 5 | Seguridad explotable — **los 5 corregidos** en la rama `fix/hallazgos-criticos` |
 | Alto | 10 | Seguridad de datos, dinero que se pierde o queda mal, reglas de grado |
 | Medio | 18 | Funcionalidad rota, alcance por sede, concurrencia, UI que miente |
 | Bajo | 19 | Bordes, rendimiento, accesibilidad, restos |
@@ -42,6 +42,13 @@ No se modificó código para hacer esta revisión.
 - Validar `regex:/^3\d{9}$/` también en `ProfileUpdateRequest`.
 - En el JS, pasar todo teléfono por `esc()`, o quedarse solo con los dígitos dentro de `fmtTel`/`waLink`/`tel:`.
 
+**Estado: corregido.**
+- `ProfileUpdateRequest` deja solo los dígitos y exige `^3\d{9}$` (o vacío).
+- `fmtTel()` formatea solo si son 10 dígitos y escapa todo lo demás (Estudiantes, Acudientes, Matrículas).
+- `waLink()` y `tel:` usan solo dígitos (también en Asistencia, Calificaciones y Pagos).
+- Prueba: `ProfileTest::test_el_telefono_del_perfil_solo_acepta_un_celular`.
+- Verificado en el navegador con datos maliciosos ya guardados en BD: el texto se ve, no se ejecuta.
+
 ### C2 ✓ XSS por el nombre de una escuela
 **Área:** Admin › Programas › Escuelas.
 
@@ -51,6 +58,11 @@ No se modificó código para hacer esta revisión.
 - Hay un caso parecido de menor riesgo, porque son valores del servidor: `programas.js:253-263` pinta `g.nombre`, `g.jornada`, `g.inicio` y `g.fin` sin escapar.
 
 **Arreglo:** `esc(esc.nombre)` y lo mismo en `programas.js`.
+
+**Estado: corregido.**
+- `PRG_UTIL` expone `esc`, y `escuelas.js` escapa el nombre antes del `innerHTML`.
+- Las tarjetas de grupo de `programas.js` escapan nombre, jornada y fechas.
+- Verificado en el navegador con el modal de eliminar.
 
 ### C3 ✓ Cualquier usuario puede borrar su cuenta y su historial financiero
 **Área:** perfil de Breeze (estudiante, docente, acudiente).
@@ -63,6 +75,10 @@ No se modificó código para hacer esta revisión.
 
 **Arreglo:** quitar la ruta y el formulario para todos los roles, o al menos para estudiante, docente y acudiente. Desactivar una cuenta es trabajo del admin.
 
+**Estado: corregido.**
+- Se quitaron `DELETE /profile`, `ProfileController::destroy` y el parcial `delete-user-form`.
+- Prueba: `ProfileTest::test_el_usuario_no_puede_eliminar_su_cuenta` (responde 405 y la cuenta sigue).
+
 ### C4 ✓ `AdministradorController` acepta cualquier usuario
 **Área:** Superadmin › Administradores.
 
@@ -72,6 +88,11 @@ No se modificó código para hacer esta revisión.
 - También se puede desactivar al propio superadmin y quedar sin acceso.
 
 **Arreglo:** `abort_unless($administrador->role === RolUsuario::Admin, 404)` en ambos métodos, más lo de M9.
+
+**Estado: corregido.**
+- `update` y `toggleActivo` llaman `asegurarAdmin()` y responden 404 si la cuenta no es de administrador.
+- Pruebas: `tests/Feature/Superadmin/AdministradoresTest.php`, las primeras del Superadmin.
+- M9 (Form Requests y auditoría) sigue abierto.
 
 ### C5 ✓ Desactivar una cuenta no corta el acceso ya abierto
 **Área:** login y sesión (todos los roles).
@@ -85,6 +106,15 @@ No se modificó código para hacer esta revisión.
 **Arreglo:**
 - Un middleware en el grupo `auth` que cierre la sesión si `activo = 0` (y, para estudiantes, si `derechoVencido`).
 - Regenerar `remember_token` al desactivar.
+
+**Estado: corregido.**
+- `App\Http\Middleware\EnsureAccountIsEnabled` (agregado al grupo `web`) revisa en cada petición lo mismo que el login.
+  - Si la cuenta ya no puede estar adentro, cierra la sesión (lo que cambia el `remember_token`) y vuelve al login con el motivo. En peticiones `fetch` responde 401.
+  - La regla vive en `EnsureAccountIsEnabled::motivo()`, y `LoginRequest` usa la misma.
+- `User::$attributes` pone `activo = true` también en memoria (igual que el default de la columna).
+- Pruebas:
+  - `tests/Feature/Auth/CuentaHabilitadaTest.php`
+  - `MatriculasTest::test_con_el_derecho_vencido_tambien_pierde_la_sesion_abierta`
 
 ---
 
@@ -355,7 +385,7 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 
 ## 8. Pruebas
 
-Hay 140 pruebas con 643 aserciones, y todas pasan con `pdo_sqlite` cargado.
+En la revisión había 140 pruebas con 643 aserciones, y todas pasaban con `pdo_sqlite` cargado. Después de corregir C1–C5 son 148 pruebas y 678 aserciones, todas en verde.
 
 | Archivo | Pruebas | Qué cubre |
 |---|---|---|
@@ -370,7 +400,7 @@ Hay 140 pruebas con 643 aserciones, y todas pasan con `pdo_sqlite` cargado.
 - El plan `periodo` no se prueba nunca.
 - No hay pruebas entre sedes en las escrituras de Matrículas (pagos, anular, estado, grupo, descuento, programa, devoluciones).
 - No se prueba crear, listar ni cambiar el estado de Programas, Docentes y Grupos. El CRUD de Escuelas tampoco tiene pruebas.
-- El Superadmin no tiene ninguna prueba.
+- El Superadmin solo tiene las de C4 (Administradores). Sedes no tiene pruebas.
 - Nada de A3 a A9 está probado.
 - Faltan pruebas de:
   - cambio de año del consecutivo;
@@ -397,7 +427,7 @@ Hay 140 pruebas con 643 aserciones, y todas pasan con `pdo_sqlite` cargado.
 
 ## Orden sugerido
 
-1. **C1–C5**, cada uno con su prueba.
+1. ~~**C1–C5**, cada uno con su prueba.~~ Hecho en la rama `fix/hallazgos-criticos`.
 2. **A2**: una línea en `.gitignore`.
 3. Arreglos rápidos de UI: **M1, M2, M3, M5**.
 4. Dinero: **A3, A4, A5, A6, A9**, con pruebas de cada escenario.

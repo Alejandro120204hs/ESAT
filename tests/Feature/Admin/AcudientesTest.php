@@ -197,7 +197,7 @@ class AcudientesTest extends TestCase
         $this->assertGuest();
 
         // Al activarla de nuevo entra con la misma clave y queda registrado su ingreso
-        $acu->update(['activo' => true]);
+        $acu->refresh()->update(['activo' => true]);
         $this->post('/login', ['email' => $acu->email, 'password' => $acu->numero_documento]);
         $this->assertAuthenticatedAs($acu);
         $this->assertNotNull($acu->fresh()->ultimo_acceso);

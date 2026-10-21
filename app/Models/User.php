@@ -28,6 +28,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /** Igual que el default de la columna: una cuenta recién creada está activa también en memoria. */
+    protected $attributes = [
+        'activo' => true,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
