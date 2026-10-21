@@ -8,14 +8,17 @@
     var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     var ESTADO_LBL = {
         aprobado: 'Aprobado', habilito: 'Aprobado en habilitación', por_habilitar: 'Perdido · puede habilitar',
-        reprobado: 'Perdió la habilitación', sin_nota: 'Sin nota del docente', en_curso: 'En curso', por_iniciar: 'Por cursar'
+        reprobado: 'Perdió la habilitación', sin_nota: 'Sin nota del docente', en_curso: 'En curso', por_iniciar: 'Por cursar',
+        no_cursado: 'No lo cursó en este grupo'
     };
     var ESTADO_TAG = {
         aprobado: 'app-status-active', habilito: 'app-status-active', por_habilitar: 'app-status-warn',
-        reprobado: 'app-status-danger', sin_nota: 'app-status-warn', en_curso: 'app-status-muted', por_iniciar: 'app-status-muted'
+        reprobado: 'app-status-danger', sin_nota: 'app-status-warn', en_curso: 'app-status-muted', por_iniciar: 'app-status-muted',
+        no_cursado: 'app-status-muted'
     };
     var SITUACION = {
         listo:     ['app-status-active', 'Listo para graduar'],
+        graduado:  ['app-status-active', 'Graduado'],
         al_dia:    ['app-status-muted', 'Al día'],
         habilitar: ['app-status-warn', 'Por habilitar'],
         reprobado: ['app-status-danger', 'Perdió la habilitación'],
@@ -239,7 +242,7 @@
         return { value: String(g.id), label: g.programa + ' · ' + g.grupo };
     })), tEst.aplicar);
     filtroCombo('cal-e-cb-situacion', [{ value: '', label: 'Todas las situaciones' }].concat(
-        ['habilitar', 'reprobado', 'listo', 'al_dia', 'sin_notas'].map(function (s) { return { value: s, label: SITUACION[s][1] }; })
+        ['habilitar', 'reprobado', 'listo', 'graduado', 'al_dia', 'sin_notas'].map(function (s) { return { value: s, label: SITUACION[s][1] }; })
     ), tEst.aplicar);
     filtroCombo('cal-e-cb-orden', [
         { value: 'prom', label: 'Menor promedio primero' },
@@ -359,11 +362,13 @@
         if (g.sin_nota.length) {
             var mods = g.sin_nota.map(function (i) { return '<strong>' + esc(g.modulos[i].nombre) + '</strong> (terminó el ' + esc(g.modulos[i].fin_txt) + ')'; });
             html += aviso('', ICON.reloj, esc(g.docente) + ' no ha registrado las notas de ' + lista(mods) + '. Mientras no las registre, ese módulo no cuenta en el promedio ni para graduar.',
-                '<a class="cal-btn cal-btn-wa cal-btn-sm" href="' + waLink(g.telefono, textoRecordatorio(g)) + '" target="_blank" rel="noopener">' + ICON.wa + 'Recordarle</a>');
+                g.telefono ? '<a class="cal-btn cal-btn-wa cal-btn-sm" href="' + waLink(g.telefono, textoRecordatorio(g)) + '" target="_blank" rel="noopener">' + ICON.wa + 'Recordarle</a>' : '');
         }
         if (g.terminado) {
-            html += aviso(g.listos === g.activos ? 'is-verde' : '', ICON.birrete,
-                'El grupo terminó el ' + esc(g.fin_txt) + '. <strong>' + g.listos + ' de ' + g.activos + '</strong> estudiantes tienen todos los módulos aprobados. ' +
+            var aprobaron = g.listos + g.graduados;
+            html += aviso(aprobaron === g.activos ? 'is-verde' : '', ICON.birrete,
+                'El grupo terminó el ' + esc(g.fin_txt) + '. <strong>' + aprobaron + ' de ' + g.activos + '</strong> estudiantes tienen todos los módulos aprobados' +
+                (g.graduados ? ' (' + g.graduados + ' ya ' + (g.graduados === 1 ? 'se graduó' : 'se graduaron') + ')' : '') + '. ' +
                 'El grado se hace en Matrículas, donde también se revisan los pagos y el paz y salvo.');
         }
 
@@ -434,7 +439,7 @@
             dato('Promedio', '<span class="cal-tono-' + tono(e.prom) + '">' + fmt(e.prom) + '</span>') +
             dato('Aprobados', e.aprobados + ' <small>de ' + e.total + '</small>') +
             dato('Perdidos', perdidos) +
-            dato('Asistencia', e.asistencia + ' % <small>referencia</small>') + '</div>';
+            dato('Asistencia', e.asistencia == null ? '— <small>sin registros</small>' : e.asistencia + ' % <small>referencia</small>') + '</div>';
 
         var nombresDe = function (estado) {
             return g.modulos.map(function (m, i) { return e.estados[i] === estado ? '<strong>' + esc(m.nombre) + '</strong> (' + fmt(e.notas[i].n) + ')' : null; }).filter(Boolean);
@@ -444,11 +449,17 @@
         }
         if (e.por_habilitar) {
             html += aviso('', ICON.alerta, 'Perdió ' + lista(nombresDe('por_habilitar')) + '. Tiene derecho a una habilitación por módulo; la nota la registra el docente.',
-                '<a class="cal-btn cal-btn-wa cal-btn-sm" href="' + waLink(e.telefono, 'Hola ' + primerNombre(e.nombres) + ', te escribimos de ESAT sobre la habilitación de tus módulos pendientes.') + '" target="_blank" rel="noopener">' + ICON.wa + 'Escribirle</a>');
+                e.telefono ? '<a class="cal-btn cal-btn-wa cal-btn-sm" href="' + waLink(e.telefono, 'Hola ' + primerNombre(e.nombres) + ', te escribimos de ESAT sobre la habilitación de tus módulos pendientes.') + '" target="_blank" rel="noopener">' + ICON.wa + 'Escribirle</a>' : '');
         }
-        if (e.situacion === 'listo') {
+        var noCursados = g.modulos.map(function (m, i) { return e.estados[i] === 'no_cursado' ? '<strong>' + esc(m.nombre) + '</strong>' : null; }).filter(Boolean);
+        if (noCursados.length) {
+            html += aviso('', ICON.reloj, 'Se matriculó cuando el grupo ya había visto ' + lista(noCursados) + '. Para graduarse también necesita ' + (noCursados.length === 1 ? 'ese módulo aprobado' : 'esos módulos aprobados') + '.');
+        }
+        if (e.situacion === 'graduado') {
+            html += aviso('is-verde', ICON.birrete, 'Se graduó con <strong>todos los módulos aprobados</strong>.');
+        } else if (e.situacion === 'listo') {
             html += aviso('is-verde', ICON.birrete, 'Tiene <strong>todos los módulos aprobados</strong>: por notas ya puede graduarse. El grado se hace en Matrículas, donde también se revisan los pagos y el paz y salvo.');
-        } else if (g.terminado && !perdidos) {
+        } else if (g.terminado && !perdidos && !noCursados.length) {
             html += aviso('', ICON.reloj, 'El grupo ya terminó, pero le faltan notas por registrar. Hasta tenerlas todas aprobadas no puede graduarse.');
         }
 
@@ -457,7 +468,7 @@
                 var x = e.notas[i], s = e.estados[i];
                 var der = x
                     ? '<span class="cal-mod-grande cal-tono-' + tono(final(x)) + '">' + fmt(final(x)) + '</span>' +
-                      (x.h != null ? '<span class="cal-mod-detalle">Nota <s>' + fmt(x.n) + '</s> · habilitó</span>' : '') + estadoTag(s)
+                      (x.h != null ? '<span class="cal-mod-detalle">Nota <s>' + fmt(x.n) + '</s> · ' + (s === 'reprobado' ? 'en habilitación' : 'habilitó') + '</span>' : '') + estadoTag(s)
                     : estadoTag(s);
                 return '<li><span class="cal-malla-n">' + (i + 1) + '</span>' +
                     '<div class="cal-min0"><div class="cal-malla-nombre">' + esc(m.nombre) + '</div>' +
@@ -482,7 +493,7 @@
     var certFoco = null;
     var RESULTADO = {
         aprobado: 'Aprobado', habilito: 'Aprobado (H)', por_habilitar: 'No aprobado', reprobado: 'No aprobado',
-        sin_nota: 'Pendiente', en_curso: 'En curso', por_iniciar: 'Por cursar'
+        sin_nota: 'Pendiente', en_curso: 'En curso', por_iniciar: 'Por cursar', no_cursado: 'Pendiente'
     };
     function fechaLarga(iso) { var p = iso.split('-'); return +p[2] + ' de ' + MESES[+p[1] - 1] + ' de ' + p[0]; }
 

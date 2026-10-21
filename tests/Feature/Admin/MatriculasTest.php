@@ -203,6 +203,35 @@ class MatriculasTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors(['motivo']);
     }
 
+    public function test_graduar_exige_todos_los_modulos_aprobados(): void
+    {
+        $mods = $this->programa->modulos()->createMany([
+            ['nombre' => 'Contabilidad general', 'horas' => 800, 'orden' => 1],
+            ['nombre' => 'Práctica empresarial', 'horas' => 800, 'orden' => 2],
+        ]);
+        $m = $this->matriculaConPlan('mensual');
+        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->pagar($m, ['valor' => $this->debe($m), 'metodo_pago' => 'Efectivo'])->assertOk();
+        $nota = fn ($mod, $n, $h = null) => $m->calificaciones()->updateOrCreate(['programa_modulo_id' => $mod->id], [
+            'curso_id' => $this->grupoA->id, 'nota' => $n, 'fecha_nota' => '2026-10-01', 'habilitacion' => $h,
+        ]);
+
+        // Al día con los pagos pero sin notas: no se gradúa
+        $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado' => 'le faltan 2']);
+
+        // Perdió la habilitación del segundo módulo: sigue sin graduarse
+        $nota($mods[0], 4.0);
+        $nota($mods[1], 2.5, 2.8);
+        $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado' => 'Práctica empresarial']);
+
+        // Aprobar en habilitación cuenta como aprobado
+        $nota($mods[1], 2.5, 3.2);
+        $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertOk();
+        $this->assertSame('graduado', $m->fresh()->estado);
+    }
+
     public function test_sin_plan_elegido_no_se_gradua_aunque_no_deba_nada(): void
     {
         $e = $this->estudiante('1070000001');

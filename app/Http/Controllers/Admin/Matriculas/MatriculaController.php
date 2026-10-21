@@ -18,6 +18,7 @@ use App\Models\Finanzas\Pago;
 use App\Models\Finanzas\Recaudo;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
+use App\Services\Academico\CalificacionService;
 use App\Services\Academico\EstudianteService;
 use App\Services\Academico\MatriculaService;
 use App\Services\Finanzas\PagoService;
@@ -39,6 +40,7 @@ class MatriculaController extends Controller
         private MatriculaService $matriculas,
         private PagoService $pagos,
         private EstudianteService $estudiantes,
+        private CalificacionService $calificaciones,
     ) {
     }
 
@@ -48,7 +50,7 @@ class MatriculaController extends Controller
 
         $matriculas = Matricula::where('sede_id', $sedeId)
             ->with([
-                'programa.escuela', 'curso',
+                'programa.escuela', 'programa.modulos', 'curso', 'calificaciones',
                 'pagos' => fn ($q) => $q->orderByRaw('fecha_vencimiento IS NULL')->orderBy('fecha_vencimiento')->orderBy('id'),
                 'recaudos' => fn ($q) => $q->with(['registradoPor', 'anuladoPor', 'cobros'])->latest('id'),
                 'devoluciones' => fn ($q) => $q->with(['registradoPor', 'cobros'])->latest('id'),
@@ -162,7 +164,7 @@ class MatriculaController extends Controller
         $abono = $trasladado > 0 ? ' Se trasladaron $ '.number_format($trasladado, 0, ',', '.').' pagados por adelantado.' : '';
 
         Auditoria::registrar('desactivar', $matricula,
-            "Cambió de programa a {$nombre}: retiró {$matricula->codigo} ({$matricula->programa->nombre}) y lo matriculó en {$grupo->programa->nombre} con {$nueva->codigo}: {$request->input('motivo')}.{$abono}");
+            "Cambió de programa a {$nombre}: retiró {$matricula->codigo} ({$matricula->programa->nombre}) y lo matriculó en {$grupo->programa->nombre} con {$nueva->codigo}: ".rtrim($request->input('motivo'), '.').".{$abono}");
         Auditoria::registrar('crear', $nueva,
             "Matriculó a {$nombre} en {$grupo->programa->nombre}, {$grupo->nombre} ({$grupo->codigo}) por cambio de programa desde {$matricula->codigo}.{$abono}");
 
@@ -242,6 +244,8 @@ class MatriculaController extends Controller
             'fecha'         => $m->fecha_inicio->format('Y-m-d'),
             'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $m->curso),
             'documentos_pendientes' => EstudianteDocumento::pendientesDe($e),
+            // Módulos de la malla sin aprobar (graduar exige que no quede ninguno)
+            'modulos_pendientes'    => $m->estado === 'activo' ? $this->calificaciones->pendientesParaGraduar($m) : [],
             'descuento_pct'    => (float) $m->descuento_pct,
             'descuento_motivo' => $m->descuento_motivo,
             'cobros'        => $m->pagos->map(fn (Pago $p) => [

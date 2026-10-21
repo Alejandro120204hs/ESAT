@@ -50,7 +50,7 @@
         activo:   { label: 'Activa',   cls: 'app-status-active', accion: 'Reintegrar', desc: 'Vuelve a clases en un grupo con cupo y se generan las cuotas que le faltan.' },
         aplazado: { label: 'Aplazada', cls: 'app-status-warn',   accion: 'Aplazar',    desc: 'Suspende sus estudios por un tiempo: libera el cupo y se anulan las cuotas que vencen después. Si no ha pagado el derecho de matrícula, queda en espera hasta que se reintegre.' },
         retirado: { label: 'Retirada', cls: 'app-status-muted',  accion: 'Retirar',    desc: 'Deja el programa de forma definitiva: libera el cupo y se anulan las cuotas futuras (y el derecho de matrícula si aún no vencía). Lo atrasado se sigue debiendo.' },
-        graduado: { label: 'Graduada', cls: 'mat-status-graduado', accion: 'Graduar',  desc: 'Terminó el programa. Solo cuando su grupo finalizó, pagó todas las cuotas y está a paz y salvo.' },
+        graduado: { label: 'Graduada', cls: 'mat-status-graduado', accion: 'Graduar',  desc: 'Terminó el programa. Solo cuando su grupo finalizó, aprobó todos los módulos, pagó todas las cuotas y está a paz y salvo.' },
         anulado:  { label: 'Anulada',  cls: 'app-status-danger', accion: 'Anular',     desc: 'Se hizo por error (estudiante o grupo equivocado). Solo si no tiene pagos: libera el cupo, no se cobra nada y queda en Finalizadas para consulta.' }
     };
     var CAMBIO_PROGRAMA = { accion: 'Cambiar de programa', desc: 'Va a estudiar otro programa: esta matrícula queda retirada y se crea una nueva en el grupo que elijas. No se vuelve a cobrar el derecho de matrícula si ya lo pagó, y lo pagado por adelantado pasa como abono.' };
@@ -1028,7 +1028,10 @@
         }
         if (estado === 'graduado') {
             var g = grupoDe(m.grupo_id), termino = g.estado === 'finalizado' || g.fin <= HOY;
+            var faltan = m.modulos_pendientes || [];
             extra.innerHTML = (!termino ? '<div class="mat-callout mat-callout-aviso"><strong>Su grupo termina el ' + fmtFecha(g.fin) + '</strong><p>Solo se puede graduar cuando el grupo finalice.</p></div>' : '') +
+                (faltan.length ? '<div class="mat-callout mat-callout-alerta"><strong>' + (faltan.length === 1 ? 'Le falta 1 módulo por aprobar' : 'Le faltan ' + faltan.length + ' módulos por aprobar') + '</strong><p>' +
+                    esc(faltan.join(', ')) + '. Las notas las registra el docente; consúltalas en Calificaciones.</p></div>' : '') +
                 (m.por_pagar > 0 ? '<div class="mat-callout mat-callout-alerta"><strong>No está a paz y salvo</strong><p>Todavía debe ' + fmtPesos(m.por_pagar) + '. Registra sus pagos antes de graduarlo.</p></div>'
                     : !m.plan_pago ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado el programa</strong><p>Nunca eligió su plan de pago, así que no tiene cuotas pagadas. No se puede graduar.</p></div>'
                     : m.cuotas_pagadas < m.cuotas_total ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado todo el programa</strong><p>Lleva ' + m.cuotas_pagadas + ' de ' + m.cuotas_total + ' cuotas pagadas.</p></div>' : '');

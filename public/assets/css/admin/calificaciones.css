@@ -356,7 +356,7 @@
 .cal-c-por_habilitar { background: #FDEFC4; color: #8A4A06; }
 .cal-c-reprobado     { background: #D93636; color: #fff; }
 .cal-c-sin_nota      { background: repeating-linear-gradient(135deg, rgba(217,123,46,0.55) 0 2px, rgba(217,123,46,0.08) 2px 5px); min-width: 30px; }
-.cal-c-en_curso, .cal-c-por_iniciar { background: none; color: #B8C0CC; min-width: 0; }
+.cal-c-en_curso, .cal-c-por_iniciar, .cal-c-no_cursado { background: none; color: #B8C0CC; min-width: 0; }
 .cal-celda sup { font-size: 0.56rem; font-weight: 800; }
 
 /* ── Notas del estudiante: un renglón por módulo ────── */
