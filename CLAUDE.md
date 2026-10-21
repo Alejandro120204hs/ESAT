@@ -13,14 +13,21 @@ dos partes:
 
 Stack: Laravel 12 + Breeze (Blade), MySQL (`esat`, XAMPP, `root` sin clave),
 `php artisan serve --port=8765` para probar local. Todo en **español**,
-nunca inglés, en toda la UI.
+nunca inglés, en toda la UI. (`.env.example` todavía trae sqlite y `APP_LOCALE=en`;
+el `.env` local usa MySQL `esat`.) `database/esat.sql` es un volcado de la BD local con
+datos personales, hashes y sesiones: **no subirlo a Git**.
+
+Los problemas abiertos de la revisión completa (21-10-2026) están en `HALLAZGOS.md`,
+con IDs (C1, A3, M2…) para referenciarlos en commits y PR.
 
 ## Roles y acceso
 
 Enum `App\Enums\RolUsuario`: `superadmin | admin | estudiante | docente | acudiente`.
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
-Redirección post-login por rol vía `User::panelUrl()`.
+Redirección post-login por rol vía `User::panelUrl()`. Solo superadmin y admin
+tienen panel: estudiante, docente y acudiente caen por ahora en el `/dashboard` de
+Breeze ("You're logged in!") y su `/profile` es el de Breeze.
 
 **Convención de contraseña**: la clave inicial de cualquier cuenta creada
 (admin, estudiante, etc.) es su número de documento/cédula — no se pide
@@ -33,12 +40,13 @@ contraseña en los formularios de alta, se genera sola.
   (estudiantes en modo consulta, auditoría). **No** gestiona escuelas,
   programas, asignación de programas a sede, ni periodos académicos — eso
   es trabajo del **Admin** de cada sede.
-- Ese trabajo (Escuelas/Programas/Asignaciones/Periodos) ya está
-  **construido y probado**, pero vive comentado dentro de
-  `resources/views/superadmin/sedes-programas.blade.php` (bloque grande
-  `{{-- RESERVADO PARA EL PANEL ADMIN --}}`). Cuando se construya el rol
-  Admin, mover ese bloque a su propia vista/CSS/JS y descomentar, no
-  reconstruir desde cero.
+- Escuelas y Programas del Admin se **reconstruyeron** en
+  `admin/programas/index.blade.php` (+ `programas.css/js`, `escuelas.css/js`), con
+  backend real. La asignación a sede es implícita al crear el programa
+  (`ProgramaController`). Asignaciones y Periodos académicos no existen en el Admin.
+  El bloque `{{-- RESERVADO PARA EL PANEL ADMIN --}}` de
+  `superadmin/sedes-programas.blade.php` (y su JS/CSS asociado) quedó como código
+  muerto: no moverlo ni descomentarlo.
 
 ## Flujo de trabajo esperado
 
@@ -78,9 +86,11 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   `app/Http/Requests/{Rol}/{Panel}/`, mensajes en español.
 - **Modelos por dominio** (no por rol, porque varios roles comparten las
   mismas tablas): `app/Models/Academico/` (Escuela, Programa,
-  ProgramaModulo, Curso, Periodo, Asistencia, actividades/evaluaciones),
-  `Finanzas/` (Matricula, Pago), `Institucional/` (Sede, Configuracion),
-  `Sistema/` (Auditoria). `User` se queda en `app/Models/`.
+  ProgramaModulo, Curso, CursoSesion, DocentePerfil, EstudianteDocumento,
+  Asistencia, Calificacion, PeriodoAcademico y actividades/evaluaciones —estos dos
+  últimos sin uso todavía—), `Finanzas/` (Matricula, Pago, Recaudo, Devolucion),
+  `Institucional/` (Sede, Configuracion), `Sistema/` (Auditoria). `User` se queda
+  en `app/Models/`.
 - Catálogo **global** de escuelas y programas; la oferta de cada sede va en
   `programa_sede`. El admin solo ve/modifica lo ofertado en su sede.
 - La **cuota del sistema** es global (`configuraciones.cuota_sistema_mensual`),
@@ -97,15 +107,18 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
 - Grupos = tabla `cursos` (`nombre` = "Grupo A"). Modalidad y cupo NO se
   guardan en el grupo: son siempre los del programa (se editan en Programas).
   El programa no tiene fecha de inicio: la tiene cada grupo, y su `fecha_fin`
-  no se escribe, es `Curso::finPara()` = inicio + duración del programa (si
-  cambia la duración del programa se recalculan sus grupos). Editar un
+  no se digita: se guarda calculada con `Curso::finPara()` = inicio + duración del
+  programa, al guardar el grupo y al cambiar la duración del programa (se recalculan
+  sus grupos). Asistencia y Calificaciones la vuelven a calcular con `finPara()`. Editar un
   programa no puede invalidar sus grupos vigentes (cupo, jornadas, horas).
   Docente vía `curso_docente`
   (uno por grupo); horario semanal en `curso_sesiones`. Las reglas de horario
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos). El resto del panel Admin sigue siendo maqueta.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos).
+  Del panel Admin solo siguen siendo maqueta el Inicio (`admin/dashboard.blade.php`, ruta closure) y las
+  pestañas Documentos de Programas y Docentes.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
   **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
@@ -115,7 +128,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
   motivo) y pagos. **Sin todos los documentos requeridos entregados no se matricula**
   (`EstudianteDocumento::pendientesDe`, en frontend y en `MatriculaRequest`). En la ficha del estudiante la matrícula es solo consulta.
-  `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**.
+  `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**. Mientras ese panel no
+  exista, nada en la app elige el plan ni genera las primeras cuotas (`generarCuotas` solo se llama al
+  reintegrar), así que una matrícula nueva no puede graduarse; los datos con plan se insertaron en la BD.
 - **Acudientes** (`Admin/Acudientes/AcudienteController` + `AcudienteService`): cuenta rol
   acudiente (**correo obligatorio** = usuario, clave = documento, ocupación en `users.profesion`),
   residencia con el combobox de Colombia, estudiantes a cargo en `acudiente_estudiante`.
@@ -203,7 +218,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   `AnularPagoRequest` + `PagoService`): una sola regla de cobro y el historial queda en la matrícula. Con
   transferencia/Nequi/Daviplata/Tarjeta la referencia es obligatoria. `anulable` del recibo sigue `AnularPagoRequest`.
   Pruebas en `tests/Feature/Admin/PagosTest.php`. Contabilidad (pendiente) = ingresos vs. egresos del mes.
-- **Exportar a Excel**: Matrículas, Docentes, Estudiantes y Acudientes tienen un botón "Exportar" que
+- **Exportar a Excel**: Matrículas, Docentes, Estudiantes, Acudientes, Asistencia, Calificaciones y Pagos
+  tienen un botón "Exportar" que
   descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
   navegador (`exportar()` + `celdaCsv()` en el JS de cada página; neutraliza celdas que empiezan con
   `= + - @` para que Excel no las tome como fórmulas). Al agregarlo a otra pantalla, copiar ese patrón.
@@ -212,9 +228,12 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   vuelve con una matrícula nueva; la vieja queda como historial). `EstudianteService::trayectoria()`
   las lista (ficha de Estudiantes › Matrícula › "Trayectoria en ESAT"); en Matrículas la ficha muestra
   "Otras matrículas de X". Matrículas tiene 3 pestañas: vigentes (activas/aplazadas), Por matricular
-  (nunca matriculados) y Finalizadas (graduadas/retiradas, solo consulta).
+  (sin matrícula vigente: nunca matriculados, o retirados/graduados que vuelven) y Finalizadas
+  (graduadas/retiradas, solo consulta).
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
-  guarda `users.ultimo_acceso`.
+  guarda `users.ultimo_acceso`. Hoy `activo` y el derecho vencido **solo se revisan al iniciar
+  sesión**: las sesiones abiertas y la cookie "Recordarme" no se cortan (HALLAZGOS C5).
+  `pagos:vencer` está programado en `routes/console.php`, pero nada ejecuta el scheduler.
 - `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
   muestran de un estudiante (los usan Estudiantes y Acudientes; no duplicar en controladores).
 - **Cupos**: solo las matrículas activas ocupan cupo → usar `Curso::estudiantesActivos()`
@@ -238,7 +257,13 @@ registra `FIELD()` para SQLite. Las reglas de horarios (jornada, tope, cruces,
 y lo que las protege desde Grupos/Docentes/Programas) están en
 `tests/Feature/Admin/HorariosTest.php`: al cambiar una regla, correrlas; al
 agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
-(no hay columna `name`).
+(no hay columna `name`). Las demás reglas del Admin están en
+`tests/Feature/Admin/{Matriculas,Pagos,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
+(datos de apoyo en `DatosAcademicos.php`). El Superadmin no tiene pruebas.
+
+Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
+sin él fallan 139 de 140. Activarlo en el `php.ini` o correr
+`php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Bug recurrente a tener en cuenta
 
@@ -256,17 +281,29 @@ reinicia `list.style.maxHeight`, la lista volvía al inicio y no dejaba bajar.
 El listener debe ser `alScroll(e)`, que ignora `e.target` dentro del panel.
 Al copiar el combobox a otra pantalla, copiar también `alScroll`.
 
+Combobox dentro de un drawer/modal con su propio Escape: el Escape del drawer
+debe ignorar la tecla mientras haya un `.app-combobox.is-open` (como en
+`horarios.js`), o cierra la acción en vez de solo la lista.
+
+**Escapar todo lo que venga de la BD antes de pintarlo con `innerHTML`** (`esc()`
+de cada archivo), incluidos teléfonos y valores "que siempre son números":
+`fmtTel()` devuelve el texto tal cual si no tiene 10 dígitos, y el teléfono se
+puede editar desde `/profile` (HALLAZGOS C1).
+
 ## Combobox propio (departamento/ciudad de Colombia)
 
 El `<select>` nativo no se puede estilizar ni controlar hacia dónde abre.
 Se construyó un combobox propio (buscador + lista, `position: fixed`,
-siempre abre hacia abajo, calcula el espacio disponible en pantalla para
+abre hacia abajo, calcula el espacio disponible en pantalla para
 no salirse del viewport) usando un dataset real de departamentos/ciudades
 de Colombia vendido en `public/assets/data/co-departamentos-ciudades.json`
-(32 departamentos, cientos de municipios reales). Ya implementado en
-`sedes-programas.js` (Sedes) y `administradores.js` (lugar de nacimiento).
-Si se necesita en otra pantalla, copiar el patrón (`initCombobox` +
-`poblarCiudades*`), no reinventarlo.
+(32 departamentos, cientos de municipios reales). Las copias del Admin abren
+hacia arriba solo si abajo no cabe y arriba hay más espacio (`haciaArriba`).
+Con departamento/ciudad está en `admin/estudiantes.js`, `admin/acudientes.js`,
+`admin/docentes.js` y en los dos del Superadmin (`sedes-programas.js`,
+`administradores.js`). **Copiar desde uno del Admin**: los del Superadmin todavía
+no tienen `alScroll` (HALLAZGOS M3). Copiar el patrón (`initCombobox` +
+`poblarCiudades*` + `alScroll`), no reinventarlo.
 
 ## Patrón de fila clicable
 
@@ -276,21 +313,28 @@ el ícono. Cuidado: si una fila tiene además un control propio (como el
 interruptor activo/inactivo en Administradores), ese control debe llamar
 `e.stopPropagation()` para no disparar también el click de la fila.
 
-## Estado actual del panel Superadmin (todas construidas, solo frontend)
+## Estado actual del panel Superadmin
+
+Sedes y Administradores tienen backend real (`SedeController`,
+`AdministradorController`, `fetch` con CSRF), todavía sin Form Requests ni
+auditoría (HALLAZGOS M9). Inicio, Estudiantes, Auditoría y Configuración siguen
+siendo maqueta con datos fijos en el Blade (rutas closure en `routes/web.php`),
+aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarlas.
+
 
 - **Inicio** (`dashboard.blade.php`): recaudo del mes + gráfica con tooltip
   al pasar el cursor, estado de cartera, alertas paginadas (4 por página),
   actividad reciente, franja de sedes/escuelas/programas/administradores.
-- **Sedes** (`sedes-programas.blade.php`, ruta `/superadmin/sedes`): CRUD
-  de sedes (nombre, departamento, ciudad, dirección) con buscador +
+- **Sedes** (`sedes-programas.blade.php`, ruta `/superadmin/sedes`): crear y
+  editar sedes, sin eliminar ni desactivar (nombre, departamento, ciudad, dirección) con buscador +
   paginación + modal crear/editar. Las 4 sedes reales: Bogotá, Sasaima,
   Guaduas, La Dorada.
 - **Administradores** (`administradores.blade.php`): tabla + asistente de
   4 pasos (Datos personales → Identificación → Contacto → Sede y
   confirmación), con edad calculada en vivo desde la fecha de nacimiento
   (nunca guardada como número fijo), validación por paso, resumen final.
-  3 administradores de ejemplo — La Dorada queda sin admin a propósito
-  (coincide con la alerta del inicio).
+  Los administradores salen de la BD. La alerta "La Dorada sin admin" del
+  Inicio sigue siendo fija.
 - **Estudiantes** (`estudiantes.blade.php`): **solo consulta**, sin
   crear/editar. Resumen (total/al día/pendiente/vencido) + tabla con
   filtros (sede/programa/estado de pago) + detalle de historial de pagos
@@ -299,7 +343,11 @@ interruptor activo/inactivo en Administradores), ese control debe llamar
   acciones de administradores (crear/editar/eliminar/activar/desactivar)
   con filtros (administrador/tipo/periodo) + detalle por evento. 24
   eventos de ejemplo.
-- **Configuración**: todavía no construida ("Pronto" en el sidebar).
+- **Configuración** (`configuracion.blade.php`): maqueta de frontend con 3
+  pestañas (Institución, Seguridad, Accesos bloqueados) y un toast al guardar.
+  Ojo: trae datos de contacto ficticios (marcados en el comentario) aunque los
+  reales existen, y no tiene el campo de **cuota del sistema**, que Programas del
+  Admin dice que se configura aquí (HALLAZGOS B16).
 - Layout compartido (`superadmin/layout.blade.php` +
   `superadmin/partials/{sidebar,topbar}.blade.php`): sidebar con el logo
   real de ESAT (ícono + wordmark, `logo-negativo.png`) fijo (no se mueve
@@ -309,9 +357,14 @@ interruptor activo/inactivo en Administradores), ese control debe llamar
 
 ## Pendiente
 
-- Roles Admin, Estudiante, Docente, Acudiente: sin construir. Admin
-  reutiliza el bloque comentado en Sedes (ver arriba).
-- Configuración (Superadmin): sin construir.
-- Backend real para todo lo anterior: no hay controladores/validación real
-  para ninguna de las pantallas del panel Superadmin todavía — todo es
-  maqueta funcional en frontend con datos de ejemplo.
+- Paneles Estudiante, Docente y Acudiente: sin construir.
+  - Estudiante: elegir plan de pago (genera las cuotas). Aplicar ahí el bloqueo
+    por derecho vencido también a las sesiones abiertas.
+  - Docente: tomar asistencia y poner notas. Validar el rango 1.0–5.0 de las
+    notas, porque hoy no se valida en ningún lado.
+- Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
+  (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
+  Agregar Form Requests y auditoría a Sedes y Administradores.
+- Admin: Inicio sigue siendo maqueta; Contabilidad, Comunicados, Foro y Reportes
+  son enlaces `#`.
+- Errores y riesgos abiertos, por prioridad: ver `HALLAZGOS.md`.
