@@ -184,6 +184,12 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (`AsistenciaService::porcentaje`, la misma regla en las fichas de Estudiantes/Acudientes/Matrículas). De cada
   estudiante cuentan las clases desde su matrícula hasta que se aplazó/retiró. `asistencias.motivo` (excusa) y
   `registrado_por` (docente). Pruebas en `tests/Feature/Admin/AsistenciaTest.php`.
+- **Calificaciones** (`admin/calificaciones/index.blade.php` + `calificaciones.css/js`): **maqueta**
+  (solo frontend, `Route::view`, datos de ejemplo en el `@php` de la vista). Nota **por módulo** de la malla
+  (`programa_modulos`), escala 1.0–5.0, aprueba 3.0; la pone el **docente**, el Admin **solo consulta** (no
+  corrige). Una sola **habilitación** por módulo perdido. Las fechas de cada módulo se **calculan**: las clases
+  del grupo (horario, inicio → fin) se reparten en orden según las horas de cada módulo. Graduar exigirá todos
+  los módulos aprobados. Certificado de notas imprimible dentro de la misma página.
 - **Exportar a Excel**: Matrículas, Docentes, Estudiantes y Acudientes tienen un botón "Exportar" que
   descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
   navegador (`exportar()` + `celdaCsv()` en el JS de cada página; neutraliza celdas que empiezan con

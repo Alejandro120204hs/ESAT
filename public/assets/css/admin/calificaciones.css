@@ -1,0 +1,459 @@
+/* ESAT — Admin: Calificaciones (solo consulta) */
+
+/* ── Layout general ────────────────────────────────── */
+.cal-wrap { display: flex; flex-direction: column; gap: 22px; }
+
+.cal-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+}
+.cal-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); margin: 0; }
+.cal-sub   { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin: 3px 0 0; line-height: 1.5; max-width: 72ch; }
+
+/* ── Botones ────────────────────────────────────────── */
+.cal-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: none;
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; transition: background 0.18s, border-color 0.18s, color 0.18s;
+    white-space: nowrap; text-decoration: none;
+}
+.cal-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cal-btn-primary  { background: var(--orange); color: var(--white); }
+.cal-btn-primary:hover { background: var(--orange-2); }
+.cal-btn-ghost    { background: transparent; color: var(--navy-3); border: 1.5px solid var(--line); }
+.cal-btn-ghost:hover { background: var(--bg); }
+.cal-btn-sm       { padding: 7px 14px; font-size: 0.82rem; gap: 6px; }
+.cal-btn-sm svg   { width: 14px; height: 14px; }
+.cal-btn-wa       { background: #E8F6EE; color: #127A3E; border: 1.5px solid transparent; }
+.cal-btn-wa:hover { background: #127A3E; color: #fff; }
+.cal-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.cal-btn:disabled { opacity: 0.45; cursor: default; }
+.cal-min0 { min-width: 0; }
+
+/* ── KPI chips (mismo formato que Docentes) ─────────── */
+.cal-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.cal-kpi-chip {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+}
+.cal-kpi-icon {
+    width: 42px; height: 42px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cal-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cal-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.cal-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.cal-kpi-blue   .cal-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
+.cal-kpi-blue   .cal-kpi-val  { color: #1D4ED8; }
+.cal-kpi-green  .cal-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
+.cal-kpi-green  .cal-kpi-val  { color: #065F46; }
+.cal-kpi-orange .cal-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
+.cal-kpi-orange .cal-kpi-val  { color: var(--orange-2); }
+.cal-kpi-red    .cal-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
+.cal-kpi-red    .cal-kpi-val  { color: var(--red); }
+
+/* ── Pestañas de vista (mismo control que Asistencia) ── */
+.cal-vistas { display: inline-flex; background: #E3E9F1; border-radius: 10px; padding: 3px; gap: 2px; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.cal-vistas::-webkit-scrollbar { display: none; }
+.cal-vista-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: none; border-radius: 8px; background: none;
+    font-family: "Archivo", system-ui; font-size: 0.84rem; font-weight: 700; color: var(--muted); cursor: pointer; white-space: nowrap;
+    transition: color 0.15s;
+}
+.cal-vista-btn:hover { color: var(--navy-3); }
+.cal-vista-btn.is-active { background: var(--white); color: var(--navy-3); box-shadow: 0 1px 3px rgba(10,27,51,.14); }
+.cal-vista-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.cal-vista-num {
+    min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08);
+    font-size: 0.74rem; font-variant-numeric: tabular-nums; text-align: center;
+}
+.cal-vista-num.is-aviso { background: rgba(217,123,46,0.16); color: #9A4A12; }
+
+.cal-vista { display: flex; flex-direction: column; gap: 14px; }
+.cal-vista[hidden] { display: none; }
+
+/* ── Filtros ────────────────────────────────────────── */
+.cal-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cal-filters .app-combobox { min-width: 190px; }
+.cal-search-box { position: relative; flex: 1; min-width: 220px; }
+.cal-search-box svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; fill: none; stroke: var(--muted);
+    stroke-width: 2; stroke-linecap: round; pointer-events: none;
+}
+.cal-search-box input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-md);
+    border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text);
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cal-search-box input::placeholder { color: #7B8494; }
+.cal-search-box input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15); }
+.cal-count-badge {
+    font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    background: var(--bg); border: 1.5px solid var(--line);
+    padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+}
+
+/* ── Tabla ──────────────────────────────────────────── */
+.cal-table-wrap {
+    background: var(--white); border: 1.5px solid var(--line);
+    border-radius: var(--radius-lg); overflow-x: auto;
+}
+.cal-table { width: 100%; border-collapse: collapse; }
+.cal-table thead th {
+    padding: 11px 14px; text-align: left;
+    font-family: "Archivo", system-ui; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg);
+    white-space: nowrap;
+}
+.cal-row { border-bottom: 1px solid var(--line); cursor: pointer; transition: background 0.14s; }
+.cal-row:last-child { border-bottom: none; }
+.cal-row:hover { background: rgba(217,123,46,0.03); }
+.cal-row.is-hidden { display: none; }
+.cal-row td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); }
+
+.cal-person-cell { display: flex; align-items: center; gap: 12px; min-width: 230px; }
+.cal-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.82rem;
+    color: var(--white); background: #64748B;
+}
+.cal-person-name { font-weight: 700; font-size: 0.87rem; color: var(--navy-3); }
+.cal-person-sub  { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+.cal-muted-cell  { color: var(--muted); font-size: 0.82rem; white-space: nowrap; }
+.cal-prog        { font-weight: 600; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.cal-num { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.cal-de  { color: var(--muted); font-size: 0.8rem; margin-left: 3px; }
+
+/* Nota: número con el color de su rango (4,0+ bien · 3,0–3,9 aprobado justo · menos de 3,0 perdido) */
+.cal-nota { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.cal-tono-ok   { color: #2D7A3A; }
+.cal-tono-warn { color: #8A5A06; }
+.cal-tono-bad  { color: var(--red); }
+.cal-tono-none { color: var(--muted); }
+
+/* Módulos aprobados: barra + "x de y" */
+.cal-meter-cell { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+.cal-meter { position: relative; width: 74px; height: 6px; border-radius: 999px; background: #E6EBF2; overflow: hidden; flex-shrink: 0; }
+.cal-meter > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: #2D7A3A; }
+
+/* Avance de módulos del grupo: un segmento por módulo */
+.cal-avance { display: flex; gap: 3px; width: 168px; margin-bottom: 5px; }
+.cal-avance-seg { flex: 1; height: 7px; border-radius: 2px; background: #E6EBF2; }
+.cal-avance-seg.is-terminado { background: #2D7A3A; }
+.cal-avance-seg.is-en_curso  { background: repeating-linear-gradient(135deg, #2D7A3A 0 3px, #A9D3A3 3px 6px); }
+.cal-avance-seg.is-sin       { background: repeating-linear-gradient(135deg, var(--orange) 0 2px, rgba(217,123,46,0.18) 2px 5px); }
+
+/* Etiquetas */
+.cal-tags { display: flex; flex-wrap: wrap; gap: 5px; max-width: 320px; }
+.cal-sin-tag, .cal-hab-tag, .cal-rep-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+}
+.cal-sin-tag { background: #FDEBDB; color: #9A4A12; }
+.cal-sin-tag::before {
+    content: ""; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+    background: repeating-linear-gradient(135deg, var(--orange) 0 2px, transparent 2px 4px);
+}
+.cal-hab-tag { background: #FEF3C7; color: #92400E; }
+.cal-rep-tag { background: #FEE2E2; color: #991B1B; }
+
+/* Acciones */
+.cal-actions-cell { text-align: right; white-space: nowrap; }
+.cal-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); transition: border-color 0.15s, color 0.15s;
+}
+.cal-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.cal-icon-btn:hover, .cal-icon-btn:focus-visible { border-color: var(--orange); color: var(--orange); outline: none; }
+
+/* Vacío */
+.cal-empty { text-align: center; padding: 48px 24px; color: var(--muted); }
+.cal-empty[hidden] { display: none; }
+.cal-empty svg { width: 36px; height: 36px; fill: none; stroke: var(--muted); stroke-width: 1.5; margin-bottom: 10px; }
+.cal-empty p   { font-size: 0.88rem; margin: 0; }
+
+/* ── Colores por escuela ────────────────────────────── */
+.cal-avatar.cal-esc-sal { background: #DC2626; }
+.cal-avatar.cal-esc-tur { background: #EA580C; }
+.cal-avatar.cal-esc-adm { background: #2563EB; }
+.cal-avatar.cal-esc-edu { background: #059669; }
+.cal-avatar.cal-esc-dep { background: #D97706; }
+.cal-avatar.cal-esc-cie { background: #4F46E5; }
+.cal-avatar.cal-esc-bel { background: #DB2777; }
+
+/* ── Paginación ─────────────────────────────────────── */
+.cal-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0 4px; flex-wrap: wrap; }
+.cal-pagination[hidden] { display: none; }
+.cal-pg-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: var(--radius-md); border: 1.5px solid var(--line);
+    background: var(--white); font-family: "Archivo", system-ui;
+    font-weight: 700; font-size: 0.8rem; color: var(--navy-3);
+    cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.cal-pg-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.cal-pg-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+.cal-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.cal-pg-num {
+    width: 34px; height: 34px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.82rem;
+    color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cal-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.cal-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.cal-pg-ellipsis { width: 28px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+/* ── Cajón lateral ──────────────────────────────────── */
+.cal-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.cal-drawer.is-open { pointer-events: auto; }
+.cal-drawer-overlay {
+    position: absolute; inset: 0;
+    background: rgba(10,27,51,0.35); opacity: 0;
+    transition: opacity 0.25s var(--ease-out);
+}
+.cal-drawer.is-open .cal-drawer-overlay { opacity: 1; }
+.cal-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 600px; max-width: 100%;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out);
+    box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+/* Las notas del grupo necesitan espacio para los módulos */
+.cal-drawer.is-ancho .cal-drawer-panel { width: 940px; }
+.cal-drawer.is-open .cal-drawer-panel { transform: translateX(0); }
+
+.cal-drawer-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); gap: 12px; flex-shrink: 0;
+}
+.cal-drawer-head-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.cal-drawer-avatar {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 1.1rem; color: var(--white); background: #64748B;
+}
+.cal-drawer-head-info { min-width: 0; }
+.cal-drawer-title { font-family: "Archivo", system-ui; font-size: 1.1rem; font-weight: 900; color: var(--navy-3); margin: 0 0 3px; }
+.cal-drawer-sub   { font-size: 0.8rem; color: var(--muted); margin-bottom: 7px; }
+.cal-drawer-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.cal-close-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+}
+.cal-close-btn[hidden] { display: none; }
+.cal-close-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cal-close-btn:hover, .cal-close-btn:focus-visible { border-color: var(--orange); color: var(--orange); outline: none; }
+
+.cal-drawer-body { flex: 1; overflow-y: auto; padding: 22px 24px 28px; display: flex; flex-direction: column; gap: 22px; }
+
+/* Datos en línea del encabezado del cajón */
+.cal-datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
+.cal-dato { padding: 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cal-dato + .cal-dato { border-left: 1px solid var(--line); }
+.cal-dato-lbl { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-dato-val { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.cal-dato-val small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.cal-dato-txt { font-size: 0.84rem; font-weight: 600; color: var(--navy-3); white-space: pre-line; }
+
+.cal-seccion-titulo { font-size: 0.71rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 10px; }
+.cal-seccion-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.cal-seccion-fila .cal-seccion-titulo { margin-bottom: 0; }
+
+/* Avisos (notas sin poner / habilitación / grado) */
+.cal-aviso {
+    display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    padding: 12px 14px; border-radius: 12px; background: #FDF1E6; color: #7A3A0C;
+}
+.cal-aviso.is-rojo  { background: #FEF2F2; color: #8F1D1D; }
+.cal-aviso.is-verde { background: #EAF5E8; color: #22561D; }
+.cal-aviso-txt { display: flex; gap: 10px; align-items: flex-start; min-width: 0; flex: 1 1 260px; }
+.cal-aviso svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cal-aviso p { margin: 0; font-size: 0.84rem; line-height: 1.5; }
+
+/* Leyenda */
+.cal-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.76rem; color: var(--muted); font-weight: 600; margin-top: 12px; }
+.cal-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+
+/* ── Malla del grupo: módulos en orden con sus fechas calculadas ── */
+.cal-malla { list-style: none; margin: 0; padding: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
+.cal-malla li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 11px 14px; }
+.cal-malla li + li { border-top: 1px solid var(--line); }
+.cal-malla li.is-en_curso { background: #F6FAF5; }
+.cal-malla-n {
+    width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-size: 0.74rem; font-weight: 800; background: #E6EBF2; color: var(--muted);
+}
+.cal-malla li.is-terminado .cal-malla-n { background: #2D7A3A; color: #fff; }
+.cal-malla li.is-en_curso .cal-malla-n  { background: #fff; color: #2D7A3A; box-shadow: inset 0 0 0 2px #2D7A3A; }
+.cal-malla li.is-sin .cal-malla-n       { background: var(--orange); color: #fff; }
+.cal-malla-nombre { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); }
+.cal-malla-sub { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+.cal-malla-der { text-align: right; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+
+/* ── Notas del grupo (estudiantes × módulos) ────────── */
+.cal-matriz-wrap { border: 1.5px solid var(--line); border-radius: var(--radius-md); overflow: auto; max-height: calc(100vh - 300px); min-height: 200px; }
+.cal-matriz { border-collapse: separate; border-spacing: 0; font-size: 0.8rem; min-width: 100%; }
+.cal-matriz th, .cal-matriz td { padding: 0; border-bottom: 1px solid var(--line); background: var(--white); }
+.cal-matriz thead th {
+    position: sticky; top: 0; z-index: 2; background: var(--bg);
+    font-family: "Archivo", system-ui; font-weight: 700; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); text-align: center;
+}
+.cal-matriz .cal-mz-nombre {
+    position: sticky; left: 0; z-index: 1; text-align: left; min-width: 210px; max-width: 210px;
+    padding: 8px 12px; border-right: 1px solid var(--line);
+}
+.cal-matriz thead .cal-mz-nombre { z-index: 3; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; vertical-align: bottom; }
+.cal-matriz .cal-mz-mod { min-width: 62px; padding: 7px 4px; font-size: 0.74rem; line-height: 1.2; }
+.cal-mz-mod b { display: block; font-size: 0.8rem; color: var(--navy-3); }
+.cal-mz-mod i { display: block; font-style: normal; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
+.cal-mz-mod.is-sin { background: #FDEBDB; color: #9A4A12; }
+.cal-mz-mod.is-sin b { color: #9A4A12; }
+.cal-mz-mod.is-en_curso b { color: #2D7A3A; }
+.cal-matriz .cal-mz-prom {
+    position: sticky; right: 0; z-index: 1; min-width: 70px; padding: 0 14px; text-align: right;
+    border-left: 1px solid var(--line); font-family: "Archivo", system-ui; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.cal-matriz thead .cal-mz-prom { z-index: 3; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.cal-matriz td.cal-mz-celda { text-align: center; padding: 6px 4px; }
+.cal-matriz tfoot th, .cal-matriz tfoot td { background: var(--bg); border-bottom: none; border-top: 1.5px solid var(--line); position: sticky; bottom: 0; }
+.cal-matriz tfoot .cal-mz-nombre { z-index: 3; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.cal-matriz tfoot .cal-mz-prom { z-index: 3; }
+.cal-matriz tbody tr:last-child th, .cal-matriz tbody tr:last-child td { border-bottom: none; }
+.cal-matriz tbody tr:hover th, .cal-matriz tbody tr:hover td { background: #FBF7F2; }
+
+.cal-mz-persona {
+    display: block; width: 100%; border: none; background: none; padding: 0; cursor: pointer; text-align: left;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700; color: var(--navy-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-mz-persona:hover { color: var(--orange-2); text-decoration: underline; text-underline-offset: 3px; }
+.cal-mz-persona:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+/* Celda de nota: chip con el color del resultado */
+.cal-celda {
+    display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+    min-width: 38px; height: 24px; padding: 0 6px; border-radius: 6px;
+    font-family: "Archivo", system-ui; font-size: 0.76rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.cal-c-aprobado      { background: #E3F2E1; color: #2D6A27; }
+.cal-c-habilito      { background: #E3F2E1; color: #2D6A27; box-shadow: inset 0 0 0 1.5px #7DB875; }
+.cal-c-por_habilitar { background: #FDEFC4; color: #8A4A06; }
+.cal-c-reprobado     { background: #D93636; color: #fff; }
+.cal-c-sin_nota      { background: repeating-linear-gradient(135deg, rgba(217,123,46,0.55) 0 2px, rgba(217,123,46,0.08) 2px 5px); min-width: 30px; }
+.cal-c-en_curso, .cal-c-por_iniciar { background: none; color: #B8C0CC; min-width: 0; }
+.cal-celda sup { font-size: 0.56rem; font-weight: 800; }
+
+/* ── Notas del estudiante: un renglón por módulo ────── */
+.cal-modulos { list-style: none; margin: 0; padding: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
+.cal-modulos li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; }
+.cal-modulos li + li { border-top: 1px solid var(--line); }
+.cal-mod-nota { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.cal-mod-grande { font-family: "Archivo", system-ui; font-size: 1.2rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.cal-mod-detalle { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+.cal-mod-detalle s { text-decoration-thickness: 1.5px; }
+
+.cal-acciones-fila { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cal-nota-vacia { font-size: 0.84rem; color: var(--muted); padding: 14px; border: 1.5px dashed var(--line); border-radius: var(--radius-md); text-align: center; margin: 0; }
+
+/* ── Certificado de notas (vista previa + impresión) ── */
+.cal-cert-modal { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px; overflow-y: auto; }
+.cal-cert-modal[aria-hidden="true"] { display: none; }
+.cal-cert-overlay { position: fixed; inset: 0; background: rgba(10,27,51,0.5); }
+.cal-cert-dialog { position: relative; width: 100%; max-width: 780px; }
+.cal-cert-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+.cal-cert-acciones .cal-btn-ghost { background: var(--white); }
+
+.cal-hoja { background: var(--white); border-radius: 14px; padding: 36px 40px; color: var(--navy-3); font-size: 0.88rem; line-height: 1.5; }
+.cal-hoja-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--navy); }
+.cal-hoja-marca { display: flex; gap: 14px; align-items: center; }
+.cal-hoja-marca img { width: 64px; height: auto; }
+.cal-hoja-marca strong { display: block; font-family: "Archivo", system-ui; font-size: 1.02rem; font-weight: 800; }
+.cal-hoja-marca span { display: block; font-size: 0.78rem; color: var(--muted); }
+.cal-hoja-num { text-align: right; }
+.cal-hoja-num span { display: block; font-family: "Archivo", system-ui; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--orange-2); }
+.cal-hoja-num strong { display: block; font-size: 0.86rem; margin-top: 4px; }
+.cal-hoja-titulo { font-family: "Archivo", system-ui; font-size: 1.3rem; font-weight: 900; text-align: center; margin: 26px 0 14px; }
+.cal-hoja p { margin: 0 0 14px; }
+.cal-hoja-tabla { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 0.84rem; }
+.cal-hoja-tabla th { text-align: left; font-family: "Archivo", system-ui; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 8px 10px; border-bottom: 1.5px solid var(--navy); }
+.cal-hoja-tabla td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.cal-hoja-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cal-hoja-tabla tfoot td { font-weight: 800; border-bottom: none; border-top: 1.5px solid var(--navy); }
+.cal-hoja-nota { font-size: 0.76rem; color: var(--muted); }
+.cal-hoja-firma { margin-top: 56px; width: 260px; border-top: 1px solid var(--navy-3); padding-top: 6px; font-size: 0.8rem; font-weight: 700; }
+.cal-hoja-firma span { display: block; font-weight: 500; color: var(--muted); }
+
+/* ── Aviso flotante ─────────────────────────────────── */
+.cal-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: #fff;
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.cal-toast.is-visible { opacity: 1; transform: none; }
+.cal-toast[hidden] { display: none; }
+
+::selection { background: rgba(217,123,46,0.22); }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .cal-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+    .cal-drawer-panel, .cal-drawer.is-ancho .cal-drawer-panel { width: 100%; }
+    .cal-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cal-dato:nth-child(3) { border-left: none; }
+    .cal-dato:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
+    .cal-title { font-size: 1.5rem; }
+    .cal-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cal-kpi-chip { padding: 12px; gap: 10px; }
+    .cal-kpi-icon { width: 36px; height: 36px; }
+    .cal-filters .app-combobox { min-width: 0; flex: 1 1 45%; }
+    .cal-vistas { display: flex; align-self: stretch; }
+    .cal-vista-btn { flex: 1 1 auto; justify-content: center; padding: 8px 6px; gap: 5px; font-size: 0.76rem; }
+    .cal-vista-num { min-width: 0; padding: 1px 6px; }
+    .cal-drawer-head, .cal-drawer-body { padding-left: 16px; padding-right: 16px; }
+    .cal-matriz .cal-mz-nombre { min-width: 140px; max-width: 140px; }
+    /* La nota baja debajo del nombre del módulo para que este no quede apretado */
+    .cal-modulos li, .cal-malla li { grid-template-columns: 30px minmax(0, 1fr); align-items: start; }
+    .cal-mod-nota, .cal-malla-der { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; }
+    .cal-matriz-wrap { max-height: none; min-height: 0; }
+    .cal-hoja { padding: 22px 18px; }
+    .cal-hoja-cab { flex-direction: column; gap: 12px; }
+    .cal-hoja-num { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cal-drawer-panel, .cal-drawer-overlay, .cal-toast { transition: none; }
+}
+
+/* ── Impresión: solo la hoja del certificado ────────── */
+/* calificaciones.js deja el certificado como hijo directo de <body> para poder ocultar todo lo demás */
+@media print {
+    html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+    body > *:not(.cal-cert-modal) { display: none !important; }
+    .cal-cert-overlay, .cal-cert-acciones { display: none; }
+    .cal-cert-modal { position: static; display: block; padding: 0; overflow: visible; }
+    .cal-cert-dialog { max-width: none; }
+    .cal-hoja { padding: 0; border-radius: 0; }
+    @page { margin: 18mm 16mm; }
+}
