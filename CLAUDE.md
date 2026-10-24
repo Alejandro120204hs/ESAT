@@ -25,9 +25,10 @@ con IDs (C1, A3, M2…) para referenciarlos en commits y PR.
 Enum `App\Enums\RolUsuario`: `superadmin | admin | estudiante | docente | acudiente`.
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
-Redirección post-login por rol vía `User::panelUrl()`. Solo superadmin y admin
-tienen panel: estudiante, docente y acudiente caen por ahora en el `/dashboard` de
-Breeze ("You're logged in!") y su `/profile` es el de Breeze. **Nadie elimina su propia
+Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin y docente
+tienen panel (el del docente es solo frontend, ver "Panel Docente"); estudiante y acudiente
+caen por ahora en el `/dashboard` de Breeze ("You're logged in!"). Docente, estudiante y
+acudiente usan el `/profile` de Breeze. **Nadie elimina su propia
 cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
 El teléfono, también el de `/profile`, se guarda solo con dígitos y debe ser un celular
 (`^3\d{9}$`).
@@ -195,7 +196,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     `documento.css/js`): recibo, comprobante de devolución, constancia de matrícula (solo vigente) y paz y
     salvo (nada por pagar en ninguna de sus matrículas y ninguna vigente sin plan).
 - **Asistencia** (`Admin/Asistencia/AsistenciaController` + `Academico/AsistenciaService`): el Admin **solo
-  consulta**; la asistencia la toma el **docente** (panel Docente, pendiente) y es **informativa: no bloquea
+  consulta**; la asistencia la toma el **docente** (panel Docente: frontend hecho, backend pendiente) y es **informativa: no bloquea
   nada** (ni grados ni matrículas; 80 % es solo referencia). Clases = días del horario entre el inicio del grupo
   y su fin (la de hoy cuenta cuando termina). Clase **sin registrar** = clase dictada sin ningún registro del
   grupo; no cuenta en el %. % = (presente + tarde) / (presente + tarde + ausente): la excusa no cuenta como falla
@@ -269,6 +270,7 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 `tests/Feature/Admin/{Matriculas,Pagos,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
+Panel Docente (acceso por rol y redirección): `tests/Feature/Docente/PanelDocenteTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
 sin él fallan casi todas (147 de las 148 actuales). Activarlo en el `php.ini` o correr
@@ -366,13 +368,48 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   usuario (perfil real conectado a `route('profile.edit')` + cerrar
   sesión).
 
+## Panel Docente (solo frontend, con datos de ejemplo)
+
+- Rutas `/docente` (closures con `role:docente`, como las maquetas del Superadmin) y
+  `User::panelUrl()` → `docente.dashboard`. Layout propio: `docente/layout.blade.php` +
+  `partials/{sidebar,topbar}`, `docente/layout.css` (el del Admin sin los menús flotantes;
+  la animación de entrada se llama `.app-anim`) y `layout.js`.
+- Pantallas (cada una con su Blade/CSS/JS y su prefijo):
+  - **Inicio** (`dashboard`, `ini-`): clases de hoy, pendientes (asistencia sin registrar,
+    notas por poner, habilitaciones), estudiantes bajo el 80 % y su horario semanal.
+  - **Mis grupos** (`grupos/index`, `grp-`): tarjetas por grupo y ficha con Estudiantes,
+    Malla y Horario.
+  - **Asistencia** (`asistencia/index`, `tas-`): calendario de clases del grupo y planilla
+    P/T/A/E (excusa con motivo obligatorio), con "Todos presentes".
+  - **Notas** (`notas/index`, `not-`): por módulo, de 1.0 a 5.0 con un decimal (acepta coma),
+    habilitación solo si la nota es menor a 3.0 y el módulo ya terminó, y "Planilla completa"
+    (estudiantes × módulos).
+- Reglas acordadas con el usuario: el docente registra y **corrige** asistencia y notas
+  mientras el grupo no esté finalizado; un grupo finalizado es solo consulta; no se registran
+  clases futuras ni notas de módulos por iniciar.
+- Enlaces directos: `asistencia?grupo=ID&fecha=AAAA-MM-DD`, `notas?grupo=ID&modulo=ID`,
+  `grupos?grupo=ID` (abre la ficha). Inicio y Mis grupos los usan.
+- **Datos de ejemplo**: `public/assets/js/docente/datos-ejemplo.js` simula al servidor con
+  las mismas reglas de `AsistenciaService` y `CalificacionService`. `DOC_DATOS` es lo que se lee
+  y `DOC_API.guardarAsistencia()` / `guardarNotas()` (Promise) es lo único que escribe; guarda
+  en `sessionStorage` para que las 4 pantallas se vean coherentes. Programas y escuelas son
+  reales; grupos, estudiantes, notas y asistencias son ficticios y las fechas se arman alrededor
+  de hoy. Cada página carga `datos-ejemplo.js` antes de su propio JS.
+- **Al conectar el backend**: un controlador por pantalla en `Docente/{Panel}/` que pase los
+  datos con `@json` en la misma forma de `DOC_DATOS`, y cambiar las dos funciones de `DOC_API`
+  por `fetch` a rutas reales con Form Requests que validen lo mismo (rango y decimal de las
+  notas, habilitación, motivo de excusa, grupo vigente). El docente solo ve sus grupos
+  (`curso_docente`); guardar `registrado_por` y registrar con `Auditoria::registrar`.
+- Su perfil todavía es el de Breeze (roto, HALLAZGOS M7).
+
 ## Pendiente
 
-- Paneles Estudiante, Docente y Acudiente: sin construir.
+- Paneles Estudiante y Acudiente: sin construir.
   - Estudiante: elegir plan de pago (genera las cuotas). El bloqueo por derecho
     vencido ya corta también las sesiones abiertas (`EnsureAccountIsEnabled`).
-  - Docente: tomar asistencia y poner notas. Validar el rango 1.0–5.0 de las
-    notas, porque hoy no se valida en ningún lado.
+- Docente: conectar el backend de Asistencia y Notas (ver "Panel Docente"). El frontend ya
+  valida el rango 1.0–5.0 de las notas, pero el servidor también debe hacerlo: hoy no se valida
+  en ningún lado. Falta además su perfil.
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
   Agregar Form Requests y auditoría a Sedes y Administradores.

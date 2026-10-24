@@ -1,0 +1,362 @@
+/* ESAT — Docente: Inicio y mi horario (frontend con datos de ejemplo) */
+
+/* ── Layout general ────────────────────────────────── */
+.ini-wrap { display: flex; flex-direction: column; gap: 22px; }
+
+.ini-header { display: flex; flex-direction: column; gap: 2px; }
+.ini-fecha {
+    display: inline-flex; align-items: center; gap: 7px; margin: 0 0 4px;
+    font-family: "Archivo", system-ui, sans-serif; font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 0.02em; color: var(--orange-2);
+}
+.ini-fecha svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ini-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); margin: 0; overflow-wrap: anywhere; }
+.ini-sub   { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin: 3px 0 0; line-height: 1.5; max-width: 72ch; min-height: 1.5em; }
+.ini-sub b { color: var(--navy-3); font-weight: 700; }
+
+/* ── Botones ────────────────────────────────────────── */
+.ini-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 16px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.84rem;
+    cursor: pointer; transition: background 0.18s, border-color 0.18s, color 0.18s;
+    white-space: nowrap; text-decoration: none;
+}
+.ini-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ini-btn-primary { background: var(--orange); color: var(--white); }
+.ini-btn-primary:hover { background: var(--orange-2); }
+.ini-btn-ghost { background: transparent; color: var(--navy-3); border-color: var(--line); }
+.ini-btn-ghost:hover { background: var(--bg); }
+.ini-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ── KPI chips (mismo formato que el Admin) ─────────── */
+.ini-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.ini-kpi-chip {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white); min-width: 0;
+}
+.ini-kpi-icon {
+    width: 42px; height: 42px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ini-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ini-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.ini-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.ini-kpi-blue   .ini-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
+.ini-kpi-blue   .ini-kpi-val  { color: #1D4ED8; }
+.ini-kpi-green  .ini-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
+.ini-kpi-green  .ini-kpi-val  { color: #065F46; }
+.ini-kpi-orange .ini-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
+.ini-kpi-orange .ini-kpi-val  { color: var(--orange-2); }
+.ini-kpi-red    .ini-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
+.ini-kpi-red    .ini-kpi-val  { color: var(--red); }
+/* En cero no hay nada que atender: el número se apaga */
+.ini-kpi-chip.is-cero .ini-kpi-icon { background: #F1F5F9; color: #94A3B8; }
+.ini-kpi-chip.is-cero .ini-kpi-val  { color: #94A3B8; }
+
+/* ── Columnas ───────────────────────────────────────── */
+.ini-cols { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.ini-col  { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* ── Tarjetas ───────────────────────────────────────── */
+.ini-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); min-width: 0; }
+.ini-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 18px 20px 14px;
+}
+.ini-card-head > div { min-width: 0; flex: 1 1 240px; }
+.ini-card-title { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.ini-card-sub { font-size: 0.8rem; color: var(--muted); margin: 3px 0 0; line-height: 1.45; }
+.ini-card-sub:empty { display: none; }
+.ini-card-num {
+    min-width: 26px; padding: 2px 9px; border-radius: 999px; text-align: center;
+    background: rgba(217,123,46,0.14); color: #9A4A12;
+    font-family: "Archivo", system-ui; font-size: 0.8rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.ini-card-num:empty { display: none; }
+
+/* ── Clases de hoy ──────────────────────────────────── */
+.ini-clases { list-style: none; margin: 0; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ini-clases:empty { display: none; }
+.ini-clase {
+    display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+    padding: 12px 14px 12px 12px; border: 1.5px solid var(--line); border-radius: 12px;
+    transition: border-color 0.2s;
+}
+.ini-clase.is-en_curso { border-color: rgba(37, 99, 235, 0.32); background: #F8FAFF; }
+.ini-clase-hora {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 12px 6px; border-radius: 10px; background: var(--jbg); color: var(--jc);
+}
+.ini-clase-ini { font-family: "Archivo", system-ui; font-size: 1.3rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.ini-clase-fin { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ini-clase-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ini-clase-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ini-clase-prog { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 2px 0 0; line-height: 1.3; }
+.ini-clase-meta { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin: 0; }
+.ini-clase-meta b { color: var(--navy-3); font-weight: 600; }
+.ini-clase-cuenta { font-size: 0.76rem; font-weight: 700; color: #1E40AF; margin: 0; }
+.ini-clase-cuenta:empty { display: none; }
+
+/* Chip de jornada y chip "En curso" */
+.ini-jornada {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px; background: var(--jbg); color: var(--jc);
+    font-size: 0.74rem; font-weight: 700; white-space: nowrap;
+}
+.ini-chip-curso { background: #DBEAFE; color: #1E40AF; }
+.ini-chip-curso::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    animation: ini-latido 1.8s ease-in-out infinite;
+}
+@keyframes ini-latido {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+}
+
+/* Próxima clase (debajo de las de hoy o en el vacío) */
+.ini-proxima {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin: 0 20px 20px; padding: 12px 14px; border-radius: 12px; background: var(--bg);
+}
+.ini-proxima[hidden] { display: none; }
+.ini-proxima-txt { min-width: 0; flex: 1 1 220px; }
+.ini-proxima-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.ini-proxima-cuando { font-family: "Archivo", system-ui; font-size: 0.92rem; font-weight: 800; color: var(--navy-3); margin-top: 2px; }
+.ini-proxima-que { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+
+/* ── Pendientes ─────────────────────────────────────── */
+.ini-pend-bloque { padding: 12px 20px 14px; border-top: 1px solid var(--line); }
+.ini-pend-titulo {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 6px;
+    font-family: "Archivo", system-ui; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.ini-pend-titulo-num {
+    padding: 1px 8px; border-radius: 999px; background: rgba(10,27,51,0.07); color: var(--navy-3);
+    font-size: 0.72rem; font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.ini-pend-lista { list-style: none; margin: 0; padding: 0; }
+.ini-pend-item {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 -10px; padding: 8px 10px; border-radius: 10px;
+    color: inherit; text-decoration: none; transition: background 0.15s;
+}
+.ini-pend-item:hover { background: #FBF7F2; }
+.ini-pend-item:focus-visible { outline: 2px solid var(--orange); outline-offset: 0; }
+.ini-pend-item:hover .ini-pend-ir, .ini-pend-item:focus-visible .ini-pend-ir { color: var(--orange); transform: translateX(2px); }
+
+/* Ficha de la izquierda: fecha, cuántas faltan o la nota */
+.ini-ficha {
+    width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-variant-numeric: tabular-nums;
+}
+.ini-ficha small { font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.ini-ficha b { font-family: "Archivo", system-ui; font-size: 1.02rem; font-weight: 900; line-height: 1; }
+.ini-ficha-asis  { background: #FDF1E6; color: #9A4A12; }
+.ini-ficha-notas { background: #EAF1FD; color: #1E40AF; }
+.ini-ficha-hab   { background: #FEF3C7; color: #8A4A06; }
+
+.ini-pend-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ini-pend-nombre { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); line-height: 1.3; }
+.ini-pend-sub { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+.ini-pend-ir {
+    width: 18px; height: 18px; flex-shrink: 0; color: #A0AABA;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: color 0.15s, transform 0.15s var(--ease-out);
+}
+
+.ini-mas {
+    margin-top: 4px; padding: 6px 0; border: none; background: none; cursor: pointer;
+    font-family: "Archivo", system-ui; font-size: 0.8rem; font-weight: 700; color: var(--orange-2);
+}
+.ini-mas:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ini-mas:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+/* ── Estudiantes para acompañar ─────────────────────── */
+.ini-acomp-lista { list-style: none; margin: 0; padding: 0 20px 6px; }
+.ini-acomp-lista:empty { display: none; }
+.ini-acomp-item {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 -10px; padding: 9px 10px; border-radius: 10px;
+    color: inherit; text-decoration: none; transition: background 0.15s;
+}
+.ini-acomp-item:hover { background: #FBF7F2; }
+.ini-acomp-item:focus-visible { outline: 2px solid var(--orange); outline-offset: 0; }
+.ini-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.8rem;
+    background: var(--jbg); color: var(--jc);
+}
+.ini-acomp-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ini-acomp-nombre { font-weight: 700; font-size: 0.87rem; color: var(--navy-3); line-height: 1.3; }
+.ini-acomp-sub { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+
+/* Medidor de asistencia: barra + porcentaje (marca blanca en el 80 %) */
+.ini-meter-cell { display: flex; align-items: center; gap: 10px; flex-shrink: 0; color: var(--red); }
+.ini-meter { position: relative; width: 74px; height: 6px; border-radius: 999px; background: #E6EBF2; overflow: hidden; flex-shrink: 0; }
+.ini-meter > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: currentColor; }
+.ini-meter::after { content: ""; position: absolute; top: 0; bottom: 0; left: 80%; width: 2px; background: var(--white); }
+.ini-pct { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.88rem; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+
+.ini-nota {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 8px 20px 18px; padding-top: 12px; border-top: 1px dashed var(--line);
+    font-size: 0.78rem; color: var(--muted); line-height: 1.5;
+}
+.ini-nota svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Vacíos ─────────────────────────────────────────── */
+.ini-empty { text-align: center; padding: 18px 24px 26px; }
+.ini-empty[hidden] { display: none; }
+.ini-empty-icono {
+    width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #E6F4E4; color: #2D6A27;
+}
+.ini-empty-icono svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ini-empty-calma { background: #EAF0F8; color: var(--navy-2); }
+.ini-empty-titulo { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.ini-empty-txt { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin: 4px auto 0; max-width: 44ch; }
+.ini-empty-txt b { color: var(--navy-3); }
+.ini-empty .ini-btn { margin-top: 14px; }
+
+/* ── Colores por jornada ────────────────────────────── */
+.ini-j-manana { --jc: #B4541C; --jbg: #FFF4E8; --jbd: #FBD9B5; --jink: #7C2D12; }
+.ini-j-tarde  { --jc: #1E40AF; --jbg: #EEF4FF; --jbd: #C7D7FB; --jink: #1E3A8A; }
+.ini-j-noche  { --jc: #5B21B6; --jbg: #F4F1FE; --jbd: #DDD6FE; --jink: #4C1D95; }
+.ini-j-fds    { --jc: #047857; --jbg: #EAFAF2; --jbd: #B5EBD0; --jink: #064E3B; }
+.ini-j-otra   { --jc: #475569; --jbg: #F1F5F9; --jbd: #E2E8F0; --jink: #334155; }
+
+/* ── Mi horario ─────────────────────────────────────── */
+/* La grilla depende del ancho de la tarjeta (con o sin menú lateral), no de la pantalla */
+.ini-horario { container-type: inline-size; }
+.ini-leyenda { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ini-leyenda:empty { display: none; }
+
+.ini-sem { display: grid; grid-template-columns: 60px repeat(6, minmax(0, 1fr)); padding: 0 20px 20px; }
+.ini-sem[hidden] { display: none; }
+.ini-sem-esquina { border-bottom: 2px solid #E2E8F0; }
+.ini-sem-head {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 4px 10px; border-bottom: 2px solid #E2E8F0;
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--navy-3);
+}
+.ini-sem-head b { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.ini-sem-head.is-libre { color: #A0AABA; }
+.ini-sem-head.is-hoy { color: var(--orange-2); border-bottom-color: var(--orange); }
+.ini-hoy-pill {
+    padding: 1px 7px; border-radius: 999px; background: var(--orange); color: var(--white);
+    font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+.ini-sem-horas { position: relative; }
+.ini-sem-hora {
+    position: absolute; right: 10px; transform: translateY(-50%);
+    font-size: 0.7rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ini-sem-hora.is-primera { transform: translateY(4px); }
+.ini-sem-hora.is-ultima  { transform: translateY(-100%); }
+
+.ini-sem-col { position: relative; border-left: 1px solid #EEF1F5; }
+.ini-sem-col:last-child { border-right: 1px solid #EEF1F5; }
+.ini-sem-col.is-hoy { background: #FFFAF4; }
+.ini-sem-linea { position: absolute; left: 0; right: 0; border-top: 1px solid #EDF0F4; }
+
+/* Franja de horas sin clases, recortada para no gastar espacio */
+.ini-sem-corte {
+    position: absolute; left: 0; right: 0;
+    border-top: 1px dashed #C5CEDA; border-bottom: 1px dashed #C5CEDA;
+    background: repeating-linear-gradient(135deg, #F3F5F9 0 4px, transparent 4px 9px);
+}
+
+.ini-sem-ahora { position: absolute; left: 0; right: 0; z-index: 2; height: 2px; background: var(--orange); pointer-events: none; }
+.ini-sem-ahora[hidden] { display: none; }
+.ini-sem-ahora::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+
+.ini-sem-bloque {
+    position: absolute; z-index: 1;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 8px 10px; border-radius: 10px; overflow: hidden;
+    background: var(--jbg); border: 1px solid var(--jbd); color: var(--jink);
+    text-decoration: none;
+    transition: box-shadow 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+.ini-sem-bloque:hover { z-index: 3; transform: translateY(-1px); box-shadow: 0 10px 22px -12px rgba(10,27,51,.45); }
+.ini-sem-bloque:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; z-index: 3; }
+.ini-sem-bloque-hora { font-size: 0.7rem; font-weight: 800; color: var(--jc); font-variant-numeric: tabular-nums; }
+.ini-sem-bloque-prog {
+    font-size: 0.82rem; font-weight: 800; line-height: 1.25; hyphens: auto; overflow-wrap: break-word;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.ini-sem-bloque-grupo { margin-top: auto; font-size: 0.72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ini-sem-bloque.is-corto { padding: 5px 9px; gap: 1px; }
+.ini-sem-bloque.is-corto .ini-sem-bloque-prog { -webkit-line-clamp: 1; font-size: 0.78rem; }
+.ini-sem-bloque.is-corto .ini-sem-bloque-grupo { display: none; }
+
+/* Lista por día (pantallas angostas) */
+.ini-sem-lista { display: none; flex-direction: column; gap: 16px; padding: 0 16px 18px; }
+.ini-sem-lista[hidden] { display: none; }
+.ini-dia-nombre {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+    font-family: "Archivo", system-ui; font-size: 0.78rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy-3);
+}
+.ini-dia-nombre span { font-family: "Public Sans", system-ui; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.ini-dia.is-hoy .ini-dia-nombre { color: var(--orange-2); }
+.ini-dia-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ini-dia-clase {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+    background: var(--jbg); border: 1px solid var(--jbd); color: var(--jink); text-decoration: none;
+}
+.ini-dia-clase:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.ini-dia-hora { font-size: 0.76rem; font-weight: 800; color: var(--jc); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 92px; }
+.ini-dia-info { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ini-dia-info b { font-size: 0.85rem; font-weight: 800; line-height: 1.3; }
+.ini-dia-info small { font-size: 0.74rem; font-weight: 600; opacity: 0.85; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1180px) {
+    .ini-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1279px) {
+    /* Una sola columna, en orden de importancia */
+    .ini-cols { display: flex; flex-direction: column; align-items: stretch; }
+    .ini-col  { display: contents; }
+    .ini-hoy    { order: 1; }
+    .ini-pend   { order: 2; }
+    .ini-acomp  { order: 3; }
+}
+/* Tarjeta angosta: lista por día en vez de grilla */
+@container (max-width: 899px) {
+    .ini-sem { display: none; }
+    .ini-sem-lista { display: flex; }
+}
+@media (max-width: 640px) {
+    .ini-title { font-size: 1.5rem; }
+    .ini-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ini-kpi-chip { padding: 12px; gap: 10px; }
+    .ini-kpi-icon { width: 36px; height: 36px; }
+    .ini-card-head { padding: 16px 16px 12px; }
+    .ini-clases { padding: 0 16px 16px; }
+    .ini-clase { grid-template-columns: 74px minmax(0, 1fr); gap: 12px; }
+    .ini-clase .ini-btn { grid-column: 1 / -1; }
+    .ini-clase-ini { font-size: 1.12rem; }
+    .ini-proxima { margin: 0 16px 16px; }
+    .ini-pend-bloque { padding: 12px 16px 14px; }
+    .ini-acomp-lista { padding: 0 16px 6px; }
+    .ini-acomp-item { flex-wrap: wrap; row-gap: 6px; }
+    .ini-acomp-info { flex: 1 1 calc(100% - 50px); }
+    .ini-acomp-item .ini-meter-cell { margin-left: 50px; }
+    .ini-nota { margin: 8px 16px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ini-chip-curso::before { animation: none; }
+    .ini-sem-bloque, .ini-pend-ir { transition: none; }
+    .ini-sem-bloque:hover { transform: none; }
+    .ini-pend-item:hover .ini-pend-ir, .ini-pend-item:focus-visible .ini-pend-ir { transform: none; }
+}

@@ -271,6 +271,26 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
 });
 
+// ============ PANEL DOCENTE ============
+// Solo frontend por ahora: las vistas usan datos de ejemplo (public/assets/js/docente/datos-ejemplo.js).
+Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
+    Route::get('/', function () {
+        return view('docente.dashboard');
+    })->name('dashboard');
+
+    Route::get('grupos', function () {
+        return view('docente.grupos.index');
+    })->name('grupos');
+
+    Route::get('asistencia', function () {
+        return view('docente.asistencia.index');
+    })->name('asistencia');
+
+    Route::get('notas', function () {
+        return view('docente.notas.index');
+    })->name('notas');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

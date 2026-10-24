@@ -293,6 +293,8 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 ### M8 ✓ Los roles sin panel caen en el `/dashboard` de Breeze
 `User::panelUrl()` (`User.php:133-140`) manda a estudiante, docente y acudiente a `route('dashboard')`, que dice "You're logged in!" en inglés.
 
+**Estado: parcial.** El docente ya entra a su propio panel (`/docente`, por ahora solo frontend con datos de ejemplo). Estudiante y acudiente siguen cayendo en el `/dashboard` de Breeze.
+
 ### M9 ✓ Superadmin sin Form Requests ni auditoría (reproducido)
 - `SedeController` y `AdministradorController` validan dentro del controlador (`AdministradorController.php:29-41,67-79`) y no escriben ninguna fila en `auditorias`. Las dos cosas van en contra de CLAUDE.md.
 - La validación es más débil que en Admin. En la prueba se aceptó:
