@@ -271,7 +271,7 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan 139 de 140. Activarlo en el `php.ini` o correr
+sin él fallan casi todas (147 de las 148 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Bug recurrente a tener en cuenta
