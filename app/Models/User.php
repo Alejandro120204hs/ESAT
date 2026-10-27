@@ -135,6 +135,7 @@ class User extends Authenticatable
         return match ($this->role) {
             RolUsuario::Superadmin => route('superadmin.dashboard'),
             RolUsuario::Admin      => route('admin.dashboard'),
+            RolUsuario::Docente    => route('docente.dashboard'),
             default => route('dashboard'),
         };
     }

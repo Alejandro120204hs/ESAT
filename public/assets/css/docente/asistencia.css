@@ -1,0 +1,467 @@
+/* ESAT — Docente: Tomar asistencia
+   Mismo lenguaje visual que Admin › Asistencia (colores P/T/A/E, calendario, chips, aviso flotante). */
+
+/* ── Layout general ────────────────────────────────── */
+.tas-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+.tas-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.tas-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); margin: 0; }
+.tas-sub   { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin: 3px 0 0; line-height: 1.5; max-width: 72ch; }
+
+.tas-sec-lbl {
+    font-family: "Archivo", system-ui, sans-serif; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px;
+}
+
+/* top/left: sin ellos, el aviso para lectores de pantalla (fuera de .tas-wrap) se ubica al final del
+   contenido desplazable y estira la página entera */
+.tas-sr {
+    position: absolute; top: 0; left: 0; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── Botones ────────────────────────────────────────── */
+.tas-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 40px; padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; white-space: nowrap; text-decoration: none;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.tas-btn svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tas-btn[hidden] { display: none; }
+.tas-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.tas-btn-primary:hover:not(:disabled) { background: var(--orange-2); }
+.tas-btn-ghost { background: transparent; color: var(--navy-3); border-color: var(--line); }
+.tas-btn-ghost:hover:not(:disabled) { background: var(--bg); }
+.tas-btn-danger { background: #FDF1F1; color: #A61B1B; border-color: #F3CACA; }
+.tas-btn-danger:hover:not(:disabled) { background: #A61B1B; color: var(--white); border-color: #A61B1B; }
+.tas-btn-sm { min-height: 36px; padding: 7px 14px; font-size: 0.82rem; gap: 6px; }
+.tas-btn-sm svg { width: 14px; height: 14px; }
+.tas-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.tas-icon-btn {
+    width: 40px; height: 40px; border-radius: var(--radius-md); flex-shrink: 0;
+    border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--navy-3); transition: border-color 0.15s, color 0.15s;
+}
+.tas-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tas-icon-btn:hover:not(:disabled), .tas-icon-btn:focus-visible { border-color: var(--orange); color: var(--orange); }
+.tas-icon-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* ── Selector de grupos ─────────────────────────────── */
+.tas-grupos { display: flex; flex-direction: column; gap: 14px; }
+.tas-grupos-fin[hidden] { display: none; }
+.tas-grupos-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+
+.tas-gcard {
+    display: flex; align-items: flex-start; gap: 12px; width: 100%; min-width: 0;
+    padding: 12px 14px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.tas-gcard:hover { border-color: rgba(217,123,46,0.55); }
+.tas-gcard:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-gcard.is-selected { border-color: var(--orange); background: #FFF8F1; box-shadow: 0 0 0 3px rgba(217,123,46,0.14); }
+.tas-gcard.is-fin { background: #F8FAFC; }
+.tas-gcard.is-fin.is-selected { background: #FFF8F1; }
+
+.tas-gcard-av {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.86rem; color: var(--white); background: #64748B;
+}
+.tas-gcard.is-fin .tas-gcard-av { opacity: 0.7; }
+.tas-gcard-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.tas-gcard-prog {
+    font-weight: 700; font-size: 0.87rem; color: var(--navy-3); line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tas-gcard-sub { font-size: 0.75rem; color: var(--muted); }
+.tas-gcard-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+/* Etiquetas */
+.tas-sin-tag, .tas-hoy-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+}
+.tas-sin-tag { background: #FDEBDB; color: #9A4A12; }
+.tas-sin-tag::before {
+    content: ""; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+    background: repeating-linear-gradient(135deg, var(--orange) 0 2px, transparent 2px 4px);
+}
+.tas-hoy-tag { background: var(--navy-3); color: var(--white); }
+.tas-gcard .app-status-tag { font-size: 0.72rem; padding: 2px 9px; }
+
+/* ── Resumen del grupo elegido ──────────────────────── */
+.tas-resumen {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap;
+    padding: 14px 18px; border-radius: var(--radius-lg); background: var(--white); border: 1.5px solid var(--line);
+}
+.tas-resumen[hidden] { display: none; }
+.tas-resumen-txt { min-width: 0; }
+.tas-resumen-ttl { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.tas-resumen-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+.tas-datos { display: flex; flex-wrap: wrap; gap: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
+.tas-dato { padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tas-dato + .tas-dato { border-left: 1px solid var(--line); }
+.tas-dato-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+.tas-dato-val { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tas-dato-val small { font-size: 0.76rem; font-weight: 600; color: var(--muted); }
+.tas-tono-ok   { color: #2D7A3A; }
+.tas-tono-warn { color: #B45309; }
+.tas-tono-bad  { color: var(--red); }
+.tas-tono-none { color: var(--muted); }
+
+/* ── Dos columnas: clases + planilla ────────────────── */
+.tas-main { display: grid; grid-template-columns: minmax(300px, 350px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.tas-main[hidden] { display: none; }
+@media (min-width: 1181px) {
+    /* El calendario acompaña mientras se baja por la lista */
+    .tas-clases { position: sticky; top: 16px; }
+}
+
+.tas-panel {
+    background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg);
+    padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
+}
+.tas-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.tas-panel-ttl { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+
+/* Interruptor "Solo sin registrar" */
+.tas-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--navy-3); min-height: 40px; user-select: none; }
+.tas-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.tas-switch-track {
+    position: relative; width: 36px; height: 20px; border-radius: 999px; background: #CBD5E1; flex-shrink: 0;
+    transition: background 0.18s;
+}
+.tas-switch-track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--white); box-shadow: 0 1px 2px rgba(10,27,51,0.25); transition: transform 0.18s var(--ease-out);
+}
+.tas-switch input:checked + .tas-switch-track { background: var(--orange); }
+.tas-switch input:checked + .tas-switch-track::after { transform: translateX(16px); }
+.tas-switch input:focus-visible + .tas-switch-track { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-switch-num {
+    min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08);
+    font-size: 0.72rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted);
+}
+.tas-switch-num.is-aviso { background: rgba(217,123,46,0.16); color: #9A4A12; }
+
+/* Aviso de clases pendientes */
+.tas-pend {
+    display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;
+    padding: 11px 13px; border-radius: 12px; background: #FDF1E6; color: #7A3A0C;
+}
+.tas-pend[hidden] { display: none; }
+.tas-pend svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tas-pend p { margin: 0; font-size: 0.83rem; line-height: 1.5; flex: 1 1 180px; }
+.tas-pend .tas-btn { margin-left: auto; background: var(--white); border-color: #F2C9A5; color: #7A3A0C; }
+.tas-pend .tas-btn:hover { border-color: var(--orange); color: var(--orange-2); }
+
+/* ── Calendario del mes ─────────────────────────────── */
+.tas-cal[hidden], .tas-lista-sin[hidden] { display: none; }
+.tas-cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.tas-cal-mes { text-align: center; min-width: 0; }
+.tas-cal-mes b { display: block; font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.95rem; color: var(--navy-3); }
+.tas-cal-mes small { display: block; font-size: 0.74rem; color: var(--muted); font-weight: 600; margin-top: 1px; }
+.tas-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.tas-cal-dow { font-size: 0.64rem; font-weight: 700; color: var(--muted); text-transform: uppercase; padding-bottom: 3px; }
+
+.tas-dia {
+    height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 600; color: #A3ACB9; font-variant-numeric: tabular-nums;
+    border: 1.5px solid transparent; background: none; padding: 0; min-width: 0;
+}
+button.tas-dia { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-dia.is-reg { background: #E3F2E1; color: #2D6A27; font-weight: 800; }
+.tas-dia.is-reg:hover { box-shadow: inset 0 0 0 1.5px #4C9A45; }
+.tas-dia.is-sin {
+    color: #7A3A0C; font-weight: 800;
+    background: repeating-linear-gradient(135deg, rgba(217,123,46,0.42) 0 2px, rgba(217,123,46,0.1) 2px 5px);
+}
+.tas-dia.is-sin:hover { box-shadow: inset 0 0 0 1.5px var(--orange); }
+.tas-dia.is-hoy { box-shadow: inset 0 0 0 2px var(--navy-3); color: var(--navy-3); font-weight: 800; }
+.tas-dia.is-hoy.is-pend { background: var(--white); }
+.tas-dia.is-fut { border: 1.5px dashed #D3DAE4; color: #8B95A5; cursor: not-allowed; }
+.tas-dia.is-sel { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); transform: scale(1.04); }
+.tas-dia.is-sel.is-hoy { box-shadow: inset 0 0 0 2px var(--navy-3), 0 0 0 2px var(--orange); }
+
+/* Leyenda */
+.tas-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.tas-leyenda[hidden] { display: none; }
+.tas-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.tas-ley { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
+.tas-ley-reg { background: #E3F2E1; box-shadow: inset 0 0 0 1px #A9D3A3; }
+.tas-ley-sin { background: repeating-linear-gradient(135deg, rgba(217,123,46,0.55) 0 2px, rgba(217,123,46,0.1) 2px 4px); }
+.tas-ley-hoy { box-shadow: inset 0 0 0 2px var(--navy-3); }
+.tas-ley-fut { border: 1.5px dashed #C2CAD6; }
+
+/* Lista "Solo sin registrar" */
+.tas-pend-lista { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.tas-pend-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 48px; padding: 9px 12px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white); cursor: pointer;
+    font: inherit; text-align: left; color: var(--navy-3); transition: border-color 0.15s, background 0.15s;
+}
+.tas-pend-btn:hover { border-color: rgba(217,123,46,0.55); }
+.tas-pend-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-pend-btn.is-sel { border-color: var(--orange); background: #FFF8F1; }
+.tas-pend-fecha { display: block; font-weight: 700; font-size: 0.86rem; }
+.tas-pend-sub { display: block; font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+
+/* ── Planilla de la clase ───────────────────────────── */
+.tas-pl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.tas-pl-head-txt { min-width: 0; }
+.tas-pl-titulo { font-family: "Archivo", system-ui; font-size: 1.2rem; font-weight: 900; color: var(--navy-3); margin: 0; }
+.tas-pl-titulo:focus { outline: none; }
+.tas-pl-titulo:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; border-radius: 4px; }
+.tas-pl-sub { font-size: 0.82rem; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+.tas-pl-sub b { color: var(--navy-3); font-weight: 700; }
+.tas-pl-estado { display: flex; flex-wrap: wrap; gap: 5px; }
+.tas-pl-cuerpo { display: flex; flex-direction: column; gap: 12px; }
+.tas-pl-cuerpo[hidden] { display: none; }
+
+/* Notas (registrada, solo consulta, pendiente) */
+.tas-nota {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 11px 13px; border-radius: 12px; background: #EEF3F9; color: var(--navy-2);
+    font-size: 0.84rem; line-height: 1.5;
+}
+.tas-nota[hidden] { display: none; }
+.tas-nota svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tas-nota p { margin: 0; }
+.tas-nota.is-ok   { background: #EDF7EC; color: #24561F; }
+.tas-nota.is-pend { background: #FDF1E6; color: #7A3A0C; }
+.tas-nota.is-lock { background: #F1F5F9; color: #475569; }
+
+/* Contadores P / T / A / E */
+.tas-conteo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tas-cnt {
+    display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px;
+    border-radius: 999px; border: 1.5px solid var(--line); background: var(--white);
+    font-size: 0.78rem; font-weight: 600; color: var(--muted);
+}
+.tas-cnt b { font-family: "Archivo", system-ui; font-size: 0.95rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.tas-cnt-sin { padding-left: 11px; border-style: dashed; }
+.tas-cnt-sin.is-cero { border-style: solid; border-color: #CFE6CC; background: #F3FAF2; color: #2D6A27; }
+.tas-cnt-pct { margin-left: auto; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.tas-cnt-pct b { font-family: "Archivo", system-ui; font-size: 0.95rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Letra de estado (como en la planilla de papel del Admin) */
+.tas-celda {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    font-family: "Archivo", system-ui; font-size: 0.7rem; font-weight: 800; line-height: 1;
+}
+.tas-c-P { background: #E3F2E1; color: #2D6A27; }
+.tas-c-T { background: #FDEFC4; color: #8A4A06; }
+.tas-c-A { background: #D93636; color: var(--white); }
+.tas-c-E { background: #DCE8FB; color: #1E40AF; }
+
+/* Todos presentes */
+.tas-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tas-tools[hidden] { display: none; }
+.tas-tools-hint { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+.tas-confirmar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap;
+    padding: 11px 13px; border-radius: 12px; background: #FFF8F1; border: 1.5px solid #F2C9A5;
+}
+.tas-confirmar[hidden] { display: none; }
+.tas-confirmar p { margin: 0; font-size: 0.84rem; color: #7A3A0C; line-height: 1.5; flex: 1 1 240px; }
+.tas-confirmar-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Filas de estudiantes */
+.tas-filas { list-style: none; border: 1.5px solid var(--line); border-radius: var(--radius-md); container-type: inline-size; }
+.tas-fila {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    padding: 12px 14px; transition: background 0.15s;
+}
+.tas-fila + .tas-fila { border-top: 1px solid var(--line); }
+.tas-fila.is-invalid { background: #FEF4F4; outline: 1.5px solid #F3B4B4; outline-offset: -1.5px; }
+.tas-fila.is-sin-marca .tas-av { box-shadow: 0 0 0 2px var(--white), 0 0 0 3.5px #E8B88E; }
+
+.tas-persona { display: flex; align-items: center; gap: 11px; flex: 1 1 100%; min-width: 0; }
+.tas-av {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.8rem; color: var(--white); background: #64748B;
+}
+.tas-persona-txt { min-width: 0; }
+
+/* Colores por escuela (los mismos del Admin; van después de .tas-av y .tas-gcard-av) */
+.tas-esc-sal { background: #DC2626; }
+.tas-esc-tur { background: #EA580C; }
+.tas-esc-adm { background: #2563EB; }
+.tas-esc-edu { background: #059669; }
+.tas-esc-dep { background: #D97706; }
+.tas-esc-cie { background: #4F46E5; }
+.tas-esc-bel { background: #DB2777; }
+
+.tas-nombre { font-weight: 700; font-size: 0.88rem; color: var(--navy-3); line-height: 1.3; }
+.tas-doc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+.tas-pct { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+.tas-salida { padding: 1px 8px; border-radius: 999px; background: #F1F5F9; color: #475569; font-weight: 600; font-size: 0.7rem; }
+
+/* Grupo de opciones: radios reales con etiquetas grandes (≥ 40 px) */
+.tas-opciones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: 1 1 100%; border: 0; min-width: 0; }
+.tas-op { position: relative; display: block; min-width: 0; }
+.tas-op input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.tas-op input:disabled { cursor: default; }
+.tas-op-cara {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 44px; padding: 6px 4px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    font-size: 0.78rem; font-weight: 700; color: var(--navy-3); white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    pointer-events: none;
+}
+.tas-op-cara .tas-celda { background: #F1F5F9; color: var(--muted); }
+.tas-op input:not(:disabled):hover + .tas-op-cara { border-color: rgba(16,40,74,0.32); }
+.tas-op input:focus-visible + .tas-op-cara { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-op input:checked + .tas-op-cara { font-weight: 800; }
+.tas-op-P input:checked + .tas-op-cara { background: #E3F2E1; border-color: #4C9A45; color: #2D6A27; }
+.tas-op-P input:checked + .tas-op-cara .tas-celda { background: #4C9A45; color: var(--white); }
+.tas-op-T input:checked + .tas-op-cara { background: #FDEFC4; border-color: #E0A526; color: #8A4A06; }
+.tas-op-T input:checked + .tas-op-cara .tas-celda { background: #E0A526; color: var(--white); }
+.tas-op-A input:checked + .tas-op-cara { background: #D93636; border-color: #D93636; color: var(--white); }
+.tas-op-A input:checked + .tas-op-cara .tas-celda { background: var(--white); color: #B42525; }
+.tas-op-E input:checked + .tas-op-cara { background: #DCE8FB; border-color: #5B8DEF; color: #1E40AF; }
+.tas-op-E input:checked + .tas-op-cara .tas-celda { background: #5B8DEF; color: var(--white); }
+.tas-op input:disabled:not(:checked) + .tas-op-cara { opacity: 0.45; }
+
+/* Motivo de la excusa */
+.tas-motivo { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--radius-md); background: #F3F7FE; }
+.tas-motivo[hidden] { display: none; }
+.tas-motivo-lbl { font-size: 0.78rem; font-weight: 700; color: #1E3A8A; }
+.tas-motivo-lbl em { font-style: normal; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.tas-input {
+    width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid #C9D6EE; border-radius: var(--radius-md);
+    font-family: inherit; font-size: 0.9rem; color: var(--text); background: var(--white); outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tas-input::placeholder { color: #8A94A3; }
+.tas-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.tas-input.is-invalid { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
+.tas-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tas-chip {
+    min-height: 34px; padding: 5px 12px; border-radius: 999px; border: 1px solid #C9D6EE; background: var(--white);
+    font-family: inherit; font-size: 0.76rem; font-weight: 600; color: #1E3A8A; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.tas-chip:hover { border-color: #5B8DEF; background: #EAF1FD; }
+.tas-chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tas-chip.is-activo { background: #1E40AF; border-color: #1E40AF; color: var(--white); }
+.tas-motivo-txt { font-size: 0.82rem; color: #1E3A8A; }
+.tas-motivo-txt b { font-weight: 700; }
+
+/* Filas anchas: opciones a la derecha del nombre */
+@container (min-width: 600px) {
+    .tas-persona { flex: 1 1 200px; }
+    .tas-opciones { flex: 0 0 auto; grid-template-columns: repeat(4, 86px); }
+}
+
+/* Vacíos */
+.tas-vacio { text-align: center; padding: 40px 20px; color: var(--muted); border: 1.5px dashed var(--line); border-radius: var(--radius-md); }
+.tas-vacio[hidden] { display: none; }
+.tas-vacio svg { width: 36px; height: 36px; fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 10px; }
+.tas-vacio p { font-size: 0.88rem; margin: 0 auto; max-width: 46ch; line-height: 1.5; }
+.tas-vacio .tas-btn { margin-top: 14px; }
+.tas-vacio-grande { background: var(--white); padding: 56px 24px; }
+.tas-vacio-chico { padding: 22px 14px; }
+
+/* ── Barra de guardado ──────────────────────────────── */
+.tas-barra {
+    position: sticky; bottom: 12px; z-index: 5;
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 12px 14px; border-radius: 12px; background: var(--white);
+    border: 1.5px solid var(--line); box-shadow: 0 10px 30px -10px rgba(10,27,51,0.28);
+}
+.tas-barra[hidden] { display: none; }
+.tas-barra-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.tas-barra-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tas-cambios { display: inline-flex; align-items: center; gap: 7px; font-size: 0.84rem; font-weight: 700; color: var(--navy-3); }
+.tas-cambios i { width: 9px; height: 9px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; }
+.tas-cambios.is-sucio { color: #9A4A12; }
+.tas-cambios.is-sucio i { background: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.2); }
+.tas-cambios.is-ok i { background: #4C9A45; }
+.tas-faltan { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+.tas-faltan.is-aviso { color: #9A4A12; }
+.tas-barra-acc { display: flex; gap: 8px; margin-left: auto; }
+
+.tas-error {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 9px 12px; border-radius: 10px; background: #FEF2F2; border: 1px solid #FECACA;
+    font-size: 0.84rem; font-weight: 600; color: #991B1B; line-height: 1.45;
+}
+.tas-error[hidden] { display: none; }
+.tas-error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Diálogo de cambios sin guardar ─────────────────── */
+.tas-dialogo { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.tas-dialogo[hidden] { display: none; }
+.tas-dialogo-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.tas-dialogo-box {
+    position: relative; z-index: 1; width: 440px; max-width: 100%;
+    background: var(--white); border-radius: var(--radius-lg); padding: 22px;
+    box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    animation: tas-dlg-in 0.22s var(--ease-out);
+}
+@keyframes tas-dlg-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+.tas-dialogo-ttl { font-family: "Archivo", system-ui; font-size: 1.08rem; font-weight: 800; color: var(--navy-3); margin: 0 0 8px; }
+.tas-dialogo-txt { margin: 0 0 18px; font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
+.tas-dialogo-acc { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+/* ── Aviso flotante ─────────────────────────────────── */
+.tas-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: var(--white);
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.tas-toast.is-visible { opacity: 1; transform: none; }
+.tas-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1180px) {
+    .tas-main { grid-template-columns: minmax(0, 1fr); }
+    .tas-clases .tas-cal, .tas-clases .tas-lista-sin { width: 100%; max-width: 480px; }
+}
+@media (max-width: 900px) {
+    .tas-resumen { padding: 14px; }
+    .tas-datos { width: 100%; }
+    .tas-dato { flex: 1 1 0; }
+}
+@media (max-width: 640px) {
+    .tas-title { font-size: 1.5rem; }
+    .tas-grupos-lista {
+        display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px;
+        padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: thin;
+    }
+    .tas-gcard { flex: 0 0 248px; scroll-snap-align: start; }
+    .tas-panel { padding: 14px; }
+    .tas-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tas-dato:nth-child(3) { border-left: none; }
+    .tas-dato:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .tas-cnt-pct { margin-left: 0; flex-basis: 100%; }
+    .tas-fila { padding: 12px 10px; }
+    .tas-op-cara { flex-direction: column; gap: 2px; font-size: 0.7rem; min-height: 50px; }
+    .tas-barra { bottom: 8px; padding: 10px 12px; }
+    .tas-barra-acc { width: 100%; }
+    .tas-barra-acc .tas-btn-primary { flex: 1; }
+    .tas-dialogo-acc { flex-direction: column-reverse; }
+    .tas-dialogo-acc .tas-btn { width: 100%; }
+    .tas-toast { left: 16px; right: 16px; bottom: 96px; max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tas-toast, .tas-switch-track, .tas-switch-track::after, .tas-gcard, .tas-op-cara, button.tas-dia { transition: none; }
+    .tas-dialogo-box { animation: none; }
+    .tas-dia.is-sel { transform: none; }
+}
