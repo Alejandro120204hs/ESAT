@@ -1073,4 +1073,10 @@
         var reciboGuardado = recaudos.find(function (r) { return r.recibo === abrirGuardado.recibo; });
         if (reciboGuardado) abrirRecibo(reciboGuardado.id);
     }
+
+    // Acceso rápido desde el Inicio: /admin/pagos#nuevo abre el formulario de registrar pago
+    if (location.hash === '#nuevo') {
+        abrirModalPago(null);
+        history.replaceState(null, '', location.pathname);
+    }
 }());

@@ -10,6 +10,12 @@ use App\Http\Controllers\Admin\Horarios\HorarioController;
 use App\Http\Controllers\Admin\Matriculas\DocumentoController;
 use App\Http\Controllers\Admin\Matriculas\MatriculaController;
 use App\Http\Controllers\Admin\Matriculas\PagoController;
+use App\Http\Controllers\Admin\Comunicados\ComunicadoController;
+use App\Http\Controllers\Admin\Foro\ForoController;
+use App\Http\Controllers\Admin\Inicio\InicioController;
+use App\Http\Controllers\Admin\Reportes\ReporteController;
+use App\Http\Controllers\Admin\Contabilidad\ContabilidadController;
+use App\Http\Controllers\Admin\Contabilidad\EgresoController;
 use App\Http\Controllers\Admin\Pagos\CarteraController;
 use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
@@ -201,9 +207,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
 // ============ PANEL ADMIN ============
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
+    Route::get('/', [InicioController::class, 'index'])->name('dashboard');
 
     Route::get('programas', [ProgramaController::class, 'index'])->name('programas');
     Route::post('programas', [ProgramaController::class, 'store'])->name('programas.store');
@@ -260,6 +264,34 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Panel "Pagos" (Finanzas): cartera, pagos recibidos, resumen de caja, por programa y devoluciones.
     // Registrar y anular un pago usan las rutas de Matrículas (matriculas.pagos.store / matriculas.pagos.anular).
     Route::get('pagos', [CarteraController::class, 'index'])->name('pagos');
+
+    // Panel "Contabilidad" (Finanzas): ingresos (lo recaudado en Pagos) contra egresos de la sede.
+    Route::get('contabilidad', [ContabilidadController::class, 'index'])->name('contabilidad');
+    Route::post('contabilidad/egresos', [EgresoController::class, 'store'])->name('contabilidad.egresos.store');
+    Route::put('contabilidad/egresos/{egreso}', [EgresoController::class, 'update'])->name('contabilidad.egresos.update');
+    Route::patch('contabilidad/egresos/{egreso}/anular', [EgresoController::class, 'anular'])->name('contabilidad.egresos.anular');
+
+    // Panel "Comunicados" (Comunicación): los del admin (toda la sede o un rol) y los que los docentes publican
+    // a sus grupos (aquí solo se archivan). El PUT llega como POST con _method porque puede traer el adjunto.
+    Route::get('comunicados', [ComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados', [ComunicadoController::class, 'store'])->name('comunicados.store');
+    Route::put('comunicados/{comunicado}', [ComunicadoController::class, 'update'])->name('comunicados.update');
+    Route::patch('comunicados/{comunicado}/archivar', [ComunicadoController::class, 'archivar'])->name('comunicados.archivar');
+    Route::delete('comunicados/{comunicado}', [ComunicadoController::class, 'destroy'])->name('comunicados.destroy');
+    Route::get('comunicados/{comunicado}/adjunto', [ComunicadoController::class, 'adjunto'])->name('comunicados.adjunto');
+
+    // Panel "Foro" (Comunicación): el foro general de la sede y su moderación. Los POST pueden traer adjunto.
+    Route::get('foro', [ForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [ForoController::class, 'store'])->name('foro.temas.store');
+    Route::post('foro/temas/{tema}/mensajes', [ForoController::class, 'responder'])->name('foro.temas.responder');
+    Route::patch('foro/temas/{tema}', [ForoController::class, 'estado'])->name('foro.temas.estado');
+    Route::patch('foro/mensajes/{mensaje}/ocultar', [ForoController::class, 'ocultar'])->name('foro.mensajes.ocultar');
+    Route::patch('foro/mensajes/{mensaje}/restaurar', [ForoController::class, 'restaurar'])->name('foro.mensajes.restaurar');
+    Route::patch('foro/mensajes/{mensaje}/descartar', [ForoController::class, 'descartar'])->name('foro.mensajes.descartar');
+    Route::get('foro/mensajes/{mensaje}/adjunto', [ForoController::class, 'adjunto'])->name('foro.adjunto');
+
+    // Panel "Reportes": documentos formales por mes (solo consulta; reportes.js los arma al cierre del mes elegido)
+    Route::get('reportes', [ReporteController::class, 'index'])->name('reportes');
 
     // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
     Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');

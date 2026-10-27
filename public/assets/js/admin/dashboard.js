@@ -1,24 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ── Animar barras del gráfico ─────────────────── */
+    /* Las barras del gráfico y de los programas entran con una animación de CSS (transform) */
     var bars = document.querySelectorAll('.dash-bar[data-pct]');
-    bars.forEach(function (bar) {
-        var pct = parseFloat(bar.dataset.pct) || 0;
-        bar.style.height = '0%';
-        setTimeout(function () {
-            bar.style.height = pct + '%';
-        }, 200);
-    });
-
-    /* ── Animar barras de progreso de programas ─────── */
-    var progBars = document.querySelectorAll('.dash-prog-bar-fill[data-w]');
-    progBars.forEach(function (pb) {
-        var w = parseFloat(pb.dataset.w) || 0;
-        pb.style.width = '0%';
-        setTimeout(function () {
-            pb.style.width = w + '%';
-        }, 300);
-    });
 
     /* ── Animar KPI counters ─────────────────────────── */
     var kpiValues = document.querySelectorAll('.dash-kpi-value[data-target]');
@@ -57,12 +40,18 @@ document.addEventListener('DOMContentLoaded', function () {
     function openActModal(item) {
         var dot   = item.dataset.actDot  || 'blue';
         var ini   = item.dataset.actIni  || '';
-        var html  = item.dataset.actTextoHtml || item.dataset.actTexto || '';
+        var quien = item.dataset.actQuien || '';
+        var texto = item.dataset.actTexto || '';
         var time  = item.dataset.actTime || '';
 
         modalDot.textContent = ini;
         modalDot.className = 'dash-act-modal-dot dot-' + dot;
-        modalText.innerHTML = html;
+        // Texto de la auditoría: siempre como texto, nunca como HTML
+        modalText.textContent = '';
+        var b = document.createElement('strong');
+        b.textContent = quien;
+        modalText.appendChild(b);
+        modalText.appendChild(document.createTextNode(' · ' + texto));
         modalTime.textContent = time;
         overlay.hidden = false;
         closeBtn.focus();

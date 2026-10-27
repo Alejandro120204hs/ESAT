@@ -491,7 +491,7 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 - **B30 (2ª)** El Superadmin arma las iniciales con `strtoupper(substr(…,0,1))` (`superadmin/partials/topbar.blade.php:18`, `superadmin/profile.blade.php:13`). Con un nombre que empieza por Á, É, Ñ u Ó sale un carácter roto; el Admin ya usa `mb_`.
 - **B31 (2ª)** Los CDN del sitio público (Bootstrap, AOS, Leaflet) no tienen `integrity` (SRI) (`layouts/app.blade.php:15-17,32-34`).
 - **B32 (2ª, posible)** La grilla "Horario general" agrupa las filas por `jornadaDeHora(hora_inicio)` (`horarios.js:627`), y `JORNADAS` (`:14`) no incluye "Fines de semana". Los grupos de fin de semana aparecen en Mañana, Tarde o Noche: es solo visual, pero choca con la regla de no deducir la jornada de las horas.
-- **B33 (2ª)** Inicio del Admin (maqueta): el acceso rápido dice "Inscribir y asignar programa", lo que contradice que Estudiantes ≠ Matrículas. Además, "Nuevo estudiante" y "Registrar pago" llevan a `#` aunque esas pantallas ya existen (`admin/dashboard:132,209,303,310,324`).
+- **B33 ✓ (2ª)** Inicio del Admin (maqueta): el acceso rápido dice "Inscribir y asignar programa", lo que contradice que Estudiantes ≠ Matrículas. Además, "Nuevo estudiante" y "Registrar pago" llevan a `#` aunque esas pantallas ya existen (`admin/dashboard:132,209,303,310,324`).
 - **B34 ✓ (2ª)** Índices (comprobado con `EXPLAIN QUERY PLAN`):
   - el historial de Matrículas busca en `auditorias` por `entidad_tipo` + `entidad_id` sin índice, y esa tabla crece sin límite;
   - `vencerAtrasados` recorre toda la tabla `pagos` (`whereDate` impide usar índice);

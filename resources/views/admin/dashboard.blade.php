@@ -1,4 +1,6 @@
-{{-- mock --}}
+{{-- Inicio (Admin): datos reales desde Admin\Inicio\InicioController (InicioService): KPI con su variación frente
+     al mes anterior, matrículas nuevas de los últimos 6 meses, actividad reciente (auditoría de la sede), mejores
+     promedios, ocupación por programa y pendientes de hoy con su enlace. Todo se pinta escapado (sin {!! !!}). --}}
 @extends('admin.layout')
 
 @section('title', 'Inicio')
@@ -10,56 +12,8 @@
 @endpush
 
 @php
-    $nombreAdmin = auth()->user()->nombres ?? auth()->user()->name ?? 'Administrador';
-    $saludo = 'Hola';
+    $nombreAdmin = auth()->user()->nombres ?: 'Administrador';
     $sedeName = auth()->user()->sede?->nombre ?? 'sede';
-
-    /* mock data */
-    $kpis = [
-        ['label' => 'Estudiantes activos',   'value' => 342,  'delta' => '+12%',  'dir' => 'up',   'foot' => '28 nuevos este mes',     'icon' => 'users',   'color' => 'blue'],
-        ['label' => 'Ingresos del mes',       'value' => 18450,'delta' => '+8%',   'dir' => 'up',   'foot' => 'vs. mes anterior',       'icon' => 'money',   'color' => 'green',  'prefix' => '$', 'suffix' => 'K'],
-        ['label' => 'Cursos activos',         'value' => 24,   'delta' => '+3',    'dir' => 'up',   'foot' => 'en 4 programas',         'icon' => 'book',    'color' => 'orange'],
-        ['label' => 'Pagos pendientes',       'value' => 17,   'delta' => '-5',    'dir' => 'down', 'foot' => 'requieren seguimiento',  'icon' => 'alert',   'color' => 'warn'],
-    ];
-
-    $meses = [
-        ['mes' => 'Abr', 'val' => 38, 'pct' => 52],
-        ['mes' => 'May', 'val' => 45, 'pct' => 62],
-        ['mes' => 'Jun', 'val' => 41, 'pct' => 57],
-        ['mes' => 'Jul', 'val' => 56, 'pct' => 77],
-        ['mes' => 'Ago', 'val' => 62, 'pct' => 85],
-        ['mes' => 'Sep', 'val' => 73, 'pct' => 100, 'active' => true],
-    ];
-
-    $actividad = [
-        ['dot' => 'orange', 'ini' => 'LM', 'texto' => '<strong>Laura Martínez</strong> se inscribió en Administración de Empresas', 'time' => 'Hace 15 min'],
-        ['dot' => 'blue',   'ini' => 'CR', 'texto' => '<strong>Carlos Ruiz</strong> realizó pago de matrícula $1,250,000',            'time' => 'Hace 42 min'],
-        ['dot' => 'green',  'ini' => 'AP', 'texto' => 'Docente <strong>Andrea Pérez</strong> publicó material en Contabilidad I',    'time' => 'Hace 1 h'],
-        ['dot' => 'red',    'ini' => 'MG', 'texto' => '<strong>Miguel García</strong> tiene 2 cuotas vencidas',                     'time' => 'Hace 2 h'],
-        ['dot' => 'blue',   'ini' => 'JP', 'texto' => '<strong>Juan Patiño</strong> completó el módulo Finanzas Básicas',            'time' => 'Hace 3 h'],
-    ];
-
-    $programas = [
-        ['nombre' => 'Administración de Empresas', 'pct' => 87, 'sub' => '42 estudiantes · 6 cursos', 'color' => 'blue'],
-        ['nombre' => 'Contabilidad y Finanzas',     'pct' => 72, 'sub' => '31 estudiantes · 5 cursos', 'color' => 'orange'],
-        ['nombre' => 'Marketing Digital',           'pct' => 58, 'sub' => '24 estudiantes · 4 cursos', 'color' => 'green'],
-        ['nombre' => 'Recursos Humanos',            'pct' => 43, 'sub' => '18 estudiantes · 3 cursos', 'color' => 'blue'],
-    ];
-
-    $tareas = [
-        ['titulo' => 'Reunión docentes',        'meta' => 'Hoy 3:00 PM',            'tag' => 'Urgente', 'color' => 'orange'],
-        ['titulo' => 'Revisar pagos oct.',      'meta' => 'Mañana',                  'tag' => 'Pagos',   'color' => 'blue'],
-        ['titulo' => 'Abrir inscripciones II',  'meta' => 'Oct 15',                  'tag' => 'Académico','color' => 'green'],
-        ['titulo' => 'Informe mensual sede',    'meta' => 'Oct 30',                  'tag' => 'Reporte', 'color' => 'blue'],
-    ];
-
-    $topEstudiantes = [
-        ['ini' => 'LM', 'nombre' => 'Laura Martínez',   'programa' => 'Adm. Empresas',  'nota' => '4.9', 'rank' => 1],
-        ['ini' => 'CR', 'nombre' => 'Carlos Ruiz',       'programa' => 'Cont. Finanzas', 'nota' => '4.8', 'rank' => 2],
-        ['ini' => 'AP', 'nombre' => 'Andrea Pérez',      'programa' => 'Marketing Dig.', 'nota' => '4.7', 'rank' => 3],
-        ['ini' => 'DS', 'nombre' => 'Diana Salazar',     'programa' => 'Rec. Humanos',   'nota' => '4.6', 'rank' => 4],
-        ['ini' => 'MO', 'nombre' => 'Mateo Ospina',      'programa' => 'Adm. Empresas',  'nota' => '4.5', 'rank' => 5],
-    ];
 @endphp
 
 @section('content')
@@ -69,7 +23,7 @@
     <img class="dash-welcome-mark" src="{{ asset('assets/img/favicon.png') }}" alt="">
     <div class="dash-welcome-text">
         <div class="dash-welcome-title">
-            {{ $saludo }}, <span>{{ $nombreAdmin }}.</span>
+            Hola, <span>{{ $nombreAdmin }}.</span>
         </div>
         <div class="dash-welcome-desc">
             Panel de gestión de la sede <strong style="color:rgba(255,255,255,0.85);">{{ $sedeName }}</strong>.
@@ -98,7 +52,7 @@
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 @endif
             </div>
-            <span class="dash-kpi-delta dash-kpi-delta-{{ $kpi['dir'] }}">
+            <span class="dash-kpi-delta dash-kpi-delta-{{ $kpi['tono'] ?? $kpi['dir'] }}" title="{{ $kpi['title'] ?? '' }}">
                 @if ($kpi['dir'] === 'up')
                     <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
                 @else
@@ -111,8 +65,8 @@
         <div class="dash-kpi-value"
              data-target="{{ $kpi['value'] }}"
              data-prefix="{{ $kpi['prefix'] ?? '' }}"
-             data-suffix="{{ $kpi['suffix'] ?? '' }}">
-            {{ ($kpi['prefix'] ?? '') . number_format($kpi['value'], 0, ',', '.') . ($kpi['suffix'] ?? '') }}
+             data-suffix="">
+            {{ ($kpi['prefix'] ?? '') . number_format($kpi['value'], 0, ',', '.') }}
         </div>
         <div class="dash-kpi-foot">{{ $kpi['foot'] }}</div>
     </div>
@@ -126,22 +80,22 @@
     <div class="dash-card">
         <div class="dash-card-head">
             <div>
-                <div class="dash-card-title">Inscripciones mensuales</div>
+                <div class="dash-card-title">Matrículas nuevas por mes</div>
                 <div class="dash-card-subtitle">Últimos 6 meses · Sede {{ $sedeName }}</div>
             </div>
-            <a href="#" class="dash-card-link">
-                Ver detalle
+            <a href="{{ route('admin.reportes') }}" class="dash-card-link">
+                Ver en Reportes
                 <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
             </a>
         </div>
         <div class="dash-chart-wrap">
             <div class="dash-chart-bars">
-                @foreach ($meses as $m)
+                @foreach ($meses['barras'] as $m)
                 <div class="dash-bar-col">
-                    <div class="dash-bar {{ isset($m['active']) ? 'dash-bar-active' : '' }}"
+                    <div class="dash-bar {{ $m['active'] ? 'dash-bar-active' : '' }}"
                          style="height: {{ $m['pct'] }}%"
                          data-pct="{{ $m['pct'] }}"
-                         data-val="{{ $m['val'] }} inscrip."></div>
+                         data-val="{{ $m['val'] }} {{ $m['val'] === 1 ? 'matrícula' : 'matrículas' }} en {{ $m['nombre'] }}"></div>
                     <span class="dash-bar-label">{{ $m['mes'] }}</span>
                 </div>
                 @endforeach
@@ -151,16 +105,21 @@
         <div class="dash-card-body" style="padding-top:0; border-top: 1px solid var(--line);">
             <div style="display:flex; gap:20px; flex-wrap:wrap; padding-top:14px;">
                 <span style="font-size:0.8rem; color:var(--muted);">
-                    <strong style="color:var(--navy-3); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">73</strong>
-                    &nbsp;inscrip. en sept.
+                    <strong style="color:var(--navy-3); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">{{ $meses['actual']['val'] }}</strong>
+                    &nbsp;en {{ $meses['actual']['nombre'] }}
                 </span>
                 <span style="font-size:0.8rem; color:var(--muted);">
-                    <strong style="color:var(--green); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">+17.7%</strong>
-                    &nbsp;vs. ago.
+                    @if ($meses['cambio'] === null)
+                        <strong style="color:var(--navy-3); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">{{ $meses['anterior']['val'] }}</strong>
+                        &nbsp;en {{ $meses['anterior']['nombre'] }}
+                    @else
+                        <strong style="color:{{ $meses['cambio'] >= 0 ? 'var(--green)' : 'var(--red)' }}; font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">{{ ($meses['cambio'] >= 0 ? '+' : '−') . abs($meses['cambio']) }} %</strong>
+                        &nbsp;frente a {{ $meses['anterior']['nombre'] }}
+                    @endif
                 </span>
                 <span style="font-size:0.8rem; color:var(--muted);">
-                    <strong style="color:var(--navy-3); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">315</strong>
-                    &nbsp;total semestre
+                    <strong style="color:var(--navy-3); font-family:'Archivo',sans-serif; font-weight:800; font-size:1.1rem;">{{ $meses['semestre'] }}</strong>
+                    &nbsp;en el semestre
                 </span>
             </div>
         </div>
@@ -176,21 +135,23 @@
         </div>
         <div class="dash-card-body" style="padding-top:8px; padding-bottom:8px;">
             <div class="dash-activity-list">
-                @foreach ($actividad as $act)
+                @forelse ($actividad as $act)
                 <div class="dash-activity-item"
                      role="button" tabindex="0"
                      data-act-dot="{{ $act['dot'] }}"
                      data-act-ini="{{ $act['ini'] }}"
-                     data-act-texto="{!! addslashes(strip_tags($act['texto'])) !!}"
-                     data-act-texto-html="{!! htmlspecialchars($act['texto'], ENT_QUOTES) !!}"
-                     data-act-time="{{ $act['time'] }}">
+                     data-act-quien="{{ $act['quien'] }}"
+                     data-act-texto="{{ $act['texto'] }}"
+                     data-act-time="{{ $act['fecha'] }}">
                     <div class="dash-activity-dot dash-activity-dot-{{ $act['dot'] }}">{{ $act['ini'] }}</div>
                     <div class="dash-activity-body">
-                        <div class="dash-activity-text">{!! $act['texto'] !!}</div>
+                        <div class="dash-activity-text"><strong>{{ $act['quien'] }}</strong> · {{ \Illuminate\Support\Str::limit($act['texto'], 110) }}</div>
                         <div class="dash-activity-time">{{ $act['time'] }}</div>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <p class="dash-vacio">Todavía no hay actividad registrada en la sede.</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -204,9 +165,9 @@
         <div class="dash-card-head">
             <div>
                 <div class="dash-card-title">Mejores estudiantes</div>
-                <div class="dash-card-subtitle">Por promedio · este semestre</div>
+                <div class="dash-card-subtitle">Por promedio de notas · matrículas vigentes</div>
             </div>
-            <a href="#" class="dash-card-link">
+            <a href="{{ route('admin.calificaciones') }}" class="dash-card-link">
                 Ver todos
                 <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
             </a>
@@ -221,7 +182,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($topEstudiantes as $e)
+                    @forelse ($top as $e)
                     <tr>
                         <td>
                             <span class="dash-rank {{ $e['rank'] <= 3 ? 'dash-rank-' . $e['rank'] : 'dash-rank-n' }}">
@@ -233,7 +194,7 @@
                                 <div class="dash-student-av">{{ $e['ini'] }}</div>
                                 <div>
                                     <div class="dash-student-name">{{ $e['nombre'] }}</div>
-                                    <div style="font-size:0.76rem; color:var(--muted);">{{ $e['programa'] }}</div>
+                                    <div style="font-size:0.76rem; color:var(--muted);">{{ $e['programa'] }} · {{ $e['modulos'] }} módulos</div>
                                 </div>
                             </div>
                         </td>
@@ -241,7 +202,9 @@
                             <strong style="font-family:'Archivo',sans-serif; font-weight:800; color:var(--navy-3);">{{ $e['nota'] }}</strong>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr><td colspan="3"><p class="dash-vacio">Todavía no hay notas registradas.</p></td></tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -251,11 +214,11 @@
     <div class="dash-card">
         <div class="dash-card-head">
             <div class="dash-card-title">Programas</div>
-            <div class="dash-card-subtitle" style="font-size:0.76rem;">Ocupación actual</div>
+            <div class="dash-card-subtitle" style="font-size:0.76rem;">Ocupación de cupos de los grupos vigentes</div>
         </div>
         <div class="dash-card-body">
             <div class="dash-prog-list">
-                @foreach ($programas as $p)
+                @forelse ($programas as $p)
                 <div class="dash-prog-item">
                     <div class="dash-prog-head">
                         <span class="dash-prog-name">{{ $p['nombre'] }}</span>
@@ -266,7 +229,9 @@
                     </div>
                     <div class="dash-prog-sub">{{ $p['sub'] }}</div>
                 </div>
-                @endforeach
+                @empty
+                <p class="dash-vacio">No hay grupos vigentes.</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -274,19 +239,24 @@
     {{-- Pendientes --}}
     <div class="dash-card">
         <div class="dash-card-head">
-            <div class="dash-card-title">Pendientes</div>
+            <div>
+                <div class="dash-card-title">Pendientes</div>
+                <div class="dash-card-subtitle">Lo que hay que atender hoy</div>
+            </div>
         </div>
         <div class="dash-card-body">
             <div class="dash-todo-list">
-                @foreach ($tareas as $t)
-                <div class="dash-todo-item dash-todo-item-{{ $t['color'] }}">
+                @forelse ($tareas as $t)
+                <a href="{{ $t['url'] }}" class="dash-todo-item dash-todo-item-{{ $t['color'] }}">
                     <div class="dash-todo-body">
                         <div class="dash-todo-title">{{ $t['titulo'] }}</div>
                         <div class="dash-todo-meta">{{ $t['meta'] }}</div>
                     </div>
                     <span class="dash-todo-tag dash-todo-tag-{{ $t['color'] }}">{{ $t['tag'] }}</span>
-                </div>
-                @endforeach
+                </a>
+                @empty
+                <p class="dash-vacio">Todo al día: no hay pendientes.</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -300,14 +270,14 @@
     </div>
     <div class="dash-card-body">
         <div class="dash-quick-grid">
-            <a href="#" class="dash-quick-item">
+            <a href="{{ route('admin.estudiantes') }}#nuevo" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-blue">
                     <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                 </div>
                 <div class="dash-quick-label">Nuevo estudiante</div>
-                <div class="dash-quick-sub">Inscribir y asignar programa</div>
+                <div class="dash-quick-sub">Registrar a la persona y sus documentos</div>
             </a>
-            <a href="#" class="dash-quick-item">
+            <a href="{{ route('admin.pagos') }}#nuevo" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-orange">
                     <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
                 </div>
@@ -321,12 +291,12 @@
                 <div class="dash-quick-label">Crear programa</div>
                 <div class="dash-quick-sub">Carrera, duración y valor</div>
             </a>
-            <a href="#" class="dash-quick-item">
+            <a href="{{ route('admin.reportes') }}" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-purple">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
                 <div class="dash-quick-label">Generar reporte</div>
-                <div class="dash-quick-sub">Exportar informe mensual</div>
+                <div class="dash-quick-sub">Documentos del mes</div>
             </a>
         </div>
     </div>
