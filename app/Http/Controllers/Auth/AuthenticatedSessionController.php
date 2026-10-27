@@ -28,7 +28,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended($request->user()->panelUrl());
+        // La página que se pidió antes del login solo se respeta si es del panel de este usuario
+        // (o su perfil). Si no, un docente que entra después de que expiró la sesión de un admin
+        // terminaba en /admin/... con un 403.
+        $panel = $request->user()->panelUrl();
+        $pedida = $request->session()->pull('url.intended');
+        $propia = $pedida && collect([$panel, route('profile.edit')])->contains(
+            fn ($base) => $pedida === $base || str_starts_with($pedida, rtrim($base, '/').'/') || str_starts_with($pedida, $base.'?')
+        );
+
+        return redirect($propia ? $pedida : $panel);
     }
 
     /**

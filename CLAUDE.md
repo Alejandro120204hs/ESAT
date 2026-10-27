@@ -120,9 +120,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos).
-  Del panel Admin solo siguen siendo maqueta el Inicio (`admin/dashboard.blade.php`, ruta closure) y las
-  pestañas Documentos de Programas y Docentes.
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio).
+  Del panel Admin solo siguen siendo maqueta las pestañas Documentos de Programas y Docentes.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
   **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
@@ -221,7 +220,73 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   usan las rutas de Matrículas** (`matriculas.pagos.store` / `matriculas.pagos.anular`, `PagoRequest` /
   `AnularPagoRequest` + `PagoService`): una sola regla de cobro y el historial queda en la matrícula. Con
   transferencia/Nequi/Daviplata/Tarjeta la referencia es obligatoria. `anulable` del recibo sigue `AnularPagoRequest`.
-  Pruebas en `tests/Feature/Admin/PagosTest.php`. Contabilidad (pendiente) = ingresos vs. egresos del mes.
+  Pruebas en `tests/Feature/Admin/PagosTest.php`.
+- **Contabilidad (Finanzas)** (`Admin/Contabilidad/ContabilidadController` + `EgresoController`, `Finanzas/ContabilidadService`,
+  modelo `Finanzas/Egreso`, tabla `egresos`, vista `admin/contabilidad/index.blade.php` + `contabilidad.css/js`): pestañas
+  Resumen del mes (ingresos − egresos, gráfica de 6 meses, egresos por categoría, imprimible), Egresos e Ingresos (solo
+  consulta: recaudos de la sede sin anulados, separados en derecho, valor del programa y cuota del sistema —lo abonado a una
+  cuota se reparte en la proporción del cobro—, `ingresosPorMes`). Egresos: solo 3 categorías (`Egreso::CATEGORIAS`:
+  nómina —un docente de la sede, el beneficiario es su nombre—, arriendo y servicios, materiales e insumos); registrar,
+  editar y anular con motivo (`EgresoRequest` / `AnularEgresoRequest`, fecha no futura ni de hace más de un año, referencia
+  obligatoria si no es efectivo, un anulado no se edita), comprobante `CE-AAAA-NNNNN` (`ultimo_egreso_AAAA`), auditoría.
+  Las devoluciones de Matrículas entran solas como egreso (solo consulta). Sin otros ingresos ni cierre de mes (decidido con
+  el usuario). Los egresos de la sede 7 en la BD salen de los horarios reales: nómina = salario fijo (tiempo completo /
+  medio tiempo) o horas dictadas × $ 25.000 (hora cátedra) en los meses con clases; la sede da pérdida porque hay 15 grupos
+  para 27 estudiantes (el usuario lo eligió así). Pruebas en `tests/Feature/Admin/ContabilidadTest.php`.
+- **Comunicados (Comunicación)** (`Admin/Comunicados/ComunicadoController`, `Comunicacion/ComunicadoService`, modelo
+  `Comunicacion/Comunicado`, tablas `comunicados` + `comunicado_lecturas`, vista `admin/comunicados/index.blade.php` +
+  `comunicados.css/js`). Decidido con el usuario: el admin publica a toda la sede o a un rol (`DESTINOS_ADMIN`); el
+  **docente** publica a sus grupos (`destino = grupo` + `curso_id`) desde su panel —todavía no existe esa función— y el
+  admin solo los ve y los **archiva** (con motivo). Estados borrador / programado / publicado / archivado; un programado
+  sale solo cuando llega `publicado_en` (`estadoActual()`, sin tareas). Los destinatarios se calculan al leer (estudiantes
+  con matrícula vigente y cuenta activa, docentes y acudientes activos, o los estudiantes del grupo). `ComunicadoRequest`:
+  un borrador solo pide destinatarios y título; programar exige fecha y hora futuras; un publicado no cambia de
+  destinatarios ni vuelve a borrador; los de docentes y los archivados no se editan. Adjunto PDF/JPG/PNG ≤ 5 MB en el disco
+  privado (`storage/app/private/comunicados/{sede}`), se descarga por `admin.comunicados.adjunto` solo desde la misma sede;
+  se borra al quitarlo o al eliminar el borrador. El PUT llega como POST con `_method` (FormData). Solo se eliminan
+  borradores. Lectura: `comunicado_lecturas.leido_en` (falta la ruta para marcarlo, cuando existan los paneles de
+  Estudiante/Acudiente/Docente) y WhatsApp a quien no lo ha leído (al acudiente si es menor). En la BD (sede 7): 18
+  comunicados y 240 lecturas simuladas (el usuario lo eligió); quien leyó tiene `ultimo_acceso` posterior y los estudiantes
+  con derecho vencido no leen. Pruebas en `tests/Feature/Admin/ComunicadosTest.php`.
+- **Foro (Comunicación)** (`Admin/Foro/ForoController`, `Comunicacion/ForoService`, modelos `Comunicacion/{ForoTema,
+  ForoMensaje,ForoReporte}`, tablas `foro_temas` + `foro_mensajes` + `foro_reportes`, vista `admin/foro/index.blade.php` +
+  `foro.css/js`). Decidido con el usuario: **un solo foro general por sede**; participan estudiantes, docentes, acudientes y
+  administración; todos abren temas (`ForoTema::CATEGORIAS`: Dudas académicas, Prácticas y salidas, Trámites y pagos, Vida en
+  la sede) y responden; un adjunto por mensaje (PDF/JPG/PNG ≤ 5 MB, disco privado `foro/{sede}`, se descarga por
+  `admin.foro.adjunto`). El primer mensaje (menor id) abre el tema: ocultarlo oculta el tema. Moderación **después, con
+  reportes** (uno por persona y mensaje; pendiente → atendido al ocultar / descartado): el admin abre temas (`TemaRequest`),
+  responde (`RespuestaRequest`: no en temas cerrados ni ocultos), fija y cierra/reabre (`EstadoTemaRequest`), oculta con
+  motivo (`OcultarMensajeRequest`), restaura y descarta reportes; todo en la auditoría. En `foro.js` cada persona va con una
+  clave `e|d|a|x` + id (`ForoService::personas`). En la BD (sede 7): 16 temas, 43 mensajes, 6 reportes y 4 adjuntos reales;
+  cada persona es de la sede, activa, el estudiante con matrícula vigente y sin derecho vencido, y su `ultimo_acceso` es
+  posterior a lo que escribió. Falta: que los paneles de Estudiante/Docente/Acudiente lean, publiquen y reporten. Pruebas en
+  `tests/Feature/Admin/ForoTest.php`.
+- **Reportes** (`Admin/Reportes/ReporteController` + `Reportes/ReporteService`, vista `admin/reportes/index.blade.php` +
+  `reportes.css/js`; solo consulta, sin tablas propias). Son los **documentos formales que la sede entrega** y no repiten
+  nada del Inicio ni de otras pantallas. **Por mes** (decidido con el usuario): arriba se elige el mes y cada documento sale
+  como estaba **al cierre de ese mes** (el mes en curso, hasta hoy); no se guarda nada ni hay historial. 9 documentos: para la
+  Secretaría de Educación (matriculados, certificados, retiros y aplazamientos del mes; el formato oficial no se inventa:
+  Excel con todas las columnas), para el aula (lista de clase, planilla de notas, asistencia del mes) y para la
+  administración (cartera por edades, estudiantes en riesgo, caracterización). `ReporteService::datosSede` pasa los datos
+  con sus fechas: matrículas (`estado_fecha`, motivo), grupos (clases de `fechasDictadas`, horario, docente y fechas de cada
+  módulo de `fechasModulos`, también los finalizados), notas con `fecha_nota`/`fecha_habilitacion`, **asistencia por
+  matrícula** (un código P/T/A/E/- por clase, de la tabla `asistencias`; quien vuelve con otra matrícula no mezcla la del
+  grupo viejo) y cobros sin anular con sus pagos fechados (recaudos sin anular). `reportes.js` reconstruye el mes: estado
+  según `estado_fecha`, nota solo si su fecha es anterior al corte, saldo = valor − pagos hasta el corte. Limitación: solo
+  se ve el último cambio de estado (el anterior está en la auditoría). Cada documento es un modelo `{titulo, sub, para,
+  resumen, grafica, tablas, notas, firmas}` (una tabla puede traer `excel` con más columnas que en pantalla). La hoja es un
+  papel de 1000 px que se reduce entera si no cabe (`escalar()`): nunca hay scroll horizontal. Pruebas en
+  `tests/Feature/Admin/ReportesTest.php`.
+- **Inicio** (`Admin/Inicio/InicioController` + `Inicio/InicioService`, vista `admin/dashboard.blade.php` + `dashboard.css/js`):
+  datos reales de hoy, solo consulta. KPI con variación frente al cierre del mes anterior (estudiantes activos, ingresos del
+  mes —recaudos sin anular— frente al mes anterior completo, grupos en clases y por iniciar, estudiantes en mora —saldo de
+  cobros vencidos con los pagos hasta esa fecha—; la flecha sigue el signo y el color el tono: menos mora es verde),
+  matrículas nuevas de los últimos 6 meses, actividad reciente (auditoría de los usuarios de la sede, siempre escapada; el
+  modal pinta texto, nunca HTML), mejores promedios (`notaFinal`, matrículas vigentes con 2+ notas), ocupación de cupos por
+  programa (`estudiantesActivos`) y pendientes de hoy con enlace (reportes del foro, cobros que vencen en 7 días, clases sin
+  asistencia y módulos sin nota de los resúmenes de Asistencia/Calificaciones, habilitaciones, comunicado programado).
+  Accesos rápidos a Estudiantes, Pagos, Programas y Reportes. Las barras entran con `transform` (no animan alto/ancho).
+  Pruebas en `tests/Feature/Admin/InicioTest.php`.
 - **Exportar a Excel**: Matrículas, Docentes, Estudiantes, Acudientes, Asistencia, Calificaciones y Pagos
   tienen un botón "Exportar" que
   descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
@@ -267,7 +332,7 @@ y lo que las protege desde Grupos/Docentes/Programas) están en
 `tests/Feature/Admin/HorariosTest.php`: al cambiar una regla, correrlas; al
 agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 (no hay columna `name`). Las demás reglas del Admin están en
-`tests/Feature/Admin/{Matriculas,Pagos,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
+`tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
 Panel Docente (acceso por rol y redirección): `tests/Feature/Docente/PanelDocenteTest.php`.
@@ -413,6 +478,6 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
   Agregar Form Requests y auditoría a Sedes y Administradores.
-- Admin: Inicio sigue siendo maqueta; Contabilidad, Comunicados, Foro y Reportes
-  son enlaces `#`.
+- Foro: leer, publicar y reportar desde los paneles de Estudiante/Docente/Acudiente.
+- Comunicados: marcar como leído desde los paneles de Estudiante/Acudiente/Docente y que el docente publique a sus grupos.
 - Errores y riesgos abiertos, por prioridad: ver `HALLAZGOS.md`.

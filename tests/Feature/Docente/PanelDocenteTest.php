@@ -32,6 +32,26 @@ class PanelDocenteTest extends TestCase
             ->assertRedirect(route('docente.dashboard', absolute: false));
     }
 
+    public function test_si_antes_se_pidio_una_pagina_de_otro_panel_llega_a_su_panel(): void
+    {
+        $docente = $this->docente();
+
+        $this->get('/admin/matriculas')->assertRedirect(route('login', absolute: false));
+
+        $this->post('/login', ['email' => $docente->email, 'password' => 'password'])
+            ->assertRedirect(route('docente.dashboard', absolute: false));
+    }
+
+    public function test_si_antes_se_pidio_una_pagina_de_su_panel_vuelve_a_ella(): void
+    {
+        $docente = $this->docente();
+
+        $this->get('/docente/notas?grupo=3')->assertRedirect(route('login', absolute: false));
+
+        $this->post('/login', ['email' => $docente->email, 'password' => 'password'])
+            ->assertRedirect('/docente/notas?grupo=3');
+    }
+
     public function test_el_docente_abre_sus_pantallas(): void
     {
         $docente = $this->docente();

@@ -1242,4 +1242,10 @@
         tabActual = reabrir.tab || 'datos';
         if (actual) mostrarFicha();
     }
+
+    // Acceso rápido desde el Inicio: /admin/estudiantes#nuevo abre el asistente de registro
+    if (location.hash === '#nuevo') {
+        abrirModal(null);
+        history.replaceState(null, '', location.pathname);
+    }
 }());
