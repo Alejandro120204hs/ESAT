@@ -158,8 +158,8 @@
 .dash-bar {
     width: 100%; border-radius: 6px 6px 0 0;
     background: var(--navy-2); min-height: 4px;
-    transition: height 0.7s var(--ease-out);
     position: relative; cursor: pointer;
+    transform-origin: bottom; animation: dashCrecerY 0.7s var(--ease-out) both;
 }
 .dash-bar-active { background: var(--orange); box-shadow: 0 4px 12px -4px rgba(217,123,46,0.5); }
 .dash-bar:hover::after {
@@ -224,7 +224,7 @@
 }
 .dash-prog-bar-fill {
     height: 100%; border-radius: 999px;
-    transition: width 1s var(--ease-out);
+    transform-origin: left; animation: dashCrecerX 1s var(--ease-out) 0.1s both;
 }
 .dash-prog-bar-blue   { background: var(--navy-2); }
 .dash-prog-bar-orange { background: var(--orange); }
@@ -420,4 +420,17 @@
 .dash-act-modal-time::before {
     content: ''; display: inline-block; width: 7px; height: 7px;
     border-radius: 50%; background: var(--orange); flex-shrink: 0;
+}
+
+/* Pendientes con enlace y bloques vacíos (datos reales) */
+a.dash-todo-item { text-decoration: none; color: inherit; transition: background 0.15s; }
+a.dash-todo-item:hover { background: rgba(217,123,46,0.05); }
+a.dash-todo-item:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.dash-vacio { margin: 0; padding: 14px 4px; font-size: 0.84rem; color: var(--muted); text-align: center; }
+
+/* Entrada de las barras con transform (no anima alto ni ancho: no mueve el diseño) */
+@keyframes dashCrecerY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes dashCrecerX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+    .dash-bar, .dash-prog-bar-fill { animation: none; }
 }

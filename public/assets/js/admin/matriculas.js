@@ -106,7 +106,8 @@
     }
     function esMenor(p) { var ed = edad(p.fecha_nac); return ed !== null && ed < 18; }
     function fmtDoc(d) { return String(d == null ? '' : d).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-    function fmtTel(t) { t = String(t || ''); return t.length === 10 ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : t; }
+    // El teléfono puede venir de /profile: solo se formatea si son 10 dígitos, lo demás se escapa
+    function fmtTel(t) { t = String(t || ''); return /^\d{10}$/.test(t) ? t.slice(0,3) + ' ' + t.slice(3,6) + ' ' + t.slice(6) : esc(t); }
     function fmtFecha(f) {
         if (!f) return '—';
         var p = f.slice(0, 10).split('-');

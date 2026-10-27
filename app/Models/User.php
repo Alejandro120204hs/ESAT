@@ -28,6 +28,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /** Igual que el default de la columna: una cuenta recién creada está activa también en memoria. */
+    protected $attributes = [
+        'activo' => true,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -130,6 +135,7 @@ class User extends Authenticatable
         return match ($this->role) {
             RolUsuario::Superadmin => route('superadmin.dashboard'),
             RolUsuario::Admin      => route('admin.dashboard'),
+            RolUsuario::Docente    => route('docente.dashboard'),
             default => route('dashboard'),
         };
     }

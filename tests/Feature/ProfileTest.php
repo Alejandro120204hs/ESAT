@@ -64,39 +64,38 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    /** El teléfono se pinta en los paneles del Admin: desde el perfil solo entra un celular (HALLAZGOS C1). */
+    public function test_el_telefono_del_perfil_solo_acepta_un_celular(): void
     {
-        $user = User::factory()->create();
+        $user  = User::factory()->create(['telefono' => '3001112233']);
+        $datos = ['nombres' => $user->nombres, 'apellidos' => $user->apellidos, 'email' => $user->email];
 
-        $response = $this
-            ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
-            ]);
+        $this->actingAs($user)->from('/profile')
+            ->patch('/profile', $datos + ['telefono' => '"><img src=x onerror=alert(1)>'])
+            ->assertSessionHasErrors('telefono');
+        $this->assertSame('3001112233', $user->fresh()->telefono);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
+        $this->actingAs($user)
+            ->patch('/profile', $datos + ['telefono' => '310 123 4567'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('3101234567', $user->fresh()->telefono);
 
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->actingAs($user)
+            ->patch('/profile', $datos + ['telefono' => ''])
+            ->assertSessionHasNoErrors();
+        $this->assertNull($user->fresh()->telefono);
     }
 
-    public function test_correct_password_must_be_provided_to_delete_account(): void
+    /** Nadie borra su propia cuenta: se llevaría en cascada matrículas, pagos y recibos (HALLAZGOS C3). */
+    public function test_el_usuario_no_puede_eliminar_su_cuenta(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
-                'password' => 'wrong-password',
-            ]);
-
-        $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+        $this->actingAs($user)
+            ->delete('/profile', ['password' => 'password'])
+            ->assertMethodNotAllowed();
 
         $this->assertNotNull($user->fresh());
+        $this->actingAs($user)->get('/profile')->assertOk()->assertDontSee('Delete Account');
     }
 }

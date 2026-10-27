@@ -131,7 +131,7 @@
         <div class="app-nav-group">
             <ul class="app-nav">
                 <li>
-                    <a href="#" class="app-nav-link {{ $active === 'reportes' ? 'is-active' : '' }}">
+                    <a href="{{ route('admin.reportes') }}" class="app-nav-link {{ $active === 'reportes' ? 'is-active' : '' }}">
                         <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                         Reportes
                     </a>

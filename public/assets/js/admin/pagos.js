@@ -61,7 +61,7 @@
     function corto(p) { return String(p || '').replace('Técnico Laboral en ', ''); }
     function tag(par) { return '<span class="app-status-tag ' + par[0] + '">' + esc(par[1]) + '</span>'; }
     function metodo(m) { return '<span class="pag-metodo"><i class="m-' + esc(String(m).toLowerCase()) + '"></i>' + esc(m) + '</span>'; }
-    function waLink(tel, texto) { return 'https://wa.me/57' + tel + '?text=' + encodeURIComponent(texto); }
+    function waLink(tel, texto) { return 'https://wa.me/57' + String(tel || '').replace(/\D/g, '') + '?text=' + encodeURIComponent(texto); }
     var FIN_MES = finDeMes(MES_HOY);
     var ICON = {
         wa: '<svg viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>',
@@ -1072,5 +1072,11 @@
     if (abrirGuardado && abrirGuardado.tipo === 'recibo') {
         var reciboGuardado = recaudos.find(function (r) { return r.recibo === abrirGuardado.recibo; });
         if (reciboGuardado) abrirRecibo(reciboGuardado.id);
+    }
+
+    // Acceso rápido desde el Inicio: /admin/pagos#nuevo abre el formulario de registrar pago
+    if (location.hash === '#nuevo') {
+        abrirModalPago(null);
+        history.replaceState(null, '', location.pathname);
     }
 }());
