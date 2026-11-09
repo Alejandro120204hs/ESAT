@@ -34,15 +34,24 @@ class AppServiceProvider extends ServiceProvider
                 $msg = "Hola ESAT, quiero información sobre: {$topic}";
                 return 'https://wa.me/' . $number . '?text=' . rawurlencode($msg);
             });
-            $view->with('educacionContinuada', [
-                'Salud Ocupacional',
-                'Áreas Sociales',
-                'Pedagogía',
-                'Administración y Gerencia',
-                'Edificios y Afines',
-                'Hotelería y Turismo',
-                'Salud',
-            ]);
+            $view->with('educacionContinuada', array_column(config('sitio.continuada'), 0));
+            $view->with('sitio', config('sitio'));
+            // URL de un archivo de public/ con su fecha como versión, para
+            // que el navegador no siga usando el viejo después de cambiarlo.
+            $view->with('recurso', fn (string $ruta) => asset($ruta) . '?v=' . @filemtime(public_path($ruta)));
+            // Foto del sitio: prefiere la versión .webp (y su -960 para pantallas
+            // chicas); null si la foto todavía no existe en public/assets/img.
+            $view->with('foto', function (?string $archivo) {
+                if (! $archivo) {
+                    return null;
+                }
+                $base = pathinfo($archivo, PATHINFO_FILENAME);
+                if (is_file(public_path("assets/img/$base.webp"))) {
+                    $chica = is_file(public_path("assets/img/$base-960.webp")) ? asset("assets/img/$base-960.webp") . ' 960w, ' : '';
+                    return ['src' => asset("assets/img/$base.webp"), 'srcset' => $chica . asset("assets/img/$base.webp") . ' 1920w'];
+                }
+                return is_file(public_path("assets/img/$archivo")) ? ['src' => asset("assets/img/$archivo"), 'srcset' => null] : null;
+            });
         });
     }
 }
