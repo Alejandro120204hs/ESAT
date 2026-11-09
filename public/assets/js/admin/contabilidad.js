@@ -862,7 +862,7 @@
             '<table class="con-hoja-tabla"><tbody><tr><td>Total ingresos</td><td class="num">' + pesos(b.ingresos) + '</td></tr>' +
                 '<tr><td>Total egresos</td><td class="num">− ' + pesos(b.egresos) + '</td></tr></tbody>' +
                 '<tfoot><tr><td>Saldo del mes</td><td class="num">' + pesos(b.saldo) + '</td></tr></tfoot></table>' +
-            '<div class="con-hoja-firmas"><div class="con-hoja-firma">Elaboró<span>' + esc(CFG.admin || 'Administrador') + '</span></div></div>');
+            '<div class="con-hoja-firmas"><div class="con-hoja-firma">Elaboró<span>' + esc(CFG.admin || 'Secretaría') + '</span></div></div>');
     });
 
     /* Escape: se revisa antes que los combobox (fase de captura) para que, si hay una lista abierta,

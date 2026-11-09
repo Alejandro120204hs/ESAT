@@ -22,7 +22,7 @@
     <div class="rep-header">
         <div>
             <h2 class="rep-title">Reportes</h2>
-            <p class="rep-sub">Los documentos formales que la sede entrega: a la Secretaría de Educación, a los docentes y a la administración. Elige el mes y cada documento sale como estaba al cierre de ese mes; imprímelo o descárgalo en Excel.</p>
+            <p class="rep-sub">Los documentos formales que la sede entrega: a la Secretaría de Educación, a los docentes y para uso interno de la sede. Elige el mes y cada documento sale como estaba al cierre de ese mes; imprímelo o descárgalo en Excel.</p>
         </div>
     </div>
 

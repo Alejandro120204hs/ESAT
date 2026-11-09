@@ -41,7 +41,7 @@
     </section>
 
     <footer class="rc-pie">
-        <div class="rc-firma"><span></span>Firma y sello · Administración de la sede</div>
+        <div class="rc-firma"><span></span>Firma y sello · Secretaría de la sede</div>
         <p>Documento válido con firma y sello de la institución.</p>
     </footer>
 @endsection

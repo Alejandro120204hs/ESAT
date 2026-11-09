@@ -12,7 +12,7 @@
 @endpush
 
 @php
-    $nombreAdmin = auth()->user()->nombres ?: 'Administrador';
+    $nombreAdmin = auth()->user()->nombres ?: 'Secretaría';
     $sedeName = auth()->user()->sede?->nombre ?? 'sede';
 @endphp
 

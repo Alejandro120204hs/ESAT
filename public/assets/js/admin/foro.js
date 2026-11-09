@@ -14,7 +14,7 @@
     var VISTA_KEY = 'esat.admin.foro.vista';
     var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var CAT = { academico: 'Dudas académicas', practicas: 'Prácticas y salidas', tramites: 'Trámites y pagos', vida: 'Vida en la sede' };
-    var ROL = { e: 'Estudiante', d: 'Docente', a: 'Acudiente', x: 'Administración' };
+    var ROL = { e: 'Estudiante', d: 'Docente', a: 'Acudiente', x: 'Secretaría' };
     var MAX_TXT = 3000, MAX_ADJ = 5 * 1024 * 1024;
 
     /* ── Utilidades ───────────────────────────── */
@@ -233,7 +233,7 @@
     filtroCombo('for-t-cb-estado', [{ value: '', label: 'Todos los temas' }, { value: 'abierto', label: 'Abiertos' }, { value: 'cerrado', label: 'Cerrados' },
         { value: 'sin', label: 'Sin respuesta' }, { value: 'reportes', label: 'Con reportes' }], function () { aplicar(); });
     filtroCombo('for-t-cb-rol', [{ value: '', label: 'Cualquier autor' }, { value: 'e', label: 'Abiertos por estudiantes' }, { value: 'd', label: 'Abiertos por docentes' },
-        { value: 'a', label: 'Abiertos por acudientes' }, { value: 'x', label: 'Abiertos por la administración' }], function () { aplicar(); });
+        { value: 'a', label: 'Abiertos por acudientes' }, { value: 'x', label: 'Abiertos por la secretaría' }], function () { aplicar(); });
     document.getElementById('for-t-search').addEventListener('input', function () { aplicar(); });
 
     /* ═══════════ Reportes y ocultos ═══════════ */
@@ -394,7 +394,7 @@
         if (nuevo) setTimeout(function () { drawer.querySelector('.for-close-btn[data-cerrar]').focus({ preventScroll: true }); }, 30);
     }
 
-    /* Responder como administración (abajo del cajón) */
+    /* Responder como secretaría (abajo del cajón) */
     function pintarResponder(t) {
         resp.hidden = false;
         if (temaOculto(t)) { resp.hidden = true; return; }
@@ -402,7 +402,7 @@
             resp.innerHTML = '<div class="for-responder-cerrado"><span>El tema está cerrado: nadie puede responder.</span><button type="button" class="for-btn for-btn-ghost for-btn-sm" data-cerrar-tema="0">' + ICON.abrir + 'Reabrir tema</button></div>';
             return;
         }
-        resp.innerHTML = '<label class="for-lbl" for="for-r-texto">Responder como administración</label>' +
+        resp.innerHTML = '<label class="for-lbl" for="for-r-texto">Responder como secretaría</label>' +
             '<textarea class="for-input for-textarea" id="for-r-texto" maxlength="' + MAX_TXT + '" placeholder="Escribe tu respuesta…">' + esc(borrador.texto) + '</textarea>' +
             '<div class="for-form-error" id="for-r-error" role="alert" hidden style="margin:0"></div>' +
             '<div class="for-responder-pie"><div class="for-adj-elegido" id="for-r-adj"></div>' +
@@ -507,7 +507,7 @@
     function abrirNuevo() {
         md = { tipo: 'tema', archivo: null };
         el('for-md-titulo').textContent = 'Nuevo tema';
-        el('for-md-sub').textContent = 'Se publica como administración, a la vista de toda la sede';
+        el('for-md-sub').textContent = 'Se publica como secretaría, a la vista de toda la sede';
         mdBody.innerHTML =
             '<div class="for-field"><span class="for-lbl">Categoría *</span><div class="for-chips" id="for-f-cats" role="radiogroup" aria-label="Categoría">' +
                 Object.keys(CAT).map(function (k) { return '<label class="for-chip"><input type="radio" name="for-f-cat" value="' + k + '"><span>' + CAT[k] + '</span></label>'; }).join('') + '</div></div>' +

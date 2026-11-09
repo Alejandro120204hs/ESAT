@@ -99,7 +99,7 @@
         $ESTADO_PAGO_TEXTO = ['al_dia' => 'Al día', 'pendiente' => 'Pendiente', 'vencido' => 'Vencido'];
     @endphp
 
-    <p class="app-page-intro">Aquí puedes ver cuántos estudiantes hay matriculados y cómo van con sus pagos. Esta pantalla es solo de consulta — crear o editar estudiantes es trabajo del administrador de cada sede.</p>
+    <p class="app-page-intro">Aquí puedes ver cuántos estudiantes hay matriculados y cómo van con sus pagos. Esta pantalla es solo de consulta — crear o editar estudiantes es trabajo de la secretaría de cada sede.</p>
 
     <div class="app-stat-row">
         <div class="app-stat-tile">

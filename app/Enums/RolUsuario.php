@@ -6,6 +6,7 @@ enum RolUsuario: string
 {
     case Superadmin = 'superadmin';
     case Admin = 'admin';
+    case AdminGeneral = 'admin_general';
     case Estudiante = 'estudiante';
     case Docente = 'docente';
     case Acudiente = 'acudiente';
@@ -14,7 +15,8 @@ enum RolUsuario: string
     {
         return match ($this) {
             self::Superadmin => 'Superadmin',
-            self::Admin => 'Admin ESAT',
+            self::Admin => 'Secretaría',
+            self::AdminGeneral => 'Admin',
             self::Estudiante => 'Estudiante',
             self::Docente => 'Docente',
             self::Acudiente => 'Acudiente',

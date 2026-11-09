@@ -140,7 +140,7 @@
     var GRUPOS_DOC = [
         { id: 'secretaria', titulo: 'Para la Secretaría de Educación', sub: 'Matrícula y certificación que reporta la institución.' },
         { id: 'aula', titulo: 'Para los docentes y el aula', sub: 'Listas y planillas de un grupo, para imprimir y firmar.' },
-        { id: 'admin', titulo: 'Para la administración', sub: 'Lo que cruza varias pantallas y ninguna muestra por sí sola.' }
+        { id: 'admin', titulo: 'Para uso interno de la sede', sub: 'Lo que cruza varias pantallas y ninguna muestra por sí sola.' }
     ];
     var DOCS = {
         matriculados: { grupo: 'secretaria', titulo: 'Matriculados del mes', desc: 'Estudiantes con matrícula en el mes: documento, género, edad, residencia, programa, jornada y estado.', filtros: ['programa'] },
@@ -168,7 +168,7 @@
     /* ═══════════ Generadores: cada uno devuelve el modelo del documento ═══════════ */
     function base(tipo, sub) {
         return { tipo: tipo, titulo: DOCS[tipo].titulo, para: GRUPOS_DOC.find(function (g) { return g.id === DOCS[tipo].grupo; }).titulo,
-            sub: sub, generado: CFG.ahora, por: CFG.admin, resumen: [], grafica: null, tablas: [], notas: [], firmas: [['Elaboró', CFG.admin + ' · Administración de la sede']] };
+            sub: sub, generado: CFG.ahora, por: CFG.admin, resumen: [], grafica: null, tablas: [], notas: [], firmas: [['Elaboró', CFG.admin + ' · Secretaría de la sede']] };
     }
     function enPrograma(m, f) { return !f.programa || String(m.programa_id) === f.programa; }
     function subPrograma(f) { return mesTxt() + ' · ' + (f.programa ? 'Programa: ' + progPorId[f.programa] : 'Todos los programas'); }

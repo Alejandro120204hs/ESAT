@@ -56,6 +56,15 @@ con IDs (C1, A3, M2…) para referenciarlos en commits y PR.
 ## Roles y acceso
 
 Enum `App\Enums\RolUsuario`: `superadmin | admin | estudiante | docente | acudiente`.
+**El rol `admin` es la Secretaría de cada sede** (lo pidió el cliente): en pantalla siempre se llama
+"Secretaría" (Superadmin › Secretarías, firmas "Secretaría de la sede", el foro y los comunicados
+"como secretaría"); por dentro (enum, rutas, carpetas, código) sigue siendo `admin`. Hace todo lo del panel.
+**El rol `admin_general` es el Admin de toda ESAT** (en pantalla "Admin"; una sola cuenta, sin sede). El
+**Superadmin es el creador del sistema** (el desarrollador). Decidido con el usuario: el Admin ve todo ESAT
+consolidado con filtro por sede, **también actúa** en las sedes ("Entrar a la sede": las mismas pantallas de la
+secretaría con una franja de la sede elegida, sin duplicarlas; todo a su nombre en la auditoría), y **lo del
+Superadmin pasa al Admin** (sedes, secretarías, inicio, estudiantes, auditoría, configuración); al Superadmin le
+queda crear la cuenta del Admin y lo técnico. Panel en construcción (ver "Panel Admin general").
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
 Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin y docente
@@ -467,6 +476,67 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   al hacer scroll — solo `.app-content` scrollea), topbar con dropdown de
   usuario (perfil real conectado a `route('profile.edit')` + cerrar
   sesión).
+
+## Panel Admin general (solo frontend, con datos de ejemplo)
+
+- Rol `admin_general` (migración `2026_11_09_000001_add_admin_general_to_users_role`), `User::isAdminGeneral()`,
+  `panelUrl()` → `general.dashboard`. Rutas `/general` (closures con `role:admin_general`). Layout propio:
+  `admin_general/layout.blade.php` + `partials/{sidebar,topbar}` (copiado del Docente), CSS/JS en
+  `public/assets/{css,js}/admin_general/`. **Mi perfil** sí tiene backend real: `admin_general/profile.blade.php` +
+  `profile.css` (el diseño del de la secretaría), guarda con `ProfileController@update` y la clave con `password.update`.
+- **Catálogo (decidido con el usuario, 2026-11-09)**: el **Admin** crea y edita escuelas y programas (malla, duración,
+  cupo, jornadas) y fija el **precio, uno solo para todas las sedes**. La **secretaría solo elige cuáles programas del
+  catálogo ofrece su sede** (`programa_sede`) y ya no crea programas ni cambia precios: al conectar el backend hay que
+  ajustar Programas de la secretaría (`Admin/Programas/ProgramaController`) a esa regla. Un secretario solo cambia lo de su sede.
+- Pantallas (cada una con su Blade/CSS/JS y su prefijo; menú: Principal, Estructura, Personas, Seguimiento, Comunicación, Supervisión):
+  - **Inicio** (`dashboard`, `gen-`): filtro de sede (chips, se recuerda), KPI con variación, comparación de sedes
+    (fila = filtrar, botón "Entrar"), ingresos de 6 meses apilados por sede (8 colores fijos validados para daltonismo,
+    `--sede-1..8`, también en Finanzas; la 9.ª sede repite color), alertas (sin secretaría, secretaría sin entrar 30+ días, mora ≥ 20 %,
+    ocupación < 50 % o ≥ 95 %, comunicados programados) y actividad (sale de la auditoría).
+  - **Sedes** (`sedes/index`, `sed-`): crear y editar (combobox de Colombia), sin eliminar ni desactivar; detalle con
+    datos, secretarías y programas.
+  - **Secretarías** (`secretarias/index`, `sec-`): cuentas rol admin; asistente de 3 pasos (clave = documento, correo y
+    documento únicos, celular `^3\d{9}$`), activar/desactivar con confirmación (avisa si la sede queda sin secretaría)
+    y restablecer clave.
+  - **Programas** (`programas/index`, `prg-`): catálogo real; crear/editar en 3 pasos (datos y jornadas, duración y
+    precio, malla editable), activar/desactivar (no con grupos vigentes), y en el detalle a qué sedes se ofrece
+    (interruptor; no se quita de una sede con grupos vigentes). Editar no invalida grupos vigentes (cupo ≥ estudiantes
+    del grupo más lleno, no se quita una jornada en uso). Pestaña Escuelas: crear, editar, eliminar solo sin programas ni docentes.
+  - **Decidido con el usuario**: el Admin **crea y edita igual que la secretaría** (mismas reglas), pero en cualquier
+    sede (la elige en el formulario). Matricular, cobrar, grupos y horarios siguen por "Entrar a la sede".
+  - **Estudiantes** (`estudiantes/index`, `est-`): todas las sedes (filtros sede/programa/matrícula/pagos, ficha con
+    datos, matrícula y pagos, exportar) + registrar y editar a la persona en 2 pasos (correo obligatorio, clave =
+    documento, TI solo si es menor, acudiente obligatorio si es menor; no cambia de sede con matrícula vigente).
+  - **Acudientes** (`acudientes/index`, `acu-`): crear/editar en 3 pasos (con sede y, opcional, estudiantes a cargo),
+    vincular (reemplaza al acudiente anterior) y desvincular (nunca a un menor), activar/desactivar cuenta, restablecer clave.
+  - **Docentes** (`docentes/index`, `dcn-`): crear/editar en 3 pasos (sede, escuela, título, especialidad, vinculación),
+    activar/desactivar (no con grupos vigentes), restablecer clave; no cambia de sede con grupos vigentes allá.
+  - En los tres, documento y correo no se repiten entre ninguna cuenta (secretarías, docentes, acudientes, estudiantes).
+  - **Académico** (`academico/index`, `aca-`): solo consulta; sede + pestañas Grupos (avance por módulo),
+    Asistencia (informativa) y Notas (módulos sin nota, por habilitar), detalle del grupo con su malla, exportar.
+  - **Foro** (`foro/index`, `for-`): foros de todas las sedes; modera (ocultar con motivo —el primer mensaje oculta el
+    tema—, restaurar, descartar reportes, fijar, cerrar/reabrir) y participa como Admin (responder, abrir temas).
+  - **Finanzas** (`finanzas/index`, `fin-`): sede + mes; pestañas Recaudo (recibo imprimible), Cartera (a hoy, por
+    edades, WhatsApp al acudiente si es menor), Contabilidad (ingresos − egresos) y Devoluciones. Solo consulta.
+  - **Comunicados** (`comunicados/index`, `com-`): publicar a todas o algunas sedes por rol (ahora, programar,
+    borrador); un publicado no cambia de destinatarios; archivar con motivo; eliminar solo borradores propios.
+  - **Reportes** (`reportes/index`, `rep-`): por mes y sede: matriculados, novedades, recaudo, ingresos y egresos,
+    cartera por edades (a hoy). Imprimir y Excel.
+  - **Auditoría** (`auditoria/index`, `aud-`): filtros de periodo, sede, persona y acción; detalle; exportar.
+  - **Configuración** (`configuracion/index`, `cfg-`): institución (datos reales), cuota del sistema, reglas de acceso
+    (intentos, días de inactividad) y desbloquear cuentas; cada formulario con Deshacer y confirmación.
+- "Entrar a la sede" (Inicio, Sedes, Estudiantes) solo abre el modal: falta el backend (sede elegida en la sesión +
+  pantallas de la secretaría con una franja). El Superadmin todavía conserva Sedes, Administradores y sus maquetas:
+  quitarle lo que pasó al Admin queda pendiente.
+- **Datos de ejemplo**: `public/assets/js/admin_general/datos-ejemplo.js` (`GEN_DATOS`, semilla fija; catálogo real de la
+  BD —10 programas con módulos, sin los 3 de prueba—, grupos con docente y estudiantes adentro, acudientes como registros
+  propios (`estudiante.acudiente_id` + `parentesco`; `sincronizar()` rearma `e.acudiente`), foro; cuadran entre
+  pantallas: recibos = ingresos del Inicio, morosos = cartera). Sedes, programas, NIT, licencia, teléfonos y cuota del
+  sistema son reales; personas y montos ficticios. `GEN_API.guardar()` / `guardarConfiguracion()` (Promise) es lo único
+  que escribe (sessionStorage por pestaña) y deja su evento en la auditoría. `window.GEN_YO` (layout) es el nombre del
+  Admin. Al conectar el backend: un controlador por pantalla en `AdminGeneral/{Panel}/` que pase los datos con `@json`
+  en la misma forma, y GEN_API por `fetch` con Form Requests.
+- Pruebas: `tests/Feature/AdminGeneral/PanelGeneralTest.php`.
 
 ## Panel Docente (solo frontend, con datos de ejemplo)
 

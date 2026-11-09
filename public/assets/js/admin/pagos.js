@@ -993,7 +993,7 @@
                 '<tr><td>Devoluciones (' + c.devs.length + ')</td><td class="num">− ' + pesos(c.salidas) + '</td></tr>' +
                 (c.anulados.length ? '<tr><td>Recibos anulados (no suman)</td><td class="num">' + c.anulados.length + '</td></tr>' : '') +
             '</tbody><tfoot><tr><td>Queda en caja</td><td class="num">' + pesos(c.total - c.salidas) + '</td></tr></tfoot></table>' +
-            '<div class="pag-hoja-firma">Firma de quien entrega<span>' + esc(D.admin || 'Administrador') + '</span></div>';
+            '<div class="pag-hoja-firma">Firma de quien entrega<span>' + esc(D.admin || 'Secretaría') + '</span></div>';
         hojaFoco = document.activeElement;
         hojaEl.setAttribute('aria-hidden', 'false');
         hojaEl.scrollTop = 0;

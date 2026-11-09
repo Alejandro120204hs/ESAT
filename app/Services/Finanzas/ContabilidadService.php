@@ -193,6 +193,6 @@ class ContabilidadService
 
     private function nombre(?User $u): string
     {
-        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Administrador') : 'Administrador';
+        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Secretaría') : 'Secretaría';
     }
 }

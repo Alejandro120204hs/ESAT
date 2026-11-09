@@ -42,7 +42,7 @@ class ForoController extends Controller
     public function responder(RespuestaRequest $request, ForoTema $tema): JsonResponse
     {
         $t = $this->foro->responder($tema, $request->input('texto'), $request->file('adjunto'));
-        Auditoria::registrar('editar', $t, "Respondió como administración en el tema «{$t->titulo}»: «".Str::limit($request->input('texto'), 80).'».');
+        Auditoria::registrar('editar', $t, "Respondió como secretaría en el tema «{$t->titulo}»: «".Str::limit($request->input('texto'), 80).'».');
 
         return $this->respuesta($t, 'Se publicó tu respuesta.');
     }
