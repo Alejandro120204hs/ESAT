@@ -1,0 +1,239 @@
+/* =========================================================
+   ESAT — sitio público · subpáginas
+   Programas técnicos, líneas de Educación Continuada y escuelas: la
+   misma portada redondeada del inicio, y debajo secciones que cambian
+   de forma (lista con encabezado fijo, fotos de salida, la foto de
+   práctica que se abre con el scroll, respaldo y más programas).
+   ========================================================= */
+
+/* ---------- Ruta de navegación ---------- */
+.migas { padding: 20px 0 16px; }
+.migas ol { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.9rem; }
+.migas li { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.migas a { color: var(--muted); font-weight: 600; transition: color 0.2s; }
+.migas a:hover { color: var(--navy); text-decoration: underline; }
+.migas svg { width: 14px; height: 14px; transform: rotate(-90deg); stroke-width: 2; }
+.migas li[aria-current] { color: var(--navy); font-weight: 700; }
+
+/* ---------- Portada ---------- */
+.sub-hero { padding: 0 clamp(10px, 1.4vw, 18px); }
+.sub-hero-marco {
+    position: relative; isolation: isolate; overflow: hidden;
+    display: flex; align-items: flex-end;
+    max-width: 1520px; min-height: clamp(440px, 66vh, 720px); margin: 0 auto;
+    border-radius: var(--radius-xl); background: var(--navy-3); color: var(--white);
+}
+.sub-hero-foto { position: absolute; left: 0; top: -8%; z-index: -2; width: 100%; height: 116%; object-fit: cover; object-position: center 25%; }
+.sub-hero-foto.es-baja { object-position: center 42%; }
+.sub-hero-velo {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(8, 21, 39, 0.82) 0%, rgba(8, 21, 39, 0.55) 38%, rgba(8, 21, 39, 0.08) 70%),
+        linear-gradient(0deg, rgba(8, 21, 39, 0.66) 0%, rgba(8, 21, 39, 0) 55%);
+}
+.sub-hero.sin-foto .sub-hero-marco { background: radial-gradient(120% 90% at 85% 20%, var(--navy-2) 0%, var(--navy-3) 60%, var(--navy-4) 100%); }
+.sub-hero.sin-foto .sub-hero-velo { display: none; }
+.sub-hero-texto { max-width: 860px; padding: clamp(48px, 9vh, 140px) clamp(28px, 5vw, 88px) clamp(32px, 6vh, 72px); }
+.sub-hero h1 { color: var(--white); font-size: clamp(2.3rem, 1.3rem + 3.4vw, 4rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; }
+/* Nombres largos ("Criminalística, Investigación Judicial…"): un paso menos para no pasar de 3 líneas. */
+.sub-hero.es-largo h1 { font-size: clamp(2rem, 1.2rem + 2.4vw, 3.1rem); }
+.sub-hero-lema { margin-top: var(--s-4); font-family: var(--font-display); font-weight: 700; font-size: clamp(1.15rem, 1rem + 0.6vw, 1.45rem); color: var(--white); }
+.sub-hero-intro { margin-top: var(--s-4); max-width: 60ch; color: rgba(255, 255, 255, 0.86); font-size: 1.05rem; }
+.sub-hero-acciones { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-6); }
+
+/* ---------- Barra fija de inscripción ---------- */
+.sub-barra {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 440;
+    background: rgba(255, 255, 255, 0.97); border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 32px -20px rgba(10, 27, 51, 0.45);
+    transform: translateY(110%); visibility: hidden;
+    transition: transform 0.55s var(--ease-out), visibility 0s 0.55s;
+}
+@supports (backdrop-filter: blur(1px)) { .sub-barra { background: rgba(255, 255, 255, 0.9); backdrop-filter: saturate(1.5) blur(14px); } }
+.sub-barra.is-visible { transform: translateY(0); visibility: visible; transition: transform 0.55s var(--ease-out), visibility 0s; }
+.sub-barra .section-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; padding-block: 10px calc(10px + env(safe-area-inset-bottom)); }
+.sub-barra p { min-width: 0; line-height: 1.25; }
+.sub-barra p span { display: block; font-size: 0.85rem; color: var(--muted); }
+.sub-barra p strong { display: block; font-family: var(--font-display); font-size: 1.02rem; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.con-barra .fab-whatsapp { transform: translateY(-80px); }
+.con-barra .fab-whatsapp:hover { transform: translateY(-83px); }
+
+/* ---------- Formación práctica / Diplomados y cursos ---------- */
+.sub-formacion, .sub-cursos { padding: var(--section-y) 0; }
+.sub-formacion-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(36px, 6vw, 96px); align-items: start; }
+.sub-formacion-cabeza { position: sticky; top: calc(var(--cab-alto) + 40px); }
+.sub-formacion-cabeza h2 { font-size: var(--t-h2); }
+.sub-formacion-cabeza p { margin-top: 14px; max-width: 46ch; color: var(--muted); font-size: var(--t-lead); line-height: 1.55; }
+
+.sub-competencias li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: var(--s-5); padding: var(--s-6) 0; border-top: 1px solid var(--line); }
+.sub-competencias li:last-child { border-bottom: 1px solid var(--line); }
+.sub-competencia-nodo { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; background: var(--navy); color: var(--white); }
+.sub-competencia-nodo svg { width: 25px; height: 25px; }
+.sub-competencias h3 { font-size: 1.25rem; letter-spacing: -0.015em; margin-top: 4px; }
+.sub-competencias p { margin-top: 6px; color: var(--muted); max-width: 56ch; }
+
+.sub-formacion-cabeza .sub-cursos-total { font-family: var(--font-display); font-weight: 800; color: var(--navy); font-size: 1rem; }
+.sub-cursos-lista li {
+    display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 18px;
+    padding: 18px 0; border-top: 1px solid var(--line);
+}
+.sub-cursos-lista li:last-child { border-bottom: 1px solid var(--line); }
+.sub-curso-nodo { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-soft); color: var(--navy); }
+.sub-curso-nodo svg { width: 22px; height: 22px; }
+.sub-curso-nombre { font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; color: var(--navy); line-height: 1.3; }
+.sub-curso-enlace {
+    width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%;
+    color: var(--green); border: 1.5px solid var(--line-strong);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.sub-curso-enlace svg { width: 20px; height: 20px; }
+.sub-curso-enlace:hover { background: var(--green); border-color: var(--green); color: var(--white); }
+
+/* ---------- Proyección ---------- */
+.sub-proyeccion { padding: var(--section-y) 0; background: var(--bg-soft); }
+.sub-salidas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); }
+.sub-salida {
+    position: relative; isolation: isolate; overflow: hidden;
+    display: flex; align-items: flex-end; min-height: 460px;
+    border-radius: var(--radius-lg); background: var(--navy-3); color: var(--white);
+}
+.sub-salida > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+.sub-salida:hover > img { transform: scale(1.05); }
+.sub-salida-velo { position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(8, 21, 39, 0.94) 0%, rgba(8, 21, 39, 0.62) 42%, rgba(8, 21, 39, 0.05) 75%); }
+.sub-salida.sin-foto { min-height: 320px; background: linear-gradient(160deg, var(--navy-2), var(--navy-4)); }
+.sub-salida.sin-foto .sub-salida-velo { display: none; }
+.sub-salida-cuerpo { padding: var(--s-6); }
+.sub-salida-icono { width: 50px; height: 50px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 15px; background: var(--white); color: var(--navy); }
+.sub-salida-icono svg { width: 25px; height: 25px; }
+.sub-salida h3 { color: var(--white); font-size: 1.35rem; letter-spacing: -0.015em; }
+.sub-salida p { margin-top: 8px; color: rgba(255, 255, 255, 0.84); }
+
+/* ---------- Práctica (la foto se abre con el scroll) ---------- */
+.sub-practica { padding: var(--section-y) clamp(10px, 1.4vw, 18px); }
+.sub-practica-marco {
+    position: relative; isolation: isolate; overflow: hidden;
+    display: flex; align-items: flex-end;
+    max-width: 1440px; height: clamp(440px, 78vh, 740px); margin: 0 auto;
+    border-radius: var(--radius-xl); background: var(--navy-3); color: var(--white);
+}
+.sub-practica-marco > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.sub-practica-velo { position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(8, 21, 39, 0.88) 0%, rgba(8, 21, 39, 0.4) 40%, rgba(8, 21, 39, 0) 70%); }
+.sub-practica-marco.sin-foto { height: auto; min-height: 340px; background: radial-gradient(110% 120% at 90% 10%, var(--navy-2), var(--navy-4)); }
+.sub-practica-marco.sin-foto .sub-practica-velo { display: none; }
+.sub-practica-texto { padding-block: clamp(28px, 5vw, 64px); }
+.sub-practica h2 { color: var(--white); font-size: clamp(1.8rem, 1.3rem + 1.8vw, 2.8rem); max-width: 20ch; }
+.sub-practica p { margin-top: 12px; max-width: 52ch; color: rgba(255, 255, 255, 0.86); font-size: var(--t-lead); }
+
+/* ---------- Respaldo institucional ---------- */
+.sub-respaldo { padding: 0 0 var(--section-y); }
+/* Sin lista de cursos, el respaldo va justo después de la portada: necesita aire arriba. */
+.sub-hero + .sub-barra + .sub-respaldo { padding-top: var(--section-y); }
+.sub-respaldo-caja {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; gap: 28px 48px;
+    padding: clamp(28px, 4vw, 48px);
+    border-radius: var(--radius-xl); background: var(--bg-soft);
+}
+.sub-respaldo h2 { font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem); }
+.sub-respaldo h3 { margin: 10px 0 6px; font-size: 1.1rem; color: var(--navy-2); }
+.sub-respaldo-texto p { color: var(--muted); max-width: 52ch; }
+.sub-respaldo-sellos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sub-respaldo-sellos li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; border-radius: 14px; background: var(--white); border: 1px solid var(--line);
+    font-size: 0.9rem; font-weight: 600; color: var(--navy); line-height: 1.3;
+}
+.sub-respaldo-sellos svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--navy-2); }
+
+/* ---------- Más programas / otras líneas / otras escuelas ---------- */
+.sub-otros, .sub-otras-lineas { padding: 0 0 var(--section-y); }
+.sub-otros-cabeza { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 28px; }
+.sub-otros-cabeza h2, .sub-otras-lineas h2 { font-size: clamp(1.5rem, 1.15rem + 1.3vw, 2.3rem); max-width: 24ch; }
+.sub-otros-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: var(--s-4); }
+.sub-otro {
+    display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: center; gap: 16px;
+    padding: 14px 22px 14px 14px; border-radius: var(--radius-lg);
+    background: var(--white); border: 1.5px solid var(--line);
+    transition: border-color 0.3s, box-shadow 0.4s;
+}
+.sub-otro:hover { border-color: var(--navy); box-shadow: var(--shadow-md); }
+.sub-otro-foto { width: 88px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: var(--bg-soft); color: var(--navy); }
+.sub-otro-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease-out); }
+.sub-otro:hover .sub-otro-foto img { transform: scale(1.08); }
+.sub-otro-foto svg { width: 34px; height: 34px; }
+.sub-otro-texto strong { display: block; font-family: var(--font-display); font-size: 1.02rem; color: var(--navy); line-height: 1.25; }
+.sub-otro-texto span { display: block; margin-top: 4px; font-size: 0.92rem; color: var(--muted); line-height: 1.4; }
+.sub-otro-flecha { width: 20px; height: 20px; color: var(--navy-2); transition: transform 0.4s var(--ease-out); }
+.sub-otro:hover .sub-otro-flecha { transform: translateX(4px); }
+
+.sub-otras-lineas h2 { margin-bottom: 20px; }
+.sub-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.sub-chips a {
+    display: inline-flex; align-items: center; gap: 9px;
+    min-height: 48px; padding: 0 20px; border-radius: 999px;
+    border: 1.5px solid var(--line-strong); color: var(--navy); font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.sub-chips svg { width: 17px; height: 17px; }
+.sub-chips a:hover { background: var(--navy); border-color: var(--navy); color: var(--white); }
+
+/* ---------- Escuela: un programa por fila ---------- */
+.sub-escuela-programas { padding: clamp(32px, 5vw, 64px) 0 var(--section-y); }
+.sub-fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 6vw, 96px); padding: clamp(40px, 5vw, 80px) 0; }
+.sub-fila + .sub-fila { border-top: 1px solid var(--line); }
+.sub-fila.es-invertida .sub-fila-foto { order: 2; }
+.sub-fila-foto { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius-xl); background: var(--bg-soft); }
+.sub-fila-foto img { position: absolute; left: 0; top: -6%; width: 100%; height: 112%; object-fit: cover; }
+.sub-fila.sin-foto { grid-template-columns: minmax(0, 1fr); }
+.sub-fila.sin-foto .sub-fila-texto { max-width: 820px; }
+.sub-fila.sin-foto h2 { display: flex; align-items: center; gap: 16px; }
+.sub-fila-icono {
+    width: 54px; height: 54px; flex-shrink: 0; display: grid; place-items: center;
+    border-radius: 16px; background: var(--bg-soft); color: var(--navy);
+}
+.sub-fila-icono svg { width: 26px; height: 26px; }
+.sub-fila-texto h2 { font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.4rem); }
+.sub-fila-texto h2 a { transition: color 0.2s; }
+.sub-fila-texto h2 a:hover { text-decoration: underline; }
+.sub-fila-lema { margin: 8px 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; color: var(--navy-2); }
+.sub-fila-texto > p:not(.sub-fila-lema) { color: var(--muted); max-width: 58ch; }
+.sub-fila-claves { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 24px; }
+.sub-fila-claves li { padding: 6px 12px; border-radius: 999px; background: var(--bg-soft); font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+.sub-fila-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 900px) {
+    .sub-formacion-grid { grid-template-columns: 1fr; }
+    .sub-formacion-cabeza { position: relative; top: 0; }
+    .sub-salidas { grid-template-columns: 1fr; }
+    .sub-salida { min-height: 380px; }
+    .sub-respaldo-caja { grid-template-columns: 1fr; }
+    .sub-fila { grid-template-columns: 1fr; }
+    .sub-fila.es-invertida .sub-fila-foto { order: 0; }
+}
+@media (max-width: 600px) {
+    .sub-hero-marco { flex-direction: column; align-items: stretch; min-height: 0; border-radius: var(--radius-lg); }
+    .sub-hero-foto { position: relative; top: 0; z-index: 0; height: auto; aspect-ratio: 16 / 9; }
+    /* En celular "Ver el programa" solo baja la página: se deja el botón de
+       inscripción, que así queda dentro de la primera pantalla. */
+    .sub-hero-acciones .btn-outline-light { display: none; }
+    /* En celular la foto va en el flujo: sin el parallax que motor.js le pone en línea. */
+    .sub-hero-foto[data-parallax] { transform: none !important; }
+    .sub-hero-velo { display: none; }
+    .sub-hero-texto { padding: 26px 22px 28px; }
+    .sub-hero.sin-foto .sub-hero-texto { padding-top: 64px; }
+    .sub-hero-acciones .btn { width: 100%; }
+    .sub-practica-marco { border-radius: var(--radius-lg); }
+    .sub-respaldo-sellos { grid-template-columns: 1fr; }
+    .sub-barra p span { display: none; }
+    .sub-competencias li { grid-template-columns: 48px minmax(0, 1fr); gap: 16px; }
+    .sub-competencia-nodo { width: 48px; height: 48px; }
+    .sub-otro { grid-template-columns: 72px minmax(0, 1fr) auto; }
+    .sub-otro-foto { width: 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sub-barra { transition: none; }
+    .sub-salida:hover > img, .sub-otro:hover .sub-otro-foto img { transform: none; }
+}
