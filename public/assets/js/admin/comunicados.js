@@ -243,7 +243,7 @@
             '<td><div class="com-cell"><div class="com-cell-titulo">' + marcas + '<span>' + esc(c.titulo) + '</span></div><div class="com-cell-msg">' + esc(c.mensaje || 'Sin mensaje todavía') + '</div></div></td>' +
             '<td>' + catTag(c.categoria) + '</td>' +
             '<td><div class="com-para"><div class="com-person-name com-nowrap">' + esc(c.destino === 'grupo' ? 'Su grupo' : DESTINO[c.destino]) + '</div>' + (c.destino === 'grupo' ? '<div class="com-person-sub" title="' + esc(paraTxt(c)) + '">' + esc(paraTxt(c)) + '</div>' : '') + '</div></td>' +
-            '<td><div class="com-person-name com-nowrap">' + esc(c.autor.tipo === 'admin' ? 'Administración' : c.autor.nombre) + '</div><div class="com-person-sub">' + (c.autor.tipo === 'admin' ? esc(c.autor.nombre) : 'Docente') + '</div></td>' +
+            '<td><div class="com-person-name com-nowrap">' + esc(c.autor.tipo === 'admin' ? 'Secretaría' : c.autor.nombre) + '</div><div class="com-person-sub">' + (c.autor.tipo === 'admin' ? esc(c.autor.nombre) : 'Docente') + '</div></td>' +
             '<td class="com-nowrap">' + fecha + (vencido(c) ? '<div class="com-person-sub">Ya no se ve desde el ' + corta(c.visible_hasta) + '</div>' : '') + '</td>' +
             '<td>' + lect + '</td>' +
             '<td class="com-actions-cell"><button type="button" class="com-icon-btn" title="Ver comunicado" aria-label="Ver ' + esc(c.titulo) + '">' + ICON.ojo + '</button></td></tr>';
@@ -286,7 +286,7 @@
     filtroCombo('com-cb-categoria', [{ value: '', label: 'Todas las categorías' }].concat(Object.keys(CAT).map(function (k) { return { value: k, label: CAT[k] }; })), function () { aplicar(); });
     filtroCombo('com-cb-destino', [{ value: '', label: 'Todos los destinatarios' }, { value: 'sede', label: 'Toda la sede' }, { value: 'estudiantes', label: 'Estudiantes' },
         { value: 'docentes', label: 'Docentes' }, { value: 'acudientes', label: 'Acudientes' }, { value: 'grupo', label: 'Grupos (de los docentes)' }], function () { aplicar(); });
-    filtroCombo('com-cb-autor', [{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Administración' }, { value: 'docente', label: 'Docentes' }], function () { aplicar(); });
+    filtroCombo('com-cb-autor', [{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Secretaría' }, { value: 'docente', label: 'Docentes' }], function () { aplicar(); });
     document.getElementById('com-search').addEventListener('input', function () { aplicar(); });
 
     var vistaBtns = document.querySelectorAll('.com-vista-btn');
@@ -353,7 +353,7 @@
         return a.url ? '<a class="com-adjunto" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + dentro + '</a>' : '<div class="com-adjunto">' + dentro + '</div>';
     }
     function preview(c) {
-        return '<div class="com-preview"><div class="com-preview-top"><span class="com-preview-de">' + esc(c.autor.tipo === 'admin' ? 'ESAT · ' + (CFG.sede || 'Administración') : c.autor.nombre + ' · ' + paraTxt(c)) + '</span>' + catTag(c.categoria) + '</div>' +
+        return '<div class="com-preview"><div class="com-preview-top"><span class="com-preview-de">' + esc(c.autor.tipo === 'admin' ? 'ESAT · ' + (CFG.sede || 'Secretaría') : c.autor.nombre + ' · ' + paraTxt(c)) + '</span>' + catTag(c.categoria) + '</div>' +
             '<h4 class="com-preview-titulo">' + esc(c.titulo) + '</h4>' +
             '<p class="com-preview-msg">' + esc(c.mensaje || 'Todavía no tiene mensaje.') + '</p>' + (c.adjunto ? adjuntoHtml(c.adjunto) : '') + '</div>';
     }
@@ -406,7 +406,7 @@
         avatar.innerHTML = ICON.megafono;
         avatar.className = 'com-drawer-avatar c-' + c.categoria;
         document.getElementById('com-dw-titulo').textContent = c.titulo;
-        document.getElementById('com-dw-sub').textContent = 'Para ' + (c.destino === 'grupo' ? paraTxt(c) : DESTINO[c.destino].toLowerCase()) + ' · ' + (esAdmin ? 'Administración (' + c.autor.nombre + ')' : 'Docente ' + c.autor.nombre);
+        document.getElementById('com-dw-sub').textContent = 'Para ' + (c.destino === 'grupo' ? paraTxt(c) : DESTINO[c.destino].toLowerCase()) + ' · ' + (esAdmin ? 'Secretaría (' + c.autor.nombre + ')' : 'Docente ' + c.autor.nombre);
         var ESTADO_TAG = { publicado: ['app-status-active', 'Publicado'], programado: ['app-status-warn', 'Programado'], borrador: ['app-status-muted', 'Borrador'], archivado: ['app-status-danger', 'Archivado'] };
         document.getElementById('com-dw-badges').innerHTML = tag(ESTADO_TAG[e][0], ESTADO_TAG[e][1]) + catTag(c.categoria) +
             (c.fijado && e !== 'archivado' ? tag('app-status-warn', 'Fijado arriba') : '') + (vencido(c) ? tag('app-status-muted', 'Ya no se ve') : '');
@@ -781,7 +781,7 @@
             .concat(items.map(function (c) {
                 var l = lectura(c), e = estado(c);
                 return [c.titulo, CAT[c.categoria], { publicado: 'Publicado', programado: 'Programado', borrador: 'Borrador', archivado: 'Archivado' }[e], paraTxt(c),
-                    c.autor.tipo === 'admin' ? 'Administración (' + c.autor.nombre + ')' : c.autor.nombre + ' (docente)', c.publicado_en || '', c.visible_hasta || '',
+                    c.autor.tipo === 'admin' ? 'Secretaría (' + c.autor.nombre + ')' : c.autor.nombre + ' (docente)', c.publicado_en || '', c.visible_hasta || '',
                     c.fijado ? 'Sí' : 'No', l.total, e === 'publicado' || e === 'archivado' ? l.leidos : '', e === 'publicado' || e === 'archivado' ? l.pct : '',
                     c.adjunto ? c.adjunto.nombre : '', c.mensaje];
             }));

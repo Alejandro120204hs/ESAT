@@ -1,0 +1,211 @@
+/* =========================================================
+   ESAT — Panel Admin (ESAT general): Auditoría
+   Mismo lenguaje que Docentes de la secretaría (encabezado, KPI, filtros, tabla, drawer y modal).
+   ========================================================= */
+
+.aud-wrap { display: flex; flex-direction: column; gap: 22px; }
+.aud-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Encabezado ─────────────────────────────── */
+.aud-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.aud-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); }
+.aud-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin-top: 3px; line-height: 1.5; max-width: 680px; }
+
+/* ── Botones ────────────────────────────────── */
+.aud-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font: 700 0.85rem "Archivo", system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.aud-btn:active { transform: scale(0.97); }
+.aud-btn:disabled { opacity: 0.55; cursor: progress; }
+.aud-btn[hidden] { display: none; }
+.aud-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.aud-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.aud-btn-primary:hover { background: var(--orange-2); }
+.aud-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.aud-btn-ghost:hover { background: var(--bg); }
+.aud-btn-sm { padding: 7px 13px; font-size: 0.8rem; }
+
+/* ── KPI ────────────────────────────────────── */
+.aud-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.aud-kpi { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white); }
+.aud-kpi-icon { width: 42px; height: 42px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.aud-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.aud-kpi-val { font: 900 1.45rem "Archivo", system-ui, sans-serif; line-height: 1; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.aud-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.aud-kpi-blue .aud-kpi-icon   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
+.aud-kpi-green .aud-kpi-icon  { background: rgba(64,118,58,0.12); color: var(--green); }
+.aud-kpi-orange .aud-kpi-icon { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+.aud-kpi-red .aud-kpi-icon    { background: rgba(185,28,28,0.1); color: var(--red); }
+
+/* ── Filtros ────────────────────────────────── */
+.aud-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aud-search { position: relative; flex: 1; min-width: 220px; }
+.aud-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.aud-search input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.aud-search input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.aud-filters .app-combobox { min-width: 190px; }
+.aud-count { font-size: 0.78rem; font-weight: 700; color: var(--muted); background: var(--bg); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+/* ── Tabla ──────────────────────────────────── */
+.aud-table-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow-x: auto; }
+.aud-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.aud-table thead th {
+    padding: 11px 14px; text-align: left; font: 700 0.7rem "Archivo", system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg); white-space: nowrap;
+}
+.aud-table td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); border-bottom: 1px solid var(--line); }
+.aud-table tbody tr:last-child td { border-bottom: none; }
+.aud-row { cursor: pointer; transition: background 0.14s; }
+.aud-row:hover { background: rgba(217,123,46,0.03); }
+.aud-row:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.aud-num { text-align: right; font-variant-numeric: tabular-nums; }
+.aud-strong { font-weight: 700; color: var(--navy-3); }
+.aud-muted { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+.aud-warn { color: #92400E; font-weight: 600; }
+.aud-cell { display: flex; align-items: center; gap: 12px; }
+.aud-avatar {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(23,59,103,0.1); color: var(--navy-2);
+}
+.aud-avatar svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.aud-actions { text-align: right; white-space: nowrap; }
+.aud-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+    transition: border-color 0.15s, color 0.15s; margin-left: 4px;
+}
+.aud-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.aud-icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+.aud-empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.88rem; }
+.aud-empty[hidden] { display: none; }
+
+.app-status-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+/* ── Paginación ─────────────────────────────── */
+.aud-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.aud-pagination[hidden] { display: none; }
+.aud-pg-btn, .aud-pg-num {
+    min-width: 34px; height: 34px; padding: 0 12px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.aud-pg-btn:hover:not(:disabled), .aud-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.aud-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.aud-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.aud-pg-gap { color: var(--muted); padding: 0 4px; }
+
+/* ── Drawer ─────────────────────────────────── */
+.aud-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.aud-drawer.is-open { pointer-events: auto; }
+.aud-drawer-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.35); opacity: 0; transition: opacity 0.25s var(--ease-out); }
+.aud-drawer.is-open .aud-drawer-overlay { opacity: 1; }
+.aud-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 560px; max-width: 100%;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out); box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+.aud-drawer.is-open .aud-drawer-panel { transform: translateX(0); }
+.aud-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); }
+.aud-drawer-title { font: 900 1.15rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.aud-drawer-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+.aud-close {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+}
+.aud-close:hover { border-color: var(--orange); color: var(--orange); }
+.aud-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.aud-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+.aud-tab {
+    padding: 11px 14px; border: none; background: none; cursor: pointer; white-space: nowrap;
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.aud-tab:hover { color: var(--navy-3); }
+.aud-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+.aud-drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+.aud-panel[hidden] { display: none; }
+.aud-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 24px; border-top: 1.5px solid var(--line); flex-wrap: wrap; }
+
+.aud-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.aud-info-full { grid-column: 1 / -1; }
+.aud-info-lbl { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.aud-info-val { display: block; font-size: 0.9rem; font-weight: 600; color: var(--navy-3); margin-top: 3px; }
+.aud-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.aud-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.86rem; }
+.aud-list-empty { color: var(--muted); font-size: 0.86rem; padding: 18px 0; text-align: center; }
+.aud-link { color: var(--orange-2); font-weight: 700; font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+.aud-link:hover { text-decoration: underline; }
+
+/* ── Modal ──────────────────────────────────── */
+.aud-modal { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.aud-modal[hidden] { display: none; }
+.aud-modal-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.aud-modal-panel {
+    position: relative; z-index: 1; width: 560px; max-width: 100%; max-height: calc(100vh - 40px);
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    display: flex; flex-direction: column; animation: audModalIn 0.22s var(--ease-out);
+}
+.aud-modal-sm { width: 460px; }
+@keyframes audModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.aud-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1.5px solid var(--line); }
+.aud-modal-title { font: 800 1.05rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.aud-modal-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.aud-modal-body { padding: 20px; overflow-y: auto; }
+.aud-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1.5px solid var(--line); }
+.aud-modal-text { font-size: 0.92rem; line-height: 1.6; color: var(--text); }
+
+.aud-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.aud-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.aud-field-full { grid-column: 1 / -1; }
+.aud-field label, .aud-field .aud-label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.aud-field input {
+    width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.aud-field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.aud-field input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
+.aud-field-error { font-size: 0.76rem; color: var(--red); font-weight: 600; }
+.aud-field-error[hidden] { display: none; }
+.aud-nota { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(233,185,73,0.15); color: #6B5208; font-size: 0.84rem; font-weight: 600; line-height: 1.5; }
+.aud-nota[hidden] { display: none; }
+
+/* ── Aviso ──────────────────────────────────── */
+.aud-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px; padding: 13px 16px; border-radius: 12px;
+    background: var(--navy-3); color: var(--white); font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.aud-toast.is-visible { opacity: 1; transform: none; }
+.aud-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) { .aud-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+    .aud-title { font-size: 1.5rem; }
+    .aud-info, .aud-fields { grid-template-columns: 1fr; }
+    .aud-filters .app-combobox { min-width: 0; flex: 1 1 160px; }
+    .aud-toast { left: 16px; right: 16px; }
+}
+@media (max-width: 460px) { .aud-kpis { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+    .aud-drawer-panel, .aud-drawer-overlay, .aud-toast { transition: none; }
+    .aud-modal-panel { animation: none; }
+}
+
+/* ── Propio de Auditoría ────────────────────── */
+.aud-filters .app-combobox { min-width: 160px; }
+.aud-texto { max-width: 520px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aud-fecha { white-space: nowrap; }
+.aud-tipo { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; white-space: nowrap; }
+.aud-tipo-crear { background: #E6F4E4; color: #2D6A27; }
+.aud-tipo-editar { background: #E0EAF6; color: var(--navy-2); }
+.aud-tipo-anular, .aud-tipo-eliminar, .aud-tipo-desactivar { background: #FEE2E2; color: #991B1B; }
+.aud-tipo-activar { background: #FEF3C7; color: #92400E; }
+.aud-rol-admin { color: var(--orange-2); font-weight: 700; }
+.aud-modal-text + .aud-info { margin-top: 16px; }

@@ -1,7 +1,7 @@
 {{-- Foro (Comunicación): datos reales desde Admin\Foro\ForoController (ForoService).
      Un solo foro general por sede: estudiantes, docentes, acudientes y administración abren temas (con categoría
      fija) y responden; un adjunto por mensaje. Moderación después, con reportes: el admin fija, cierra o reabre
-     temas, oculta mensajes con motivo (y los restaura), descarta reportes y responde como administración. --}}
+     temas, oculta mensajes con motivo (y los restaura), descarta reportes y responde como secretaría. --}}
 @extends('admin.layout')
 
 @section('title', 'Foro')
@@ -19,7 +19,7 @@
     <div class="for-header">
         <div>
             <h2 class="for-title">Foro</h2>
-            <p class="for-sub">El espacio donde estudiantes, docentes y acudientes de la sede conversan. Revisa los reportes, oculta lo que no cumpla las normas y responde como administración.</p>
+            <p class="for-sub">El espacio donde estudiantes, docentes y acudientes de la sede conversan. Revisa los reportes, oculta lo que no cumpla las normas y responde como secretaría.</p>
         </div>
         <button type="button" class="for-btn for-btn-primary" id="for-btn-nuevo">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -119,7 +119,7 @@
 
     {{-- ═══════════ Ocultos ═══════════ --}}
     <section class="for-vista" data-panel="ocultos" hidden>
-        <p class="for-ayuda">Mensajes que la administración ocultó. Nadie más los ve; si se ocultó por error, ábrelo y restáuralo.</p>
+        <p class="for-ayuda">Mensajes que la secretaría ocultó. Nadie más los ve; si se ocultó por error, ábrelo y restáuralo.</p>
         <div class="for-table-wrap">
             <table class="for-table">
                 <thead><tr><th>Mensaje oculto</th><th>Escrito por</th><th>Motivo</th><th>Ocultado</th><th></th></tr></thead>

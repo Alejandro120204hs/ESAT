@@ -1,7 +1,7 @@
 @extends('superadmin.layout')
 
-@section('title', 'Administradores')
-@section('page-title', 'Administradores')
+@section('title', 'Secretarías')
+@section('page-title', 'Secretarías')
 @section('active', 'administradores')
 @section('content-class', 'app-adm-content')
 
@@ -10,22 +10,22 @@
 @endpush
 
 @section('content')
-    <p class="app-page-intro">Aquí podrás crear nuevas cuentas de administrador, asignarlas a una sede y activarlas o desactivarlas.</p>
+    <p class="app-page-intro">Aquí podrás crear las cuentas de secretaría, asignarlas a una sede y activarlas o desactivarlas.</p>
 
     <div class="app-panel app-list-panel">
         <div class="app-panel-heading">
             <div class="app-search">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="search" placeholder="Buscar administrador..." data-table-search="administradores">
+                <input type="search" placeholder="Buscar secretaría..." data-table-search="administradores">
             </div>
-            <button type="button" class="app-btn-primary" data-open-wizard>Nuevo administrador</button>
+            <button type="button" class="app-btn-primary" data-open-wizard>Nueva secretaría</button>
         </div>
 
         <div class="app-table-scroll app-table-scroll-tall">
             <table class="app-table" data-table="administradores" data-per-page="15">
                 <thead>
                     <tr>
-                        <th>Administrador</th>
+                        <th>Secretaría</th>
                         <th>Documento</th>
                         <th>Sede</th>
                         <th>Correo</th>
@@ -69,7 +69,7 @@
                         </tr>
                     @endforeach
                     @if ($administradores->isEmpty())
-                        <tr><td colspan="7" class="app-table-empty-row">No hay administradores registrados todavía.</td></tr>
+                        <tr><td colspan="7" class="app-table-empty-row">No hay secretarías registradas todavía.</td></tr>
                     @endif
                 </tbody>
             </table>
@@ -82,7 +82,7 @@
     <div class="app-modal-backdrop" data-modal="modal-administrador" hidden>
         <div class="app-modal app-modal-wizard">
             <div class="app-modal-header">
-                <h3 data-wizard-title data-create-title="Nuevo administrador" data-edit-title="Editar administrador">Nuevo administrador</h3>
+                <h3 data-wizard-title data-create-title="Nueva secretaría" data-edit-title="Editar secretaría">Nueva secretaría</h3>
                 <button type="button" class="app-modal-close" data-close-wizard aria-label="Cerrar">
                     <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
@@ -245,7 +245,7 @@
                 <button type="button" class="app-btn-secondary" data-wizard-back hidden>Atrás</button>
                 <span class="app-wizard-progress" data-wizard-progress>Paso 1 de 4</span>
                 <button type="button" class="app-btn-primary" data-wizard-next>Siguiente</button>
-                <button type="button" class="app-btn-primary" data-wizard-finish data-create-label="Crear administrador" data-edit-label="Guardar cambios" hidden>Crear administrador</button>
+                <button type="button" class="app-btn-primary" data-wizard-finish data-create-label="Crear secretaría" data-edit-label="Guardar cambios" hidden>Crear secretaría</button>
             </div>
         </div>
     </div>

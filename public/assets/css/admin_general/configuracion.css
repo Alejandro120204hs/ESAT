@@ -1,0 +1,252 @@
+/* =========================================================
+   ESAT — Panel Admin (ESAT general): Configuración
+   Mismo lenguaje que Docentes de la secretaría (encabezado, KPI, filtros, tabla, drawer y modal).
+   ========================================================= */
+
+.cfg-wrap { display: flex; flex-direction: column; gap: 22px; }
+.cfg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Encabezado ─────────────────────────────── */
+.cfg-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cfg-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); }
+.cfg-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin-top: 3px; line-height: 1.5; max-width: 680px; }
+
+/* ── Botones ────────────────────────────────── */
+.cfg-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font: 700 0.85rem "Archivo", system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.cfg-btn:active { transform: scale(0.97); }
+.cfg-btn:disabled { opacity: 0.55; cursor: progress; }
+.cfg-btn[hidden] { display: none; }
+.cfg-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cfg-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.cfg-btn-primary:hover { background: var(--orange-2); }
+.cfg-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.cfg-btn-ghost:hover { background: var(--bg); }
+.cfg-btn-sm { padding: 7px 13px; font-size: 0.8rem; }
+
+/* ── KPI ────────────────────────────────────── */
+.cfg-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.cfg-kpi { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white); }
+.cfg-kpi-icon { width: 42px; height: 42px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cfg-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cfg-kpi-val { font: 900 1.45rem "Archivo", system-ui, sans-serif; line-height: 1; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.cfg-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.cfg-kpi-blue .cfg-kpi-icon   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
+.cfg-kpi-green .cfg-kpi-icon  { background: rgba(64,118,58,0.12); color: var(--green); }
+.cfg-kpi-orange .cfg-kpi-icon { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+.cfg-kpi-red .cfg-kpi-icon    { background: rgba(185,28,28,0.1); color: var(--red); }
+
+/* ── Filtros ────────────────────────────────── */
+.cfg-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cfg-search { position: relative; flex: 1; min-width: 220px; }
+.cfg-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.cfg-search input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cfg-search input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.cfg-filters .app-combobox { min-width: 190px; }
+.cfg-count { font-size: 0.78rem; font-weight: 700; color: var(--muted); background: var(--bg); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+/* ── Tabla ──────────────────────────────────── */
+.cfg-table-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow-x: auto; }
+.cfg-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.cfg-table thead th {
+    padding: 11px 14px; text-align: left; font: 700 0.7rem "Archivo", system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg); white-space: nowrap;
+}
+.cfg-table td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); border-bottom: 1px solid var(--line); }
+.cfg-table tbody tr:last-child td { border-bottom: none; }
+.cfg-row { cursor: pointer; transition: background 0.14s; }
+.cfg-row:hover { background: rgba(217,123,46,0.03); }
+.cfg-row:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.cfg-num { text-align: right; font-variant-numeric: tabular-nums; }
+.cfg-strong { font-weight: 700; color: var(--navy-3); }
+.cfg-muted { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+.cfg-warn { color: #92400E; font-weight: 600; }
+.cfg-cell { display: flex; align-items: center; gap: 12px; }
+.cfg-avatar {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(23,59,103,0.1); color: var(--navy-2);
+}
+.cfg-avatar svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cfg-actions { text-align: right; white-space: nowrap; }
+.cfg-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+    transition: border-color 0.15s, color 0.15s; margin-left: 4px;
+}
+.cfg-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cfg-icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+.cfg-empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.88rem; }
+.cfg-empty[hidden] { display: none; }
+
+.app-status-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+/* ── Paginación ─────────────────────────────── */
+.cfg-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.cfg-pagination[hidden] { display: none; }
+.cfg-pg-btn, .cfg-pg-num {
+    min-width: 34px; height: 34px; padding: 0 12px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.cfg-pg-btn:hover:not(:disabled), .cfg-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.cfg-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.cfg-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.cfg-pg-gap { color: var(--muted); padding: 0 4px; }
+
+/* ── Drawer ─────────────────────────────────── */
+.cfg-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.cfg-drawer.is-open { pointer-events: auto; }
+.cfg-drawer-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.35); opacity: 0; transition: opacity 0.25s var(--ease-out); }
+.cfg-drawer.is-open .cfg-drawer-overlay { opacity: 1; }
+.cfg-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 560px; max-width: 100%;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out); box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+.cfg-drawer.is-open .cfg-drawer-panel { transform: translateX(0); }
+.cfg-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); }
+.cfg-drawer-title { font: 900 1.15rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.cfg-drawer-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+.cfg-close {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+}
+.cfg-close:hover { border-color: var(--orange); color: var(--orange); }
+.cfg-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.cfg-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+.cfg-tab {
+    padding: 11px 14px; border: none; background: none; cursor: pointer; white-space: nowrap;
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.cfg-tab:hover { color: var(--navy-3); }
+.cfg-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+.cfg-drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+.cfg-panel[hidden] { display: none; }
+.cfg-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 24px; border-top: 1.5px solid var(--line); flex-wrap: wrap; }
+
+.cfg-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cfg-info-full { grid-column: 1 / -1; }
+.cfg-info-lbl { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.cfg-info-val { display: block; font-size: 0.9rem; font-weight: 600; color: var(--navy-3); margin-top: 3px; }
+.cfg-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cfg-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.86rem; }
+.cfg-list-empty { color: var(--muted); font-size: 0.86rem; padding: 18px 0; text-align: center; }
+.cfg-link { color: var(--orange-2); font-weight: 700; font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+.cfg-link:hover { text-decoration: underline; }
+
+/* ── Modal ──────────────────────────────────── */
+.cfg-modal { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.cfg-modal[hidden] { display: none; }
+.cfg-modal-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.cfg-modal-panel {
+    position: relative; z-index: 1; width: 560px; max-width: 100%; max-height: calc(100vh - 40px);
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    display: flex; flex-direction: column; animation: cfgModalIn 0.22s var(--ease-out);
+}
+.cfg-modal-sm { width: 460px; }
+@keyframes cfgModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.cfg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1.5px solid var(--line); }
+.cfg-modal-title { font: 800 1.05rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.cfg-modal-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.cfg-modal-body { padding: 20px; overflow-y: auto; }
+.cfg-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1.5px solid var(--line); }
+.cfg-modal-text { font-size: 0.92rem; line-height: 1.6; color: var(--text); }
+
+.cfg-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.cfg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cfg-field-full { grid-column: 1 / -1; }
+.cfg-field label, .cfg-field .cfg-label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.cfg-field input {
+    width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cfg-field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.cfg-field input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
+.cfg-field-error { font-size: 0.76rem; color: var(--red); font-weight: 600; }
+.cfg-field-error[hidden] { display: none; }
+.cfg-nota { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(233,185,73,0.15); color: #6B5208; font-size: 0.84rem; font-weight: 600; line-height: 1.5; }
+.cfg-nota[hidden] { display: none; }
+
+/* ── Aviso ──────────────────────────────────── */
+.cfg-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px; padding: 13px 16px; border-radius: 12px;
+    background: var(--navy-3); color: var(--white); font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.cfg-toast.is-visible { opacity: 1; transform: none; }
+.cfg-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) { .cfg-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+    .cfg-title { font-size: 1.5rem; }
+    .cfg-info, .cfg-fields { grid-template-columns: 1fr; }
+    .cfg-filters .app-combobox { min-width: 0; flex: 1 1 160px; }
+    .cfg-toast { left: 16px; right: 16px; }
+}
+@media (max-width: 460px) { .cfg-kpis { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+    .cfg-drawer-panel, .cfg-drawer-overlay, .cfg-toast { transition: none; }
+    .cfg-modal-panel { animation: none; }
+}
+
+/* ── Propio de Configuración ────────────────── */
+.cfg-ptabs { display: flex; gap: 4px; border-bottom: 1.5px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.cfg-ptab {
+    padding: 11px 16px; border: none; background: none; cursor: pointer; white-space: nowrap; font: 700 0.88rem "Archivo", system-ui, sans-serif;
+    color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color 0.15s, border-color 0.15s;
+}
+.cfg-ptab:hover { color: var(--navy-3); }
+.cfg-ptab.is-active { color: var(--orange-2); border-bottom-color: var(--orange); }
+.cfg-ptab-num { display: inline-flex; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 6px; border-radius: 999px; background: #FEE2E2; color: #991B1B; font-size: 0.72rem; align-items: center; justify-content: center; }
+.cfg-ptab-num[hidden] { display: none; }
+.cfg-ppanel[hidden] { display: none; }
+.cfg-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); min-width: 0; }
+.cfg-card-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
+.cfg-card-title { font: 800 1rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.cfg-card-sub { font-size: 0.83rem; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+.cfg-card-body { padding: 20px 22px; }
+.cfg-card-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); }
+.cfg-hint { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+.cfg-prefijo { position: relative; }
+.cfg-prefijo span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; pointer-events: none; }
+.cfg-prefijo input { padding-left: 28px; }
+.cfg-ejemplo { padding: 14px 16px; border-radius: 12px; background: var(--bg); font-size: 0.86rem; color: var(--navy-3); line-height: 1.6; }
+.cfg-ejemplo strong { font-family: "Archivo", system-ui, sans-serif; }
+.cfg-cambios { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 0.86rem; }
+.cfg-cambios li { padding: 8px 12px; border-radius: 9px; background: var(--bg); }
+.cfg-cambios del { color: var(--muted); }
+.cfg-sin-cambios { font-size: 0.8rem; color: var(--muted); align-self: center; margin-right: auto; }
+.cfg-sin-cambios[hidden] { display: none; }
+
+/* Dos columnas: formulario + tarjeta de apoyo (como el resto del panel, a todo el ancho) */
+.cfg-ppanel { margin: 0; }
+.cfg-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.cfg-card-icon { width: 42px; height: 42px; border-radius: var(--radius-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.cfg-card-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cfg-card-icon-blue   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
+.cfg-card-icon-green  { background: rgba(64,118,58,0.12); color: var(--green); }
+.cfg-card-icon-orange { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+
+.cfg-previa { border: 1.5px dashed var(--line); border-radius: 12px; padding: 16px 18px; }
+.cfg-previa-inst { font: 900 1rem "Archivo", system-ui, sans-serif; color: var(--navy-3); overflow-wrap: anywhere; }
+.cfg-previa-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; line-height: 1.55; overflow-wrap: anywhere; }
+.cfg-previa-linea { height: 2px; background: var(--navy-3); margin: 12px 0 10px; }
+.cfg-previa-doc { font: 800 0.82rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.cfg-previa-falta { color: var(--red); font-weight: 600; }
+
+.cfg-reglas { margin: 16px 0 0 18px; font-size: 0.84rem; color: var(--muted); line-height: 1.55; }
+.cfg-reglas li + li { margin-top: 4px; }
+.cfg-motivos { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cfg-motivos li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-size: 0.86rem; color: var(--navy-3); }
+.cfg-motivos strong { font: 800 1rem "Archivo", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.cfg-ir-bloq { margin-top: 14px; width: 100%; }
+@media (max-width: 1100px) { .cfg-grid { grid-template-columns: 1fr; } }

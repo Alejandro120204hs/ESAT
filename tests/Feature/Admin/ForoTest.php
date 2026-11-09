@@ -61,7 +61,7 @@ class ForoTest extends TestCase
 
         $this->actingAs($this->admin)->get('/admin/foro')->assertOk()
             ->assertViewHas('temas', fn ($ts) => $ts->pluck('id')->all() === [$propio->id] && ! $ts->contains('id', $ajeno->id))
-            ->assertViewHas('personas', fn ($ps) => isset($ps['e'.$e->id], $ps['x'.$this->admin->id]) && $ps['x'.$this->admin->id][1] === 'Administración');
+            ->assertViewHas('personas', fn ($ps) => isset($ps['e'.$e->id], $ps['x'.$this->admin->id]) && $ps['x'.$this->admin->id][1] === 'Secretaría');
     }
 
     public function test_abrir_un_tema_con_adjunto_y_fijado(): void

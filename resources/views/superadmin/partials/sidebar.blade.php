@@ -22,7 +22,7 @@
         <li>
             <a href="{{ route('superadmin.administradores') }}" class="app-nav-link {{ $active === 'administradores' ? 'is-active' : '' }}">
                 <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/></svg>
-                Administradores
+                Secretarías
             </a>
         </li>
         <li>

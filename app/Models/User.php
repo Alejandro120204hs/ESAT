@@ -110,6 +110,11 @@ class User extends Authenticatable
         return $this->role === RolUsuario::Admin;
     }
 
+    public function isAdminGeneral(): bool
+    {
+        return $this->role === RolUsuario::AdminGeneral;
+    }
+
     public function isEstudiante(): bool
     {
         return $this->role === RolUsuario::Estudiante;
@@ -135,6 +140,7 @@ class User extends Authenticatable
         return match ($this->role) {
             RolUsuario::Superadmin => route('superadmin.dashboard'),
             RolUsuario::Admin      => route('admin.dashboard'),
+            RolUsuario::AdminGeneral => route('general.dashboard'),
             RolUsuario::Docente    => route('docente.dashboard'),
             default => route('dashboard'),
         };

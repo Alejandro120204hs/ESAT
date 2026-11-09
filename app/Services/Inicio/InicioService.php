@@ -156,7 +156,7 @@ class InicioService
                 return [
                     'dot'   => ['crear' => 'green', 'activar' => 'green', 'editar' => 'blue', 'desactivar' => 'red', 'eliminar' => 'red'][$a->accion] ?? 'orange',
                     'ini'   => $ini ?: 'A',
-                    'quien' => trim(($u->nombres ?? '').' '.($u->apellidos ?? '')) ?: 'Administración',
+                    'quien' => trim(($u->nombres ?? '').' '.($u->apellidos ?? '')) ?: 'Secretaría',
                     'texto' => $a->descripcion,
                     'time'  => $this->mayuscula(Carbon::parse($a->created_at)->locale('es')->diffForHumans()),
                     'fecha' => Carbon::parse($a->created_at)->locale('es')->translatedFormat('j \d\e F \d\e Y, g:i a'),

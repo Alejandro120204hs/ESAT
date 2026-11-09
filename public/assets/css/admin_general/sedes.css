@@ -1,0 +1,199 @@
+/* =========================================================
+   ESAT — Panel Admin (ESAT general): Sedes
+   Mismo lenguaje que Docentes de la secretaría (encabezado, KPI, filtros, tabla, drawer y modal).
+   ========================================================= */
+
+.sed-wrap { display: flex; flex-direction: column; gap: 22px; }
+.sed-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Encabezado ─────────────────────────────── */
+.sed-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.sed-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); }
+.sed-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin-top: 3px; line-height: 1.5; max-width: 680px; }
+
+/* ── Botones ────────────────────────────────── */
+.sed-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font: 700 0.85rem "Archivo", system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.sed-btn:active { transform: scale(0.97); }
+.sed-btn:disabled { opacity: 0.55; cursor: progress; }
+.sed-btn[hidden] { display: none; }
+.sed-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sed-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.sed-btn-primary:hover { background: var(--orange-2); }
+.sed-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.sed-btn-ghost:hover { background: var(--bg); }
+.sed-btn-sm { padding: 7px 13px; font-size: 0.8rem; }
+
+/* ── KPI ────────────────────────────────────── */
+.sed-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.sed-kpi { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white); }
+.sed-kpi-icon { width: 42px; height: 42px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sed-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sed-kpi-val { font: 900 1.45rem "Archivo", system-ui, sans-serif; line-height: 1; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.sed-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.sed-kpi-blue .sed-kpi-icon   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
+.sed-kpi-green .sed-kpi-icon  { background: rgba(64,118,58,0.12); color: var(--green); }
+.sed-kpi-orange .sed-kpi-icon { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+.sed-kpi-red .sed-kpi-icon    { background: rgba(185,28,28,0.1); color: var(--red); }
+
+/* ── Filtros ────────────────────────────────── */
+.sed-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sed-search { position: relative; flex: 1; min-width: 220px; }
+.sed-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.sed-search input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.sed-search input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.sed-filters .app-combobox { min-width: 190px; }
+.sed-count { font-size: 0.78rem; font-weight: 700; color: var(--muted); background: var(--bg); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+/* ── Tabla ──────────────────────────────────── */
+.sed-table-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow-x: auto; }
+.sed-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.sed-table thead th {
+    padding: 11px 14px; text-align: left; font: 700 0.7rem "Archivo", system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg); white-space: nowrap;
+}
+.sed-table td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); border-bottom: 1px solid var(--line); }
+.sed-table tbody tr:last-child td { border-bottom: none; }
+.sed-row { cursor: pointer; transition: background 0.14s; }
+.sed-row:hover { background: rgba(217,123,46,0.03); }
+.sed-row:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.sed-num { text-align: right; font-variant-numeric: tabular-nums; }
+.sed-strong { font-weight: 700; color: var(--navy-3); }
+.sed-muted { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+.sed-warn { color: #92400E; font-weight: 600; }
+.sed-cell { display: flex; align-items: center; gap: 12px; }
+.sed-avatar {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(23,59,103,0.1); color: var(--navy-2);
+}
+.sed-avatar svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sed-actions { text-align: right; white-space: nowrap; }
+.sed-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+    transition: border-color 0.15s, color 0.15s; margin-left: 4px;
+}
+.sed-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sed-icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+.sed-empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.88rem; }
+.sed-empty[hidden] { display: none; }
+
+.app-status-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+/* ── Paginación ─────────────────────────────── */
+.sed-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.sed-pagination[hidden] { display: none; }
+.sed-pg-btn, .sed-pg-num {
+    min-width: 34px; height: 34px; padding: 0 12px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.sed-pg-btn:hover:not(:disabled), .sed-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.sed-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.sed-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.sed-pg-gap { color: var(--muted); padding: 0 4px; }
+
+/* ── Drawer ─────────────────────────────────── */
+.sed-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.sed-drawer.is-open { pointer-events: auto; }
+.sed-drawer-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.35); opacity: 0; transition: opacity 0.25s var(--ease-out); }
+.sed-drawer.is-open .sed-drawer-overlay { opacity: 1; }
+.sed-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 560px; max-width: 100%;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out); box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+.sed-drawer.is-open .sed-drawer-panel { transform: translateX(0); }
+.sed-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); }
+.sed-drawer-title { font: 900 1.15rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.sed-drawer-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+.sed-close {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+}
+.sed-close:hover { border-color: var(--orange); color: var(--orange); }
+.sed-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.sed-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+.sed-tab {
+    padding: 11px 14px; border: none; background: none; cursor: pointer; white-space: nowrap;
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.sed-tab:hover { color: var(--navy-3); }
+.sed-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+.sed-drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+.sed-panel[hidden] { display: none; }
+.sed-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 24px; border-top: 1.5px solid var(--line); flex-wrap: wrap; }
+
+.sed-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.sed-info-full { grid-column: 1 / -1; }
+.sed-info-lbl { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.sed-info-val { display: block; font-size: 0.9rem; font-weight: 600; color: var(--navy-3); margin-top: 3px; }
+.sed-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.sed-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.86rem; }
+.sed-list-empty { color: var(--muted); font-size: 0.86rem; padding: 18px 0; text-align: center; }
+.sed-link { color: var(--orange-2); font-weight: 700; font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+.sed-link:hover { text-decoration: underline; }
+
+/* ── Modal ──────────────────────────────────── */
+.sed-modal { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.sed-modal[hidden] { display: none; }
+.sed-modal-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.sed-modal-panel {
+    position: relative; z-index: 1; width: 560px; max-width: 100%; max-height: calc(100vh - 40px);
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    display: flex; flex-direction: column; animation: sedModalIn 0.22s var(--ease-out);
+}
+.sed-modal-sm { width: 460px; }
+@keyframes sedModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.sed-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1.5px solid var(--line); }
+.sed-modal-title { font: 800 1.05rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.sed-modal-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.sed-modal-body { padding: 20px; overflow-y: auto; }
+.sed-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1.5px solid var(--line); }
+.sed-modal-text { font-size: 0.92rem; line-height: 1.6; color: var(--text); }
+
+.sed-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.sed-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sed-field-full { grid-column: 1 / -1; }
+.sed-field label, .sed-field .sed-label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.sed-field input {
+    width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.sed-field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.sed-field input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
+.sed-field-error { font-size: 0.76rem; color: var(--red); font-weight: 600; }
+.sed-field-error[hidden] { display: none; }
+.sed-nota { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(233,185,73,0.15); color: #6B5208; font-size: 0.84rem; font-weight: 600; line-height: 1.5; }
+.sed-nota[hidden] { display: none; }
+
+/* ── Aviso ──────────────────────────────────── */
+.sed-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px; padding: 13px 16px; border-radius: 12px;
+    background: var(--navy-3); color: var(--white); font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.sed-toast.is-visible { opacity: 1; transform: none; }
+.sed-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) { .sed-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+    .sed-title { font-size: 1.5rem; }
+    .sed-info, .sed-fields { grid-template-columns: 1fr; }
+    .sed-filters .app-combobox { min-width: 0; flex: 1 1 160px; }
+    .sed-toast { left: 16px; right: 16px; }
+}
+@media (max-width: 460px) { .sed-kpis { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+    .sed-drawer-panel, .sed-drawer-overlay, .sed-toast { transition: none; }
+    .sed-modal-panel { animation: none; }
+}

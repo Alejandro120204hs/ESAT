@@ -59,7 +59,7 @@ class ForoService
                     ? str_replace('Técnico Laboral en ', '', $m->programa->nombre).($m->curso ? ' · '.$m->curso->nombre : '') : 'Estudiante',
                 RolUsuario::Docente   => $u->docentePerfil?->escuela?->nombre ?? 'Docente',
                 RolUsuario::Acudiente => $this->deQuien($u),
-                default               => 'Administración',
+                default               => 'Secretaría',
             };
 
             return [$this->clave($u) => [$this->nombre($u), $detalle]];
@@ -201,6 +201,6 @@ class ForoService
 
     private function nombre(User $u): string
     {
-        return trim($u->nombres.' '.$u->apellidos) ?: 'Administrador';
+        return trim($u->nombres.' '.$u->apellidos) ?: 'Secretaría';
     }
 }

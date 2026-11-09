@@ -1,0 +1,253 @@
+/* =========================================================
+   ESAT — Panel Admin (ESAT general): Acudientes
+   Mismo lenguaje que Docentes de la secretaría (encabezado, KPI, filtros, tabla, drawer y modal).
+   ========================================================= */
+
+.acu-wrap { display: flex; flex-direction: column; gap: 22px; }
+.acu-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Encabezado ─────────────────────────────── */
+.acu-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.acu-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); }
+.acu-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin-top: 3px; line-height: 1.5; max-width: 680px; }
+
+/* ── Botones ────────────────────────────────── */
+.acu-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 18px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font: 700 0.85rem "Archivo", system-ui, sans-serif; cursor: pointer; white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.acu-btn:active { transform: scale(0.97); }
+.acu-btn:disabled { opacity: 0.55; cursor: progress; }
+.acu-btn[hidden] { display: none; }
+.acu-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.acu-btn-primary:hover { background: var(--orange-2); }
+.acu-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.acu-btn-ghost:hover { background: var(--bg); }
+.acu-btn-sm { padding: 7px 13px; font-size: 0.8rem; }
+
+/* ── KPI ────────────────────────────────────── */
+.acu-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.acu-kpi { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white); }
+.acu-kpi-icon { width: 42px; height: 42px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.acu-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.acu-kpi-val { font: 900 1.45rem "Archivo", system-ui, sans-serif; line-height: 1; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.acu-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.acu-kpi-blue .acu-kpi-icon   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
+.acu-kpi-green .acu-kpi-icon  { background: rgba(64,118,58,0.12); color: var(--green); }
+.acu-kpi-orange .acu-kpi-icon { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+.acu-kpi-red .acu-kpi-icon    { background: rgba(185,28,28,0.1); color: var(--red); }
+
+/* ── Filtros ────────────────────────────────── */
+.acu-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.acu-search { position: relative; flex: 1; min-width: 220px; }
+.acu-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.acu-search input {
+    width: 100%; padding: 10px 12px 10px 36px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.acu-search input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.acu-filters .app-combobox { min-width: 190px; }
+.acu-count { font-size: 0.78rem; font-weight: 700; color: var(--muted); background: var(--bg); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+/* ── Tabla ──────────────────────────────────── */
+.acu-table-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow-x: auto; }
+.acu-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.acu-table thead th {
+    padding: 11px 14px; text-align: left; font: 700 0.7rem "Archivo", system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1.5px solid var(--line); background: var(--bg); white-space: nowrap;
+}
+.acu-table td { padding: 13px 14px; vertical-align: middle; font-size: 0.84rem; color: var(--navy-3); border-bottom: 1px solid var(--line); }
+.acu-table tbody tr:last-child td { border-bottom: none; }
+.acu-row { cursor: pointer; transition: background 0.14s; }
+.acu-row:hover { background: rgba(217,123,46,0.03); }
+.acu-row:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.acu-num { text-align: right; font-variant-numeric: tabular-nums; }
+.acu-strong { font-weight: 700; color: var(--navy-3); }
+.acu-muted { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+.acu-warn { color: #92400E; font-weight: 600; }
+.acu-cell { display: flex; align-items: center; gap: 12px; }
+.acu-avatar {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(23,59,103,0.1); color: var(--navy-2);
+}
+.acu-avatar svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.acu-actions { text-align: right; white-space: nowrap; }
+.acu-icon-btn {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+    transition: border-color 0.15s, color 0.15s; margin-left: 4px;
+}
+.acu-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.acu-icon-btn:hover { border-color: var(--orange); color: var(--orange); }
+.acu-empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 0.88rem; }
+.acu-empty[hidden] { display: none; }
+
+.app-status-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+/* ── Paginación ─────────────────────────────── */
+.acu-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.acu-pagination[hidden] { display: none; }
+.acu-pg-btn, .acu-pg-num {
+    min-width: 34px; height: 34px; padding: 0 12px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--white);
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--navy-3); cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.acu-pg-btn:hover:not(:disabled), .acu-pg-num:hover { border-color: var(--orange); color: var(--orange); }
+.acu-pg-btn:disabled { opacity: 0.38; cursor: default; }
+.acu-pg-num.is-active { background: var(--orange); border-color: var(--orange); color: var(--white); }
+.acu-pg-gap { color: var(--muted); padding: 0 4px; }
+
+/* ── Drawer ─────────────────────────────────── */
+.acu-drawer { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.acu-drawer.is-open { pointer-events: auto; }
+.acu-drawer-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.35); opacity: 0; transition: opacity 0.25s var(--ease-out); }
+.acu-drawer.is-open .acu-drawer-overlay { opacity: 1; }
+.acu-drawer-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 560px; max-width: 100%;
+    background: var(--white); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.28s var(--ease-out); box-shadow: -8px 0 40px rgba(10,27,51,0.14);
+}
+.acu-drawer.is-open .acu-drawer-panel { transform: translateX(0); }
+.acu-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 18px; border-bottom: 1.5px solid var(--line); }
+.acu-drawer-title { font: 900 1.15rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.acu-drawer-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+.acu-close {
+    width: 32px; height: 32px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted);
+}
+.acu-close:hover { border-color: var(--orange); color: var(--orange); }
+.acu-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.acu-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+.acu-tab {
+    padding: 11px 14px; border: none; background: none; cursor: pointer; white-space: nowrap;
+    font: 700 0.8rem "Archivo", system-ui, sans-serif; color: var(--muted);
+    border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.acu-tab:hover { color: var(--navy-3); }
+.acu-tab.is-active { color: var(--orange); border-bottom-color: var(--orange); }
+.acu-drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+.acu-panel[hidden] { display: none; }
+.acu-drawer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 24px; border-top: 1.5px solid var(--line); flex-wrap: wrap; }
+
+.acu-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.acu-info-full { grid-column: 1 / -1; }
+.acu-info-lbl { display: block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.acu-info-val { display: block; font-size: 0.9rem; font-weight: 600; color: var(--navy-3); margin-top: 3px; }
+.acu-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.acu-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.86rem; }
+.acu-list-empty { color: var(--muted); font-size: 0.86rem; padding: 18px 0; text-align: center; }
+.acu-link { color: var(--orange-2); font-weight: 700; font-size: 0.82rem; text-decoration: none; white-space: nowrap; }
+.acu-link:hover { text-decoration: underline; }
+
+/* ── Modal ──────────────────────────────────── */
+.acu-modal { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.acu-modal[hidden] { display: none; }
+.acu-modal-overlay { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.acu-modal-panel {
+    position: relative; z-index: 1; width: 560px; max-width: 100%; max-height: calc(100vh - 40px);
+    background: var(--white); border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgba(10,27,51,0.22);
+    display: flex; flex-direction: column; animation: acuModalIn 0.22s var(--ease-out);
+}
+.acu-modal-sm { width: 460px; }
+@keyframes acuModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.acu-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1.5px solid var(--line); }
+.acu-modal-title { font: 800 1.05rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
+.acu-modal-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.acu-modal-body { padding: 20px; overflow-y: auto; }
+.acu-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1.5px solid var(--line); }
+.acu-modal-text { font-size: 0.92rem; line-height: 1.6; color: var(--text); }
+
+.acu-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.acu-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.acu-field-full { grid-column: 1 / -1; }
+.acu-field label, .acu-field .acu-label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
+.acu-field input {
+    width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.acu-field input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.acu-field input.is-invalid, .app-combobox.is-invalid .app-combobox-trigger { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
+.acu-field-error { font-size: 0.76rem; color: var(--red); font-weight: 600; }
+.acu-field-error[hidden] { display: none; }
+.acu-nota { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(233,185,73,0.15); color: #6B5208; font-size: 0.84rem; font-weight: 600; line-height: 1.5; }
+.acu-nota[hidden] { display: none; }
+
+/* ── Aviso ──────────────────────────────────── */
+.acu-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px; padding: 13px 16px; border-radius: 12px;
+    background: var(--navy-3); color: var(--white); font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.acu-toast.is-visible { opacity: 1; transform: none; }
+.acu-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 1000px) { .acu-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+    .acu-title { font-size: 1.5rem; }
+    .acu-info, .acu-fields { grid-template-columns: 1fr; }
+    .acu-filters .app-combobox { min-width: 0; flex: 1 1 160px; }
+    .acu-toast { left: 16px; right: 16px; }
+}
+@media (max-width: 460px) { .acu-kpis { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+    .acu-drawer-panel, .acu-drawer-overlay, .acu-toast { transition: none; }
+    .acu-modal-panel { animation: none; }
+}
+
+/* ── Propio de Secretarías ──────────────────── */
+.acu-avatar-txt { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--navy-2); color: var(--white); font: 800 0.8rem "Archivo", system-ui, sans-serif; }
+.acu-avatar-txt.is-off { background: #94A3B8; }
+
+/* Interruptor activa / inactiva */
+.acu-switch { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; padding: 4px; cursor: pointer; font: 600 0.8rem "Public Sans", system-ui, sans-serif; color: var(--navy-3); border-radius: 8px; }
+.acu-switch:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.acu-switch-track { width: 36px; height: 20px; border-radius: 999px; background: #CBD5E1; position: relative; transition: background 0.18s; flex-shrink: 0; }
+.acu-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--white); box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 0.18s var(--ease-out); }
+.acu-switch[aria-checked="true"] .acu-switch-track { background: var(--green); }
+.acu-switch[aria-checked="true"] .acu-switch-track::after { transform: translateX(16px); }
+
+/* Pasos del formulario */
+.acu-steps { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.acu-step { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.acu-step-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); background: var(--bg); display: flex; align-items: center; justify-content: center; font: 800 0.72rem "Archivo", system-ui, sans-serif; color: var(--muted); }
+.acu-step span { font-size: 0.76rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.acu-step.is-active .acu-step-dot { border-color: var(--orange); background: var(--orange); color: var(--white); }
+.acu-step.is-active span { color: var(--orange-2); }
+.acu-step.is-done .acu-step-dot { border-color: var(--green); background: var(--green); color: var(--white); }
+.acu-step.is-done span { color: var(--green); }
+.acu-step-line { flex: 1 1 0; min-width: 14px; height: 2px; background: var(--line); margin: 0 10px; }
+.acu-paso[hidden] { display: none; }
+.acu-field select {
+    width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
+    font-family: inherit; font-size: 0.92rem; color: var(--text); outline: none;
+}
+.acu-field select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
+.acu-field select.is-invalid { border-color: var(--red); }
+.acu-hint { font-size: 0.76rem; color: var(--muted); }
+.acu-resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-top: 16px; padding: 14px; border-radius: 12px; background: var(--bg); }
+.acu-modal-foot-split { justify-content: space-between; }
+.acu-modal-foot-split > div { display: flex; gap: 10px; margin-left: auto; }
+@media (max-width: 600px) { .acu-step:not(.is-active) span { display: none; } .acu-resumen { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .acu-switch-track, .acu-switch-track::after { transition: none; } }
+
+/* ── Propio de Acudientes ─────────────────────────── */
+.acu-filters .app-combobox { min-width: 170px; }
+.acu-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.acu-tag { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; white-space: nowrap; background: #F1F5F9; color: var(--navy-3); }
+.acu-seccion { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--navy-2); margin: 20px 0 10px; }
+.acu-seccion:first-child { margin-top: 0; }
+.acu-drawer-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.acu-panel .acu-info + .acu-seccion { margin-top: 22px; }
+.acu-field .app-combobox-trigger { min-height: 42px; }
+.acu-vincular { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto; gap: 8px; margin-top: 14px; align-items: start; }
+.acu-vincular select, .acu-vincular-sel { width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line); font-family: inherit; font-size: 0.86rem; background: var(--white); color: var(--text); }
+.acu-aviso { font-size: 0.8rem; color: var(--navy-2); background: #EEF3FA; padding: 9px 12px; border-radius: 10px; margin-top: 10px; line-height: 1.5; }
+.acu-aviso[hidden] { display: none; }
+.acu-elegidos { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.acu-elegidos li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--bg); font-size: 0.85rem; }
+@media (max-width: 600px) { .acu-vincular { grid-template-columns: 1fr; } }
+.acu-field[hidden] { display: none; }

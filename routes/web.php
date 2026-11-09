@@ -303,6 +303,21 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
 });
 
+// ============ PANEL ADMIN (ESAT GENERAL) ============
+// Rol admin_general: toda ESAT, sin sede propia. Solo frontend por ahora: las vistas usan datos de ejemplo
+// (public/assets/js/admin_general/datos-ejemplo.js).
+Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('general.')->group(function () {
+    Route::get('/', function () {
+        return view('admin_general.dashboard');
+    })->name('dashboard');
+
+    foreach (['sedes', 'secretarias', 'programas', 'estudiantes', 'acudientes', 'docentes', 'academico', 'finanzas', 'comunicados', 'foro', 'reportes', 'auditoria', 'configuracion'] as $pantalla) {
+        Route::get($pantalla, function () use ($pantalla) {
+            return view('admin_general.'.$pantalla.'.index');
+        })->name($pantalla);
+    }
+});
+
 // ============ PANEL DOCENTE ============
 // Solo frontend por ahora: las vistas usan datos de ejemplo (public/assets/js/docente/datos-ejemplo.js).
 Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
