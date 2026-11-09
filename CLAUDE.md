@@ -4,12 +4,45 @@ Escuela Nacional de Educación ESAT (instituto técnico colombiano legalmente
 licenciado — Lic. Funcionamiento 5850, NIT 900820764-1). El proyecto tiene
 dos partes:
 
-1. **Sitio público** (`resources/views/welcome.blade.php` y páginas de
-   `paginas.*`) — ya construido: programas técnicos, sedes, convenios,
-   educación continuada. Todos los datos legales/de contacto/sedes ahí son
-   **reales**, nunca inventados.
-2. **Plataforma interna** (paneles por rol) — en construcción activa, es el
-   foco actual. Todo lo de abajo es sobre esta parte.
+1. **Sitio público** (inicio, programas, Educación Continuada y escuelas) — rediseñado
+   en noviembre de 2026 (ver "Sitio público" abajo). Todos los datos legales/de
+   contacto/sedes ahí son **reales**, nunca inventados.
+2. **Plataforma interna** (paneles por rol) — en construcción activa. Casi todo lo de
+   abajo es sobre esta parte.
+
+## Sitio público
+
+- **Datos, no vistas sueltas.** `config/sitio.php`: escuelas (con su foto y sus programas
+  `[nombre, slug]`), Educación Continuada, sedes (dirección y coordenadas reales), WhatsApp y
+  redes (vacías hasta tener las URL reales). `config/contenido.php`: el texto de cada programa
+  (`programas.{slug}`) y de cada línea de Educación Continuada (`continuada.{slug}`). Header,
+  footer, inicio y subpáginas leen de ahí: un programa o una sede se agrega en esos archivos,
+  no en la vista.
+- **Rutas**: `routes/web.php` genera una ruta por programa (`/{slug}`, nombre `programas.{slug}`),
+  por línea (`continuada.{slug}`) y por escuela (`/escuelas/{slug}`, `escuelas.{slug}`), todas a
+  `Sitio/PaginaController`. Plantillas: `paginas/{programa,continuada,escuela}.blade.php` y
+  `paginas/partes/{hero,barra,migas,respaldo}`. El inicio es `welcome.blade.php`.
+- **Fotos**: `public/assets/img` tiene el original y su `.webp` + `-960.webp` (procedencia en
+  `.impeccable/procedencia-imagenes.md`). En las vistas, `$foto('archivo.png')` devuelve
+  `src`/`srcset` del WebP o null si la foto no existe; sin foto, la página se arma con el ícono de
+  la escuela (nunca un aviso de "foto pendiente"). Un programa sin foto propia usa otra foto
+  real del mismo programa (`PaginaController::conPortada`).
+- **CSS/JS** en `public/assets/{css,js}/sitio/`: `base.css` + `motor.js` en todas las páginas,
+  `inicio.*` en el inicio y `subpaginas.*` en programas, líneas y escuelas. Se cargan con
+  `$recurso('ruta')` (versión por fecha del archivo). Librerías por CDN con versión exacta:
+  GSAP 3.13 + ScrollTrigger, Lenis 1.3.4 y Leaflet 1.9.4 (sin Bootstrap ni AOS).
+- **Movimiento** (`motor.js`, apagado con `prefers-reduced-motion`): `data-revelar`
+  (`subir|escalonar|mascara|lado`, `data-retraso`), `data-parallax` (+ `data-parallax-marco`) y
+  `data-contar`. El contenido es visible sin JS; las animaciones solo parten de ese estado. Un
+  disparador creado antes de una sección fijada (la pista de Nuevas carreras) necesita
+  `ScrollTrigger.sort()` + `refresh()` (ya está al final de `inicio.js`).
+- **Footer**: su cierre (`#contacto`) es la invitación a escribir por WhatsApp; una página lo
+  cambia con `@section('cierre_titulo' | 'cierre_texto' | 'cierre_tema' | 'cierre_boton')`.
+- **Diseño**: el sistema visual está en `DESIGN.md`; el contrato de dirección, como comentario al
+  inicio del `<body>` en `layouts/app.blade.php`.
+- **Pendiente de ESAT**: cifras de estudiantes y egresados, foto y WhatsApp de cada sede, URL de
+  redes, fotos de 8 programas de Ciencias y decidir el formulario de Novedades (hoy solo muestra
+  la confirmación, no guarda el correo).
 
 Stack: Laravel 12 + Breeze (Blade), MySQL (`esat`, XAMPP, `root` sin clave),
 `php artisan serve --port=8765` para probar local. Todo en **español**,
@@ -336,6 +369,8 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
 Panel Docente (acceso por rol y redirección): `tests/Feature/Docente/PanelDocenteTest.php`.
+Sitio público (una página por programa, línea y escuela, rutas de siempre, cierre del footer):
+`tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
 sin él fallan casi todas (147 de las 148 actuales). Activarlo en el `php.ini` o correr
