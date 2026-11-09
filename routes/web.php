@@ -23,6 +23,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Sitio\PaginaController;
 use App\Http\Controllers\Superadmin\Administradores\AdministradorController;
 use App\Http\Controllers\Superadmin\Sedes\SedeController;
+use App\Http\Controllers\Docente\Asistencia\AsistenciaController as DocenteAsistenciaController;
+use App\Http\Controllers\Docente\Grupos\GrupoController as DocenteGrupoController;
+use App\Http\Controllers\Docente\Inicio\InicioController as DocenteInicioController;
+use App\Http\Controllers\Docente\Notas\NotaController as DocenteNotaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -190,23 +194,15 @@ Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('gene
 });
 
 // ============ PANEL DOCENTE ============
-// Solo frontend por ahora: las vistas usan datos de ejemplo (public/assets/js/docente/datos-ejemplo.js).
+// Los grupos que tiene a cargo (curso_docente). Toma y corrige la asistencia y las notas mientras el
+// grupo no haya terminado (PanelDocenteService); Admin › Asistencia y Calificaciones solo consultan.
 Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
-    Route::get('/', function () {
-        return view('docente.dashboard');
-    })->name('dashboard');
-
-    Route::get('grupos', function () {
-        return view('docente.grupos.index');
-    })->name('grupos');
-
-    Route::get('asistencia', function () {
-        return view('docente.asistencia.index');
-    })->name('asistencia');
-
-    Route::get('notas', function () {
-        return view('docente.notas.index');
-    })->name('notas');
+    Route::get('/', [DocenteInicioController::class, 'index'])->name('dashboard');
+    Route::get('grupos', [DocenteGrupoController::class, 'index'])->name('grupos');
+    Route::get('asistencia', [DocenteAsistenciaController::class, 'index'])->name('asistencia');
+    Route::post('asistencia/{curso}', [DocenteAsistenciaController::class, 'store'])->whereNumber('curso')->name('asistencia.guardar');
+    Route::get('notas', [DocenteNotaController::class, 'index'])->name('notas');
+    Route::post('notas/{curso}/{modulo}', [DocenteNotaController::class, 'store'])->whereNumber(['curso', 'modulo'])->name('notas.guardar');
 });
 
 Route::middleware('auth')->group(function () {

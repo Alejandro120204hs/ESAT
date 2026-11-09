@@ -1,9 +1,7 @@
-{{-- Inicio del docente — PANTALLA SOLO FRONTEND (todavía sin controlador ni persistencia real).
-     Todo lo que se ve sale de los datos de ejemplo de public/assets/js/docente/datos-ejemplo.js
-     (window.DOC_DATOS): programas, escuelas y jornadas son reales; grupos, horarios, estudiantes,
-     asistencias y notas son FICTICIOS. Esta pantalla no guarda nada: sus enlaces llevan a Asistencia,
-     Notas y Mis grupos, que guardan con DOC_API (sessionStorage) mientras no exista el backend.
-     Solo cuentan los grupos sin finalizar; los finalizados son historial. --}}
+{{-- Inicio del docente (Docente/Inicio/InicioController). Datos reales de los grupos que tiene a cargo
+     (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js arma DOC_DATOS). Esta pantalla no guarda nada:
+     sus enlaces llevan a Asistencia, Notas y Mis grupos. Solo cuentan los grupos sin finalizar; los
+     finalizados son historial. --}}
 @extends('docente.layout')
 
 @section('title', 'Inicio')
@@ -160,6 +158,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}"></script>
+    @include('docente.partials.datos')
     <script src="{{ asset('assets/js/docente/dashboard.js') }}?v={{ filemtime(public_path('assets/js/docente/dashboard.js')) }}"></script>
 @endpush

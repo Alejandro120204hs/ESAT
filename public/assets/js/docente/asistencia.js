@@ -1,5 +1,5 @@
 /* ESAT — Docente: Tomar asistencia
-   Lee solo de window.DOC_DATOS y guarda solo con window.DOC_API (datos-ejemplo.js) hasta que exista el backend.
+   Lee solo de window.DOC_DATOS y guarda solo con window.DOC_API (datos.js → POST docente.asistencia.guardar).
    Reglas (las mismas de AsistenciaService): se registra y corrige cualquier clase ya dictada o la de hoy mientras
    el grupo esté vigente; un grupo finalizado es solo consulta; una clase futura no se registra; la excusa lleva
    motivo; % = (presente + tarde) / (presente + tarde + ausente) y el 80 % es solo referencia. */

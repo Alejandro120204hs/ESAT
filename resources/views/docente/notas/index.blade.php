@@ -1,7 +1,6 @@
-{{-- Notas (panel Docente): pantalla SOLO FRONTEND con datos de ejemplo de public/assets/js/docente/datos-ejemplo.js.
-     Programas, escuelas y jornadas son reales; grupos, estudiantes, notas y asistencia son FICTICIOS.
-     "Guardar notas" llama DOC_API.guardarNotas, que por ahora guarda en el sessionStorage de la pestaña
-     mientras no exista el backend (CalificacionService).
+{{-- Notas (panel Docente, Docente/Notas/NotaController). Datos reales de los grupos del docente
+     (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js). "Guardar notas" llama DOC_API.guardarNotas →
+     POST docente.notas.guardar (NotasRequest) con solo las notas que cambiaron.
      Reglas: nota por módulo de 1,0 a 5,0 con un decimal, se aprueba con 3,0; una sola habilitación por módulo
      perdido y solo cuando el módulo ya terminó. Los grupos finalizados y las matrículas que no están activas
      solo se consultan. Enlace directo: ?grupo=ID&modulo=ID (los dos opcionales). --}}
@@ -171,6 +170,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}"></script>
+@include('docente.partials.datos')
 <script src="{{ asset('assets/js/docente/notas.js') }}?v={{ filemtime(public_path('assets/js/docente/notas.js')) }}"></script>
 @endpush

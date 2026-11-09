@@ -1,5 +1,5 @@
 /* ESAT — Docente: Inicio y mi horario
-   Solo frontend: lee window.DOC_DATOS (datos-ejemplo.js) y no guarda nada. Cada pendiente lleva a la
+   Lee window.DOC_DATOS (datos.js, datos reales de sus grupos) y no guarda nada. Cada pendiente lleva a la
    pantalla que lo resuelve (Asistencia, Notas o Mis grupos) con el grupo y la fecha o el módulo en la URL.
    Solo cuentan los grupos sin finalizar: los finalizados son historial. */
 (function () {

@@ -68,7 +68,7 @@ queda crear la cuenta del Admin y lo técnico. Panel en construcción (ver "Pane
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
 Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin y docente
-tienen panel (el del docente es solo frontend, ver "Panel Docente"); estudiante y acudiente
+tienen panel (ver "Panel Docente"); estudiante y acudiente
 caen por ahora en el `/dashboard` de Breeze ("You're logged in!"). Docente, estudiante y
 acudiente usan el `/profile` de Breeze. **Nadie elimina su propia
 cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
@@ -161,8 +161,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (uno por grupo); horario semanal en `curso_sesiones`. Las reglas de horario
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
-- Backend real hecho: Superadmin (Sedes, Administradores) y Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio).
+- Backend real hecho: Superadmin (Sedes, Administradores), Admin
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio)
+  y Docente (Inicio, Mis grupos, Asistencia, Notas).
   Del panel Admin solo siguen siendo maqueta las pestañas Documentos de Programas y Docentes.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
@@ -237,7 +238,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     `documento.css/js`): recibo, comprobante de devolución, constancia de matrícula (solo vigente) y paz y
     salvo (nada por pagar en ninguna de sus matrículas y ninguna vigente sin plan).
 - **Asistencia** (`Admin/Asistencia/AsistenciaController` + `Academico/AsistenciaService`): el Admin **solo
-  consulta**; la asistencia la toma el **docente** (panel Docente: frontend hecho, backend pendiente) y es **informativa: no bloquea
+  consulta**; la asistencia la toma el **docente** (panel Docente) y es **informativa: no bloquea
   nada** (ni grados ni matrículas; 80 % es solo referencia). Clases = días del horario entre el inicio del grupo
   y su fin (la de hoy cuenta cuando termina). Clase **sin registrar** = clase dictada sin ningún registro del
   grupo; no cuenta en el %. % = (presente + tarde) / (presente + tarde + ausente): la excusa no cuenta como falla
@@ -377,7 +378,8 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 `tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
-Panel Docente (acceso por rol y redirección): `tests/Feature/Docente/PanelDocenteTest.php`.
+Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
+guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
 Sitio público (una página por programa, línea y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
@@ -538,17 +540,17 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   en la misma forma, y GEN_API por `fetch` con Form Requests.
 - Pruebas: `tests/Feature/AdminGeneral/PanelGeneralTest.php`.
 
-## Panel Docente (solo frontend, con datos de ejemplo)
+## Panel Docente (datos reales)
 
-- Rutas `/docente` (closures con `role:docente`, como las maquetas del Superadmin) y
+- Rutas `/docente` (`role:docente`) a un controlador por pantalla en `Docente/{Inicio,Grupos,Asistencia,Notas}/`, y
   `User::panelUrl()` → `docente.dashboard`. Layout propio: `docente/layout.blade.php` +
   `partials/{sidebar,topbar}`, `docente/layout.css` (el del Admin sin los menús flotantes;
   la animación de entrada se llama `.app-anim`) y `layout.js`.
 - Pantallas (cada una con su Blade/CSS/JS y su prefijo):
   - **Inicio** (`dashboard`, `ini-`): clases de hoy, pendientes (asistencia sin registrar,
     notas por poner, habilitaciones), estudiantes bajo el 80 % y su horario semanal.
-  - **Mis grupos** (`grupos/index`, `grp-`): tarjetas por grupo y ficha con Estudiantes,
-    Malla y Horario.
+  - **Mis grupos** (`grupos/index`, `grp-`): tarjetas por grupo (Activo · Por iniciar · Finalizado) y ficha con
+    Estudiantes, Malla y Horario.
   - **Asistencia** (`asistencia/index`, `tas-`): calendario de clases del grupo y planilla
     P/T/A/E (excusa con motivo obligatorio), con "Todos presentes".
   - **Notas** (`notas/index`, `not-`): por módulo, de 1.0 a 5.0 con un decimal (acepta coma),
@@ -559,17 +561,20 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   clases futuras ni notas de módulos por iniciar.
 - Enlaces directos: `asistencia?grupo=ID&fecha=AAAA-MM-DD`, `notas?grupo=ID&modulo=ID`,
   `grupos?grupo=ID` (abre la ficha). Inicio y Mis grupos los usan.
-- **Datos de ejemplo**: `public/assets/js/docente/datos-ejemplo.js` simula al servidor con
-  las mismas reglas de `AsistenciaService` y `CalificacionService`. `DOC_DATOS` es lo que se lee
-  y `DOC_API.guardarAsistencia()` / `guardarNotas()` (Promise) es lo único que escribe; guarda
-  en `sessionStorage` para que las 4 pantallas se vean coherentes. Programas y escuelas son
-  reales; grupos, estudiantes, notas y asistencias son ficticios y las fechas se arman alrededor
-  de hoy. Cada página carga `datos-ejemplo.js` antes de su propio JS.
-- **Al conectar el backend**: un controlador por pantalla en `Docente/{Panel}/` que pase los
-  datos con `@json` en la misma forma de `DOC_DATOS`, y cambiar las dos funciones de `DOC_API`
-  por `fetch` a rutas reales con Form Requests que validen lo mismo (rango y decimal de las
-  notas, habilitación, motivo de excusa, grupo vigente). El docente solo ve sus grupos
-  (`curso_docente`); guardar `registrado_por` y registrar con `Auditoria::registrar`.
+- **Datos** (`Academico/PanelDocenteService`): `datos()` arma lo que leen las 4 pantallas con las reglas de
+  `AsistenciaService` y `CalificacionService` (lo que ve el docente cuadra con Admin › Asistencia y Calificaciones):
+  sus grupos con horario (`curso_docente`, vigentes primero), módulos con `fechasModulos`, estudiantes (una fila por
+  estudiante con su matrícula en el grupo; `desde` = su matrícula o el inicio del grupo, `hasta` = cuando se aplazó,
+  retiró o graduó), asistencias y notas (la nota sigue a la matrícula). Cada vista lo pasa con `@include('docente.partials.datos')`
+  (`window.DOC_SERVIDOR`) y `public/assets/js/docente/datos.js` arma `DOC_DATOS` (deriva clases, %, estados de nota y
+  pendientes, y los recalcula al guardar sin recargar) y `DOC_API`.
+- **Guardar** (lo único que escribe, `fetch` con CSRF): `POST docente/asistencia/{curso}` (`AsistenciaRequest`: grupo
+  suyo y sin terminar, día de clase del horario y no futuro —la de hoy sí, aunque no haya terminado—, toda la lista de
+  ese día marcada, excusa con motivo) y `POST docente/notas/{curso}/{modulo}` (`NotasRequest`, solo las que cambiaron:
+  nota 1.0–5.0 con un decimal, sin nota la borra, habilitación solo con nota < 3.0 y módulo terminado, matrícula
+  activa, módulo del programa, no por iniciar y que cursó en el grupo). Los errores salen uno a la vez con el nombre
+  del estudiante (`asistencia.js` señala su fila). Guardan `registrado_por`, la fecha de la nota/habilitación cuando
+  cambia y una línea en la auditoría (entidad `Curso`). No necesitó campos nuevos en la BD.
 - Su perfil todavía es el de Breeze (roto, HALLAZGOS M7).
 
 ## Pendiente
@@ -577,9 +582,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 - Paneles Estudiante y Acudiente: sin construir.
   - Estudiante: elegir plan de pago (genera las cuotas). El bloqueo por derecho
     vencido ya corta también las sesiones abiertas (`EnsureAccountIsEnabled`).
-- Docente: conectar el backend de Asistencia y Notas (ver "Panel Docente"). El frontend ya
-  valida el rango 1.0–5.0 de las notas, pero el servidor también debe hacerlo: hoy no se valida
-  en ningún lado. Falta además su perfil.
+- Docente: su perfil, y simplificar el diseño de sus 4 pantallas (revisión del 9-11-2026: hay cifras repetidas en
+  varias partes de la misma pantalla).
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
   Agregar Form Requests y auditoría a Sedes y Administradores.

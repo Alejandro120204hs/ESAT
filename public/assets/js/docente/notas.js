@@ -1,7 +1,7 @@
 /* =========================================================
    ESAT — Panel Docente: Notas
    Lee SOLO de window.DOC_DATOS y guarda SOLO con window.DOC_API.guardarNotas
-   (datos-ejemplo.js; sessionStorage mientras no exista el backend).
+   (datos.js → POST docente.notas.guardar, solo las notas que cambiaron).
    Reglas (las mismas de CalificacionService): nota por módulo de 1,0 a 5,0 con un
    decimal, aprueba 3,0; una sola habilitación por módulo perdido y solo con el módulo
    terminado; grupo finalizado y matrículas no activas = solo consulta.

@@ -1,6 +1,6 @@
 /* =========================================================
    ESAT — Panel Docente: Mis grupos
-   Solo frontend: lee window.DOC_DATOS (datos-ejemplo.js). Esta pantalla no guarda nada;
+   Lee window.DOC_DATOS (datos.js, datos reales de sus grupos). Esta pantalla no guarda nada;
    "Tomar asistencia" y "Poner notas" llevan a sus pantallas con ?grupo=ID.
    ========================================================= */
 (function () {
@@ -179,12 +179,17 @@
         });
     }
 
+    // Finalizado (solo consulta) · Por iniciar (en planificación) · Activo
+    function estadoTag(g) {
+        if (g.soloConsulta) return '<span class="app-status-tag app-status-muted">Finalizado</span>';
+        if (g.estado === 'planificacion') return '<span class="app-status-tag app-status-muted">Por iniciar</span>';
+        return '<span class="app-status-tag app-status-active">Activo</span>';
+    }
+
     function tarjeta(g) {
         var r = resumen(g), sg = sigla(g.escuela);
         var fin = g.soloConsulta;
-        var estado = fin
-            ? '<span class="app-status-tag app-status-muted">Finalizado</span>'
-            : '<span class="app-status-tag app-status-active">Activo</span>';
+        var estado = estadoTag(g);
 
         var modulo;
         if (fin) {
@@ -424,7 +429,7 @@
         dwTitulo.textContent = g.programa;
         dwSub.textContent = g.nombre + ' · ' + g.codigo;
         dwBadges.innerHTML =
-            (g.soloConsulta ? '<span class="app-status-tag app-status-muted">Finalizado</span>' : '<span class="app-status-tag app-status-active">Activo</span>') +
+            estadoTag(g) +
             '<span class="grp-jornada-tag">' + esc(g.jornada) + '</span>' +
             '<span class="grp-esc-tag">' + esc(g.escuela) + '</span>';
         dwSolo.hidden = !g.soloConsulta;
