@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\RolUsuario;
 use App\Models\User;
 use App\Services\Finanzas\PagoService;
+use App\Services\Sistema\BloqueoService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,10 @@ class EnsureAccountIsEnabled
     {
         if (! $user->activo) {
             return 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.';
+        }
+        // Bloqueada por intentos fallidos o inactividad (Admin › Configuración): no entra hasta que la desbloqueen
+        if ($user->bloqueado_en) {
+            return BloqueoService::mensaje($user);
         }
 
         // El derecho de matrícula se paga antes de empezar clases: vencido sin pagar, no se ingresa

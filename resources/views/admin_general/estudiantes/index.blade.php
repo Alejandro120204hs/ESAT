@@ -1,8 +1,7 @@
-{{-- Estudiantes (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Estudiantes, acudientes, notas y pagos son ficticios; sedes y programas son reales. El Admin registra y edita a la PERSONA
-     igual que la secretaría, en cualquier sede (correo obligatorio = usuario, clave = documento, acudiente obligatorio si es
-     menor). Matricular y cobrar sigue siendo de Matrículas: el Admin entra a la sede. estudiantes.js pinta todo escapado y
-     exporta lo filtrado a Excel (CSV). --}}
+{{-- Estudiantes (Admin de ESAT general). Datos reales: AdminGeneral EstudianteController@index (PersonasService) los pasa
+     en window.GEN_DATOS: todos los estudiantes con su matrícula, pagos, asistencia y promedio (solo consulta). Registrar y
+     editar a la persona en la sede elegida usa las reglas de la secretaría (EstudianteRequest). Matricular y cobrar: entrando
+     a la sede. estudiantes.js escapa todo lo que viene de los datos. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Estudiantes')
@@ -123,8 +122,7 @@
             </button>
         </div>
         <div class="est-modal-body">
-            <p class="est-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría y se abrirá la ficha de este estudiante. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
-            <p class="est-nota" id="est-entrar-nota" hidden>Esta pantalla todavía es una maqueta: entrar a la sede funcionará cuando se conecte el backend.</p>
+            <p class="est-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría; entrarás a Matrículas para matricularlo o cobrarle. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
         </div>
         <div class="est-modal-foot">
             <button type="button" class="est-btn est-btn-ghost" data-cerrar-modal>Cancelar</button>
@@ -152,24 +150,35 @@
                     <div class="est-field est-field-full"><label for="est-f-sede">Sede</label><select id="est-f-sede"></select><span class="est-field-error" data-error="sede" hidden></span></div>
                     <div class="est-field"><label for="est-f-nombres">Nombres</label><input type="text" id="est-f-nombres" maxlength="60" autocomplete="off"><span class="est-field-error" data-error="nombres" hidden></span></div>
                     <div class="est-field"><label for="est-f-apellidos">Apellidos</label><input type="text" id="est-f-apellidos" maxlength="60" autocomplete="off"><span class="est-field-error" data-error="apellidos" hidden></span></div>
-                    <div class="est-field"><label for="est-f-tipo">Tipo de documento</label><select id="est-f-tipo"><option value="CC">Cédula de ciudadanía</option><option value="TI">Tarjeta de identidad</option><option value="CE">Cédula de extranjería</option><option value="PA">Pasaporte</option><option value="PPT">Permiso por protección temporal</option></select></div>
-                    <div class="est-field"><label for="est-f-documento">Número de documento</label><input type="text" id="est-f-documento" inputmode="numeric" maxlength="12" autocomplete="off"><span class="est-field-error" data-error="documento" hidden></span></div>
+                    <div class="est-field"><label for="est-f-tipo">Tipo de documento</label><select id="est-f-tipo">@foreach (\App\Http\Requests\Admin\Estudiantes\EstudianteRequest::TIPOS_DOCUMENTO as $valor => $tipo)<option value="{{ $valor }}">{{ $tipo }}</option>@endforeach</select><span class="est-field-error" data-error="tipo" hidden></span></div>
+                    <div class="est-field"><label for="est-f-documento">Número de documento</label><input type="text" id="est-f-documento" inputmode="numeric" maxlength="11" autocomplete="off"><span class="est-field-error" data-error="documento" hidden></span></div>
                     <div class="est-field"><label for="est-f-nacimiento">Fecha de nacimiento</label><input type="date" id="est-f-nacimiento"><span class="est-hint" id="est-edad"></span><span class="est-field-error" data-error="nacimiento" hidden></span></div>
                     <div class="est-field"><label for="est-f-genero">Género</label><select id="est-f-genero"><option value="">Selecciona</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Otro</option></select><span class="est-field-error" data-error="genero" hidden></span></div>
+                    <div class="est-field"><label for="est-f-depto-nac">Departamento de nacimiento</label><select id="est-f-depto-nac"></select><span class="est-field-error" data-error="depto-nac" hidden></span></div>
+                    <div class="est-field"><label for="est-f-ciudad-nac">Ciudad de nacimiento</label><select id="est-f-ciudad-nac"></select><span class="est-field-error" data-error="ciudad-nac" hidden></span></div>
                 </div>
             </div>
             <div class="est-paso" data-paso="2" hidden>
                 <div class="est-fields">
                     <div class="est-field"><label for="est-f-telefono">Celular</label><input type="tel" id="est-f-telefono" inputmode="numeric" maxlength="14" placeholder="3001234567" autocomplete="off"><span class="est-field-error" data-error="telefono" hidden></span></div>
                     <div class="est-field"><label for="est-f-correo">Correo (es su usuario)</label><input type="email" id="est-f-correo" maxlength="120" autocomplete="off"><span class="est-field-error" data-error="correo" hidden></span></div>
-                    <div class="est-field est-field-full"><label for="est-f-ciudad">Ciudad de residencia</label><input type="text" id="est-f-ciudad" maxlength="80" autocomplete="off"><span class="est-field-error" data-error="ciudad" hidden></span></div>
+                    <div class="est-field est-field-full"><label for="est-f-direccion">Dirección de residencia</label><input type="text" id="est-f-direccion" maxlength="150" placeholder="Ej. Calle 5 # 4-20, barrio Centro" autocomplete="off"><span class="est-field-error" data-error="direccion" hidden></span></div>
+                    <div class="est-field"><label for="est-f-depto">Departamento de residencia</label><select id="est-f-depto"></select><span class="est-field-error" data-error="depto" hidden></span></div>
+                    <div class="est-field"><label for="est-f-ciudad">Ciudad o municipio de residencia</label><select id="est-f-ciudad"></select><span class="est-field-error" data-error="ciudad" hidden></span></div>
                 </div>
                 <h3 class="est-seccion">Acudiente <span class="est-muted" id="est-acu-req"></span></h3>
                 <div class="est-fields">
                     <div class="est-field"><label for="est-f-acudiente">Acudiente de la sede</label><select id="est-f-acudiente"></select><span class="est-field-error" data-error="acudiente" hidden></span></div>
                     <div class="est-field"><label for="est-f-parentesco">Parentesco</label><select id="est-f-parentesco"></select><span class="est-field-error" data-error="parentesco" hidden></span></div>
                 </div>
-                <p class="est-hint est-hint-acu">¿El acudiente no está en la lista? Regístralo primero en <a class="est-link" href="/general/acudientes">Acudientes</a>.</p>
+                <div class="est-fields est-acu-nuevo" id="est-acu-nuevo" hidden>
+                    <div class="est-field"><label for="est-f-a-documento">Cédula del acudiente</label><input type="text" id="est-f-a-documento" inputmode="numeric" maxlength="11" autocomplete="off"><span class="est-field-error" data-error="a-documento" hidden></span></div>
+                    <div class="est-field"><label for="est-f-a-telefono">Celular del acudiente</label><input type="tel" id="est-f-a-telefono" inputmode="numeric" maxlength="14" autocomplete="off"><span class="est-field-error" data-error="a-telefono" hidden></span></div>
+                    <div class="est-field"><label for="est-f-a-nombres">Nombres</label><input type="text" id="est-f-a-nombres" maxlength="100" autocomplete="off"><span class="est-field-error" data-error="a-nombres" hidden></span></div>
+                    <div class="est-field"><label for="est-f-a-apellidos">Apellidos</label><input type="text" id="est-f-a-apellidos" maxlength="100" autocomplete="off"><span class="est-field-error" data-error="a-apellidos" hidden></span></div>
+                    <div class="est-field est-field-full"><label for="est-f-a-correo">Correo del acudiente (es su usuario)</label><input type="email" id="est-f-a-correo" maxlength="120" autocomplete="off"><span class="est-field-error" data-error="a-correo" hidden></span></div>
+                </div>
+                <p class="est-hint est-hint-acu" id="est-acu-ayuda">¿El acudiente no está en la lista? Elige «Registrar un acudiente nuevo»: su clave inicial será su cédula.</p>
                 <p class="est-nota" id="est-nota-clave">La clave inicial es su número de documento. Para matricularlo, entra a la sede: sin todos los documentos requeridos entregados no se matricula.</p>
             </div>
         </div>
@@ -184,6 +193,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/estudiantes.js') }}?v={{ filemtime(public_path('assets/js/admin_general/estudiantes.js')) }}" defer></script>
 @endpush

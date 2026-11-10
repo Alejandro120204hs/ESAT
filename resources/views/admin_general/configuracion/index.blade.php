@@ -1,7 +1,6 @@
-{{-- Configuración (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Datos de la institución REALES (nombre, NIT, licencia 5850 del 23-09-2019, Secretaría de Educación de Cundinamarca,
-     teléfonos del sitio público; el correo no se conoce y queda vacío). Cuota del sistema real ($ 2.000, configuraciones).
-     Las cuentas bloqueadas son ficticias. Pasa del Superadmin. Guardar usa GEN_API (solo en la pestaña). --}}
+{{-- Configuración (Admin de ESAT general). Datos reales: ConfiguracionController@index los pasa en window.GEN_DATOS.
+     Datos de la institución (salen en recibos y documentos; por defecto los reales de ESAT), cuota del sistema, reglas de
+     acceso (BloqueoService: intentos fallidos e inactividad) y desbloqueo de cuentas. Todo queda en la auditoría. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Configuración')
@@ -197,6 +196,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/configuracion.js') }}?v={{ filemtime(public_path('assets/js/admin_general/configuracion.js')) }}" defer></script>
 @endpush

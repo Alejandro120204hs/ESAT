@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'sede.trabajo' => \App\Http\Middleware\EnsureSedeDeTrabajo::class,
         ]);
         // Cuenta desactivada o derecho de matrícula vencido: se corta también la sesión abierta
         $middleware->web(append: [

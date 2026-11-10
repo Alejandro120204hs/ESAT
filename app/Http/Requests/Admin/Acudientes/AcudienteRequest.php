@@ -28,7 +28,7 @@ class AcudienteRequest extends FormRequest
     {
         $a = $this->route('acudiente');
 
-        return ! $a || ($a->role === RolUsuario::Acudiente && $a->sede_id === (int) $this->user()->sede_id);
+        return ! $a || ($a->role === RolUsuario::Acudiente && $a->sede_id === $this->sedeId());
     }
 
     protected function prepareForValidation(): void
@@ -78,7 +78,7 @@ class AcudienteRequest extends FormRequest
             $ids = array_column($this->input('estudiantes'), 'id');
 
             // Solo estudiantes de la sede
-            $validos = User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->user()->sede_id)
+            $validos = User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->sedeId())
                 ->whereIn('id', $ids)->count();
             if ($validos !== count($ids)) {
                 $v->errors()->add('estudiantes', 'Uno de los estudiantes no está registrado en tu sede.');
@@ -128,5 +128,11 @@ class AcudienteRequest extends FormRequest
             'estudiantes.*.id.distinct'       => 'Agregaste el mismo estudiante dos veces.',
             'estudiantes.*.parentesco.*'      => 'Selecciona el parentesco con cada estudiante.',
         ];
+    }
+
+    /** Sede en la que se valida: la de trabajo (secretaría o Admin dentro de una sede). El panel general la sobrescribe. */
+    protected function sedeId(): int
+    {
+        return (int) $this->user()->sedeTrabajoId();
     }
 }

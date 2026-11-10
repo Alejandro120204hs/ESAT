@@ -93,7 +93,7 @@ class InicioService
     }
 
     /** Cuántos estudiantes tenían un cobro vencido con saldo a la fecha, y cuánto (pagos recibidos hasta ese día). */
-    private function mora(Collection $matriculas, CarbonInterface $d): array
+    public function mora(Collection $matriculas, CarbonInterface $d): array
     {
         $cobros = Pago::whereIn('matricula_id', $matriculas->pluck('id'))->where('estado', '!=', 'anulado')
             ->whereNotNull('fecha_vencimiento')->where('fecha_vencimiento', '<', $d->toDateString())
@@ -148,7 +148,8 @@ class InicioService
     {
         $usuarios = User::where('sede_id', $sedeId)->pluck('id');
 
-        return Auditoria::whereIn('user_id', $usuarios)->with('usuario')->latest('created_at')->latest('id')->limit(6)->get()
+        /* Lo que hicieron los usuarios de la sede, más lo que hizo el Admin de ESAT dentro de ella */
+        return Auditoria::where(fn ($q) => $q->whereIn('user_id', $usuarios)->orWhere('sede_id', $sedeId))->with('usuario')->latest('created_at')->latest('id')->limit(6)->get()
             ->map(function (Auditoria $a) {
                 $u = $a->usuario;
                 $ini = mb_strtoupper(mb_substr($u->nombres ?? '', 0, 1).mb_substr($u->apellidos ?? '', 0, 1));

@@ -38,7 +38,7 @@ class PanelGeneralTest extends TestCase
 
         foreach (self::PANTALLAS as $url) {
             $this->actingAs($admin)->get($url)->assertOk()
-                ->assertSee('datos-ejemplo.js', false)
+                ->assertSee('window.GEN_DATOS', false)
                 ->assertSee('ESAT · Panel general');
         }
     }
@@ -53,13 +53,15 @@ class PanelGeneralTest extends TestCase
         }
     }
 
-    public function test_no_entra_a_los_paneles_de_sede(): void
+    public function test_no_entra_a_otros_paneles_y_a_la_secretaria_solo_eligiendo_sede(): void
     {
         $admin = $this->adminGeneral();
 
-        foreach (['/admin', '/superadmin', '/docente'] as $url) {
+        foreach (['/superadmin', '/docente'] as $url) {
             $this->actingAs($admin)->get($url)->assertForbidden();
         }
+        /* Las pantallas de la secretaría son para "Entrar a la sede": sin sede elegida vuelve a su panel (EntrarSedeTest) */
+        $this->actingAs($admin)->get('/admin')->assertRedirect(route('general.dashboard', absolute: false));
     }
 
     public function test_su_perfil_usa_el_diseno_del_panel_y_guarda(): void

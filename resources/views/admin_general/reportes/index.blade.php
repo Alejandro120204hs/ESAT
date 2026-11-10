@@ -1,7 +1,6 @@
-{{-- Reportes (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Documentos formales consolidados de todo ESAT o de una sede, POR MES (como en la secretaría: cada documento sale como
-     estaba al cierre del mes; el mes en curso, hasta hoy). Encabezado con los datos reales de la institución; las cifras
-     son ficticias y cuadran con Finanzas e Inicio. Solo consulta: imprimir y exportar a Excel (CSV). --}}
+{{-- Reportes (Admin de ESAT general): solo consulta. Datos reales: AdminGeneral ReporteController@index (FinanzasService) los
+     pasa en window.GEN_DATOS. Por mes y sede: matriculados, novedades, recaudo, ingresos y egresos, cartera por edades (a hoy).
+     Imprimir y Excel. reportes.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Reportes')
@@ -56,6 +55,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/reportes.js') }}?v={{ filemtime(public_path('assets/js/admin_general/reportes.js')) }}" defer></script>
 @endpush

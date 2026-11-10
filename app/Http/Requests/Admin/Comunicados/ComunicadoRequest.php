@@ -19,7 +19,7 @@ class ComunicadoRequest extends FormRequest
     {
         $c = $this->route('comunicado');
 
-        return ! $c || $c->sede_id === (int) $this->user()->sede_id;
+        return ! $c || $c->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     protected function prepareForValidation(): void
@@ -62,6 +62,11 @@ class ComunicadoRequest extends FormRequest
             }
             $c = $this->route('comunicado');
             if ($c) {
+                if ($c->autor?->isAdminGeneral() && ! $this->user()->isAdminGeneral()) {
+                    $v->errors()->add('titulo', 'Este comunicado lo envió el Admin de ESAT: solo él lo edita. Puedes archivarlo en tu sede.');
+
+                    return;
+                }
                 if (! $c->esDelAdmin()) {
                     $v->errors()->add('titulo', 'Los comunicados de los docentes no se editan desde aquí: solo se pueden archivar.');
                     return;

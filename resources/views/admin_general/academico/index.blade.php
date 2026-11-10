@@ -1,7 +1,6 @@
-{{-- Académico (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Programas y módulos reales; docentes, grupos, asistencia y notas ficticios (los grupos cuadran con el Inicio).
-     SOLO CONSULTA de todas las sedes o de una: pestañas Grupos, Asistencia y Notas (los docentes tienen su pantalla), con exportar a Excel.
-     La asistencia es informativa (80 % es solo referencia); las notas las pone el docente. Para corregir algo se entra a la sede. --}}
+{{-- Académico (Admin de ESAT general): solo consulta. Datos reales: AdminGeneral AcademicoController@index (AcademicoService)
+     los pasa en window.GEN_DATOS: grupos de todas las sedes con avance, asistencia y notas calculados con las mismas reglas
+     de la secretaría (AsistenciaService y CalificacionService). Grupos y horarios se manejan entrando a la sede. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Académico')
@@ -90,6 +89,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/academico.js') }}?v={{ filemtime(public_path('assets/js/admin_general/academico.js')) }}" defer></script>
 @endpush

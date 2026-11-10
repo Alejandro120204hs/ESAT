@@ -1,7 +1,6 @@
-{{-- Auditoría (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Los eventos se arman con los recibos, matrículas y egresos ficticios del ejemplo más algunos a mano; las sedes son
-     reales. SOLO CONSULTA: qué hicieron las secretarías y el Admin en cada sede (crear, editar, anular, activar,
-     desactivar, eliminar), con filtros, detalle y exportar a Excel. Al conectar el backend sale de la tabla auditorias. --}}
+{{-- Auditoría (Admin de ESAT general). Solo consulta. Datos reales: AuditoriaController@index (SupervisionService) los pasa en
+     window.GEN_DATOS: lo que hicieron secretarías, docentes y el Admin en el último año, con filtros de periodo, sede,
+     persona y acción, detalle y exportar. auditoria.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Auditoría')
@@ -92,6 +91,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/auditoria.js') }}?v={{ filemtime(public_path('assets/js/admin_general/auditoria.js')) }}" defer></script>
 @endpush

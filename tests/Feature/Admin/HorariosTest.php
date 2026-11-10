@@ -255,7 +255,7 @@ class HorariosTest extends TestCase
         $this->assertSame('inactivo', $docente->docentePerfil()->first()->estado);
     }
 
-    /* ── Programas: cambiar la duración no puede crear cruces ── */
+    /* ── Programas (los edita el Admin de ESAT): cambiar la duración no puede crear cruces ── */
 
     public function test_programas_no_deja_alargar_la_duracion_si_crea_un_cruce_de_docente(): void
     {
@@ -266,7 +266,7 @@ class HorariosTest extends TestCase
         $this->grupo($this->programa(['Tarde']), 'Tarde', docente: $docente, inicio: '2026-09-07', sesiones: [$this->sesion('Lunes', '14:00', '18:00')]);
 
         // A 12 meses, el primero llegaría hasta febrero del año siguiente y chocaría con el segundo
-        $this->actingAs($this->admin)->putJson("/admin/programas/{$programa->id}", $this->datosPrograma($programa, ['duracion_meses' => 12]))
+        $this->actingAs($this->adminGeneral())->putJson("/general/programas/{$programa->id}", $this->datosPrograma($programa, ['duracion_meses' => 12]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['duracion_meses' => 'se cruza']);
 
@@ -278,7 +278,7 @@ class HorariosTest extends TestCase
         $programa = $this->programa(['Mañana', 'Tarde']);
         $this->grupo($programa, 'Tarde');
 
-        $this->actingAs($this->admin)->putJson("/admin/programas/{$programa->id}", $this->datosPrograma($programa, ['jornadas' => ['Mañana']]))
+        $this->actingAs($this->adminGeneral())->putJson("/general/programas/{$programa->id}", $this->datosPrograma($programa, ['jornadas' => ['Mañana']]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['jornadas']);
     }
@@ -293,9 +293,16 @@ class HorariosTest extends TestCase
         ]);
     }
 
+    private function adminGeneral(): User
+    {
+        return User::factory()->create(['role' => 'admin_general', 'sede_id' => null]);
+    }
+
     private function datosPrograma(Programa $p, array $cambios): array
     {
         return array_merge([
+            'resolucion'     => 'En trámite',
+            'modulos'        => [['nombre' => 'Módulo único', 'horas' => $p->horas]],
             'nombre'         => $p->nombre,
             'codigo'         => $p->codigo,
             'nivel'          => $p->nivel,

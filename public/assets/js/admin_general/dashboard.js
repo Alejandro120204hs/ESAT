@@ -1,6 +1,6 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Inicio
-   Lee GEN_DATOS (datos-ejemplo.js) y pinta KPI, comparación de sedes, ingresos de 6 meses, alertas y
+   Lee GEN_DATOS (InicioController, datos reales) y pinta KPI, comparación de sedes, ingresos de 6 meses, alertas y
    actividad según la sede elegida ("" = todas). Todo lo que viene de los datos se escapa con esc().
    ========================================================= */
 document.addEventListener('DOMContentLoaded', function () {
@@ -414,24 +414,34 @@ document.addEventListener('DOMContentLoaded', function () {
         dot.className = 'gen-modal-dot ' + colorDe(s);
         dot.textContent = iniciales(a.quien);
         document.getElementById('gen-act-modal-titulo').textContent = a.quien;
-        document.getElementById('gen-act-modal-sede').textContent = (a.rol === 'admin' ? 'Admin' : 'Secretaría') + ' · ' + (s ? 'Sede ' + s.nombre : 'Todas las sedes');
+        document.getElementById('gen-act-modal-sede').textContent = ({ admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente' }[a.rol] || 'Secretaría') + ' · ' + (s ? 'Sede ' + s.nombre : 'Todas las sedes');
         document.getElementById('gen-act-modal-text').textContent = a.texto;
         document.getElementById('gen-act-modal-time').textContent = fechaLarga(a.fecha) + ' · ' + hace(a.fecha);
         abrir('gen-act-modal');
     });
+
+
+    /* ── Entrar a la sede: trabaja con las pantallas de la secretaría (EntrarSedeController) ── */
+    function entrarASede(id, destino) {
+        var f = document.createElement('form');
+        f.method = 'POST'; f.action = '/general/sedes/' + encodeURIComponent(id) + '/entrar';
+        [['_token', document.querySelector('meta[name="csrf-token"]').content], ['destino', destino || 'dashboard']].forEach(function (c) {
+            var i = document.createElement('input'); i.type = 'hidden'; i.name = c[0]; i.value = c[1]; f.appendChild(i);
+        });
+        document.body.appendChild(f); f.submit();
+    }
 
     var entrarSede = null;
     function abrirEntrar(id) {
         entrarSede = sedePorId(id);
         document.getElementById('gen-entrar-titulo').textContent = 'Entrar a ' + entrarSede.nombre;
         document.getElementById('gen-entrar-sub').textContent = entrarSede.ciudad + ' · ' +
-            (entrarSede.secretaria ? 'Secretaría: ' + entrarSede.secretaria.nombre : 'Sin secretaría');
-        document.getElementById('gen-entrar-nota').hidden = true;
+            (secretariasDe(entrarSede).length ? 'Secretaría: ' + nombreSec(secretariasDe(entrarSede)[0]) : 'Sin secretaría');
         abrir('gen-entrar-modal');
     }
     document.getElementById('gen-entrar-ok').addEventListener('click', function () {
-        // Maqueta: al conectar el backend esto va a la ruta que deja la sede elegida en la sesión.
-        document.getElementById('gen-entrar-nota').hidden = false;
+        this.disabled = true;
+        entrarASede(entrarSede.id, 'dashboard');
     });
 
     /* ── Pintar ─────────────────────────────────── */

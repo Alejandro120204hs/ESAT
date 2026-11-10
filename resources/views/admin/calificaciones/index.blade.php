@@ -33,7 +33,7 @@ $SITUACION = [
     'reprobado' => ['app-status-danger', 'Perdió la habilitación'],
     'sin_notas' => ['app-status-muted',  'Sin notas aún'],
 ];
-$sede = auth()->user()->sede;
+$sede = auth()->user()->sedeTrabajo();
 @endphp
 
 @section('content')
@@ -370,8 +370,9 @@ $sede = auth()->user()->sede;
                 <div class="cal-hoja-marca">
                     <img src="{{ asset('assets/img/logo.png') }}" alt="ESAT">
                     <div>
-                        <strong>Escuela Nacional de Educación ESAT</strong>
-                        <span>NIT 900820764-1 · Lic. Funcionamiento 5850</span>
+                        @php $inst = \App\Models\Institucional\Configuracion::institucion(); @endphp{{-- Admin › Configuración --}}
+                        <strong>{{ $inst['nombre'] }}</strong>
+                        <span>NIT {{ $inst['nit'] }} · Lic. Funcionamiento {{ $inst['licencia'] }}</span>
                         @if($sede)
                             <span>Sede {{ $sede->nombre }}@if($sede->direccion) · {{ $sede->direccion }}@endif @if($sede->ciudad) · {{ $sede->ciudad }}@endif</span>
                         @endif

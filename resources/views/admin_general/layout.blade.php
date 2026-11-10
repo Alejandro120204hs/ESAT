@@ -37,8 +37,6 @@
 </div>
 
 <script src="{{ asset('assets/js/admin_general/layout.js') }}?v={{ filemtime(public_path('assets/js/admin_general/layout.js')) }}" defer></script>
-{{-- Nombre del Admin para los datos de ejemplo (quién registró cada cosa) --}}
-<script>window.GEN_YO = @json(trim(auth()->user()->nombres.' '.auth()->user()->apellidos) ?: 'Admin');</script>
 @stack('scripts')
 </body>
 </html>

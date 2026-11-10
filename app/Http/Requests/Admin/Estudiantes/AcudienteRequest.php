@@ -16,7 +16,7 @@ class AcudienteRequest extends FormRequest
     {
         $e = $this->route('estudiante');
 
-        return $e->role === RolUsuario::Estudiante && $e->sede_id === (int) $this->user()->sede_id;
+        return $e->role === RolUsuario::Estudiante && $e->sede_id === $this->sedeId();
     }
 
     protected function prepareForValidation(): void
@@ -49,5 +49,11 @@ class AcudienteRequest extends FormRequest
         return array_merge($this->mensajesAcudiente(), [
             'acudiente.required' => 'Busca al acudiente por su cédula.',
         ]);
+    }
+
+    /** Sede en la que se valida: la de trabajo (secretaría o Admin dentro de una sede). El panel general la sobrescribe. */
+    protected function sedeId(): int
+    {
+        return (int) $this->user()->sedeTrabajoId();
     }
 }

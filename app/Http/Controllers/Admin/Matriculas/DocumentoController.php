@@ -45,6 +45,6 @@ class DocumentoController extends Controller
 
     private function asegurarSede(Matricula $matricula): void
     {
-        abort_unless($matricula->sede_id === (int) auth()->user()->sede_id, 404);
+        abort_unless($matricula->sede_id === (int) auth()->user()->sedeTrabajoId(), 404);
     }
 }

@@ -166,7 +166,7 @@
 var COM_CFG = {
     ahora: @json(now()->format('Y-m-d H:i')),
     admin: @json(trim(auth()->user()->nombres.' '.auth()->user()->apellidos)),
-    sede: @json(auth()->user()->sede?->nombre),
+    sede: @json(auth()->user()->sedeTrabajo()?->nombre),
     url: @json(url('admin/comunicados'))
 };
 var COM_DATOS = {

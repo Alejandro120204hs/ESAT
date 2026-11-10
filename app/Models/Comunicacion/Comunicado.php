@@ -37,6 +37,7 @@ class Comunicado extends Model
     public const DISCO = 'local';
 
     protected $fillable = [
+        'lote',
         'sede_id',
         'autor_id',
         'titulo',

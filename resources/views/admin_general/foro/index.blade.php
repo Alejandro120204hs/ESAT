@@ -1,8 +1,6 @@
-{{-- Foro (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Temas, mensajes y reportes ficticios; sedes y categorías reales (ForoTema::CATEGORIAS). Un foro general por sede.
-     Decidido con el usuario: el Admin ve los foros de todas las sedes, MODERA (atiende reportes: ocultar con motivo,
-     restaurar, descartar; fija y cierra/reabre temas) y PARTICIPA (responde y abre temas como Admin en la sede que elija).
-     Lo hecho se guarda solo en la pestaña (GEN_API) y queda en la auditoría. Todo lo de los datos va escapado. --}}
+{{-- Foro (Admin de ESAT general). Datos reales: AdminGeneral ForoController@index los pasa en window.GEN_DATOS: el foro de
+     cada sede. El Admin modera (ocultar con motivo —el primer mensaje oculta el tema—, restaurar, descartar reportes, fijar,
+     cerrar o reabrir) y participa como Admin (abrir temas y responder), con las reglas de la secretaría (ForoService). --}}
 @extends('admin_general.layout')
 
 @section('title', 'Foro')
@@ -142,6 +140,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/foro.js') }}?v={{ filemtime(public_path('assets/js/admin_general/foro.js')) }}" defer></script>
 @endpush

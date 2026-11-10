@@ -1,10 +1,11 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Acudientes
    Acudientes de todas las sedes: crear y editar en 3 pasos (eligiendo la sede y, si se quiere, sus estudiantes), vincular y desvincular estudiantes (un acudiente por estudiante; un menor nunca queda sin acudiente), activar/desactivar la cuenta y restablecer la clave.
-   Guardar usa GEN_API mientras no hay backend. Todo lo de los datos va por esc().
+   Los datos llegan en window.GEN_DATOS (AdminGeneral AcudienteController@index); guardar va por fetch a /general/acudientes
+   (las reglas de la secretaría, en la sede elegida) y recarga con el aviso. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 12;
@@ -40,6 +41,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -145,18 +176,13 @@
     function fmtTel(t) { var d = String(t || '').replace(/\D/g, ''); return d.length === 10 ? d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6) : esc(t); }
 
     /* ── Datos ──────────────────────────────────── */
-    var PARENTESCOS = ['Madre', 'Padre', 'Abuela', 'Abuelo', 'Tía', 'Tío', 'Hermano', 'Hermana', 'Otro'];
+    var PARENTESCOS = D.opciones.parentescos;
     var EST = { activo: 'Activo', aplazado: 'Aplazado', retirado: 'Retirado', graduado: 'Graduado', sin_matricula: 'Sin matrícula' };
     function sede(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
     function nombre(x) { return x.nombres + ' ' + x.apellidos; }
     function iniciales(x) { return ((x.nombres || '').charAt(0) + (x.apellidos || '').charAt(0)).toUpperCase(); }
     function aCargo(a) { return D.estudiantes.filter(function (e) { return e.acudiente_id === a.id; }); }
     function acudiente(id) { return D.acudientes.find(function (a) { return a.id === +id; }); }
-    function usado(campo, valor, propioId) {
-        valor = String(valor).toLowerCase();
-        return D.acudientes.some(function (x) { return String(x[campo]).toLowerCase() === valor && x.id !== propioId; }) ||
-            D.secretarias.concat(D.docentes, D.estudiantes).some(function (x) { return String(x[campo]).toLowerCase() === valor; });
-    }
     function opcionesParentesco(sel) { $(sel).innerHTML = '<option value="">Parentesco</option>' + PARENTESCOS.map(function (p) { return '<option>' + p + '</option>'; }).join(''); }
     /* Estudiantes de la sede que se pueden vincular (los menores sin acudiente primero) */
     function opcionesEstudiante(selId, sedeId, excluir) {
@@ -271,16 +297,17 @@
     $('acu-v-vincular').addEventListener('click', function () {
         var a = actual, eid = +$('acu-v-estudiante').value, par = $('acu-v-parentesco').value;
         if (!eid || !par) { toast('Elige el estudiante y el parentesco.'); return; }
-        var e = D.estudiantes.find(function (x) { return x.id === eid; }), antes = e.acudiente ? e.acudiente.nombre : null;
-        API.guardar('estudiantes', { id: e.id, acudiente_id: a.id, parentesco: par }, 'Vinculó a ' + nombre(e) + ' con su acudiente ' + nombre(a) + ' (' + par.toLowerCase() + ')' + (antes ? ', en reemplazo de ' + antes : '') + '.', 'editar', a.sede_id)
-            .then(function () { $('acu-v-parentesco').value = ''; pintarEstudiantesDrawer(); pintarKpis(); filtrar(); toast(nombre(e) + ' quedó a cargo de ' + nombre(a) + '.'); });
+        var e = D.estudiantes.find(function (x) { return x.id === eid; });
+        var btn = this; btn.disabled = true;
+        enviar('POST', '/general/acudientes/' + a.id + '/vincular', { estudiante_id: e.id, parentesco: par })
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) { btn.disabled = false; toast(err.message); });
     });
     $('acu-dw-estudiantes').addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-desvincular]'); if (!b || b.disabled) return;
         var a = actual, e = D.estudiantes.find(function (x) { return x.id === +b.dataset.desvincular; });
         confirmar('¿Desvincular a ' + nombre(e) + '?', 'Es mayor de edad, así que puede quedar sin acudiente. ' + nombre(a) + ' ya no verá su información.', 'Desvincular', function () {
-            return API.guardar('estudiantes', { id: e.id, acudiente_id: null, parentesco: null }, 'Desvinculó a ' + nombre(e) + ' de su acudiente ' + nombre(a) + '.', 'editar', a.sede_id)
-                .then(function () { pintarEstudiantesDrawer(); pintarKpis(); filtrar(); toast('Se desvinculó a ' + nombre(e) + '.'); });
+            return enviar('DELETE', '/general/acudientes/' + a.id + '/estudiantes/' + e.id).then(function (r) { recargarConAviso(r.mensaje); });
         });
     });
 
@@ -295,22 +322,20 @@
     });
     var alConfirmar = null;
     function confirmar(titulo, texto, boton, accion) { $('acu-conf-titulo').textContent = titulo; $('acu-conf-texto').textContent = texto; $('acu-conf-ok').textContent = boton; alConfirmar = accion; abrirModal('acu-confirmar', $('acu-conf-ok')); }
-    $('acu-conf-ok').addEventListener('click', function () { var b = this; b.disabled = true; alConfirmar().then(function () { b.disabled = false; cerrarModal(); }); });
-    function refrescar() { pintarKpis(); filtrar(); if (actual && drawer.classList.contains('is-open')) abrirDrawer(actual.id, drawer.querySelector('.acu-tab.is-active').dataset.tab); }
+    $('acu-conf-ok').addEventListener('click', function () { var b = this; b.disabled = true; alConfirmar().catch(function (err) { b.disabled = false; cerrarModal(); toast(err.message); }); });
 
     $('acu-dw-estado').addEventListener('click', function () {
         var a = actual;
         confirmar(a.activo ? '¿Desactivar la cuenta de ' + nombre(a) + '?' : '¿Activar la cuenta de ' + nombre(a) + '?',
             a.activo ? 'No podrá entrar a ver las notas, la asistencia y los pagos de sus estudiantes. Sigue siendo su acudiente.' : 'Podrá entrar otra vez con su correo y su clave.',
             a.activo ? 'Desactivar' : 'Activar', function () {
-                return API.guardar('acudientes', { id: a.id, activo: !a.activo }, (a.activo ? 'Desactivó' : 'Activó') + ' la cuenta del acudiente ' + nombre(a) + '.', a.activo ? 'desactivar' : 'activar', a.sede_id)
-                    .then(function () { actual = acudiente(a.id); refrescar(); toast(actual.activo ? 'Se activó la cuenta.' : 'Se desactivó la cuenta.'); });
+                return enviar('PATCH', '/general/acudientes/' + a.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
             });
     });
     $('acu-dw-clave').addEventListener('click', function () {
         var a = actual;
         confirmar('¿Restablecer la clave de ' + nombre(a) + '?', 'Su clave volverá a ser su número de documento (' + a.numero_documento + ') y se cerrarán sus sesiones abiertas.', 'Restablecer clave', function () {
-            return API.guardar('acudientes', { id: a.id }, 'Restableció la clave del acudiente ' + nombre(a) + '.', 'editar', a.sede_id).then(function () { toast('La clave volvió a ser su número de documento.'); });
+            return enviar('PATCH', '/general/acudientes/' + a.id + '/clave').then(function (r) { recargarConAviso(r.mensaje); });
         });
     });
 
@@ -333,22 +358,24 @@
         if (c === 'depto') cbDepto.classList.toggle('is-invalid', !!m); else if (c === 'ciudad') cbCiudad.classList.toggle('is-invalid', !!m); else if (f(c)) f(c).classList.toggle('is-invalid', !!m);
     }
     function validar(p) {
-        var v = function (id) { return f(id).value.trim(); }, propio = editando ? editando.id : null;
+        var v = function (id) { return f(id).value.trim(); };
         if (p === 1) {
             err('nombres', v('nombres').length < 2 ? 'Escribe los nombres.' : ''); err('apellidos', v('apellidos').length < 2 ? 'Escribe los apellidos.' : '');
             var doc = v('documento').replace(/\D/g, '');
-            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el documento (solo números, de 6 a 12).' : usado('numero_documento', doc, propio) ? 'Ya hay una cuenta con ese documento.' : '');
-            err('genero', v('genero') ? '' : 'Elige el género.'); err('profesion', v('profesion').length < 3 ? 'Escribe la ocupación.' : '');
+            err('documento', !/^\d{6,11}$/.test(doc) ? 'Escribe el documento (solo números, de 6 a 11).' : '');
+            err('genero', v('genero') ? '' : 'Elige el género.'); err('profesion', v('profesion') && v('profesion').length < 3 ? 'Escribe la ocupación o déjala vacía.' : '');
         }
         if (p === 2) {
             var tel = v('telefono').replace(/\D/g, ''), correo = v('correo').toLowerCase();
             err('telefono', !/^3\d{9}$/.test(tel) ? 'Escribe un celular de 10 dígitos que empiece por 3.' : '');
-            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe el correo: es su usuario para entrar.' : usado('email', correo, propio) ? 'Ya hay una cuenta con ese correo.' : '');
+            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe el correo: es su usuario para entrar.' : '');
             err('depto', cbDepto.value() ? '' : 'Elige el departamento.'); err('ciudad', cbCiudad.value() ? '' : 'Elige la ciudad.');
             err('direccion', v('direccion').length < 5 ? 'Escribe la dirección.' : '');
         }
         if (p === 3) {
             err('sede', v('sede') ? '' : 'Elige la sede.');
+            if (!editando && !v('sede')) { /* ya marcado */ }
+            else if (!editando && !elegidos.length) err('sede', 'Agrega al menos un estudiante a cargo: el acudiente se registra con sus estudiantes.');
             if (editando && +v('sede') !== editando.sede_id && aCargo(editando).length) err('sede', 'Tiene estudiantes a cargo en ' + sede(editando.sede_id).nombre + ': desvincúlalos o pásalos a otro acudiente antes de cambiarlo de sede.');
         }
         var malo = CAMPOS[p].find(function (c) { var e = document.querySelector('#acu-form [data-error="' + c + '"]'); return e && !e.hidden; });
@@ -410,28 +437,28 @@
         e.preventDefault();
         if (!validar(paso)) return;
         if (paso < 3) { irPaso(paso + 1); return; }
-        var reg = { nombres: f('nombres').value.trim(), apellidos: f('apellidos').value.trim(), tipo_documento: f('tipo').value, numero_documento: f('documento').value.replace(/\D/g, ''),
-            genero: f('genero').value, profesion: f('profesion').value.trim(), telefono: f('telefono').value.replace(/\D/g, ''), email: f('correo').value.trim().toLowerCase(),
-            departamento: cbDepto.value(), ciudad: cbCiudad.value(), direccion: f('direccion').value.trim(), sede_id: +f('sede').value };
-        var eraNuevo = !editando, n = reg.nombres + ' ' + reg.apellidos;
-        if (editando) reg.id = editando.id; else { reg.activo = true; reg.ultimo_acceso = null; reg.creada = new Date().toISOString(); }
+        var cuerpo = { nombres: f('nombres').value.trim(), apellidos: f('apellidos').value.trim(), tipo_documento: f('tipo').value, numero_documento: f('documento').value,
+            genero: f('genero').value || null, profesion: f('profesion').value.trim(), telefono: f('telefono').value, email: f('correo').value.trim(),
+            departamento_residencia: cbDepto.value(), ciudad_residencia: cbCiudad.value(), direccion: f('direccion').value.trim(), sede_id: +f('sede').value,
+            /* Al editar se mandan los que tiene hoy: los estudiantes se cambian desde la ficha */
+            estudiantes: editando ? aCargo(editando).map(function (e) { return { id: e.id, parentesco: e.parentesco }; }) : elegidos };
         var btn = $('acu-siguiente'); btn.disabled = true;
-        API.guardar('acudientes', reg, (eraNuevo ? 'Registró al acudiente ' : 'Editó los datos del acudiente ') + n + ' en la sede ' + sede(reg.sede_id).nombre + '.', eraNuevo ? 'crear' : 'editar', reg.sede_id).then(function (r) {
-            /* Vincula los estudiantes elegidos (cada uno reemplaza a su acudiente anterior) */
-            return elegidos.reduce(function (p, x) {
-                return p.then(function () {
-                    var est = D.estudiantes.find(function (y) { return y.id === x.id; });
-                    return API.guardar('estudiantes', { id: est.id, acudiente_id: r.id, parentesco: x.parentesco }, 'Vinculó a ' + nombre(est) + ' con su acudiente ' + n + ' (' + x.parentesco.toLowerCase() + ').', 'editar', reg.sede_id);
-                });
-            }, Promise.resolve()).then(function () { return r; });
-        }).then(function (r) {
-            btn.disabled = false; cerrarModal();
-            actual = acudiente(r.id); refrescar();
-            toast(eraNuevo ? 'Se registró a ' + n + (elegidos.length ? ' con ' + elegidos.length + (elegidos.length === 1 ? ' estudiante' : ' estudiantes') + ' a cargo' : '') + '. Su clave inicial es su número de documento.' : 'Se guardaron los cambios de ' + n + '.');
-            if (eraNuevo) abrirDrawer(r.id, elegidos.length ? 'estudiantes' : 'datos');
-        });
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/acudientes/' + editando.id : '/general/acudientes', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                var CAMPO = { nombres: 'nombres', apellidos: 'apellidos', tipo_documento: 'documento', numero_documento: 'documento', genero: 'genero', profesion: 'profesion',
+                    telefono: 'telefono', email: 'correo', departamento_residencia: 'depto', ciudad_residencia: 'ciudad', direccion: 'direccion', sede_id: 'sede', estudiantes: 'sede' };
+                var k = Object.keys(fallo.errores || {}).map(function (c) { return c.indexOf('estudiantes') === 0 ? 'estudiantes' : c; }).find(function (c) { return CAMPO[c]; });
+                if (!k) { toast(fallo.message); return; }
+                var c = CAMPO[k], p = +Object.keys(CAMPOS).find(function (n) { return CAMPOS[n].indexOf(c) >= 0; });
+                var msg = (fallo.errores[k] || fallo.errores[Object.keys(fallo.errores)[0]])[0];
+                irPaso(p); err(c, msg);
+            });
     });
 
     pintarKpis();
     filtrar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

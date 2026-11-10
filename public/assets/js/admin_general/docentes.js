@@ -1,10 +1,11 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Docentes
    Docentes de todas las sedes: crear y editar en 3 pasos (eligiendo la sede), activar/desactivar (no con grupos vigentes) y restablecer la clave, con las reglas de la secretaría.
-   Guardar usa GEN_API mientras no hay backend. Todo lo de los datos va por esc().
+   Los datos llegan en window.GEN_DATOS (AdminGeneral DocenteController@index); guardar va por fetch a /general/docentes
+   (las reglas de la secretaría, en la sede elegida) y recarga con el aviso. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 12;
@@ -40,6 +41,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -161,13 +192,6 @@
     function iniciales(d) { return ((d.nombres || '').charAt(0) + (d.apellidos || '').charAt(0)).toUpperCase(); }
     function gruposDe(d, vig) { return D.grupos.filter(function (g) { return g.docente_id === d.id && (!vig || g.estado !== 'finalizado'); }); }
     function tag(par) { return '<span class="app-status-tag app-status-' + par[1] + '">' + esc(par[0]) + '</span>'; }
-    /* Documento y correo no se repiten entre las cuentas (docentes, secretarías, acudientes y estudiantes) */
-    function usado(campo, valor, propioId) {
-        valor = String(valor).toLowerCase();
-        var k = campo === 'numero_documento' ? 'numero_documento' : 'email';
-        return D.docentes.some(function (x) { return String(x[k]).toLowerCase() === valor && x.id !== propioId; }) ||
-            D.secretarias.concat(D.acudientes, D.estudiantes).some(function (x) { return String(x[k]).toLowerCase() === valor; });
-    }
 
     /* ── KPI ────────────────────────────────────── */
     function pintarKpis() {
@@ -183,7 +207,7 @@
     var cbSede = $('dcn-cb-sede'), cbEsc = $('dcn-cb-escuela'), cbEst = $('dcn-cb-estado');
     [cbSede, cbEsc, cbEst].forEach(initCombobox);
     cbSede.setOptions([{ value: '', label: 'Todas las sedes' }].concat(D.sedes.map(function (s) { return { value: String(s.id), label: s.nombre }; })));
-    cbEsc.setOptions([{ value: '', label: 'Todas las escuelas' }].concat(D.escuelas.filter(function (e) { return !e.eliminado; }).map(function (e) { return { value: String(e.id), label: e.nombre }; })));
+    cbEsc.setOptions([{ value: '', label: 'Todas las escuelas' }].concat(D.escuelas.map(function (e) { return { value: String(e.id), label: e.nombre }; })));
     cbEst.setOptions([{ value: '', label: 'Todos los estados' }, { value: 'activo', label: 'Activos' }, { value: 'en_proceso', label: 'En proceso' }, { value: 'inactivo', label: 'Inactivos' }]);
     cbSede.setValue('', 'Todas las sedes', { silent: true }); cbEsc.setValue('', 'Todas las escuelas', { silent: true }); cbEst.setValue('', 'Todos los estados', { silent: true });
     var pagina = 1, filtrados = [];
@@ -266,27 +290,26 @@
     });
     var alConfirmar = null;
     function confirmar(titulo, texto, boton, accion) { $('dcn-conf-titulo').textContent = titulo; $('dcn-conf-texto').textContent = texto; $('dcn-conf-ok').textContent = boton; alConfirmar = accion; abrirModal('dcn-confirmar', $('dcn-conf-ok')); }
-    $('dcn-conf-ok').addEventListener('click', function () { var b = this; b.disabled = true; alConfirmar().then(function () { b.disabled = false; cerrarModal(); }); });
-    function refrescar() { pintarKpis(); filtrar(); if (actual && drawer.classList.contains('is-open')) abrirDrawer(actual.id, drawer.querySelector('.dcn-tab.is-active').dataset.tab); }
+    $('dcn-conf-ok').addEventListener('click', function () { var b = this; b.disabled = true; alConfirmar().catch(function (err) { b.disabled = false; cerrarModal(); toast(err.message); }); });
 
     $('dcn-dw-estado').addEventListener('click', function () {
-        var d = actual, sedeId = d.sedes[0];
+        var d = actual;
         if (d.estado !== 'inactivo') {
             var gv = gruposDe(d, true);
-            if (gv.length) { toast('No se puede desactivar: tiene ' + gv.length + ' grupo(s) vigente(s). Asígnales otro docente en Horarios de la sede primero.'); return; }
+            if (gv.length) { toast('No se puede desactivar: tiene ' + gv.length + ' grupo(s) vigente(s). Asígnales otro docente en Grupos de la sede primero.'); return; }
             confirmar('¿Desactivar a ' + nombre(d) + '?', 'No podrá entrar a la plataforma y no se le podrán asignar grupos. Su historial se conserva.', 'Desactivar', function () {
-                return API.guardar('docentes', { id: d.id, estado: 'inactivo' }, 'Desactivó al docente ' + nombre(d) + '.', 'desactivar', sedeId).then(function () { refrescar(); toast('Se desactivó al docente.'); });
+                return enviar('PATCH', '/general/docentes/' + d.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
             });
         } else {
             confirmar('¿Activar a ' + nombre(d) + '?', 'Podrá entrar otra vez y recibir grupos.', 'Activar', function () {
-                return API.guardar('docentes', { id: d.id, estado: 'activo' }, 'Activó al docente ' + nombre(d) + '.', 'activar', sedeId).then(function () { refrescar(); toast('Se activó al docente.'); });
+                return enviar('PATCH', '/general/docentes/' + d.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
             });
         }
     });
     $('dcn-dw-clave').addEventListener('click', function () {
         var d = actual;
         confirmar('¿Restablecer la clave de ' + nombre(d) + '?', 'Su clave volverá a ser su número de documento (' + d.numero_documento + ') y se cerrarán sus sesiones abiertas.', 'Restablecer clave', function () {
-            return API.guardar('docentes', { id: d.id }, 'Restableció la clave del docente ' + nombre(d) + '.', 'editar', d.sedes[0]).then(function () { toast('La clave de ' + nombre(d) + ' volvió a ser su número de documento.'); });
+            return enviar('PATCH', '/general/docentes/' + d.id + '/clave').then(function (r) { recargarConAviso(r.mensaje); });
         });
     });
 
@@ -300,7 +323,7 @@
     cbDepto.querySelector('[data-combobox-value]').addEventListener('change', function () { cbCiudad.reset('Selecciona una ciudad'); cbCiudad.setOptions(ciudadesDe(cbDepto.value())); err('depto', ''); });
     cbCiudad.querySelector('[data-combobox-value]').addEventListener('change', function () { err('ciudad', ''); });
     $('dcn-f-sede').innerHTML = '<option value="">Selecciona</option>' + D.sedes.map(function (s) { return '<option value="' + s.id + '">' + esc(s.nombre) + '</option>'; }).join('');
-    $('dcn-f-escuela').innerHTML = '<option value="">Selecciona</option>' + D.escuelas.filter(function (e) { return !e.eliminado; }).map(function (e) { return '<option value="' + e.id + '">' + esc(e.nombre) + '</option>'; }).join('');
+    $('dcn-f-escuela').innerHTML = '<option value="">Selecciona</option>' + D.escuelas.map(function (e) { return '<option value="' + e.id + '">' + esc(e.nombre) + '</option>'; }).join('');
 
     var paso = 1, editando = null, CAMPOS = { 1: ['nombres', 'apellidos', 'documento', 'nacimiento', 'genero'], 2: ['telefono', 'correo', 'depto', 'ciudad', 'direccion'], 3: ['sede', 'escuela', 'profesion', 'especialidad'] };
     function f(id) { return $('dcn-f-' + id); }
@@ -310,11 +333,11 @@
         if (c === 'depto') cbDepto.classList.toggle('is-invalid', !!m); else if (c === 'ciudad') cbCiudad.classList.toggle('is-invalid', !!m); else if (f(c)) f(c).classList.toggle('is-invalid', !!m);
     }
     function validar(p) {
-        var v = function (id) { return f(id).value.trim(); }, propio = editando ? editando.id : null;
+        var v = function (id) { return f(id).value.trim(); };
         if (p === 1) {
             err('nombres', v('nombres').length < 2 ? 'Escribe los nombres.' : ''); err('apellidos', v('apellidos').length < 2 ? 'Escribe los apellidos.' : '');
             var doc = v('documento').replace(/\D/g, '');
-            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el documento (solo números, de 6 a 12).' : usado('numero_documento', doc, propio) ? 'Ya hay una cuenta con ese documento.' : '');
+            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el documento (solo números, de 6 a 12).' : '');
             var e = edad(v('nacimiento'));
             err('nacimiento', !v('nacimiento') ? 'Escribe la fecha de nacimiento.' : e < 18 ? 'Debe ser mayor de edad.' : e > 85 ? 'Revisa la fecha.' : '');
             err('genero', v('genero') ? '' : 'Elige el género.');
@@ -322,7 +345,7 @@
         if (p === 2) {
             var tel = v('telefono').replace(/\D/g, ''), correo = v('correo').toLowerCase();
             err('telefono', !/^3\d{9}$/.test(tel) ? 'Escribe un celular de 10 dígitos que empiece por 3.' : '');
-            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe un correo válido.' : usado('email', correo, propio) ? 'Ya hay una cuenta con ese correo.' : '');
+            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe un correo válido.' : '');
             err('depto', cbDepto.value() ? '' : 'Elige el departamento.'); err('ciudad', cbCiudad.value() ? '' : 'Elige la ciudad.');
             err('direccion', v('direccion').length < 5 ? 'Escribe la dirección.' : '');
         }
@@ -379,22 +402,29 @@
         e.preventDefault();
         if (!validar(paso)) return;
         if (paso < 3) { irPaso(paso + 1); return; }
-        var reg = { nombres: f('nombres').value.trim(), apellidos: f('apellidos').value.trim(), tipo_documento: f('tipo').value, numero_documento: f('documento').value.replace(/\D/g, ''),
-            fecha_nacimiento: f('nacimiento').value, genero: f('genero').value, telefono: f('telefono').value.replace(/\D/g, ''), email: f('correo').value.trim().toLowerCase(),
-            departamento: cbDepto.value(), ciudad: cbCiudad.value(), direccion: f('direccion').value.trim(), escuela_id: +f('escuela').value,
-            profesion: f('profesion').value.trim(), especialidad: f('especialidad').value.trim(), vinculacion: f('vinculacion').value };
-        var sedeId = +f('sede').value, eraNuevo = !editando;
-        if (editando) { reg.id = editando.id; reg.sedes = editando.sedes[0] === sedeId ? editando.sedes : [sedeId].concat(editando.sedes.slice(1).filter(function (x) { return x !== sedeId; })); }
-        else { reg.sedes = [sedeId]; reg.estado = f('estado').value; }
-        var n = reg.nombres + ' ' + reg.apellidos, btn = $('dcn-siguiente'); btn.disabled = true;
-        API.guardar('docentes', reg, (eraNuevo ? 'Registró al docente ' : 'Editó los datos del docente ') + n + ' en la sede ' + sede(sedeId).nombre + '.', eraNuevo ? 'crear' : 'editar', sedeId).then(function (r) {
-            btn.disabled = false; cerrarModal();
-            if (eraNuevo) actual = D.docentes.find(function (x) { return x.id === r.id; });
-            refrescar();
-            toast(eraNuevo ? 'Se registró a ' + n + '. Su clave inicial es su número de documento.' : 'Se guardaron los cambios de ' + n + '.');
-        });
+        var cuerpo = { nombres: f('nombres').value.trim(), apellidos: f('apellidos').value.trim(), tipo_documento: f('tipo').value, numero_documento: f('documento').value,
+            fecha_nacimiento: f('nacimiento').value, genero: f('genero').value, telefono: f('telefono').value, email: f('correo').value.trim(),
+            departamento_residencia: cbDepto.value(), ciudad_residencia: cbCiudad.value(), direccion: f('direccion').value.trim(), sede_id: +f('sede').value,
+            escuela_id: +f('escuela').value, profesion: f('profesion').value.trim(), titulo_academico: f('especialidad').value.trim(), vinculacion: f('vinculacion').value,
+            /* El estado de alguien ya registrado se cambia con Activar/Desactivar */
+            estado: editando ? editando.estado : f('estado').value };
+        var btn = $('dcn-siguiente'); btn.disabled = true;
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/docentes/' + editando.id : '/general/docentes', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                var CAMPO = { nombres: 'nombres', apellidos: 'apellidos', tipo_documento: 'documento', numero_documento: 'documento', fecha_nacimiento: 'nacimiento', genero: 'genero',
+                    telefono: 'telefono', email: 'correo', departamento_residencia: 'depto', ciudad_residencia: 'ciudad', direccion: 'direccion', sede_id: 'sede',
+                    escuela_id: 'escuela', profesion: 'profesion', titulo_academico: 'especialidad', vinculacion: 'escuela', estado: 'sede' };
+                var k = Object.keys(fallo.errores || {}).find(function (c) { return CAMPO[c]; });
+                if (!k) { toast(fallo.message); return; }
+                var c = CAMPO[k], p = +Object.keys(CAMPOS).find(function (n) { return CAMPOS[n].indexOf(c) >= 0; });
+                irPaso(p); err(c, fallo.errores[k][0]);
+            });
     });
 
     pintarKpis();
     filtrar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

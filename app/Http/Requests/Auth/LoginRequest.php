@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Http\Middleware\EnsureAccountIsEnabled;
+use App\Services\Sistema\BloqueoService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -45,6 +46,8 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            // Cuenta los intentos fallidos seguidos: al llegar al máximo de Configuración, la cuenta se bloquea
+            app(BloqueoService::class)->registrarFallo((string) $this->input('email'));
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -55,14 +58,17 @@ class LoginRequest extends FormRequest
 
         // Cuenta desactivada, o estudiante con el derecho de matrícula vencido sin pagar: no ingresa.
         // La misma regla corta la sesión ya abierta en cada petición (EnsureAccountIsEnabled).
+        // Bloqueo (Configuración): el aviso solo sale con la clave correcta, así no revela qué correos existen.
         $usuario = Auth::user();
+        $bloqueos = app(BloqueoService::class);
+        $bloqueos->revisarInactividad($usuario);
         if ($motivo = EnsureAccountIsEnabled::motivo($usuario)) {
             Auth::guard('web')->logout();
 
             throw ValidationException::withMessages(['email' => $motivo]);
         }
 
-        $usuario->forceFill(['ultimo_acceso' => now()])->saveQuietly();
+        $bloqueos->ingresoCorrecto($usuario);
     }
 
     /**

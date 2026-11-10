@@ -26,7 +26,7 @@ class EgresoController extends Controller
 
     public function store(EgresoRequest $request): JsonResponse
     {
-        $e = $this->contabilidad->registrar((int) $request->user()->sede_id, $request->datos());
+        $e = $this->contabilidad->registrar((int) $request->user()->sedeTrabajoId(), $request->datos());
 
         Auditoria::registrar('crear', $e,
             "Registró el egreso {$e->comprobante} por {$this->pesos($e->valor)} (".Egreso::CATEGORIAS[$e->categoria]."): {$e->concepto}, pagado a {$e->beneficiario} ({$e->metodo_pago}).");

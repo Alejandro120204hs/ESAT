@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Admin\Programas;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Programas\ProgramaRequest;
-use App\Models\Academico\Curso;
 use App\Models\Academico\Escuela;
 use App\Models\Academico\Programa;
+use App\Models\Institucional\Sede;
 use App\Models\Sistema\Auditoria;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
+/**
+ * Secretaría › Programas: los programas que ofrece la sede (consulta) y elegir cuáles del catálogo ofrece. Decidido con
+ * el usuario: el catálogo —programas, malla, precios y escuelas— lo maneja el Admin de ESAT (AdminGeneral\Programas).
+ */
 class ProgramaController extends Controller
 {
     public function index(): View
@@ -33,112 +35,52 @@ class ProgramaController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        // Lo que la sede todavía no ofrece del catálogo (los inactivos no se ofrecen)
+        $catalogo = Programa::where('estado', '!=', 'inactivo')->whereNotIn('id', $programas->pluck('id'))
+            ->with('escuela')->orderBy('nombre')->get()
+            ->map(fn (Programa $p) => ['id' => $p->id, 'nombre' => $p->nombre, 'codigo' => $p->codigo, 'escuela' => $p->escuela->nombre,
+                'meses' => $p->duracion_meses, 'precio_total' => (float) $p->precio_total]);
+
         return view('admin.programas.index', [
-            'programas'   => $programas->map(fn (Programa $p) => $this->paraVista($p))->values(),
-            'escuelas'    => $escuelas,
-            'cuotaSistema'=> Programa::cuotaSistemaMensual(),
-            'opciones'    => [
-                'niveles'     => Programa::NIVELES,
-                'modalidades' => Programa::MODALIDADES,
-                'jornadas'    => Programa::JORNADAS,
-            ],
+            'programas'    => $programas->map(fn (Programa $p) => $this->paraVista($p))->values(),
+            'escuelas'     => $escuelas,
+            'catalogo'     => $catalogo,
+            'cuotaSistema' => Programa::cuotaSistemaMensual(),
         ]);
     }
 
-    public function store(ProgramaRequest $request): JsonResponse
+    /** Ofrece o deja de ofrecer un programa del catálogo en la sede (no se deja con grupos vigentes; no se ofrece uno inactivo). */
+    public function oferta(Programa $programa): JsonResponse
     {
-        $programa = DB::transaction(function () use ($request) {
-            $datos = $this->datos($request);
-            $datos['codigo'] ??= $this->siguienteCodigo((int) $datos['escuela_id']);
-
-            $programa = Programa::create($datos);
-            // Lo que crea el admin queda ofertado en su sede
-            $programa->sedes()->attach($this->sedeId());
-
-            return $programa;
-        });
-
-        Auditoria::registrar('crear', $programa, "Creó el programa {$programa->nombre} ({$programa->codigo}).");
-
-        return response()->json(['ok' => true, 'mensaje' => "Se creó el programa {$programa->nombre}."]);
-    }
-
-    public function update(ProgramaRequest $request, Programa $programa): JsonResponse
-    {
-        $this->asegurarSede($programa);
-
-        $datos = $this->datos($request);
-        $datos['codigo'] ??= $programa->codigo;
-
-        DB::transaction(function () use ($programa, $datos) {
-            $programa->update($datos);
-            // La fecha de fin de cada grupo es su inicio + la duración del programa
-            if ($programa->wasChanged('duracion_meses')) {
-                $programa->cursos->each(fn (Curso $c) => $c->update(['fecha_fin' => Curso::finPara($c->fecha_inicio, $programa)]));
+        $sede = Sede::findOrFail($this->sedeId());
+        $corto = str_replace('Técnico Laboral en ', '', $programa->nombre);
+        if ($programa->sedes()->where('sedes.id', $sede->id)->exists()) {
+            $n = $programa->cursos()->where('sede_id', $sede->id)->where('estado', '!=', 'finalizado')->count();
+            if ($n) {
+                return response()->json(['message' => "No se puede dejar de ofrecer: tiene {$n} ".($n === 1 ? 'grupo vigente' : 'grupos vigentes').' en la sede. Se quita cuando terminen.'], 422);
             }
-        });
+            $programa->sedes()->detach($sede->id);
+            Auditoria::registrar('editar', $programa, "Dejó de ofrecer el programa {$programa->nombre} en la sede {$sede->nombre}.");
 
-        Auditoria::registrar('editar', $programa, "Editó el programa {$programa->nombre} ({$programa->codigo}).");
+            return response()->json(['ok' => true, 'mensaje' => "La sede ya no ofrece {$corto}."]);
+        }
+        if ($programa->estado === 'inactivo') {
+            return response()->json(['message' => 'Ese programa está inactivo en el catálogo: no se puede ofrecer.'], 422);
+        }
+        $programa->sedes()->attach($sede->id);
+        Auditoria::registrar('editar', $programa, "Empezó a ofrecer el programa {$programa->nombre} en la sede {$sede->nombre}.");
 
-        return response()->json(['ok' => true, 'mensaje' => "Se guardaron los cambios de {$programa->nombre}."]);
-    }
-
-    /** Activo ⇄ inactivo (un programa en aprobación pasa a activo). */
-    public function cambiarEstado(Programa $programa): JsonResponse
-    {
-        $this->asegurarSede($programa);
-
-        $nuevo = $programa->estado === 'activo' ? 'inactivo' : 'activo';
-        $programa->update(['estado' => $nuevo]);
-
-        $accion = $nuevo === 'activo' ? 'activar' : 'desactivar';
-        $verbo  = $nuevo === 'activo' ? 'Activó' : 'Desactivó';
-        Auditoria::registrar($accion, $programa, "{$verbo} el programa {$programa->nombre} ({$programa->codigo}).");
-
-        return response()->json([
-            'ok'      => true,
-            'estado'  => $nuevo,
-            'mensaje' => $nuevo === 'activo' ? "{$programa->nombre} quedó activo." : "{$programa->nombre} quedó inactivo.",
-        ]);
+        return response()->json(['ok' => true, 'mensaje' => "La sede ya ofrece {$corto}: puedes abrirle grupos."]);
     }
 
     /* ── Auxiliares ── */
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return $sedeId;
-    }
-
-    /** El admin solo puede modificar programas ofertados en su sede. */
-    private function asegurarSede(Programa $programa): void
-    {
-        abort_unless($programa->sedes()->where('sedes.id', $this->sedeId())->exists(), 404);
-    }
-
-    private function datos(ProgramaRequest $request): array
-    {
-        $datos = $request->validated();
-        $datos['duracion_periodos'] = Programa::calcularPeriodos($datos['duracion_meses'], $datos['tipo_periodo']);
-        $datos['jornadas'] = array_values(array_intersect(Programa::JORNADAS, $datos['jornadas']));
-
-        return $datos;
-    }
-
-    /** ESA-{SIGLA}-NNN con el siguiente consecutivo libre de la escuela. */
-    private function siguienteCodigo(int $escuelaId): string
-    {
-        $sigla = Escuela::findOrFail($escuelaId)->sigla;
-        $prefijo = "ESA-{$sigla}-";
-        $n = Programa::where('codigo', 'like', $prefijo.'%')->count() + 1;
-
-        while (Programa::where('codigo', $prefijo.str_pad((string) $n, 3, '0', STR_PAD_LEFT))->exists()) {
-            $n++;
-        }
-
-        return $prefijo.str_pad((string) $n, 3, '0', STR_PAD_LEFT);
     }
 
     /** Forma que espera programas.js. */

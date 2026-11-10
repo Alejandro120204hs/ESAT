@@ -251,3 +251,6 @@
 .acu-elegidos li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--bg); font-size: 0.85rem; }
 @media (max-width: 600px) { .acu-vincular { grid-template-columns: 1fr; } }
 .acu-field[hidden] { display: none; }
+
+/* El bloque de estudiantes a cargo va debajo de la sede: su título no pierde el margen de arriba */
+.acu-bloque-est > .acu-seccion:first-child { margin-top: 20px; }

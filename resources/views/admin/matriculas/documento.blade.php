@@ -30,8 +30,9 @@
         <div class="rc-marca">
             <img src="{{ asset('assets/img/logo.png') }}" alt="ESAT">
             <div>
-                <strong>Escuela Nacional de Educación ESAT</strong>
-                <span>NIT 900820764-1 · Lic. Funcionamiento 5850</span>
+                @php $inst = \App\Models\Institucional\Configuracion::institucion(); @endphp{{-- Admin › Configuración --}}
+                <strong>{{ $inst['nombre'] }}</strong>
+                <span>NIT {{ $inst['nit'] }} · Lic. Funcionamiento {{ $inst['licencia'] }}</span>
                 @if ($m->sede)
                     <span>Sede {{ $m->sede->nombre }}@if ($m->sede->direccion) · {{ $m->sede->direccion }}@endif @if ($m->sede->ciudad) · {{ $m->sede->ciudad }}@endif</span>
                 @endif

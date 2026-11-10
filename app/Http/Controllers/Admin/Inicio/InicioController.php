@@ -16,7 +16,7 @@ class InicioController extends Controller
 
     public function index(): View
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return view('admin.dashboard', $this->inicio->datosSede((int) $sedeId));

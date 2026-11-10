@@ -97,6 +97,7 @@ class User extends Authenticatable
             'fecha_nacimiento' => 'date',
             'activo'           => 'boolean',
             'ultimo_acceso'    => 'datetime',
+            'bloqueado_en'     => 'datetime',
         ];
     }
 
@@ -149,6 +150,35 @@ class User extends Authenticatable
     public function sede(): BelongsTo
     {
         return $this->belongsTo(Sede::class);
+    }
+
+    /** Clave de sesión con la sede en la que está trabajando el Admin de ESAT ("Entrar a la sede"). */
+    public const SESION_SEDE = 'general.sede_id';
+
+    /**
+     * Sede con la que se está trabajando en las pantallas de la secretaría: la propia de la secretaría, o la que el
+     * Admin de ESAT eligió al "Entrar a la sede" (null si todavía no eligió). Toda pantalla de la secretaría usa esta,
+     * nunca sede_id directo.
+     */
+    public function sedeTrabajoId(): ?int
+    {
+        if ($this->isAdminGeneral()) {
+            $id = session(self::SESION_SEDE);
+
+            return $id ? (int) $id : null;
+        }
+
+        return $this->sede_id;
+    }
+
+    public function sedeTrabajo(): ?Sede
+    {
+        if (! $this->isAdminGeneral()) {
+            return $this->sede;
+        }
+        $id = $this->sedeTrabajoId();
+
+        return $id ? once(fn () => Sede::find($id)) : null;   // una consulta por petición
     }
 
     /** Datos propios del rol docente (escuela, vinculación, estado). */

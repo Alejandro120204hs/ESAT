@@ -233,3 +233,8 @@
 .est-hint { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
 .est-hint-acu { margin-top: 10px; }
 .est-seccion .est-muted { display: inline; text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+/* Acudiente nuevo dentro del registro del estudiante */
+.est-acu-nuevo { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.est-acu-nuevo[hidden] { display: none; }
+.est-hint[hidden] { display: none; }

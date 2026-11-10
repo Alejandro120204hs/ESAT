@@ -186,7 +186,7 @@
 var FORO_CFG = {
     ahora: @json(now()->format('Y-m-d H:i')),
     admin: @json(trim(auth()->user()->nombres.' '.auth()->user()->apellidos)),
-    sede: @json(auth()->user()->sede?->nombre),
+    sede: @json(auth()->user()->sedeTrabajo()?->nombre),
     yo: @json('x'.auth()->id()),
     url: @json(url('admin/foro'))
 };

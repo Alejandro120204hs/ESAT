@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/admin/pagos.css') }}?v={{ filemtime(public_path('assets/css/admin/pagos.css')) }}">
 @endpush
 
-@php $sede = auth()->user()->sede; @endphp
+@php $sede = auth()->user()->sedeTrabajo(); @endphp
 
 @section('content')
 <div class="pag-wrap adm-anim">
@@ -260,8 +260,9 @@
                 <div class="pag-hoja-marca">
                     <img src="{{ asset('assets/img/logo.png') }}" alt="ESAT">
                     <div>
-                        <strong>Escuela Nacional de Educación ESAT</strong>
-                        <span>NIT 900820764-1 · Lic. Funcionamiento 5850</span>
+                        @php $inst = \App\Models\Institucional\Configuracion::institucion(); @endphp{{-- Admin › Configuración --}}
+                        <strong>{{ $inst['nombre'] }}</strong>
+                        <span>NIT {{ $inst['nit'] }} · Lic. Funcionamiento {{ $inst['licencia'] }}</span>
                         @if($sede)
                             <span>Sede {{ $sede->nombre }}@if($sede->ciudad) · {{ $sede->ciudad }}@endif</span>
                         @endif

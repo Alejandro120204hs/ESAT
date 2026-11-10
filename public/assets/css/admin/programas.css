@@ -578,3 +578,15 @@
 .prg-toast.is-visible { opacity: 1; transform: none; }
 .prg-toast[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { .prg-toast { transition: none; } }
+
+/* Agregar del catálogo (la secretaría elige qué programas ofrece su sede) */
+.prg-cat-box { max-width: 640px; width: 100%; }
+.prg-cat-lista { list-style: none; margin: 4px 0 0; padding: 0; max-height: min(420px, 60vh); overflow-y: auto; }
+.prg-cat-lista li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line, #E3E8EF); }
+.prg-cat-lista li:last-child { border-bottom: none; }
+.prg-cat-lista .prg-btn { flex-shrink: 0; }
+.prg-cat-vacio { color: var(--muted, #6B7A90); font-size: 0.88rem; }
+#btn-catalogo[hidden] { display: none; }
+@media (max-width: 560px) {
+    .prg-cat-lista li { flex-direction: column; align-items: flex-start; }
+}

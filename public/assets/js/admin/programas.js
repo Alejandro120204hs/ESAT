@@ -4,7 +4,6 @@
 
     var data  = window.PRG_DATA || [];
     var cuota = window.PRG_CUOTA || 0;
-    var opc   = window.PRG_OPC || { niveles: [], modalidades: [], jornadas: [] };
     var csrf  = (document.querySelector('meta[name="csrf-token"]') || {}).content;
     var FLASH = 'esat.admin.programas.aviso';
 
@@ -55,7 +54,6 @@
         var aviso = sessionStorage.getItem(FLASH);
         if (aviso) { sessionStorage.removeItem(FLASH); toast(aviso); }
     } catch (e) {}
-    window.PRG_UTIL = { enviar: enviar, recargarConAviso: recargarConAviso, esc: esc };
     function badge(estado) {
         var map = {
             activo:         '<span class="app-status-tag app-status-active">Activo</span>',
@@ -266,12 +264,6 @@
             }).join('');
         }
 
-        // Footer button
-        var toggleBtn = document.getElementById('prg-drawer-toggle-btn');
-        if (toggleBtn) {
-            toggleBtn.textContent = p.estado === 'activo' ? 'Desactivar programa' : 'Activar programa';
-            toggleBtn.className = 'prg-btn ' + (p.estado === 'activo' ? 'prg-btn-danger' : 'prg-btn-secondary');
-        }
     }
 
     function set(id, text) {
@@ -303,235 +295,41 @@
             openDrawer(Number(btn.dataset.id));
         });
     });
-    document.querySelectorAll('[data-action="editar"]').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            openModal(Number(btn.dataset.id));
-        });
-    });
     document.querySelectorAll('.prg-row').forEach(function (row) {
         row.addEventListener('click', function () {
             openDrawer(Number(row.dataset.id));
         });
     });
 
-    // Editar desde drawer
-    var editFromDrawer = document.getElementById('prg-drawer-edit-btn');
-    if (editFromDrawer) {
-        editFromDrawer.addEventListener('click', function () {
-            if (currentPrg) { closeDrawer(); openModal(currentPrg.id); }
-        });
-    }
-
-    // Activar / desactivar desde el drawer
-    var toggleEstadoBtn = document.getElementById('prg-drawer-toggle-btn');
-    if (toggleEstadoBtn) {
-        toggleEstadoBtn.addEventListener('click', function () {
+    /* ── Dejar de ofrecer el programa en la sede (no con grupos vigentes; lo revisa el servidor) ── */
+    var quitarBtn = document.getElementById('prg-drawer-quitar-btn');
+    if (quitarBtn) {
+        quitarBtn.addEventListener('click', function () {
             if (!currentPrg) return;
-            toggleEstadoBtn.disabled = true;
-            enviar('PATCH', '/admin/programas/' + currentPrg.id + '/estado')
+            quitarBtn.disabled = true;
+            enviar('PATCH', '/admin/programas/' + currentPrg.id + '/oferta')
                 .then(function (r) { recargarConAviso(r.mensaje); })
-                .catch(function (err) { toggleEstadoBtn.disabled = false; toast(err.message); });
+                .catch(function (err) { quitarBtn.disabled = false; toast(err.message); });
         });
     }
 
-    /* ── Modal wizard ─────────────────────────── */
-    var modal        = document.getElementById('prg-modal');
-    var modalOverlay = document.getElementById('prg-modal-overlay');
-    var modalClose   = document.getElementById('prg-modal-close');
-    var btnNext      = document.getElementById('prg-btn-next');
-    var btnBack      = document.getElementById('prg-btn-back');
-    var stepLbl      = document.getElementById('prg-step-lbl');
-    var modalTitle   = document.getElementById('prg-modal-title');
-    var currentStep  = 1;
-    var totalSteps   = 3;
-    var editandoId   = null;
-    var formError    = document.getElementById('prg-form-error');
-
-    function campo(id) { return document.getElementById(id); }
-    function valor(id) { return (campo(id).value || '').trim(); }
-
-    function openModal(id) {
-        currentStep = 1;
-        editandoId = id || null;
-        limpiarErrores();
-        var p = id ? data.find(function (x) { return x.id === id; }) : null;
-        modalTitle.textContent = p ? 'Editar programa' : 'Nuevo programa';
-
-        campo('prg-inp-nombre').value      = p ? p.nombre : '';
-        campo('prg-inp-codigo').value      = p ? p.codigo : '';
-        campo('prg-inp-resolucion').value  = p ? (p.resolucion || '') : '';
-        campo('prg-inp-horas').value       = p ? p.horas : '';
-        campo('prg-inp-descripcion').value = p ? (p.descripcion || '') : '';
-        campo('prg-inp-perfil').value      = p ? (p.perfil_egreso || '') : '';
-        campo('prg-inp-cupo').value        = p ? p.cupo : '';
-        campo('prg-inp-meses').value       = p ? p.meses : '';
-        campo('prg-inp-valor-programa').value = p ? p.valor_programa : '';
-        campo('prg-inp-matricula').value   = p ? p.matricula : '';
-        document.querySelectorAll('#prg-inp-jornadas input').forEach(function (c) {
-            c.checked = !!p && p.jornadas.indexOf(c.value) >= 0;
-        });
-        if (p) {
-            cbNivel.setValue(p.nivel, p.nivel, { silent: true });
-            cbEscuela.setValue(String(p.escuela_id), p.escuela, { silent: true });
-            cbModalidad.setValue(p.modalidad, p.modalidad, { silent: true });
-            cbPeriodo.setValue(p.tipo_periodo, p.tipo_periodo === 'semestre' ? 'Semestre' : 'Trimestre', { silent: true });
-            cbEstado.setValue(p.estado, ESTADO_LBL[p.estado], { silent: true });
-        } else {
-            cbNivel.reset(); cbEscuela.reset(); cbPeriodo.reset();
-            cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
-            cbEstado.setValue('activo', 'Activo', { silent: true });
-        }
-        pintarPeriodos();
-        renderStep();
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeModal() {
-        if (!modal) return;
-        modal.classList.remove('is-open');
-        modal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-    }
-    if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
-    if (modalClose)   modalClose.addEventListener('click', closeModal);
-
-    document.getElementById('btn-nuevo')?.addEventListener('click', function () { openModal(null); });
-
-    function renderStep() {
-        // Steps
-        document.querySelectorAll('.prg-mstep').forEach(function (s) {
-            s.classList.toggle('is-active', Number(s.dataset.step) === currentStep);
-        });
-        document.querySelectorAll('.prg-wstep').forEach(function (s) {
-            var n = Number(s.dataset.step);
-            s.classList.toggle('is-active', n === currentStep);
-            s.classList.toggle('is-done', n < currentStep);
-        });
-        if (stepLbl) stepLbl.textContent = 'Paso ' + currentStep + ' de ' + totalSteps;
-        if (btnBack) btnBack.style.visibility = currentStep === 1 ? 'hidden' : 'visible';
-        if (btnNext) btnNext.textContent = currentStep === totalSteps ? (editandoId ? 'Guardar cambios' : 'Guardar programa') : 'Siguiente';
-        if (formError) formError.hidden = true;
-        var body = modal.querySelector('.prg-modal-body');
-        if (body) body.scrollTop = 0;
-    }
-
-    /* ── Validación por paso (el servidor vuelve a validar todo) ── */
-    function limpiarErrores() {
-        if (formError) formError.hidden = true;
-        modal.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
-    }
-    function marcarError(msg, id) {
-        formError.textContent = msg;
-        formError.hidden = false;
-        var el = id && campo(id);
-        if (el) {
-            var marca = el.closest('.prg-input-pfx') || el;
-            marca.classList.add('is-invalid');
-            var foco = el.querySelector ? (el.querySelector('[data-combobox-trigger], input') || el) : el;
-            foco.focus();
-        }
-        return false;
-    }
-    function jornadasMarcadas() {
-        return Array.prototype.map.call(document.querySelectorAll('#prg-inp-jornadas input:checked'), function (c) { return c.value; });
-    }
-    function validarPaso(paso) {
-        limpiarErrores();
-        if (paso === 1) {
-            if (valor('prg-inp-nombre').length < 5) return marcarError('Escribe el nombre del programa.', 'prg-inp-nombre');
-            if (!cbNivel.value()) return marcarError('Selecciona el nivel.', 'prg-cb-nivel');
-            if (!cbEscuela.value()) return marcarError('Selecciona la escuela.', 'prg-cb-escuela');
-            if (!cbModalidad.value()) return marcarError('Selecciona la modalidad.', 'prg-cb-modalidad');
-            var h = parseInt(valor('prg-inp-horas'));
-            if (!(h >= 1 && h <= 5000)) return marcarError('Escribe la duración en horas (máximo 5.000).', 'prg-inp-horas');
-        }
-        if (paso === 2) {
-            if (!jornadasMarcadas().length) return marcarError('Selecciona al menos una jornada.', 'prg-inp-jornadas');
-            var c = parseInt(valor('prg-inp-cupo'));
-            if (!(c >= 1 && c <= 60)) return marcarError('El cupo por grupo debe estar entre 1 y 60 estudiantes.', 'prg-inp-cupo');
-            var m = parseInt(valor('prg-inp-meses'));
-            if (!(m >= 1 && m <= 60)) return marcarError('Indica la duración en meses (entre 1 y 60).', 'prg-inp-meses');
-            if (!cbPeriodo.value()) return marcarError('Selecciona si el programa va por semestres o trimestres.', 'prg-cb-periodo');
-            if (!cbEstado.value()) return marcarError('Selecciona el estado del programa.', 'prg-cb-estado');
-        }
-        if (paso === 3) {
-            var v = parseFloat(valor('prg-inp-valor-programa'));
-            var mt = parseFloat(valor('prg-inp-matricula'));
-            if (!(v >= 0) || valor('prg-inp-valor-programa') === '') return marcarError('Escribe el valor total del programa.', 'prg-inp-valor-programa');
-            if (!(mt >= 0) || valor('prg-inp-matricula') === '') return marcarError('Escribe el valor de la matrícula.', 'prg-inp-matricula');
-            if (mt > v) return marcarError('La matrícula no puede ser mayor que el valor total del programa.', 'prg-inp-matricula');
-        }
-        return true;
-    }
-
-    /* Campo del servidor → campo del formulario y paso donde está */
-    var CAMPOS = {
-        nombre: ['prg-inp-nombre', 1], codigo: ['prg-inp-codigo', 1], resolucion: ['prg-inp-resolucion', 1],
-        nivel: ['prg-cb-nivel', 1], escuela_id: ['prg-cb-escuela', 1], modalidad: ['prg-cb-modalidad', 1],
-        horas: ['prg-inp-horas', 1], descripcion: ['prg-inp-descripcion', 1], perfil_egreso: ['prg-inp-perfil', 1],
-        jornadas: ['prg-inp-jornadas', 2], cupo_grupo: ['prg-inp-cupo', 2],
-        duracion_meses: ['prg-inp-meses', 2], tipo_periodo: ['prg-cb-periodo', 2], estado: ['prg-cb-estado', 2],
-        precio_total: ['prg-inp-valor-programa', 3], matricula: ['prg-inp-matricula', 3]
-    };
-
-    function guardar() {
-        var cuerpo = {
-            nombre: valor('prg-inp-nombre'), codigo: valor('prg-inp-codigo'), resolucion: valor('prg-inp-resolucion'),
-            nivel: cbNivel.value(), escuela_id: cbEscuela.value(), modalidad: cbModalidad.value(),
-            horas: valor('prg-inp-horas'), descripcion: valor('prg-inp-descripcion'), perfil_egreso: valor('prg-inp-perfil'),
-            jornadas: jornadasMarcadas(), cupo_grupo: valor('prg-inp-cupo'),
-            duracion_meses: valor('prg-inp-meses'), tipo_periodo: cbPeriodo.value(), estado: cbEstado.value(),
-            precio_total: valor('prg-inp-valor-programa'), matricula: valor('prg-inp-matricula')
-        };
-        btnNext.disabled = true;
-        enviar(editandoId ? 'PUT' : 'POST', editandoId ? '/admin/programas/' + editandoId : '/admin/programas', cuerpo)
-            .then(function (r) { recargarConAviso(r.mensaje); })
-            .catch(function (err) {
-                btnNext.disabled = false;
-                var clave = err.errores && Object.keys(err.errores)[0];
-                var base = clave && clave.split('.')[0];
-                if (base && CAMPOS[base]) {
-                    currentStep = CAMPOS[base][1];
-                    renderStep();
-                    marcarError(err.errores[clave][0], CAMPOS[base][0]);
-                } else {
-                    marcarError(err.message);
-                }
-            });
-    }
-
-    if (btnNext) {
-        btnNext.addEventListener('click', function () {
-            if (!validarPaso(currentStep)) return;
-            if (currentStep < totalSteps) {
-                currentStep++;
-                renderStep();
-            } else {
-                guardar();
-            }
+    /* ── Agregar del catálogo: los programas activos que la sede todavía no ofrece ── */
+    var catModal = document.getElementById('prg-cat-modal');
+    if (catModal) {
+        var volverCat = null;
+        var abrirCat = function () { volverCat = document.activeElement; catModal.hidden = false; var b = catModal.querySelector('button'); if (b) b.focus(); };
+        var cerrarCat = function () { if (catModal.hidden) return; catModal.hidden = true; if (volverCat && document.contains(volverCat)) volverCat.focus(); };
+        document.getElementById('btn-catalogo').addEventListener('click', abrirCat);
+        catModal.querySelectorAll('[data-cerrar-cat]').forEach(function (b) { b.addEventListener('click', cerrarCat); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarCat(); });
+        catModal.addEventListener('click', function (e) {
+            var b = e.target.closest('[data-ofrecer]'); if (!b) return;
+            b.disabled = true;
+            enviar('PATCH', '/admin/programas/' + b.dataset.ofrecer + '/oferta')
+                .then(function (r) { recargarConAviso(r.mensaje); })
+                .catch(function (err) { b.disabled = false; toast(err.message); });
         });
     }
-    if (modal) {
-        modal.addEventListener('input', function (e) {
-            var m = e.target.closest('.is-invalid') || e.target;
-            m.classList.remove('is-invalid');
-            if (formError) formError.hidden = true;
-        });
-        modal.addEventListener('change', function (e) {
-            var m = e.target.closest('.is-invalid');
-            if (m) m.classList.remove('is-invalid');
-            if (formError) formError.hidden = true;
-        });
-    }
-    if (btnBack) {
-        btnBack.addEventListener('click', function () {
-            if (currentStep > 1) { currentStep--; renderStep(); }
-        });
-    }
-
-    // (sin cálculo en paso 3 — el sistema calcula totales en rol estudiante)
 
     /* ── Combobox genérico ────────────────────── */
     function initCombobox(root) {
@@ -687,45 +485,7 @@
         cbFiltEst.setValue('', 'Todos los estados', {silent:true});
     }
 
-    /* ── Inicializar comboboxes del wizard ───── */
-    var cbNivel    = document.getElementById('prg-cb-nivel');
-    var cbEscuela  = document.getElementById('prg-cb-escuela');
-    var cbModalidad= document.getElementById('prg-cb-modalidad');
-    var cbPeriodo  = document.getElementById('prg-cb-periodo');
-    var cbEstado   = document.getElementById('prg-cb-estado');
-    var ESTADO_LBL = { activo: 'Activo', en_aprobacion: 'En proceso de aprobación', inactivo: 'Inactivo' };
-
-    [cbNivel, cbEscuela, cbModalidad, cbPeriodo, cbEstado].forEach(initCombobox);
-    cbNivel.setOptions(opc.niveles);
-    // Escuelas reales (todas, aunque todavía no tengan programas en la sede)
-    cbEscuela.setOptions((window.ESC_DATA || []).map(function (e) { return { value: String(e.id), label: e.nombre }; }));
-    cbModalidad.setOptions(opc.modalidades);
-    cbModalidad.setValue('Presencial', 'Presencial', { silent: true });
-    cbPeriodo.setOptions([{ value: 'semestre', label: 'Semestre' }, { value: 'trimestre', label: 'Trimestre' }]);
-    cbEstado.setOptions(Object.keys(ESTADO_LBL).map(function (k) { return { value: k, label: ESTADO_LBL[k] }; }));
-    cbEstado.setValue('activo', 'Activo', { silent: true });
-
-    // Periodos calculados en vivo: los mismos que guarda el servidor (meses ÷ 6 o ÷ 3, redondeado hacia arriba)
-    var periodosHint = document.getElementById('prg-periodos-hint');
-    function pintarPeriodos() {
-        var m = parseInt(valor('prg-inp-meses'));
-        var tipo = cbPeriodo.value();
-        if (!(m >= 1) || !tipo) { periodosHint.textContent = ''; return; }
-        var n = Math.max(1, Math.ceil(m / (tipo === 'semestre' ? 6 : 3)));
-        periodosHint.textContent = m + (m === 1 ? ' mes' : ' meses') + ' = ' + n + ' ' +
-            (tipo === 'semestre' ? (n === 1 ? 'semestre' : 'semestres') : (n === 1 ? 'trimestre' : 'trimestres'));
-    }
-    campo('prg-inp-meses').addEventListener('input', pintarPeriodos);
-    document.getElementById('prg-inp-periodo').addEventListener('change', pintarPeriodos);
-
     // Inicializar
     applyFilters();
-    renderStep();
-
-    // Acceso rápido desde el Inicio: /admin/programas#nuevo abre el modal de crear
-    if (location.hash === '#nuevo') {
-        openModal(null);
-        history.replaceState(null, '', location.pathname);
-    }
 
 }());
