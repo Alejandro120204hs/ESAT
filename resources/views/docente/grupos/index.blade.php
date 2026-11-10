@@ -1,10 +1,7 @@
 {{--
-    Docente › Mis grupos — PANTALLA SOLO FRONTEND (todavía sin backend).
-    Todos los datos salen de window.DOC_DATOS (public/assets/js/docente/datos-ejemplo.js):
-    programas, escuelas y jornadas son reales; grupos, módulos, estudiantes, acudientes,
-    teléfonos, asistencias y notas son FICTICIOS.
-    Esta pantalla solo consulta: no guarda nada. "Tomar asistencia" y "Poner notas" llevan a
-    sus pantallas con ?grupo=ID; ahí se guarda vía DOC_API (sessionStorage) hasta que exista el backend.
+    Docente › Mis grupos (Docente/Grupos/GrupoController). Datos reales de los grupos que el docente tiene
+    a cargo (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js arma DOC_DATOS).
+    Esta pantalla solo consulta: "Tomar asistencia" y "Poner notas" llevan a sus pantallas con ?grupo=ID.
     Deep link: /docente/grupos?grupo=ID abre la ficha de ese grupo.
 --}}
 @extends('docente.layout')
@@ -131,6 +128,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}" defer></script>
+@include('docente.partials.datos')
 <script src="{{ asset('assets/js/docente/grupos.js') }}?v={{ filemtime(public_path('assets/js/docente/grupos.js')) }}" defer></script>
 @endpush

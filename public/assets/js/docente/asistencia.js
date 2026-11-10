@@ -1,5 +1,5 @@
 /* ESAT — Docente: Tomar asistencia
-   Lee solo de window.DOC_DATOS y guarda solo con window.DOC_API (datos-ejemplo.js) hasta que exista el backend.
+   Lee solo de window.DOC_DATOS y guarda solo con window.DOC_API (datos.js → POST docente.asistencia.guardar).
    Reglas (las mismas de AsistenciaService): se registra y corrige cualquier clase ya dictada o la de hoy mientras
    el grupo esté vigente; un grupo finalizado es solo consulta; una clase futura no se registra; la excusa lleva
    motivo; % = (presente + tarde) / (presente + tarde + ausente) y el 80 % es solo referencia. */
@@ -60,17 +60,6 @@
     function tono(p) { return p == null ? 'none' : (p >= 90 ? 'ok' : (p >= D.MINIMO ? 'warn' : 'bad')); }
     function pctTxt(p) { return p == null ? '—' : p + ' %'; }
     function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
-    function sigla(escuela) {
-        var s = (escuela || '').toLowerCase();
-        if (s.indexOf('salud') > -1) return 'sal';
-        if (s.indexOf('turis') > -1) return 'tur';
-        if (s.indexOf('admin') > -1) return 'adm';
-        if (s.indexOf('educa') > -1) return 'edu';
-        if (s.indexOf('deport') > -1) return 'dep';
-        if (s.indexOf('cienc') > -1) return 'cie';
-        if (s.indexOf('belleza') > -1 || s.indexOf('estét') > -1) return 'bel';
-        return 'gen';
-    }
     function listaY(arr) { return arr.length > 1 ? arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1] : (arr[0] || ''); }
     function horarioTxt(g) {
         var dias = g.horario.map(function (h) { return h.dia.slice(0, 3); });
@@ -170,7 +159,7 @@
     var el = {
         vigentes: $('tas-vigentes'), finWrap: $('tas-fin-wrap'), finalizados: $('tas-finalizados'), sinGrupos: $('tas-sin-grupos'),
         resumen: $('tas-resumen'), main: $('tas-main'),
-        soloSin: $('tas-solo-sin'), soloNum: $('tas-solo-num'), pend: $('tas-pend'), cal: $('tas-cal'), listaSin: $('tas-lista-sin'), leyenda: $('tas-leyenda'),
+        soloSin: $('tas-solo-sin'), pend: $('tas-pend'), cal: $('tas-cal'), listaSin: $('tas-lista-sin'), leyenda: $('tas-leyenda'),
         planilla: $('tas-planilla'), titulo: $('tas-pl-titulo'), sub: $('tas-pl-sub'), estado: $('tas-pl-estado'), nota: $('tas-pl-nota'),
         cuerpo: $('tas-pl-cuerpo'), conteo: $('tas-conteo'), tools: $('tas-tools'), todos: $('tas-todos'), todosHint: $('tas-todos-hint'),
         confirmar: $('tas-confirmar'), confirmarTxt: $('tas-confirmar-txt'), confSi: $('tas-conf-si'), confNo: $('tas-conf-no'),
@@ -207,18 +196,15 @@
         var sel = st.g && st.g.id === g.id;
         var n = pendientes(g).length;
         var tags = '';
-        if (g.soloConsulta) tags += '<span class="app-status-tag app-status-muted">Solo consulta</span>';
-        else {
+        if (!g.soloConsulta) {
             if (claseDe(g, D.hoy)) tags += '<span class="tas-hoy-tag">Clase hoy</span>';
-            tags += n ? '<span class="tas-sin-tag">' + esc(plural(n, 'sin registrar', 'sin registrar')) + '</span>'
-                : '<span class="app-status-tag app-status-active">Al día</span>';
+            if (n) tags += '<span class="tas-sin-tag">' + esc(plural(n, 'sin registrar', 'sin registrar')) + '</span>';
         }
         return '<button type="button" class="tas-gcard' + (sel ? ' is-selected' : '') + (g.soloConsulta ? ' is-fin' : '') + '" data-grupo="' + g.id + '" aria-pressed="' + sel + '">' +
-            '<span class="tas-gcard-av tas-esc-' + sigla(g.escuela) + '" aria-hidden="true">' + esc(g.nombre.slice(-1)) + '</span>' +
             '<span class="tas-gcard-txt">' +
                 '<span class="tas-gcard-prog">' + esc(g.programa) + '</span>' +
                 '<span class="tas-gcard-sub">' + esc(g.nombre + ' · ' + g.jornada) + '</span>' +
-                '<span class="tas-gcard-tags">' + tags + '</span>' +
+                (tags ? '<span class="tas-gcard-tags">' + tags + '</span>' : '') +
             '</span></button>';
     }
     function renderGrupos() {
@@ -228,22 +214,15 @@
         el.finWrap.hidden = !f.length;
     }
 
-    function dato(lbl, val) { return '<div class="tas-dato"><span class="tas-dato-lbl">' + esc(lbl) + '</span><span class="tas-dato-val">' + val + '</span></div>'; }
     function renderResumen() {
         var g = st.g;
-        var registradas = g.clases.filter(function (c) { return c.estado === 'registrada'; }).length;
-        var dictadas = registradas + g.clases.filter(function (c) { return c.estado === 'sin_registrar'; }).length;
-        var sub = horarioTxt(g) + ' · ' + g.jornada + ' · ' + g.escuela;
-        sub += g.soloConsulta ? ' · Finalizó el ' + diaMes(g.fin) : ' · Termina el ' + diaMes(g.fin);
-        var html = '<div class="tas-resumen-txt"><h3 class="tas-resumen-ttl">' + esc(g.programa + ' · ' + g.nombre) + '</h3>' +
-            '<div class="tas-resumen-sub">' + esc(sub) + '</div></div>' +
-            '<div class="tas-datos">' +
-                dato('Asistencia del grupo', '<span class="tas-tono-' + tono(g.pct) + '">' + esc(pctTxt(g.pct)) + '</span>') +
-                dato(g.soloConsulta ? 'Graduados' : 'Estudiantes activos', esc(g.soloConsulta ? g.graduados : g.activos)) +
-                dato('Bajo el ' + D.MINIMO + ' %', '<span class="' + (g.bajoMinimo ? 'tas-tono-bad' : '') + '">' + esc(g.bajoMinimo) + '</span>') +
-                dato('Registradas', esc(registradas) + ' <small>de ' + esc(dictadas) + '</small>') +
-            '</div>';
-        el.resumen.innerHTML = html;
+        var sub = horarioTxt(g) + ' · ' + g.jornada + (g.soloConsulta ? ' · Finalizó el ' : ' · Termina el ') + diaMes(g.fin);
+        var bajo = g.bajoMinimo ? ' · <span class="tas-tono-bad">' + esc(plural(g.bajoMinimo, 'estudiante', 'estudiantes') + ' bajo el ' + D.MINIMO + ' %') + '</span>' : '';
+        el.resumen.innerHTML =
+            '<div class="tas-resumen-txt"><h3 class="tas-resumen-ttl">' + esc(g.programa + ' · ' + g.nombre) + '</h3>' +
+                '<div class="tas-resumen-sub">' + esc(sub) + '</div></div>' +
+            '<p class="tas-resumen-pct">' + (g.pct == null ? 'Sin asistencia registrada'
+                : 'Asistencia del grupo <b class="tas-tono-' + tono(g.pct) + '">' + esc(pctTxt(g.pct)) + '</b>') + bajo + '</p>';
     }
 
     /* ═══════════ Clases ═══════════ */
@@ -251,8 +230,6 @@
 
     function renderClases() {
         var g = st.g, sin = pendientes(g);
-        el.soloNum.textContent = sin.length;
-        el.soloNum.classList.toggle('is-aviso', sin.length > 0);
         el.soloSin.checked = st.soloSin;
 
         // Aviso de pendientes (solo con el calendario; la lista ya las muestra todas)
@@ -313,8 +290,7 @@
         var porDia = {};
         g.clases.forEach(function (c) { if (c.fecha.slice(0, 7) === st.mes) porDia[c.fecha] = c; });
         var delMes = Object.keys(porDia).map(function (k) { return porDia[k]; });
-        var sinMes = delMes.filter(function (c) { return c.estado === 'sin_registrar'; }).length;
-        var resumen = plural(delMes.length, 'clase', 'clases') + (sinMes && !g.soloConsulta ? ' · ' + sinMes + ' sin registrar' : '');
+        var resumen = plural(delMes.length, 'clase', 'clases');
 
         var primero = new Date(y, m, 1), dias = new Date(y, m + 1, 0).getDate();
         var desfase = (primero.getDay() + 6) % 7; // lunes primero
@@ -352,11 +328,7 @@
     function chipEstado(c) {
         var out = '';
         if (c.fecha === D.hoy) out += '<span class="tas-hoy-tag">Hoy</span>';
-        if (c.estado === 'registrada') out += '<span class="app-status-tag app-status-active">Registrada</span>';
-        else if (c.estado === 'sin_registrar') out += st.g.soloConsulta ? '<span class="app-status-tag app-status-muted">Sin registro</span>' : '<span class="tas-sin-tag">Sin registrar</span>';
-        else if (c.estado === 'hoy') out += '<span class="app-status-tag app-status-warn">En curso hasta las ' + esc(c.fin) + '</span>';
-        else if (c.estado === 'futura') out += '<span class="app-status-tag app-status-muted">Futura</span>';
-        if (st.g.soloConsulta) out += '<span class="app-status-tag app-status-muted">Solo consulta</span>';
+        if (c.estado === 'futura') out += '<span class="app-status-tag app-status-muted">Futura</span>';
         return out;
     }
     function nota(tipo, icono, texto) {
@@ -430,9 +402,9 @@
             ? '<span class="tas-salida">' + esc(SALIDA[e.matricula.estado] + (e.matricula.estadoFecha ? ' desde el ' + diaMes(e.matricula.estadoFecha) : '')) + '</span>' : '';
         var idN = 'tas-n-' + e.id;
         var ops = OPCIONES.map(function (o) {
-            return '<label class="tas-op tas-op-' + o.l + '">' +
+            return '<label class="tas-op tas-op-' + o.l + '" title="' + o.txt + '">' +
                 '<input type="radio" name="tas-e-' + e.id + '" value="' + o.v + '"' + (x && x.estado === o.v ? ' checked' : '') + (soloVer ? ' disabled' : '') + '>' +
-                '<span class="tas-op-cara"><span class="tas-celda" aria-hidden="true">' + o.l + '</span>' + o.txt + '</span></label>';
+                '<span class="tas-op-cara"><span aria-hidden="true">' + o.l + '</span><span class="tas-sr">' + o.txt + '</span></span></label>';
         }).join('');
         var motivo;
         if (soloVer) {
@@ -447,7 +419,7 @@
         }
         return '<li class="tas-fila' + (x ? '' : ' is-sin-marca') + '" data-est="' + e.id + '">' +
             '<div class="tas-persona">' +
-                '<span class="tas-av tas-esc-' + sigla(st.g.escuela) + '" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</span>' +
+                '<span class="tas-av" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</span>' +
                 '<div class="tas-persona-txt">' +
                     '<div class="tas-nombre" id="' + idN + '">' + esc(nombreDe(e)) + '</div>' +
                     '<div class="tas-doc"><span>' + esc(e.tipoDoc + ' ' + e.documento) + '</span>' +
@@ -492,14 +464,14 @@
         if (md !== 'editar' && md !== 'consulta') return;
         var n = conteo(), total = lista().length;
         var pct = D.porcentaje(n.presente + n.tarde, n.ausente);
-        var cnt = function (l, v, txt) { return '<span class="tas-cnt"><span class="tas-celda tas-c-' + l + '" aria-hidden="true">' + l + '</span><b>' + v + '</b>' + txt + '</span>'; };
-        el.conteo.innerHTML =
-            cnt('P', n.presente, n.presente === 1 ? 'Presente' : 'Presentes') +
-            cnt('T', n.tarde, n.tarde === 1 ? 'Tarde' : 'Tardes') +
-            cnt('A', n.ausente, n.ausente === 1 ? 'Ausente' : 'Ausentes') +
-            cnt('E', n.excusa, n.excusa === 1 ? 'Excusa' : 'Excusas') +
-            (md === 'editar' ? '<span class="tas-cnt tas-cnt-sin' + (n.sin ? '' : ' is-cero') + '"><b>' + n.sin + '</b>sin marcar</span>' : '') +
-            '<span class="tas-cnt-pct">Asistencia de la clase <b class="tas-tono-' + tono(pct) + '">' + esc(pctTxt(pct)) + '</b></span>';
+        var partes = [];
+        if (n.presente) partes.push(plural(n.presente, 'presente', 'presentes'));
+        if (n.tarde) partes.push(plural(n.tarde, 'llegó tarde', 'llegaron tarde'));
+        if (n.ausente) partes.push(plural(n.ausente, 'ausente', 'ausentes'));
+        if (n.excusa) partes.push(plural(n.excusa, 'con excusa', 'con excusa'));
+        var resumenClase = esc(partes.join(' · ')) + (pct == null ? '' : ' · <b class="tas-tono-' + tono(pct) + '">' + esc(pctTxt(pct)) + '</b>');
+        el.conteo.hidden = md === 'editar';
+        el.conteo.innerHTML = md === 'editar' ? '' : resumenClase;
 
         if (md !== 'editar') return;
         var sucio = hayCambios(), c = clase();
@@ -515,7 +487,7 @@
         el.cambios.className = 'tas-cambios' + (sucio ? ' is-sucio' : (c.estado === 'registrada' ? ' is-ok' : ''));
         el.cambios.innerHTML = '<i aria-hidden="true"></i>' + (sucio ? 'Cambios sin guardar' : (c.estado === 'registrada' ? 'Asistencia guardada' : 'Sin registrar todavía'));
         el.faltan.className = 'tas-faltan' + (n.sin ? ' is-aviso' : '');
-        el.faltan.textContent = n.sin ? (n.sin === 1 ? 'Falta 1 estudiante por marcar' : 'Faltan ' + n.sin + ' estudiantes por marcar') : 'Todos marcados · ' + plural(total, 'estudiante', 'estudiantes');
+        el.faltan.innerHTML = n.sin ? esc(n.sin === 1 ? 'Falta 1 estudiante por marcar' : 'Faltan ' + n.sin + ' estudiantes por marcar') : resumenClase;
         el.descartar.hidden = !sucio;
         el.descartar.disabled = st.guardando;
         el.guardar.disabled = st.guardando || (!sucio && c.estado === 'registrada');

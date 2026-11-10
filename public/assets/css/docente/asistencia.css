@@ -70,12 +70,6 @@
 .tas-gcard.is-fin { background: #F8FAFC; }
 .tas-gcard.is-fin.is-selected { background: #FFF8F1; }
 
-.tas-gcard-av {
-    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.86rem; color: var(--white); background: #64748B;
-}
-.tas-gcard.is-fin .tas-gcard-av { opacity: 0.7; }
 .tas-gcard-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .tas-gcard-prog {
     font-weight: 700; font-size: 0.87rem; color: var(--navy-3); line-height: 1.3;
@@ -106,12 +100,9 @@
 .tas-resumen-txt { min-width: 0; }
 .tas-resumen-ttl { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); margin: 0; }
 .tas-resumen-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; line-height: 1.45; }
-.tas-datos { display: flex; flex-wrap: wrap; gap: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
-.tas-dato { padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tas-dato + .tas-dato { border-left: 1px solid var(--line); }
-.tas-dato-lbl { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
-.tas-dato-val { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tas-dato-val small { font-size: 0.76rem; font-weight: 600; color: var(--muted); }
+
+.tas-resumen-pct { margin: 0; font-size: 0.84rem; font-weight: 600; color: var(--muted); }
+.tas-resumen-pct b { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .tas-tono-ok   { color: #2D7A3A; }
 .tas-tono-warn { color: #B45309; }
 .tas-tono-bad  { color: var(--red); }
@@ -146,11 +137,7 @@
 .tas-switch input:checked + .tas-switch-track { background: var(--orange); }
 .tas-switch input:checked + .tas-switch-track::after { transform: translateX(16px); }
 .tas-switch input:focus-visible + .tas-switch-track { outline: 2px solid var(--orange); outline-offset: 2px; }
-.tas-switch-num {
-    min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08);
-    font-size: 0.72rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted);
-}
-.tas-switch-num.is-aviso { background: rgba(217,123,46,0.16); color: #9A4A12; }
+
 
 /* Aviso de clases pendientes */
 .tas-pend {
@@ -242,19 +229,10 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
 .tas-nota.is-lock { background: #F1F5F9; color: #475569; }
 
 /* Contadores P / T / A / E */
-.tas-conteo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.tas-cnt {
-    display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px;
-    border-radius: 999px; border: 1.5px solid var(--line); background: var(--white);
-    font-size: 0.78rem; font-weight: 600; color: var(--muted);
-}
-.tas-cnt b { font-family: "Archivo", system-ui; font-size: 0.95rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; }
-.tas-cnt-sin { padding-left: 11px; border-style: dashed; }
-.tas-cnt-sin.is-cero { border-style: solid; border-color: #CFE6CC; background: #F3FAF2; color: #2D6A27; }
-.tas-cnt-pct { margin-left: auto; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
-.tas-cnt-pct b { font-family: "Archivo", system-ui; font-size: 0.95rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tas-conteo { margin: 0; font-size: 0.86rem; font-weight: 600; color: var(--navy-3); }
+.tas-conteo[hidden] { display: none; }
+.tas-conteo b, .tas-faltan b { font-family: "Archivo", system-ui; font-weight: 800; font-variant-numeric: tabular-nums; }
 
-/* Letra de estado (como en la planilla de papel del Admin) */
 .tas-celda {
     display: inline-flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
@@ -262,13 +240,16 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
 }
 .tas-c-P { background: #E3F2E1; color: #2D6A27; }
 .tas-c-T { background: #FDEFC4; color: #8A4A06; }
-.tas-c-A { background: #D93636; color: var(--white); }
+.tas-c-A { background: #C62828; color: var(--white); }
 .tas-c-E { background: #DCE8FB; color: #1E40AF; }
 
 /* Todos presentes */
 .tas-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tas-tools[hidden] { display: none; }
 .tas-tools-hint { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+.tas-claves { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-left: auto; font-size: 0.76rem; font-weight: 600; color: var(--muted); }
+.tas-claves > span { display: inline-flex; align-items: center; gap: 5px; }
+.tas-claves i { font-style: normal; }
 .tas-confirmar {
     display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap;
     padding: 11px 13px; border-radius: 12px; background: #FFF8F1; border: 1.5px solid #F2C9A5;
@@ -291,50 +272,38 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
 .tas-av {
     width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.8rem; color: var(--white); background: #64748B;
+    font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.8rem; color: var(--navy-2); background: #E6ECF4;
 }
 .tas-persona-txt { min-width: 0; }
-
-/* Colores por escuela (los mismos del Admin; van después de .tas-av y .tas-gcard-av) */
-.tas-esc-sal { background: #DC2626; }
-.tas-esc-tur { background: #EA580C; }
-.tas-esc-adm { background: #2563EB; }
-.tas-esc-edu { background: #059669; }
-.tas-esc-dep { background: #D97706; }
-.tas-esc-cie { background: #4F46E5; }
-.tas-esc-bel { background: #DB2777; }
 
 .tas-nombre { font-weight: 700; font-size: 0.88rem; color: var(--navy-3); line-height: 1.3; }
 .tas-doc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
 .tas-pct { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.74rem; font-variant-numeric: tabular-nums; }
 .tas-salida { padding: 1px 8px; border-radius: 999px; background: #F1F5F9; color: #475569; font-weight: 600; font-size: 0.7rem; }
 
-/* Grupo de opciones: radios reales con etiquetas grandes (≥ 40 px) */
-.tas-opciones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; flex: 1 1 100%; border: 0; min-width: 0; }
+/* Opciones: control segmentado P T A E con radios reales (cada uno ≥ 44 × 40 px).
+   Colores de la planilla del Admin: verde presente, ámbar tarde, rojo ausente, azul excusa. */
+.tas-opciones {
+    display: inline-grid; grid-template-columns: repeat(4, minmax(44px, 1fr)); flex: 1 1 100%; min-width: 0;
+    border: 1.5px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background: var(--white);
+}
 .tas-op { position: relative; display: block; min-width: 0; }
+.tas-op + .tas-op { border-left: 1px solid var(--line); }
 .tas-op input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .tas-op input:disabled { cursor: default; }
 .tas-op-cara {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    min-height: 44px; padding: 6px 4px; border-radius: var(--radius-md);
-    border: 1.5px solid var(--line); background: var(--white);
-    font-size: 0.78rem; font-weight: 700; color: var(--navy-3); white-space: nowrap;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 40px; font-family: "Archivo", system-ui; font-size: 0.9rem; font-weight: 800; color: #64748B;
+    transition: background 0.15s, color 0.15s;
     pointer-events: none;
 }
-.tas-op-cara .tas-celda { background: #F1F5F9; color: var(--muted); }
-.tas-op input:not(:disabled):hover + .tas-op-cara { border-color: rgba(16,40,74,0.32); }
-.tas-op input:focus-visible + .tas-op-cara { outline: 2px solid var(--orange); outline-offset: 2px; }
-.tas-op input:checked + .tas-op-cara { font-weight: 800; }
-.tas-op-P input:checked + .tas-op-cara { background: #E3F2E1; border-color: #4C9A45; color: #2D6A27; }
-.tas-op-P input:checked + .tas-op-cara .tas-celda { background: #4C9A45; color: var(--white); }
-.tas-op-T input:checked + .tas-op-cara { background: #FDEFC4; border-color: #E0A526; color: #8A4A06; }
-.tas-op-T input:checked + .tas-op-cara .tas-celda { background: #E0A526; color: var(--white); }
-.tas-op-A input:checked + .tas-op-cara { background: #D93636; border-color: #D93636; color: var(--white); }
-.tas-op-A input:checked + .tas-op-cara .tas-celda { background: var(--white); color: #B42525; }
-.tas-op-E input:checked + .tas-op-cara { background: #DCE8FB; border-color: #5B8DEF; color: #1E40AF; }
-.tas-op-E input:checked + .tas-op-cara .tas-celda { background: #5B8DEF; color: var(--white); }
-.tas-op input:disabled:not(:checked) + .tas-op-cara { opacity: 0.45; }
+.tas-op input:not(:disabled):hover + .tas-op-cara { background: #F4F7FB; color: var(--navy-3); }
+.tas-op input:focus-visible + .tas-op-cara { outline: 2px solid var(--orange); outline-offset: -3px; }
+.tas-op-P input:checked + .tas-op-cara { background: #2F7A2A; color: var(--white); }
+.tas-op-T input:checked + .tas-op-cara { background: #F3C24B; color: #5C3A06; }
+.tas-op-A input:checked + .tas-op-cara { background: #C62828; color: var(--white); }
+.tas-op-E input:checked + .tas-op-cara { background: #2F5FC4; color: var(--white); }
+.tas-op input:disabled:not(:checked) + .tas-op-cara { opacity: 0.5; }
 
 /* Motivo de la excusa */
 .tas-motivo { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--radius-md); background: #F3F7FE; }
@@ -364,7 +333,7 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
 /* Filas anchas: opciones a la derecha del nombre */
 @container (min-width: 600px) {
     .tas-persona { flex: 1 1 200px; }
-    .tas-opciones { flex: 0 0 auto; grid-template-columns: repeat(4, 86px); }
+    .tas-opciones { flex: 0 0 auto; grid-template-columns: repeat(4, 50px); }
 }
 
 /* Vacíos */
@@ -435,8 +404,6 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
 }
 @media (max-width: 900px) {
     .tas-resumen { padding: 14px; }
-    .tas-datos { width: 100%; }
-    .tas-dato { flex: 1 1 0; }
 }
 @media (max-width: 640px) {
     .tas-title { font-size: 1.5rem; }
@@ -446,12 +413,7 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
     }
     .tas-gcard { flex: 0 0 248px; scroll-snap-align: start; }
     .tas-panel { padding: 14px; }
-    .tas-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .tas-dato:nth-child(3) { border-left: none; }
-    .tas-dato:nth-child(n+3) { border-top: 1px solid var(--line); }
-    .tas-cnt-pct { margin-left: 0; flex-basis: 100%; }
     .tas-fila { padding: 12px 10px; }
-    .tas-op-cara { flex-direction: column; gap: 2px; font-size: 0.7rem; min-height: 50px; }
     .tas-barra { bottom: 8px; padding: 10px 12px; }
     .tas-barra-acc { width: 100%; }
     .tas-barra-acc .tas-btn-primary { flex: 1; }

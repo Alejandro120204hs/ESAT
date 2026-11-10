@@ -82,14 +82,8 @@
 .grp-grid[hidden] { display: none; }
 
 /* Colores por escuela: los mismos de Estudiantes/Docentes del Admin (sólido = avatar, tinte = etiqueta) */
-.grp-esc-sal { --esc: #DC2626; --esc-suave: rgba(239,68,68,0.12);  --esc-ink: #991B1B; }
-.grp-esc-tur { --esc: #EA580C; --esc-suave: rgba(249,115,22,0.12); --esc-ink: #9A3412; }
-.grp-esc-adm { --esc: #2563EB; --esc-suave: rgba(59,130,246,0.12); --esc-ink: #1E3A8A; }
-.grp-esc-edu { --esc: #059669; --esc-suave: rgba(16,185,129,0.12); --esc-ink: #065F46; }
-.grp-esc-dep { --esc: #D97706; --esc-suave: rgba(234,179,8,0.12);  --esc-ink: #713F12; }
-.grp-esc-cie { --esc: #4F46E5; --esc-suave: rgba(99,102,241,0.12); --esc-ink: #312E81; }
-.grp-esc-bel { --esc: #DB2777; --esc-suave: rgba(236,72,153,0.12); --esc-ink: #9D174D; }
-.grp-esc-otr { --esc: #64748B; --esc-suave: rgba(100,116,139,0.12); --esc-ink: #334155; }
+/* La escuela no lleva color propio: el tono es el neutro de la marca (avatar de la ficha y etiqueta) */
+[class*="grp-esc-"] { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
 
 .grp-card {
     display: flex; flex-direction: column; gap: 14px;
@@ -102,20 +96,23 @@
 .grp-card:focus-visible { box-shadow: 0 0 0 3px var(--white), 0 0 0 5px var(--orange); }
 .grp-card.is-finalizado { background: #FBFCFD; }
 
-.grp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .grp-esc-tag {
     display: inline-block; padding: 3px 10px; border-radius: 999px; max-width: 100%;
     background: var(--esc-suave); color: var(--esc-ink);
     font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.grp-card-head { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.grp-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.grp-card-head > .app-status-tag, .grp-card-head > .grp-hoy-tag { flex-shrink: 0; margin-top: 2px; }
+.grp-card-titulos { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .grp-card-prog {
     font-family: "Archivo", system-ui, sans-serif; font-size: 1.1rem; font-weight: 800; line-height: 1.25; color: var(--navy-3);
     overflow-wrap: anywhere;
 }
 .grp-card-grupo { font-size: 0.82rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-.grp-card-horario { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 0.84rem; color: var(--navy-3); }
+.grp-card-horario { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; margin: 0; font-size: 0.84rem; color: var(--navy-3); }
+.grp-jornada { font-weight: 700; }
+.grp-jornada::after { content: "·"; margin-left: 8px; color: var(--muted); font-weight: 400; }
 .grp-jornada-tag {
     display: inline-block; padding: 3px 10px; border-radius: 999px;
     font-size: 0.72rem; font-weight: 700; background: #F1F5F9; color: var(--navy-3); white-space: nowrap;
@@ -130,10 +127,9 @@
 
 /* Avance del programa */
 .grp-avance { display: flex; flex-direction: column; gap: 6px; }
-.grp-avance-fila { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 2px 10px; font-size: 0.8rem; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
-.grp-avance-fila > span { white-space: nowrap; }
-.grp-avance-fila b { font-family: "Archivo", system-ui, sans-serif; font-size: 0.86rem; color: var(--navy-3); }
-.grp-barra { height: 7px; border-radius: 999px; background: #E6EBF2; overflow: hidden; }
+.grp-avance-fila { display: flex; align-items: center; gap: 10px; }
+.grp-avance-pct { font-family: "Archivo", system-ui, sans-serif; font-size: 0.82rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 3.2em; text-align: right; }
+.grp-barra { flex: 1 1 auto; height: 7px; border-radius: 999px; background: #E6EBF2; overflow: hidden; }
 .grp-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--orange); }
 .grp-card.is-finalizado .grp-barra > span { background: #94A3B8; }
 .grp-modulo { font-size: 0.82rem; color: var(--text); line-height: 1.45; }
@@ -141,25 +137,21 @@
 .grp-modulo span { color: var(--muted); }
 
 /* Datos en línea (estudiantes / asistencia) */
-.grp-card-datos { display: grid; grid-template-columns: 1fr 1fr; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
-.grp-card-dato { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.grp-card-dato + .grp-card-dato { border-left: 1px solid var(--line); }
+.grp-card-resumen { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 0; margin: 0; font-size: 0.84rem; color: var(--muted); font-weight: 600; }
+.grp-card-resumen b { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; }
+.grp-card-resumen .grp-sep { width: 3px; height: 3px; margin: 0 9px; border-radius: 50%; background: #B8C3D2; align-self: center; }
 .grp-dato-lbl { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .grp-dato-val { font-family: "Archivo", system-ui, sans-serif; font-size: 1.15rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .grp-dato-val small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .grp-dato-sub { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
 
 /* Pendientes */
-.grp-pendientes { display: flex; flex-wrap: wrap; gap: 6px; }
-.grp-pend {
-    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
-    font-size: 0.74rem; font-weight: 700; white-space: nowrap;
+.grp-btn-num {
+    min-width: 20px; padding: 1px 6px; margin-left: 2px; border-radius: 999px; text-align: center;
+    font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.24); color: inherit;
 }
-.grp-pend svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.grp-pend-asis { background: #FDEBDB; color: #9A4A12; }
-.grp-pend-notas { background: #FEF3C7; color: #92400E; }
-.grp-pend-ok { background: #E6F4E4; color: #2D6A27; }
-.grp-pend-muted { background: #F1F5F9; color: var(--muted); }
+.grp-btn-ghost .grp-btn-num { background: #FDEBDB; color: #9A4A12; }
 
 .grp-card-pie {
     display: flex; align-items: center; flex-wrap: wrap; gap: 8px;

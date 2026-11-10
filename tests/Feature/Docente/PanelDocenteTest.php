@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Panel Docente (por ahora solo frontend con datos de ejemplo): el docente entra a su propio
+ * Panel Docente: el docente entra a su propio
  * panel y solo él ve sus pantallas.
  */
 class PanelDocenteTest extends TestCase
@@ -57,7 +57,7 @@ class PanelDocenteTest extends TestCase
         $docente = $this->docente();
 
         foreach (self::PANTALLAS as $url) {
-            $this->actingAs($docente)->get($url)->assertOk()->assertSee('datos-ejemplo.js', false);
+            $this->actingAs($docente)->get($url)->assertOk()->assertSee('window.DOC_SERVIDOR', false)->assertSee('assets/js/docente/datos.js', false);
         }
     }
 
