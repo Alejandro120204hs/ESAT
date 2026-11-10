@@ -1,6 +1,22 @@
 <?php
 
 use App\Http\Controllers\Admin\Acudientes\AcudienteController;
+use App\Http\Controllers\AdminGeneral\Academico\AcademicoController as GeneralAcademicoController;
+use App\Http\Controllers\AdminGeneral\Acudientes\AcudienteController as GeneralAcudienteController;
+use App\Http\Controllers\AdminGeneral\Auditoria\AuditoriaController as GeneralAuditoriaController;
+use App\Http\Controllers\AdminGeneral\Comunicados\ComunicadoController as GeneralComunicadoController;
+use App\Http\Controllers\AdminGeneral\Configuracion\ConfiguracionController as GeneralConfiguracionController;
+use App\Http\Controllers\AdminGeneral\Docentes\DocenteController as GeneralDocenteController;
+use App\Http\Controllers\AdminGeneral\Estudiantes\EstudianteController as GeneralEstudianteController;
+use App\Http\Controllers\AdminGeneral\Finanzas\FinanzasController as GeneralFinanzasController;
+use App\Http\Controllers\AdminGeneral\Foro\ForoController as GeneralForoController;
+use App\Http\Controllers\AdminGeneral\Inicio\InicioController as GeneralInicioController;
+use App\Http\Controllers\AdminGeneral\Programas\EscuelaController as GeneralEscuelaController;
+use App\Http\Controllers\AdminGeneral\Programas\ProgramaController as GeneralProgramaController;
+use App\Http\Controllers\AdminGeneral\Reportes\ReporteController as GeneralReporteController;
+use App\Http\Controllers\AdminGeneral\Secretarias\SecretariaController as GeneralSecretariaController;
+use App\Http\Controllers\AdminGeneral\Sedes\EntrarSedeController;
+use App\Http\Controllers\AdminGeneral\Sedes\SedeController as GeneralSedeController;
 use App\Http\Controllers\Admin\Asistencia\AsistenciaController;
 use App\Http\Controllers\Admin\Calificaciones\CalificacionController;
 use App\Http\Controllers\Admin\Docentes\DocenteController;
@@ -17,7 +33,6 @@ use App\Http\Controllers\Admin\Reportes\ReporteController;
 use App\Http\Controllers\Admin\Contabilidad\ContabilidadController;
 use App\Http\Controllers\Admin\Contabilidad\EgresoController;
 use App\Http\Controllers\Admin\Pagos\CarteraController;
-use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Sitio\PaginaController;
@@ -81,17 +96,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 });
 
 // ============ PANEL ADMIN ============
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+// La secretaría trabaja en su sede; el Admin de ESAT también entra aquí, en la sede que eligió ("Entrar a la sede").
+// Todas las pantallas leen la sede con User::sedeTrabajoId(); 'sede.trabajo' exige que el Admin ya haya elegido una.
+Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [InicioController::class, 'index'])->name('dashboard');
 
+    // El catálogo (programas, precios, escuelas) lo maneja el Admin de ESAT; la sede elige cuáles ofrece
     Route::get('programas', [ProgramaController::class, 'index'])->name('programas');
-    Route::post('programas', [ProgramaController::class, 'store'])->name('programas.store');
-    Route::put('programas/{programa}', [ProgramaController::class, 'update'])->name('programas.update');
-    Route::patch('programas/{programa}/estado', [ProgramaController::class, 'cambiarEstado'])->name('programas.estado');
-
-    Route::post('escuelas', [EscuelaController::class, 'store'])->name('escuelas.store');
-    Route::put('escuelas/{escuela}', [EscuelaController::class, 'update'])->name('escuelas.update');
-    Route::delete('escuelas/{escuela}', [EscuelaController::class, 'destroy'])->name('escuelas.destroy');
+    Route::patch('programas/{programa}/oferta', [ProgramaController::class, 'oferta'])->name('programas.oferta');
 
     Route::get('docentes', [DocenteController::class, 'index'])->name('docentes');
     Route::post('docentes', [DocenteController::class, 'store'])->name('docentes.store');
@@ -179,18 +191,80 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 // ============ PANEL ADMIN (ESAT GENERAL) ============
-// Rol admin_general: toda ESAT, sin sede propia. Solo frontend por ahora: las vistas usan datos de ejemplo
-// (public/assets/js/admin_general/datos-ejemplo.js).
+// Rol admin_general ("Admin"): toda ESAT, sin sede propia. Ve todo consolidado con filtro de sede, maneja la
+// estructura (sedes, secretarías, catálogo), y para matricular/cobrar entra a una sede (EntrarSedeController).
 Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('general.')->group(function () {
-    Route::get('/', function () {
-        return view('admin_general.dashboard');
-    })->name('dashboard');
+    Route::post('sedes/{sede}/entrar', [EntrarSedeController::class, 'entrar'])->name('sedes.entrar');
+    Route::post('salir-de-sede', [EntrarSedeController::class, 'salir'])->name('sedes.salir');
 
-    foreach (['sedes', 'secretarias', 'programas', 'estudiantes', 'acudientes', 'docentes', 'academico', 'finanzas', 'comunicados', 'foro', 'reportes', 'auditoria', 'configuracion'] as $pantalla) {
-        Route::get($pantalla, function () use ($pantalla) {
-            return view('admin_general.'.$pantalla.'.index');
-        })->name($pantalla);
-    }
+    Route::get('/', [GeneralInicioController::class, 'index'])->name('dashboard');
+
+    // Estructura
+    Route::get('sedes', [GeneralSedeController::class, 'index'])->name('sedes');
+    Route::post('sedes', [GeneralSedeController::class, 'store'])->name('sedes.store');
+    Route::put('sedes/{sede}', [GeneralSedeController::class, 'update'])->name('sedes.update');
+
+    Route::get('secretarias', [GeneralSecretariaController::class, 'index'])->name('secretarias');
+    Route::post('secretarias', [GeneralSecretariaController::class, 'store'])->name('secretarias.store');
+    Route::put('secretarias/{secretaria}', [GeneralSecretariaController::class, 'update'])->name('secretarias.update');
+    Route::patch('secretarias/{secretaria}/estado', [GeneralSecretariaController::class, 'estado'])->name('secretarias.estado');
+    Route::patch('secretarias/{secretaria}/clave', [GeneralSecretariaController::class, 'restablecerClave'])->name('secretarias.clave');
+
+    Route::get('programas', [GeneralProgramaController::class, 'index'])->name('programas');
+    Route::post('programas', [GeneralProgramaController::class, 'store'])->name('programas.store');
+    Route::put('programas/{programa}', [GeneralProgramaController::class, 'update'])->name('programas.update');
+    Route::patch('programas/{programa}/estado', [GeneralProgramaController::class, 'estado'])->name('programas.estado');
+    Route::patch('programas/{programa}/sedes/{sede}', [GeneralProgramaController::class, 'oferta'])->name('programas.oferta');
+    Route::post('escuelas', [GeneralEscuelaController::class, 'store'])->name('escuelas.store');
+    Route::put('escuelas/{escuela}', [GeneralEscuelaController::class, 'update'])->name('escuelas.update');
+    Route::delete('escuelas/{escuela}', [GeneralEscuelaController::class, 'destroy'])->name('escuelas.destroy');
+
+    // Personas
+    Route::get('estudiantes', [GeneralEstudianteController::class, 'index'])->name('estudiantes');
+    Route::post('estudiantes', [GeneralEstudianteController::class, 'store'])->name('estudiantes.store');
+    Route::put('estudiantes/{estudiante}', [GeneralEstudianteController::class, 'update'])->name('estudiantes.update');
+
+    Route::get('acudientes', [GeneralAcudienteController::class, 'index'])->name('acudientes');
+    Route::post('acudientes', [GeneralAcudienteController::class, 'store'])->name('acudientes.store');
+    Route::put('acudientes/{acudiente}', [GeneralAcudienteController::class, 'update'])->name('acudientes.update');
+    Route::post('acudientes/{acudiente}/vincular', [GeneralAcudienteController::class, 'vincular'])->name('acudientes.vincular');
+    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [GeneralAcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
+    Route::patch('acudientes/{acudiente}/estado', [GeneralAcudienteController::class, 'estado'])->name('acudientes.estado');
+    Route::patch('acudientes/{acudiente}/clave', [GeneralAcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
+
+    Route::get('docentes', [GeneralDocenteController::class, 'index'])->name('docentes');
+    Route::post('docentes', [GeneralDocenteController::class, 'store'])->name('docentes.store');
+    Route::put('docentes/{docente}', [GeneralDocenteController::class, 'update'])->name('docentes.update');
+    Route::patch('docentes/{docente}/estado', [GeneralDocenteController::class, 'estado'])->name('docentes.estado');
+    Route::patch('docentes/{docente}/clave', [GeneralDocenteController::class, 'restablecerClave'])->name('docentes.clave');
+
+    // Seguimiento (solo consulta)
+    Route::get('academico', [GeneralAcademicoController::class, 'index'])->name('academico');
+    Route::get('finanzas', [GeneralFinanzasController::class, 'index'])->name('finanzas');
+    Route::get('reportes', [GeneralReporteController::class, 'index'])->name('reportes');
+
+    // Comunicación
+    Route::get('comunicados', [GeneralComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados', [GeneralComunicadoController::class, 'store'])->name('comunicados.store');
+    Route::put('comunicados/{comunicado}', [GeneralComunicadoController::class, 'update'])->name('comunicados.update');
+    Route::patch('comunicados/{comunicado}/archivar', [GeneralComunicadoController::class, 'archivar'])->name('comunicados.archivar');
+    Route::delete('comunicados/{comunicado}', [GeneralComunicadoController::class, 'destroy'])->name('comunicados.destroy');
+
+    Route::get('foro', [GeneralForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [GeneralForoController::class, 'store'])->name('foro.temas.store');
+    Route::post('foro/temas/{tema}/responder', [GeneralForoController::class, 'responder'])->name('foro.responder');
+    Route::patch('foro/temas/{tema}/estado', [GeneralForoController::class, 'estado'])->name('foro.estado');
+    Route::patch('foro/mensajes/{mensaje}/ocultar', [GeneralForoController::class, 'ocultar'])->name('foro.ocultar');
+    Route::patch('foro/mensajes/{mensaje}/restaurar', [GeneralForoController::class, 'restaurar'])->name('foro.restaurar');
+    Route::patch('foro/mensajes/{mensaje}/descartar', [GeneralForoController::class, 'descartar'])->name('foro.descartar');
+
+    // Supervisión
+    Route::get('auditoria', [GeneralAuditoriaController::class, 'index'])->name('auditoria');
+    Route::get('configuracion', [GeneralConfiguracionController::class, 'index'])->name('configuracion');
+    Route::put('configuracion/institucion', [GeneralConfiguracionController::class, 'institucion'])->name('configuracion.institucion');
+    Route::put('configuracion/cobros', [GeneralConfiguracionController::class, 'cobros'])->name('configuracion.cobros');
+    Route::put('configuracion/seguridad', [GeneralConfiguracionController::class, 'seguridad'])->name('configuracion.seguridad');
+    Route::patch('configuracion/bloqueadas/{usuario}', [GeneralConfiguracionController::class, 'desbloquear'])->name('configuracion.desbloquear');
 });
 
 // ============ PANEL DOCENTE ============

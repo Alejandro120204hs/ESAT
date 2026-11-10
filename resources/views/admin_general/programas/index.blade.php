@@ -1,8 +1,7 @@
-{{-- Programas (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     El CATÁLOGO es REAL (escuelas, programas, módulos, precios, jornadas, cupos y resoluciones de la BD; sin los 3 programas
-     de prueba). Decidido con el usuario: el Admin crea y edita escuelas y programas y fija el precio (uno solo para todas las
-     sedes); la secretaría solo elige cuáles ofrece su sede. Editar un programa no puede invalidar sus grupos vigentes (cupo,
-     jornadas). Lo hecho se guarda solo en la pestaña (GEN_API). --}}
+{{-- Programas (Admin de ESAT general). Datos reales: AdminGeneral ProgramaController@index los pasa en window.GEN_DATOS.
+     Decidido con el usuario: el Admin crea y edita escuelas y programas (con su malla) y fija el precio (uno solo para todas
+     las sedes); la secretaría solo elige cuáles ofrece su sede. Editar no puede invalidar los grupos vigentes (cupo, jornadas,
+     horas: ProgramaRequest) y la malla no cambia si ya hay notas. Todo queda en la auditoría. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Programas')
@@ -125,6 +124,7 @@
                     <div class="prg-field"><label for="prg-f-codigo">Código</label><input type="text" id="prg-f-codigo" maxlength="20" placeholder="ESA-SAL-004"><span class="prg-field-error" data-error="codigo" hidden></span></div>
                     <div class="prg-field"><label for="prg-f-escuela">Escuela</label><select id="prg-f-escuela"></select><span class="prg-field-error" data-error="escuela" hidden></span></div>
                     <div class="prg-field"><label for="prg-f-modalidad">Modalidad</label><select id="prg-f-modalidad"><option>Presencial</option><option>Mixta</option><option>Virtual</option></select></div>
+                    <div class="prg-field"><label for="prg-f-nivel">Nivel</label><select id="prg-f-nivel">@foreach (\App\Models\Academico\Programa::NIVELES as $nivel)<option>{{ $nivel }}</option>@endforeach</select></div>
                     <div class="prg-field"><label for="prg-f-estado">Estado</label><select id="prg-f-estado"><option value="activo">Activo</option><option value="en_aprobacion">En aprobación</option></select></div>
                     <div class="prg-field prg-field-full"><label for="prg-f-resolucion">Resolución de aprobación</label><input type="text" id="prg-f-resolucion" maxlength="120" placeholder="Res. 0000-2026 · SED Bogotá, o «En trámite»"><span class="prg-field-error" data-error="resolucion" hidden></span></div>
                     <fieldset class="prg-field prg-field-full prg-jornadas" id="prg-f-jornadas">
@@ -150,6 +150,7 @@
             </div>
             <div class="prg-paso" data-paso="3" hidden>
                 <p class="prg-hint prg-malla-ayuda">Los módulos se dictan en este orden. Las horas del programa son la suma de las horas de los módulos.</p>
+                <p class="prg-nota" id="prg-malla-bloqueada" hidden>Ya hay notas puestas en los módulos de este programa: la malla queda como está.</p>
                 <ol class="prg-malla-edit" id="prg-malla-edit"></ol>
                 <button type="button" class="prg-btn prg-btn-ghost prg-btn-sm" id="prg-mod-agregar">
                     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -177,7 +178,7 @@
         <div class="prg-modal-body">
             <div class="prg-fields">
                 <div class="prg-field prg-field-full"><label for="prg-e-nombre">Nombre</label><input type="text" id="prg-e-nombre" maxlength="80" placeholder="Ej. Belleza"><span class="prg-field-error" data-error="e-nombre" hidden></span></div>
-                <div class="prg-field"><label for="prg-e-sigla">Sigla</label><input type="text" id="prg-e-sigla" maxlength="4" placeholder="BEL"><span class="prg-hint">3 o 4 letras; va en el código de sus programas.</span><span class="prg-field-error" data-error="e-sigla" hidden></span></div>
+                <div class="prg-field" id="prg-e-sigla-campo"><label for="prg-e-sigla">Sigla</label><input type="text" id="prg-e-sigla" readonly><span class="prg-hint">Se generó al crearla y no cambia: va en el código de sus programas.</span></div>
             </div>
         </div>
         <div class="prg-modal-foot">
@@ -208,6 +209,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/programas.js') }}?v={{ filemtime(public_path('assets/js/admin_general/programas.js')) }}" defer></script>
 @endpush

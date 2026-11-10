@@ -1,10 +1,11 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Sedes
-   Lista, búsqueda, paginación, detalle (drawer) y crear/editar (modal) con datos de GEN_DATOS.
-   Guardar usa GEN_API (sessionStorage) mientras no hay backend. Todo lo de los datos va por esc().
+   Lista, búsqueda, paginación, detalle (drawer) y crear/editar (modal). Los datos llegan del servidor en
+   window.GEN_DATOS (SedeController@index); guardar va por fetch a /general/sedes (SedeRequest valida lo mismo) y
+   recarga la página con el aviso. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 10;
@@ -40,6 +41,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -218,7 +249,7 @@
             : '<li class="sed-list-empty">La sede no tiene cuentas de secretaría. <a class="sed-link" href="/general/secretarias?nueva=' + s.id + '">Crear una</a></li>';
         var progs = (s.programas || []).map(function (pid) { return D.programas.find(function (p) { return p.id === pid; }); }).filter(Boolean);
         $('sed-dw-programas').innerHTML = progs.length ? progs.map(function (p) {
-            var n = D.estudiantes.filter(function (e) { return e.sede_id === s.id && e.programa_id === p.id && e.estado === 'activo'; }).length;
+            var n = (s.por_programa || {})[p.id] || 0;
             return '<li><span>' + esc(p.nombre) + '</span><span class="sed-muted">' + n + (n === 1 ? ' estudiante' : ' estudiantes') + '</span></li>';
         }).join('') : '<li class="sed-list-empty">La sede todavía no ofrece programas del catálogo. <a class="sed-link" href="/general/programas">Asígnalos en Programas</a></li>';
         tab('datos');
@@ -252,13 +283,23 @@
         if (modalAbierto) cerrarModal(); else if (drawer.classList.contains('is-open')) cerrarDrawer();
     });
 
+
+    /* ── Entrar a la sede: trabaja con las pantallas de la secretaría (EntrarSedeController) ── */
+    function entrarASede(id, destino) {
+        var f = document.createElement('form');
+        f.method = 'POST'; f.action = '/general/sedes/' + encodeURIComponent(id) + '/entrar';
+        [['_token', document.querySelector('meta[name="csrf-token"]').content], ['destino', destino || 'dashboard']].forEach(function (c) {
+            var i = document.createElement('input'); i.type = 'hidden'; i.name = c[0]; i.value = c[1]; f.appendChild(i);
+        });
+        document.body.appendChild(f); f.submit();
+    }
+
     function abrirEntrar(s) {
         $('sed-entrar-titulo').textContent = 'Entrar a ' + s.nombre;
         $('sed-entrar-sub').textContent = lugar(s);
-        $('sed-entrar-nota').hidden = true;
         abrirModal('sed-entrar', $('sed-entrar-ok'));
     }
-    $('sed-entrar-ok').addEventListener('click', function () { $('sed-entrar-nota').hidden = false; });
+    $('sed-entrar-ok').addEventListener('click', function () { this.disabled = true; entrarASede(actual.id, 'dashboard'); });
 
     /* ── Formulario crear / editar ──────────────── */
     var cbDepto = $('sed-cb-depto'), cbCiudad = $('sed-cb-ciudad');
@@ -316,20 +357,20 @@
         if (!ok) { var f = document.querySelector('#sed-form .is-invalid'); if (f) (f.querySelector('button') || f).focus(); return; }
 
         var btn = $('sed-guardar'); btn.disabled = true;
-        var reg = editando ? { id: editando.id, nombre: nombre, departamento: depto, ciudad: ciudad, direccion: direccion }
-            : { nombre: nombre, departamento: depto, ciudad: ciudad, direccion: direccion, creada: new Date().toISOString().slice(0, 10), programas: [] };
-        var texto = editando ? 'Editó la sede ' + nombre + '.' : 'Creó la sede ' + nombre + ' (' + ciudad + ', ' + depto + ').';
-        API.guardar('sedes', reg, texto, editando ? 'editar' : 'crear', editando ? editando.id : null).then(function (r) {
-            btn.disabled = false;
-            var eraNueva = !editando;
-            cerrarModal();
-            if (drawer.classList.contains('is-open')) abrirDrawer(r.id || editando.id);
-            pintarKpis(); filtrar();
-            toast(eraNueva ? 'Se creó la sede ' + nombre + '. Ahora asígnale una secretaría.' : 'Se guardaron los cambios de la sede ' + nombre + '.');
-        });
+        var cuerpo = { nombre: nombre, departamento: depto, ciudad: ciudad, direccion: direccion };
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/sedes/' + editando.id : '/general/sedes', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) {
+                btn.disabled = false;
+                var CAMPO = { nombre: 'nombre', departamento: 'depto', ciudad: 'ciudad', direccion: 'direccion' }, marcado = false;
+                Object.keys(err.errores || {}).forEach(function (k) { if (CAMPO[k]) { error(CAMPO[k], err.errores[k][0]); marcado = true; } });
+                if (!marcado) toast(err.message);
+            });
     });
 
     pintarKpis();
     filtrar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
     if (/[?&]nueva=1/.test(location.search)) abrirForm(null);
 }());

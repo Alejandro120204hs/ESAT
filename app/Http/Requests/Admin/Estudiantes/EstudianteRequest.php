@@ -30,7 +30,7 @@ class EstudianteRequest extends FormRequest
     {
         $e = $this->route('estudiante');
 
-        return ! $e || ($e->role === RolUsuario::Estudiante && $e->sede_id === (int) $this->user()->sede_id);
+        return ! $e || ($e->role === RolUsuario::Estudiante && $e->sede_id === $this->sedeId());
     }
 
     protected function prepareForValidation(): void
@@ -152,5 +152,11 @@ class EstudianteRequest extends FormRequest
             'telefono.regex'                   => 'El celular debe tener 10 dígitos y empezar por 3.',
             'email.unique'                     => 'Ese correo ya está registrado por otro usuario.',
         ], $this->mensajesAcudiente());
+    }
+
+    /** Sede en la que se valida: la de trabajo (secretaría o Admin dentro de una sede). El panel general la sobrescribe. */
+    protected function sedeId(): int
+    {
+        return (int) $this->user()->sedeTrabajoId();
     }
 }

@@ -15,7 +15,7 @@ class AnularPagoRequest extends FormRequest
     {
         $m = $this->route('matricula');
 
-        return $m->sede_id === (int) $this->user()->sede_id && $this->route('recaudo')->matricula_id === $m->id;
+        return $m->sede_id === (int) $this->user()->sedeTrabajoId() && $this->route('recaudo')->matricula_id === $m->id;
     }
 
     public function rules(): array

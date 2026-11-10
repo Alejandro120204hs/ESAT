@@ -142,6 +142,8 @@
 
     /* ── Datos ──────────────────────────────────── */
     var DIA = 86400000;
+    var ROL = { admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente', estudiante: 'Estudiante', acudiente: 'Acudiente' };
+    function rol(a) { return ROL[a.rol] || a.rol; }
     var TIPO = { crear: 'Creó', editar: 'Editó', anular: 'Anuló', activar: 'Activó', desactivar: 'Desactivó', eliminar: 'Eliminó' };
     function sedePorId(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
     function fechaHora(f) { var d = new Date(f); return fechaLarga(f) + ', ' + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }); }
@@ -154,7 +156,7 @@
     cbPeriodo.setOptions([{ value: '1', label: 'Hoy' }, { value: '7', label: 'Últimos 7 días' }, { value: '30', label: 'Últimos 30 días' }, { value: '90', label: 'Últimos 90 días' }, { value: '', label: 'Todo' }]);
     cbSede.setOptions([{ value: '', label: 'Todas las sedes' }, { value: 'general', label: 'Sin sede (todo ESAT)' }].concat(D.sedes.map(function (s) { return { value: String(s.id), label: s.nombre }; })));
     var personas = {}; D.auditoria.forEach(function (a) { personas[a.quien] = a.rol; });
-    cbPersona.setOptions([{ value: '', label: 'Todas las personas' }].concat(Object.keys(personas).sort().map(function (p) { return { value: p, label: p + (personas[p] === 'admin' ? ' (Admin)' : '') }; })));
+    cbPersona.setOptions([{ value: '', label: 'Todas las personas' }].concat(Object.keys(personas).sort().map(function (p) { return { value: p, label: p + ' (' + (ROL[personas[p]] || personas[p]) + ')' }; })));
     cbTipo.setOptions([{ value: '', label: 'Todas las acciones' }].concat(Object.keys(TIPO).map(function (t) { return { value: t, label: TIPO[t] + ' (' + t + ')' }; })));
     cbPeriodo.setValue('30', 'Últimos 30 días', { silent: true }); cbSede.setValue('', 'Todas las sedes', { silent: true });
     cbPersona.setValue('', 'Todas las personas', { silent: true }); cbTipo.setValue('', 'Todas las acciones', { silent: true });
@@ -196,7 +198,7 @@
             var s = sedePorId(a.sede_id), d = new Date(a.fecha);
             return '<tr class="aud-row" tabindex="0" data-id="' + a.id + '">' +
                 '<td class="aud-fecha"><div class="aud-strong">' + esc(fechaMini(a.fecha)) + '</div><div class="aud-muted">' + esc(d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })) + '</div></td>' +
-                '<td><div class="aud-strong">' + esc(a.quien) + '</div><div class="aud-muted' + (a.rol === 'admin' ? ' aud-rol-admin' : '') + '">' + (a.rol === 'admin' ? 'Admin' : 'Secretaría') + '</div></td>' +
+                '<td><div class="aud-strong">' + esc(a.quien) + '</div><div class="aud-muted' + (a.rol === 'admin' ? ' aud-rol-admin' : '') + '">' + esc(rol(a)) + '</div></td>' +
                 '<td>' + esc(s ? s.nombre : 'Todo ESAT') + '</td>' +
                 '<td><span class="aud-tipo aud-tipo-' + esc(a.tipo) + '">' + esc(TIPO[a.tipo] || a.tipo) + '</span><div class="aud-muted">' + esc(a.entidad) + '</div></td>' +
                 '<td><div class="aud-texto" title="' + esc(a.texto) + '">' + esc(a.texto) + '</div></td></tr>';
@@ -215,7 +217,7 @@
         $('aud-md-titulo').textContent = (TIPO[a.tipo] || a.tipo) + ' · ' + a.entidad;
         $('aud-md-sub').textContent = fechaHora(a.fecha);
         $('aud-md-texto').textContent = a.texto;
-        $('aud-md-info').innerHTML = [['Quién', a.quien], ['Rol', a.rol === 'admin' ? 'Admin (ESAT general)' : 'Secretaría'], ['Sede', s ? s.nombre : 'Todo ESAT'], ['Sobre', a.entidad]]
+        $('aud-md-info').innerHTML = [['Quién', a.quien], ['Rol', a.rol === 'admin' ? 'Admin (ESAT general)' : rol(a)], ['Sede', s ? s.nombre : 'Todo ESAT'], ['Sobre', a.entidad]]
             .map(function (x) { return '<div><span class="aud-info-lbl">' + esc(x[0]) + '</span><span class="aud-info-val">' + esc(x[1]) + '</span></div>'; }).join('');
         modal.hidden = false; modal.querySelector('.aud-close').focus();
     }
@@ -234,7 +236,7 @@
     $('aud-exportar').addEventListener('click', function () {
         descargarCsv('auditoria-esat', [['Fecha', 'Hora', 'Quién', 'Rol', 'Sede', 'Acción', 'Sobre', 'Detalle']].concat(filtrados.map(function (a) {
             var d = new Date(a.fecha), s = sedePorId(a.sede_id);
-            return [fechaMini(a.fecha), d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }), a.quien, a.rol === 'admin' ? 'Admin' : 'Secretaría', s ? s.nombre : 'Todo ESAT', TIPO[a.tipo] || a.tipo, a.entidad, a.texto];
+            return [fechaMini(a.fecha), d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }), a.quien, rol(a), s ? s.nombre : 'Todo ESAT', TIPO[a.tipo] || a.tipo, a.entidad, a.texto];
         })));
     });
 

@@ -346,11 +346,6 @@
 .gen-modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); }
 .gen-entrar-lista { margin: 12px 0 0 18px; font-size: 0.86rem; color: var(--muted); line-height: 1.55; }
 .gen-entrar-lista li + li { margin-top: 4px; }
-.gen-entrar-nota {
-    margin-top: 14px; padding: 10px 12px; border-radius: 9px;
-    background: rgba(233,185,73,0.15); color: #6B5208; font-size: 0.84rem; font-weight: 600; line-height: 1.5;
-}
-.gen-entrar-nota[hidden] { display: none; }
 
 /* ── Movimiento ─────────────────────────────── */
 @keyframes genCrecerY { from { transform: scaleY(0); } to { transform: scaleY(1); } }

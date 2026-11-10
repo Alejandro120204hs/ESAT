@@ -1,7 +1,6 @@
-{{-- Acudientes (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Acudientes y estudiantes ficticios; sedes reales. El Admin crea y edita igual que la secretaría, en cualquier sede. Mismas
-     reglas: cuenta rol acudiente, correo obligatorio (usuario) y clave inicial = documento; un solo acudiente por estudiante
-     (vincular reemplaza al anterior) y ningún menor queda sin acudiente. Guarda en la pestaña (GEN_API). --}}
+{{-- Acudientes (Admin de ESAT general). Datos reales: AdminGeneral AcudienteController@index los pasa en window.GEN_DATOS.
+     Registrar (con al menos un estudiante a cargo de la sede elegida) y editar con las reglas de la secretaría, vincular y
+     desvincular estudiantes (ningún menor queda sin acudiente), activar/desactivar y restablecer la clave. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Acudientes')
@@ -127,10 +126,10 @@
                 <div class="acu-fields">
                     <div class="acu-field"><label for="acu-f-nombres">Nombres</label><input type="text" id="acu-f-nombres" maxlength="60" autocomplete="off"><span class="acu-field-error" data-error="nombres" hidden></span></div>
                     <div class="acu-field"><label for="acu-f-apellidos">Apellidos</label><input type="text" id="acu-f-apellidos" maxlength="60" autocomplete="off"><span class="acu-field-error" data-error="apellidos" hidden></span></div>
-                    <div class="acu-field"><label for="acu-f-tipo">Tipo de documento</label><select id="acu-f-tipo"><option value="CC">Cédula de ciudadanía</option><option value="CE">Cédula de extranjería</option><option value="PA">Pasaporte</option><option value="PPT">Permiso por protección temporal</option></select></div>
+                    <div class="acu-field"><label for="acu-f-tipo">Tipo de documento</label><select id="acu-f-tipo">@foreach (\App\Http\Requests\Admin\Acudientes\AcudienteRequest::TIPOS_DOCUMENTO as $valor => $tipo)<option value="{{ $valor }}">{{ $tipo }}</option>@endforeach</select></div>
                     <div class="acu-field"><label for="acu-f-documento">Número de documento</label><input type="text" id="acu-f-documento" inputmode="numeric" maxlength="12" autocomplete="off"><span class="acu-field-error" data-error="documento" hidden></span></div>
-                    <div class="acu-field"><label for="acu-f-genero">Género</label><select id="acu-f-genero"><option value="">Selecciona</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Otro</option></select><span class="acu-field-error" data-error="genero" hidden></span></div>
-                    <div class="acu-field"><label for="acu-f-profesion">Ocupación</label><input type="text" id="acu-f-profesion" maxlength="100" placeholder="Ej. Comerciante" autocomplete="off"><span class="acu-field-error" data-error="profesion" hidden></span></div>
+                    <div class="acu-field"><label for="acu-f-genero">Género <span class="acu-muted">(opcional)</span></label><select id="acu-f-genero"><option value="">Selecciona</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Otro</option></select><span class="acu-field-error" data-error="genero" hidden></span></div>
+                    <div class="acu-field"><label for="acu-f-profesion">Ocupación <span class="acu-muted">(opcional)</span></label><input type="text" id="acu-f-profesion" maxlength="100" placeholder="Ej. Comerciante" autocomplete="off"><span class="acu-field-error" data-error="profesion" hidden></span></div>
                 </div>
             </div>
             <div class="acu-paso" data-paso="2" hidden>
@@ -164,9 +163,9 @@
                 <div class="acu-fields">
                     <div class="acu-field acu-field-full"><label for="acu-f-sede">Sede</label><select id="acu-f-sede"></select><span class="acu-field-error" data-error="sede" hidden></span></div>
                 </div>
-                <div id="acu-f-bloque-est">
+                <div id="acu-f-bloque-est" class="acu-bloque-est">
                     <h3 class="acu-seccion">Estudiantes a cargo</h3>
-                    <p class="acu-hint">Opcional ahora: también se vinculan después desde la ficha. Un estudiante tiene un solo acudiente; si ya tenía uno, se reemplaza.</p>
+                    <p class="acu-hint">Agrega al menos uno: el acudiente se registra con los estudiantes que tiene a cargo. Después puedes vincularle más desde su ficha. Un estudiante tiene un solo acudiente; si ya tenía uno, se reemplaza.</p>
                     <div class="acu-vincular">
                         <select id="acu-f-estudiante" aria-label="Estudiante"></select>
                         <select id="acu-f-parentesco" aria-label="Parentesco"></select>
@@ -205,6 +204,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/acudientes.js') }}?v={{ filemtime(public_path('assets/js/admin_general/acudientes.js')) }}" defer></script>
 @endpush

@@ -1,6 +1,6 @@
 @php
     $active = $active ?? '';
-    $sedeName = auth()->user()->sede?->nombre ?? 'Sin sede';
+    $sedeName = auth()->user()->sedeTrabajo()?->nombre ?? 'Sin sede';
     $initials = mb_strtoupper(mb_substr(auth()->user()->nombres ?? auth()->user()->name ?? 'A', 0, 1) . mb_substr(auth()->user()->apellidos ?? '', 0, 1));
     if (strlen($initials) < 1) $initials = 'A';
 @endphp

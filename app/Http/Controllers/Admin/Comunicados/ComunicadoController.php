@@ -66,6 +66,7 @@ class ComunicadoController extends Controller
     {
         abort_unless($comunicado->sede_id === $this->sedeId(), 403);
         abort_unless($comunicado->estado === 'borrador', 422, 'Solo se eliminan los borradores.');
+        abort_if($comunicado->autor?->isAdminGeneral() && ! auth()->user()->isAdminGeneral(), 403, 'Este borrador es del Admin de ESAT.');
 
         Auditoria::registrar('eliminar', $comunicado, "Eliminó el borrador «{$comunicado->titulo}».");
         $this->comunicados->eliminar($comunicado);
@@ -103,7 +104,7 @@ class ComunicadoController extends Controller
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return (int) $sedeId;

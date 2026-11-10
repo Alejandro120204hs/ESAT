@@ -67,6 +67,18 @@
         {{-- Topbar --}}
         @include('admin.partials.topbar')
 
+        {{-- El Admin de ESAT está trabajando dentro de una sede ("Entrar a la sede") --}}
+        @if (auth()->user()->isAdminGeneral())
+        <div class="app-franja-sede" role="status">
+            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+            <span>Estás trabajando en la sede <strong>{{ auth()->user()->sedeTrabajo()?->nombre }}</strong> como Admin. Todo queda en la auditoría de la sede con tu nombre.</span>
+            <form method="POST" action="{{ route('general.sedes.salir') }}">
+                @csrf
+                <button type="submit" class="app-franja-sede-btn">Volver al panel general</button>
+            </form>
+        </div>
+        @endif
+
         {{-- Contenido --}}
         <main class="app-content @yield('content-class')">
             @yield('content')

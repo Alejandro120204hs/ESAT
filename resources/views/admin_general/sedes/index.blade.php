@@ -1,7 +1,6 @@
-{{-- Sedes (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Nombre, ubicación y dirección de las 4 sedes son reales; secretarías, estudiantes y cifras son ficticias.
-     Crear y editar sedes (sin eliminar ni desactivar, como en el Superadmin). Lo creado se guarda solo en la pestaña
-     (GEN_API, sessionStorage). sedes.js pinta todo y escapa lo que viene de los datos. --}}
+{{-- Sedes (Admin de ESAT general). Datos reales: SedeController@index los pasa en window.GEN_DATOS.
+     Crear y editar sedes (sin eliminar ni desactivar), SedeRequest valida y queda en la auditoría.
+     sedes.js pinta todo y escapa lo que viene de los datos. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Sedes')
@@ -177,7 +176,6 @@
         </div>
         <div class="sed-modal-body">
             <p class="sed-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
-            <p class="sed-nota" id="sed-entrar-nota" hidden>Esta pantalla todavía es una maqueta: entrar a la sede funcionará cuando se conecte el backend.</p>
         </div>
         <div class="sed-modal-foot">
             <button type="button" class="sed-btn sed-btn-ghost" data-cerrar-modal>Cancelar</button>
@@ -190,6 +188,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/sedes.js') }}?v={{ filemtime(public_path('assets/js/admin_general/sedes.js')) }}" defer></script>
 @endpush

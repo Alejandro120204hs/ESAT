@@ -58,7 +58,7 @@ class PagoController extends Controller
     public function recibo(Recaudo $recaudo): View
     {
         $recaudo->load(['matricula.estudiante', 'matricula.programa', 'matricula.curso', 'matricula.sede', 'cobros', 'registradoPor', 'anuladoPor']);
-        abort_unless($recaudo->matricula->sede_id === (int) auth()->user()->sede_id, 404);
+        abort_unless($recaudo->matricula->sede_id === (int) auth()->user()->sedeTrabajoId(), 404);
 
         $m     = $recaudo->matricula;
         $total = $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : $m->programa->duracion_periodos;
@@ -105,7 +105,7 @@ class PagoController extends Controller
     public function comprobanteDevolucion(Devolucion $devolucion): View
     {
         $devolucion->load(['matricula.estudiante', 'matricula.programa', 'matricula.curso', 'matricula.sede', 'cobros', 'registradoPor']);
-        abort_unless($devolucion->matricula->sede_id === (int) auth()->user()->sede_id, 404);
+        abort_unless($devolucion->matricula->sede_id === (int) auth()->user()->sedeTrabajoId(), 404);
         $m     = $devolucion->matricula;
         $total = $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : $m->programa->duracion_periodos;
 

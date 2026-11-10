@@ -1,8 +1,6 @@
-{{-- Inicio (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js):
-     los nombres de las sedes son los de CLAUDE.md; personas, montos, estudiantes, grupos, cartera y actividad son ficticios.
-     Bloques acordados con el usuario: filtro de sede, KPI de ESAT con variación, comparación de sedes (con "Entrar a la
-     sede"), ingresos de los últimos 6 meses por sede, alertas y actividad reciente de las secretarías. dashboard.js pinta
-     todo según la sede elegida y escapa lo que viene de los datos. --}}
+{{-- Inicio (Admin de ESAT general): solo consulta. Datos reales: AdminGeneral InicioController@index los pasa en
+     window.GEN_DATOS: cifras de cada sede (EstructuraService, las mismas reglas del Inicio de la secretaría), secretarías,
+     actividad reciente (auditoría) y comunicados programados. dashboard.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Inicio')
@@ -147,7 +145,6 @@
                 <li>Arriba verás una franja con la sede en la que estás y el botón para volver al panel general.</li>
                 <li>Todo lo que hagas queda en la auditoría de la sede con tu nombre.</li>
             </ul>
-            <p class="gen-entrar-nota" id="gen-entrar-nota" hidden>Esta pantalla todavía es una maqueta: entrar a la sede funcionará cuando se conecte el backend.</p>
         </div>
         <div class="gen-modal-foot">
             <button type="button" class="gen-btn gen-btn-ghost" data-cerrar>Cancelar</button>
@@ -159,6 +156,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/dashboard.js') }}?v={{ filemtime(public_path('assets/js/admin_general/dashboard.js')) }}" defer></script>
 @endpush

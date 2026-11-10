@@ -1,11 +1,12 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Secretarías
    Cuentas de secretaría (rol admin) de todas las sedes: lista con filtros, crear/editar en 3 pasos,
-   activar/desactivar (con confirmación) y restablecer la clave. Guardar usa GEN_API mientras no hay backend.
+   activar/desactivar (con confirmación) y restablecer la clave. Los datos llegan en window.GEN_DATOS
+   (SecretariaController@index); guardar va por fetch a /general/secretarias (SecretariaRequest) y recarga con el aviso.
    Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 10;
@@ -38,6 +39,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -234,7 +265,7 @@
     }
     $('sec-conf-ok').addEventListener('click', function () {
         var b = this; b.disabled = true;
-        Promise.resolve(alConfirmar && alConfirmar()).then(function () { b.disabled = false; cerrarModal(); });
+        Promise.resolve(alConfirmar && alConfirmar()).catch(function (err) { b.disabled = false; cerrarModal(); toast(err.message); });
     });
 
     /* ── Activar / desactivar ───────────────────── */
@@ -247,14 +278,12 @@
                 'Desactivar cuenta',
                 otras ? '' : 'La sede ' + s.nombre + ' se queda sin secretaría activa: tendrás que registrar sus matrículas y pagos entrando a la sede, o crear otra cuenta.',
                 function () {
-                    return API.guardar('secretarias', { id: x.id, activo: false }, 'Desactivó la cuenta de secretaría de ' + nombre(x) + ' (sede ' + s.nombre + ').', 'desactivar', s.id)
-                        .then(function () { pintarKpis(); pintarTabla(); toast('Se desactivó la cuenta de ' + nombre(x) + '.'); });
+                    return enviar('PATCH', '/general/secretarias/' + x.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
                 });
         } else {
             confirmar('¿Activar la cuenta de ' + nombre(x) + '?', 'Podrá entrar otra vez con su correo y su clave a la sede ' + s.nombre + '.', 'Activar cuenta', '',
                 function () {
-                    return API.guardar('secretarias', { id: x.id, activo: true }, 'Activó la cuenta de secretaría de ' + nombre(x) + ' (sede ' + s.nombre + ').', 'activar', s.id)
-                        .then(function () { pintarKpis(); pintarTabla(); toast('Se activó la cuenta de ' + nombre(x) + '.'); });
+                    return enviar('PATCH', '/general/secretarias/' + x.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
                 });
         }
     }
@@ -282,10 +311,9 @@
         }
         if (p === 2) {
             var doc = v('documento').replace(/\D/g, ''), tel = v('telefono').replace(/\D/g, ''), correo = v('correo').toLowerCase();
-            var otro = function (campo, valor) { return D.secretarias.some(function (x) { return String(x[campo]).toLowerCase() === valor && (!editando || x.id !== editando.id); }); };
-            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el número de documento (solo números, de 6 a 12).' : otro('numero_documento', doc) ? 'Ya hay una cuenta con ese documento.' : '');
+            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el número de documento (solo números, de 6 a 12).' : '');
             err('telefono', !/^3\d{9}$/.test(tel) ? 'Escribe un celular de 10 dígitos que empiece por 3.' : '');
-            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe un correo válido.' : otro('email', correo) ? 'Ya hay una cuenta con ese correo.' : '');
+            err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe un correo válido.' : '');
         }
         if (p === 3) err('sede', cbFormSede.value() ? '' : 'Elige la sede.');
         var malo = CAMPOS[p].find(function (c) { return !document.querySelector('#sec-form [data-error="' + c + '"]').hidden; });
@@ -344,28 +372,32 @@
             tipo_documento: f('tipo').value, numero_documento: f('documento').value.replace(/\D/g, ''), telefono: f('telefono').value.replace(/\D/g, ''),
             email: f('correo').value.trim().toLowerCase(), sede_id: +cbFormSede.value()
         };
-        if (editando) reg.id = editando.id; else { reg.activo = true; reg.ultimo_acceso = null; reg.creada = new Date().toISOString(); }
-        var s = sedePorId(reg.sede_id), n = reg.nombres + ' ' + reg.apellidos, eraNueva = !editando;
-        var cambioSede = editando && editando.sede_id !== reg.sede_id;
-        var texto = eraNueva ? 'Creó la cuenta de secretaría de ' + n + ' en la sede ' + s.nombre + '.'
-            : 'Editó la cuenta de secretaría de ' + n + (cambioSede ? ' y la pasó a la sede ' + s.nombre : '') + '.';
         var btn = $('sec-siguiente'); btn.disabled = true;
-        API.guardar('secretarias', reg, texto, eraNueva ? 'crear' : 'editar', s.id).then(function () {
-            btn.disabled = false; cerrarModal(); pintarKpis(); filtrar();
-            toast(eraNueva ? 'Se creó la cuenta de ' + n + '. Su clave inicial es su número de documento.' : 'Se guardaron los cambios de ' + n + '.');
-        });
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/secretarias/' + editando.id : '/general/secretarias', reg)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                /* Lleva al paso del primer campo con error */
+                var CAMPO = { nombres: 'nombres', apellidos: 'apellidos', genero: 'genero', fecha_nacimiento: 'nacimiento', numero_documento: 'documento',
+                    tipo_documento: 'documento', telefono: 'telefono', email: 'correo', sede_id: 'sede' };
+                var k = Object.keys(fallo.errores || {}).find(function (c) { return CAMPO[c]; });
+                if (!k) { toast(fallo.message); return; }
+                var c = CAMPO[k], p = +Object.keys(CAMPOS).find(function (n) { return CAMPOS[n].indexOf(c) >= 0; });
+                irPaso(p); err(c, fallo.errores[k][0]);
+            });
     });
     $('sec-restablecer').addEventListener('click', function () {
         var x = editando;
         confirmar('¿Restablecer la clave de ' + nombre(x) + '?', 'Su clave volverá a ser su número de documento (' + x.numero_documento + ') y se cerrarán sus sesiones abiertas.', 'Restablecer clave', '',
             function () {
-                return API.guardar('secretarias', { id: x.id }, 'Restableció la clave de la secretaría ' + nombre(x) + '.', 'editar', x.sede_id)
-                    .then(function () { toast('La clave de ' + nombre(x) + ' volvió a ser su número de documento.'); });
+                return enviar('PATCH', '/general/secretarias/' + x.id + '/clave').then(function (r) { recargarConAviso(r.mensaje); });
             });
     });
 
     pintarKpis();
     filtrar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
     var nuevaEn = (location.search.match(/[?&]nueva=(\d+)/) || [])[1];
     if (nuevaEn) abrirForm(null, +nuevaEn);
 }());

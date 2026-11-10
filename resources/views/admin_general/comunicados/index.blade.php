@@ -1,8 +1,7 @@
-{{-- Comunicados (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Comunicados, autores y lecturas son ficticios; sedes reales. El Admin publica a todas las sedes o a algunas, por rol
-     (todos, estudiantes, docentes, acudientes, secretarías): publicar ahora, programar o guardar borrador. Ve también
-     los de las secretarías y los docentes, y los puede archivar con motivo. Un publicado no cambia de destinatarios ni
-     vuelve a borrador; solo se eliminan borradores propios. Lo hecho se guarda solo en la pestaña (GEN_API). --}}
+{{-- Comunicados (Admin de ESAT general). Datos reales: AdminGeneral ComunicadoController@index (ComunicacionService) los
+     pasa en window.GEN_DATOS. El Admin publica, programa o deja en borrador a todas o algunas sedes (una fila por sede,
+     agrupadas por lote) para todos o un rol; edita los suyos (un publicado no cambia de destinatarios ni de sedes), archiva
+     cualquiera con motivo y elimina sus borradores. comunicados.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Comunicados')
@@ -126,7 +125,6 @@
                         <label class="com-opcion"><input type="radio" name="destino" value="estudiantes"><span>Estudiantes</span></label>
                         <label class="com-opcion"><input type="radio" name="destino" value="docentes"><span>Docentes</span></label>
                         <label class="com-opcion"><input type="radio" name="destino" value="acudientes"><span>Acudientes</span></label>
-                        <label class="com-opcion"><input type="radio" name="destino" value="secretarias"><span>Secretarías</span></label>
                     </fieldset>
                     <p class="com-alcance" id="com-alcance"></p>
                     <p class="com-bloqueado" id="com-bloqueado" hidden>Ya está publicado: no se pueden cambiar las sedes ni los destinatarios.</p>
@@ -193,6 +191,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/comunicados.js') }}?v={{ filemtime(public_path('assets/js/admin_general/comunicados.js')) }}" defer></script>
 @endpush

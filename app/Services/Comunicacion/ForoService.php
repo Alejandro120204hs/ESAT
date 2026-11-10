@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ForoService
 {
-    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'acudiente' => 'a', 'admin' => 'x', 'superadmin' => 'x'];
+    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'acudiente' => 'a', 'admin' => 'x', 'admin_general' => 'x', 'superadmin' => 'x'];
 
     public function datosSede(int $sedeId): array
     {
@@ -59,6 +59,7 @@ class ForoService
                     ? str_replace('Técnico Laboral en ', '', $m->programa->nombre).($m->curso ? ' · '.$m->curso->nombre : '') : 'Estudiante',
                 RolUsuario::Docente   => $u->docentePerfil?->escuela?->nombre ?? 'Docente',
                 RolUsuario::Acudiente => $this->deQuien($u),
+                RolUsuario::AdminGeneral => 'Admin de ESAT',
                 default               => 'Secretaría',
             };
 

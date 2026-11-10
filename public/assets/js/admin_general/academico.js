@@ -149,12 +149,13 @@
     function docente(id) { return D.docentes.find(function (d) { return d.id === +id; }); }
     function corto(n) { return String(n || '').replace('Técnico Laboral en ', ''); }
     function nombreDoc(d) { return d ? d.nombres + ' ' + d.apellidos : 'Sin docente'; }
-    function estudiantesDe(g) { return D.estudiantes.filter(function (e) { return e.grupo_id === g.id && e.estado === 'activo'; }); }
-    function prom(l, k) { return l.length ? l.reduce(function (t, x) { return t + x[k]; }, 0) / l.length : 0; }
-    function asistenciaDe(g) { return Math.round(prom(estudiantesDe(g), 'asistencia')); }
-    function bajo80(g) { return estudiantesDe(g).filter(function (e) { return e.asistencia < 80; }).length; }
-    function promedioDe(g) { return prom(estudiantesDe(g), 'promedio'); }
-    function porHabilitar(g) { return estudiantesDe(g).filter(function (e) { return e.por_habilitar; }).length; }
+    /* Las cifras de cada grupo vienen del servidor con las reglas de la secretaría (AsistenciaService y CalificacionService) */
+    function asistenciaDe(g) { return g.asistencia; }
+    function bajo80(g) { return g.bajo80; }
+    function promedioDe(g) { return g.promedio; }
+    function porHabilitar(g) { return g.por_habilitar; }
+    function modulo(g) { var p = programa(g.programa_id); return g.modulo_actual != null && p.modulos[g.modulo_actual] ? p.modulos[g.modulo_actual] : null; }
+    function pctTxt(v) { return v == null ? '—' : v + ' %'; }
     function tag(par) { return '<span class="app-status-tag app-status-' + par[1] + '">' + esc(par[0]) + '</span>'; }
     function medidor(pct, bajo) { return '<div class="aca-medidor"><div class="aca-bar"><span class="' + (bajo ? 'is-baja' : '') + '" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></span></div><b>' + pct + ' %</b></div>'; }
     function nota(n) { return n ? n.toFixed(1).replace('.', ',') : '—'; }
@@ -199,7 +200,8 @@
     function pintarKpis() {
         var gs = D.grupos.filter(enSede), enClases = gs.filter(function (g) { return g.estado === 'en_clases'; });
         var docs = D.docentes.filter(function (d) { return d.estado === 'activo' && (!sel || d.sedes.indexOf(+sel) >= 0); });
-        var asis = Math.round(prom(D.estudiantes.filter(function (e) { return enSede(e) && e.estado === 'activo'; }), 'asistencia'));
+        var conAsis = enClases.filter(function (g) { return g.asistencia != null && g.estudiantes; }), pesos = conAsis.reduce(function (t, g) { return t + g.estudiantes; }, 0);
+        var asis = pesos ? Math.round(conAsis.reduce(function (t, g) { return t + g.asistencia * g.estudiantes; }, 0) / pesos) : 0;
         var sinReg = enClases.reduce(function (t, g) { return t + g.sin_registrar; }, 0), sinNota = enClases.reduce(function (t, g) { return t + g.sin_nota; }, 0);
         var k = [['blue', 'docente', num(docs.length), 'Docentes activos'], ['green', 'grupo', num(enClases.length), 'Grupos en clases · ' + gs.filter(function (g) { return g.estado === 'por_iniciar'; }).length + ' por iniciar'],
             [asis < 80 ? 'orange' : 'green', 'ok', asis + ' %', 'Asistencia promedio'], [sinReg + sinNota ? 'red' : 'green', 'alerta', num(sinReg) + ' · ' + num(sinNota), 'Clases sin registrar · módulos sin nota']];
@@ -220,14 +222,14 @@
                 }).sort(function (a, b) { var o = { en_clases: 0, por_iniciar: 1, finalizado: 2 }; return o[a.estado] - o[b.estado] || a.inicio.localeCompare(b.inicio); });
             },
             fila: function (g) {
-                var p = programa(g.programa_id), d = docente(g.docente_id), mod = p.modulos[g.modulo_actual];
-                var avance = g.estado === 'en_clases' ? '<div class="aca-muted aca-modulo">Módulo ' + (g.modulo_actual + 1) + ' de ' + p.modulos.length + ': ' + esc(mod.nombre) + '</div>' + medidor(g.avance) : g.estado === 'por_iniciar' ? '<span class="aca-muted">Empieza el ' + esc(fechaMini(g.inicio)) + '</span>' : '<span class="aca-muted">Terminó</span>';
+                var p = programa(g.programa_id), d = docente(g.docente_id), mod = modulo(g);
+                var avance = g.estado === 'en_clases' ? (mod ? '<div class="aca-muted aca-modulo">Módulo ' + (g.modulo_actual + 1) + ' de ' + p.modulos.length + ': ' + esc(mod.nombre) + '</div>' : '') + medidor(g.avance) : g.estado === 'por_iniciar' ? '<span class="aca-muted">Empieza el ' + esc(fechaMini(g.inicio)) + '</span>' : '<span class="aca-muted">Terminó</span>';
                 return '<tr class="aca-row" tabindex="0" data-grupo="' + g.id + '"><td><div class="aca-strong">' + esc(corto(p.nombre)) + '</div><div class="aca-muted">' + esc(g.nombre) + '</div></td>' +
                     '<td>' + esc(sede(g.sede_id).nombre) + '</td><td>' + esc(nombreDoc(d)) + '</td><td>' + esc(g.jornada) + '</td>' +
                     '<td class="aca-num">' + esc(fechaMini(g.inicio)) + '<div class="aca-muted">a ' + esc(fechaMini(g.fin)) + '</div></td><td>' + avance + '</td>' +
                     '<td class="aca-num">' + (g.estado === 'finalizado' ? '—' : g.estudiantes + ' / ' + g.cupo) + '</td><td>' + tag(EST_G[g.estado]) + '</td></tr>';
             },
-            csv: function (g) { var p = programa(g.programa_id); return [p.nombre, g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), g.jornada, g.inicio, g.fin, EST_G[g.estado][0], g.estudiantes, g.cupo, g.estado === 'en_clases' ? p.modulos[g.modulo_actual].nombre : '']; },
+            csv: function (g) { var p = programa(g.programa_id); return [p.nombre, g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), g.jornada, g.inicio, g.fin, EST_G[g.estado][0], g.estudiantes, g.cupo, g.estado === 'en_clases' && modulo(g) ? modulo(g).nombre : '']; },
             csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Jornada', 'Inicio', 'Fin', 'Estado', 'Estudiantes', 'Cupo', 'Módulo actual']
         },
         asistencia: {
@@ -239,15 +241,15 @@
                     if (f === 'sin_registrar' && !g.sin_registrar) return false;
                     if (f === 'bajo' && !bajo80(g)) return false;
                     return !q || normal(textoGrupo(g)).indexOf(q) !== -1;
-                }).sort(function (a, b) { return (b.sin_registrar - a.sin_registrar) || (asistenciaDe(a) - asistenciaDe(b)); });
+                }).sort(function (a, b) { return (b.sin_registrar - a.sin_registrar) || ((asistenciaDe(a) == null ? 101 : asistenciaDe(a)) - (asistenciaDe(b) == null ? 101 : asistenciaDe(b))); });
             },
             fila: function (g) {
                 var p = programa(g.programa_id), a = asistenciaDe(g), b = bajo80(g);
                 return '<tr class="aca-row" tabindex="0" data-grupo="' + g.id + '"><td><div class="aca-strong">' + esc(corto(p.nombre)) + '</div><div class="aca-muted">' + esc(g.nombre + ' · ' + g.jornada) + '</div></td>' +
-                    '<td>' + esc(sede(g.sede_id).nombre) + '</td><td>' + esc(nombreDoc(docente(g.docente_id))) + '</td><td>' + medidor(a, a < 80) + '</td>' +
+                    '<td>' + esc(sede(g.sede_id).nombre) + '</td><td>' + esc(nombreDoc(docente(g.docente_id))) + '</td><td>' + (a == null ? '<span class="aca-muted">Sin clases registradas</span>' : medidor(a, a < 80)) + '</td>' +
                     '<td class="aca-num' + (g.sin_registrar ? ' aca-mala' : '') + '">' + g.sin_registrar + '</td><td class="aca-num' + (b ? ' aca-mala' : '') + '">' + b + ' de ' + g.estudiantes + '</td></tr>';
             },
-            csv: function (g) { return [corto(programa(g.programa_id).nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), asistenciaDe(g) + ' %', g.sin_registrar, bajo80(g), g.estudiantes]; },
+            csv: function (g) { return [corto(programa(g.programa_id).nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), pctTxt(asistenciaDe(g)), g.sin_registrar, bajo80(g), g.estudiantes]; },
             csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Asistencia', 'Clases sin registrar', 'Estudiantes bajo 80 %', 'Estudiantes']
         },
         notas: {
@@ -265,11 +267,11 @@
                 var p = programa(g.programa_id), pr = promedioDe(g), h = porHabilitar(g);
                 return '<tr class="aca-row" tabindex="0" data-grupo="' + g.id + '"><td><div class="aca-strong">' + esc(corto(p.nombre)) + '</div><div class="aca-muted">' + esc(g.nombre) + '</div></td>' +
                     '<td>' + esc(sede(g.sede_id).nombre) + '</td><td>' + esc(nombreDoc(docente(g.docente_id))) + '</td>' +
-                    '<td>' + (g.modulo_actual + 1) + ' de ' + p.modulos.length + '<div class="aca-muted">' + esc(p.modulos[g.modulo_actual].nombre) + '</div></td>' +
+                    '<td>' + (modulo(g) ? (g.modulo_actual + 1) + ' de ' + p.modulos.length + '<div class="aca-muted">' + esc(modulo(g).nombre) + '</div>' : '<span class="aca-muted">—</span>') + '</td>' +
                     '<td class="aca-num"><span class="' + (pr < 3.5 ? 'aca-mala' : 'aca-strong') + '">' + nota(pr) + '</span></td>' +
                     '<td class="aca-num' + (g.sin_nota ? ' aca-mala' : '') + '">' + g.sin_nota + '</td><td class="aca-num' + (h ? ' aca-mala' : '') + '">' + h + '</td></tr>';
             },
-            csv: function (g) { var p = programa(g.programa_id); return [corto(p.nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), (g.modulo_actual + 1) + ' de ' + p.modulos.length, nota(promedioDe(g)), g.sin_nota, porHabilitar(g)]; },
+            csv: function (g) { var p = programa(g.programa_id); return [corto(p.nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), modulo(g) ? (g.modulo_actual + 1) + ' de ' + p.modulos.length : '', nota(promedioDe(g)), g.sin_nota, porHabilitar(g)]; },
             csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Módulo actual', 'Promedio', 'Módulos sin nota', 'Estudiantes por habilitar']
         }
     };
@@ -300,18 +302,31 @@
     function cerrar() { if (modal.hidden) return; modal.hidden = true; if (volver && document.contains(volver)) volver.focus(); }
     modal.querySelectorAll('[data-cerrar-modal]').forEach(function (b) { b.addEventListener('click', cerrar); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !document.querySelector('.app-combobox.is-open')) cerrar(); });
-    $('aca-md-entrar').addEventListener('click', function () { toast('Entrar a la sede ' + sede(sedeDetalle).nombre + ' funcionará cuando se conecte el backend.'); });
+
+    /* ── Entrar a la sede: grupos y horarios se manejan con las pantallas de la secretaría (EntrarSedeController) ── */
+    function entrarASede(id, destino) {
+        var f = document.createElement('form');
+        f.method = 'POST'; f.action = '/general/sedes/' + encodeURIComponent(id) + '/entrar';
+        [['_token', document.querySelector('meta[name="csrf-token"]').content], ['destino', destino || 'dashboard']].forEach(function (c) {
+            var i = document.createElement('input'); i.type = 'hidden'; i.name = c[0]; i.value = c[1]; f.appendChild(i);
+        });
+        document.body.appendChild(f); f.submit();
+    }
+    $('aca-md-entrar').addEventListener('click', function () {
+        this.disabled = true;
+        entrarASede(sedeDetalle, 'cursos');
+    });
     function info(f) { return '<div class="aca-info">' + f.map(function (x) { return '<div' + (x[2] ? ' class="aca-info-full"' : '') + '><span class="aca-info-lbl">' + esc(x[0]) + '</span><span class="aca-info-val">' + esc(x[1]) + '</span></div>'; }).join('') + '</div>'; }
     function abrirGrupo(id) {
-        var g = D.grupos.find(function (x) { return x.id === id; }), p = programa(g.programa_id), est = estudiantesDe(g);
+        var g = D.grupos.find(function (x) { return x.id === id; }), p = programa(g.programa_id);
         var horas = 0;
         abrir(corto(p.nombre) + ' · ' + g.nombre, 'Sede ' + sede(g.sede_id).nombre + ' · ' + EST_G[g.estado][0],
             info([['Docente', nombreDoc(docente(g.docente_id))], ['Jornada', g.jornada], ['Inicio', fechaMini(g.inicio)], ['Fin', fechaMini(g.fin)],
-                ['Estudiantes', g.estado === 'finalizado' ? '—' : g.estudiantes + ' de ' + g.cupo], ['Asistencia', est.length ? asistenciaDe(g) + ' %' : '—'],
-                ['Promedio', est.length ? nota(promedioDe(g)) : '—'], ['Clases sin registrar', String(g.sin_registrar)]]) +
+                ['Estudiantes', g.estado === 'finalizado' ? '—' : g.estudiantes + ' de ' + g.cupo], ['Asistencia', pctTxt(asistenciaDe(g))],
+                ['Promedio', nota(promedioDe(g))], ['Clases sin registrar', String(g.sin_registrar)]]) +
             '<h3 class="aca-seccion">Malla</h3><ol class="aca-malla">' + p.modulos.map(function (m, i) {
                 horas += m.horas;
-                var est2 = g.estado === 'finalizado' || (g.estado === 'en_clases' && i < g.modulo_actual) ? ['Terminado', 'muted'] : g.estado === 'en_clases' && i === g.modulo_actual ? ['En curso', 'active'] : ['Pendiente', 'warn'];
+                var est2 = g.estado === 'finalizado' || (g.estado === 'en_clases' && g.modulo_actual != null && i < g.modulo_actual) ? ['Terminado', 'muted'] : g.estado === 'en_clases' && i === g.modulo_actual ? ['En curso', 'active'] : ['Pendiente', 'warn'];
                 return '<li><span class="aca-malla-n">' + (i + 1) + '</span><span>' + esc(m.nombre) + '<span class="aca-muted"> · ' + m.horas + ' h</span></span>' + tag(est2) + '</li>';
             }).join('') + '</ol>', g.sede_id);
     }

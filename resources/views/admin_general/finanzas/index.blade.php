@@ -1,8 +1,6 @@
-{{-- Finanzas (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Recibos, cartera, egresos y devoluciones son ficticios (cuadran con el Inicio); sedes y programas son reales.
-     SOLO CONSULTA de todo ESAT o de una sede: Recaudo (por mes), Cartera (a hoy, por edades), Contabilidad (ingresos
-     − egresos por mes) y Devoluciones. Registrar o anular pagos y egresos se hace entrando a la sede. finanzas.js
-     pinta todo escapado, exporta a Excel (CSV) e imprime el recibo. --}}
+{{-- Finanzas (Admin de ESAT general): solo consulta. Datos reales: AdminGeneral FinanzasController@index (FinanzasService) los
+     pasa en window.GEN_DATOS: recibos, cartera de los estudiantes, egresos sin anular y devoluciones del último año de todas
+     las sedes. Cobrar, anular y registrar egresos se hace entrando a la sede. finanzas.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Finanzas')
@@ -200,6 +198,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/finanzas.js') }}?v={{ filemtime(public_path('assets/js/admin_general/finanzas.js')) }}" defer></script>
 @endpush

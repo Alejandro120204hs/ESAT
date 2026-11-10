@@ -13,6 +13,7 @@ class Auditoria extends Model
 
     protected $fillable = [
         'user_id',
+        'sede_id',
         'accion',
         'entidad_tipo',
         'entidad_id',
@@ -28,10 +29,12 @@ class Auditoria extends Model
      * Deja constancia de una acción del usuario autenticado.
      * $accion: crear | editar | eliminar | activar | desactivar
      */
-    public static function registrar(string $accion, Model $entidad, string $descripcion): self
+    public static function registrar(string $accion, Model $entidad, string $descripcion, ?int $sedeId = null): self
     {
         return static::create([
             'user_id'      => auth()->id(),
+            // La sede de lo que se cambió cuando el Admin actúa desde el panel general; si no, la de quien actúa
+            'sede_id'      => $sedeId ?? auth()->user()?->sedeTrabajoId(),   // la sede de la secretaría o la que eligió el Admin
             'accion'       => $accion,
             'entidad_tipo' => class_basename($entidad),
             'entidad_id'   => $entidad->getKey(),

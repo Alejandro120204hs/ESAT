@@ -16,7 +16,7 @@ class VinculoRequest extends FormRequest
     {
         $a = $this->route('acudiente');
 
-        return $a->role === RolUsuario::Acudiente && $a->sede_id === (int) $this->user()->sede_id;
+        return $a->role === RolUsuario::Acudiente && $a->sede_id === $this->sedeId();
     }
 
     public function rules(): array
@@ -41,7 +41,7 @@ class VinculoRequest extends FormRequest
 
     public function estudiante(): ?User
     {
-        return User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->user()->sede_id)
+        return User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->sedeId())
             ->find($this->input('estudiante_id'));
     }
 
@@ -52,5 +52,11 @@ class VinculoRequest extends FormRequest
             'parentesco.required'    => 'Selecciona el parentesco con el estudiante.',
             'parentesco.in'          => 'Selecciona el parentesco con el estudiante.',
         ];
+    }
+
+    /** Sede en la que se valida: la de trabajo (secretaría o Admin dentro de una sede). El panel general la sobrescribe. */
+    protected function sedeId(): int
+    {
+        return (int) $this->user()->sedeTrabajoId();
     }
 }

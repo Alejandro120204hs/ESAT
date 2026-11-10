@@ -1,7 +1,6 @@
-{{-- Docentes (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Docentes, grupos y datos personales ficticios; sedes, escuelas y programas reales. Decidido con el usuario: el Admin crea y
-     edita igual que la secretaría, pero en cualquier sede (la elige en el formulario). Mismas reglas: clave inicial = documento,
-     correo y documento únicos, celular ^3\d{9}$, mayor de edad, no se desactiva con grupos vigentes. Guarda en la pestaña (GEN_API). --}}
+{{-- Docentes (Admin de ESAT general). Datos reales: AdminGeneral DocenteController@index (PersonasService) los pasa en
+     window.GEN_DATOS: docentes de todas las sedes con sus grupos. Registrar y editar en la sede elegida con las reglas de la
+     secretaría, activar/desactivar (no con grupos vigentes) y restablecer la clave. Asignar grupos: entrando a la sede. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Docentes')
@@ -193,6 +192,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/docentes.js') }}?v={{ filemtime(public_path('assets/js/admin_general/docentes.js')) }}" defer></script>
 @endpush

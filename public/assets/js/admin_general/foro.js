@@ -2,10 +2,11 @@
    ESAT — Panel Admin (ESAT general): Foro
    Los foros de todas las sedes: lista con filtros, el tema con sus mensajes, moderación (ocultar con motivo,
    restaurar, descartar reportes, fijar, cerrar/reabrir) y participación como Admin (responder, abrir temas).
-   Guardar usa GEN_API. Los mensajes se pintan escapados (nunca como HTML).
+   Los datos llegan en window.GEN_DATOS (AdminGeneral ForoController@index); cada acción va por fetch a /general/foro
+   (las reglas de la secretaría) y recarga con el aviso. Los mensajes se pintan escapados (nunca como HTML).
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 10;
@@ -38,6 +39,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -126,7 +157,7 @@
     }
 
     /* ── Datos ──────────────────────────────────── */
-    var CATEGORIAS = ['Dudas académicas', 'Prácticas y salidas', 'Trámites y pagos', 'Vida en la sede'];
+    var CATEGORIAS = D.categorias;
     var ROL = { estudiante: 'Estudiante', docente: 'Docente', acudiente: 'Acudiente', secretaria: 'Secretaría', admin: 'Admin' };
     function sede(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
     function tema(id) { return D.foro.find(function (t) { return t.id === +id; }); }
@@ -137,7 +168,9 @@
     function ultima(t) { return t.mensajes.reduce(function (f, m) { return m.fecha > f ? m.fecha : f; }, primero(t).fecha); }
     function fechaHora(f) { var d = new Date(f); return fechaLarga(f) + ', ' + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }); }
     function iniciales(n) { var p = String(n || '').split(/\s+/); return ((p[0] || '').charAt(0) + (p[1] || '').charAt(0)).toUpperCase(); }
-    function guardarTema(t, texto, tipo) { return API.guardar('foro', JSON.parse(JSON.stringify(t)), texto, tipo || 'editar', t.sede_id); }
+    function accion(metodo, url, cuerpo, alFallar) {
+        return enviar(metodo, url, cuerpo).then(function (r) { recargarConAviso(r.mensaje); }).catch(function (err) { if (alFallar) alFallar(); toast(err.message); });
+    }
 
     /* ── Sede y filtros ─────────────────────────── */
     var sel = '', pagina = 1, filtrados = [];
@@ -239,30 +272,22 @@
     }
     function cerrarDrawer() { drawer.classList.remove('is-open'); drawer.setAttribute('aria-hidden', 'true'); if (volverDrawer && document.contains(volverDrawer)) volverDrawer.focus(); }
     drawer.querySelectorAll('[data-cerrar-drawer]').forEach(function (b) { b.addEventListener('click', cerrarDrawer); });
-    function despues(msg) { actual = tema(actual.id); pintarHilo(); pintarKpis(); pintarTabla(); toast(msg); }
     function msj(id) { return actual.mensajes.find(function (m) { return m.id === +id; }); }
 
     $('for-dw-fijar').addEventListener('click', function () {
-        var t = actual; t.fijado = !t.fijado;
-        guardarTema(t, (t.fijado ? 'Fijó' : 'Quitó de fijados') + ' el tema «' + t.titulo + '» del foro de ' + sede(t.sede_id).nombre + '.').then(function () { despues(t.fijado ? 'El tema quedó fijado arriba.' : 'El tema ya no está fijado.'); });
+        var b = this; b.disabled = true;
+        accion('PATCH', '/general/foro/temas/' + actual.id + '/estado', { fijado: !actual.fijado }, function () { b.disabled = false; });
     });
     $('for-dw-cerrar').addEventListener('click', function () {
-        var t = actual; t.cerrado = !t.cerrado;
-        guardarTema(t, (t.cerrado ? 'Cerró' : 'Reabrió') + ' el tema «' + t.titulo + '» del foro de ' + sede(t.sede_id).nombre + '.').then(function () { despues(t.cerrado ? 'Se cerró el tema: nadie más puede responder.' : 'Se reabrió el tema.'); });
+        var b = this; b.disabled = true;
+        accion('PATCH', '/general/foro/temas/' + actual.id + '/estado', { cerrado: !actual.cerrado }, function () { b.disabled = false; });
     });
     $('for-hilo').addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b) return;
-        var t = actual;
         if (b.dataset.ocultar) { pedirOcultar(msj(b.dataset.ocultar)); return; }
-        if (b.dataset.restaurar) {
-            var m = msj(b.dataset.restaurar); m.oculto = null;
-            guardarTema(t, 'Restauró un mensaje de ' + m.autor + ' en el tema «' + t.titulo + '».').then(function () { despues('Se restauró el mensaje.'); });
-        }
-        if (b.dataset.descartar) {
-            var m2 = msj(b.dataset.descartar);
-            m2.reportes.forEach(function (r) { if (r.estado === 'pendiente') r.estado = 'descartado'; });
-            guardarTema(t, 'Descartó los reportes de un mensaje de ' + m2.autor + ' en el tema «' + t.titulo + '».').then(function () { despues('Se descartaron los reportes: el mensaje sigue visible.'); });
-        }
+        var listo = function () { b.disabled = false; };
+        if (b.dataset.restaurar) { b.disabled = true; accion('PATCH', '/general/foro/mensajes/' + b.dataset.restaurar + '/restaurar', null, listo); }
+        if (b.dataset.descartar) { b.disabled = true; accion('PATCH', '/general/foro/mensajes/' + b.dataset.descartar + '/descartar', null, listo); }
     });
 
     /* ── Modales ────────────────────────────────── */
@@ -287,10 +312,8 @@
         e.preventDefault();
         var motivo = $('for-oc-motivo').value.trim();
         if (motivo.length < 5) { $('for-e-motivo').textContent = 'Escribe el motivo (mínimo 5 caracteres).'; $('for-e-motivo').hidden = false; $('for-oc-motivo').classList.add('is-invalid'); $('for-oc-motivo').focus(); return; }
-        var t = actual, m = ocultando;
-        m.oculto = { motivo: motivo, por: D.yo, fecha: new Date().toISOString() };
-        m.reportes.forEach(function (r) { if (r.estado === 'pendiente') r.estado = 'atendido'; });
-        guardarTema(t, 'Ocultó un mensaje de ' + m.autor + ' en el tema «' + t.titulo + '»: ' + motivo + '.').then(function () { cerrarModal(); despues('Se ocultó el mensaje.'); });
+        var b = this.querySelector('[type=submit]'); if (b) b.disabled = true;
+        accion('PATCH', '/general/foro/mensajes/' + ocultando.id + '/ocultar', { motivo: motivo }, function () { if (b) b.disabled = false; });
     });
     $('for-oc-motivo').addEventListener('input', function () { $('for-e-motivo').hidden = true; this.classList.remove('is-invalid'); });
 
@@ -301,12 +324,7 @@
         if (t.cerrado) return;
         if (texto.length < 2) { $('for-e-respuesta').textContent = 'Escribe la respuesta.'; $('for-e-respuesta').hidden = false; $('for-r-texto').focus(); return; }
         var b = $('for-r-enviar'); b.disabled = true;
-        var nuevo = Math.max.apply(null, D.foro.reduce(function (a, x) { return a.concat(x.mensajes.map(function (m) { return m.id; })); }, [0])) + 1;
-        t.mensajes.push({ id: nuevo, rol: 'admin', autor: D.yo, texto: texto, fecha: new Date().toISOString(), oculto: null, reportes: [] });
-        guardarTema(t, 'Respondió como Admin en el tema «' + t.titulo + '» (' + sede(t.sede_id).nombre + '): «' + texto.slice(0, 80) + (texto.length > 80 ? '…' : '') + '».', 'crear').then(function () {
-            b.disabled = false; $('for-r-texto').value = ''; despues('Se publicó tu respuesta.');
-            var hilo = drawer.querySelector('.for-drawer-body'); hilo.scrollTop = hilo.scrollHeight;
-        });
+        accion('POST', '/general/foro/temas/' + t.id + '/responder', { texto: texto }, function () { b.disabled = false; });
     });
     $('for-r-texto').addEventListener('input', function () { $('for-e-respuesta').hidden = true; });
 
@@ -327,12 +345,15 @@
         errF('titulo', ti.length < 5 ? 'Escribe un título de al menos 5 caracteres.' : ''); errF('texto', tx.length < 10 ? 'Escribe el mensaje (mínimo 10 caracteres).' : '');
         var malo = document.querySelector('#for-form .for-field-error:not([hidden])');
         if (malo) { malo.parentNode.querySelector('input, select, textarea').focus(); return; }
-        var idM = Math.max.apply(null, D.foro.reduce(function (a, x) { return a.concat(x.mensajes.map(function (m) { return m.id; })); }, [0])) + 1;
-        var t = { sede_id: +s, categoria: c, titulo: ti, fijado: $('for-f-fijar').checked, cerrado: false,
-            mensajes: [{ id: idM, rol: 'admin', autor: D.yo, texto: tx, fecha: new Date().toISOString(), oculto: null, reportes: [] }] };
-        API.guardar('foro', t, 'Abrió el tema «' + ti + '» en el foro de ' + sede(s).nombre + '.', 'crear', +s).then(function (r) {
-            cerrarModal(); pintarKpis(); pintarTabla(); toast('Se publicó el tema en el foro de ' + sede(s).nombre + '.'); abrirTema(r.id);
-        });
+        var btn = this.querySelector('[type=submit]'); if (btn) btn.disabled = true;
+        enviar('POST', '/general/foro/temas', { sede_id: +s, categoria: c, titulo: ti, texto: tx, fijado: $('for-f-fijar').checked })
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                if (btn) btn.disabled = false;
+                var CAMPO = { sede_id: 'sede', categoria: 'categoria', titulo: 'titulo', texto: 'texto' };
+                var k = Object.keys(fallo.errores || {}).find(function (x) { return CAMPO[x]; });
+                if (k) errF(CAMPO[k], fallo.errores[k][0]); else toast(fallo.message);
+            });
     });
 
     function pintar() {
@@ -340,4 +361,6 @@
         pintarKpis(); pagina = 1; pintarTabla();
     }
     pintar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

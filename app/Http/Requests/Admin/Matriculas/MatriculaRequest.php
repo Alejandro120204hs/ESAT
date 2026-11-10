@@ -47,7 +47,7 @@ class MatriculaRequest extends FormRequest
             if ($v->errors()->isNotEmpty()) {
                 return;
             }
-            $sedeId = (int) $this->user()->sede_id;
+            $sedeId = (int) $this->user()->sedeTrabajoId();
 
             $e = $this->estudiante();
             if (! $e) {
@@ -89,7 +89,7 @@ class MatriculaRequest extends FormRequest
 
     public function estudiante(): ?User
     {
-        return User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->user()->sede_id)->find($this->input('estudiante_id'));
+        return User::where('role', RolUsuario::Estudiante)->where('sede_id', $this->user()->sedeTrabajoId())->find($this->input('estudiante_id'));
     }
 
     public function grupo(): ?Curso

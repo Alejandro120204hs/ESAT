@@ -1,11 +1,11 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Configuración
    Datos de la institución, cuota del sistema y reglas de acceso (cada formulario con validación, Deshacer y
-   confirmación que muestra qué cambia), y desbloqueo de cuentas. Guardar usa GEN_API.guardarConfiguracion
+   confirmación que muestra qué cambia), y desbloqueo de cuentas. Los datos llegan en window.GEN_DATOS (ConfiguracionController@index);
    mientras no hay backend. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     /* ── Utilidades ─────────────────────────────── */
@@ -30,6 +30,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     function plata(n) { return '$ ' + num(n); }
@@ -60,7 +90,7 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
     $('cfg-conf-ok').addEventListener('click', function () {
         var b = this; b.disabled = true;
-        alConfirmar().then(function () { b.disabled = false; cerrar(); refrescar(); });
+        alConfirmar().then(function (r) { recargarConAviso(r.mensaje); }).catch(function (err) { b.disabled = false; cerrar(); toast(err.message); });
     });
 
     /* ── Formularios (cada uno con sus campos, validación y lo que se guarda) ── */
@@ -115,9 +145,8 @@
         if (malo) { malo.parentNode.querySelector('input').focus(); return; }
         var ref = inst.ref(), cambios = inst.difs().map(function (c) { return [c.etiqueta, c.texto ? c.texto(ref[c.k]) : ref[c.k], c.texto ? c.texto(v[c.k]) : v[c.k]]; });
         confirmar('¿Guardar los datos de la institución?', 'Los recibos y documentos que se impriman desde ahora en todas las sedes saldrán con estos datos.', cambios, 'Guardar', function () {
-            var nueva = Object.assign({}, C().institucion, v);
-            return API.guardarConfiguracion({ institucion: nueva }, 'Cambió los datos de la institución: ' + cambios.map(function (c) { return c[0].toLowerCase(); }).join(', ') + '.')
-                .then(function () { inst.cargar(); toast('Se guardaron los datos de la institución.'); });
+            var nueva = v;
+            return enviar('PUT', '/general/configuracion/institucion', nueva);
         });
     });
 
@@ -129,7 +158,7 @@
         var v = cobros.leer().cuota;
         $('cfg-ejemplo').innerHTML = v === '' ? 'Escribe el valor.' :
             'Ejemplo: si la cuota de un programa es de <strong>' + esc(plata(250000)) + '</strong>, el estudiante paga <strong>' + esc(plata(250000 + v)) + '</strong> al mes. ' +
-            'Con los ' + num(D.estudiantes.filter(function (e) { return e.estado === 'activo'; }).length) + ' estudiantes activos de hoy, son unos <strong>' + esc(plata(v * D.estudiantes.filter(function (e) { return e.estado === 'activo'; }).length)) + '</strong> al mes para el sistema.';
+            'Con los ' + num(D.activos) + ' estudiantes activos de hoy, son unos <strong>' + esc(plata(v * D.activos)) + '</strong> al mes para el sistema.';
     }
     $('cfg-cuota').addEventListener('input', function () { var d = digitos(this.value); this.value = d ? num(+d) : ''; ejemplo(); });
     cobros.form.addEventListener('submit', function (e) {
@@ -138,8 +167,7 @@
         err(cobros.form, 'cuota', v === '' ? 'Escribe el valor.' : v > 100000 ? 'Revisa el valor: es muy alto para una cuota del sistema.' : v % 100 ? 'Usa un valor redondo (múltiplo de $ 100).' : '');
         if (v === '' || v > 100000 || v % 100) { $('cfg-cuota').focus(); return; }
         confirmar('¿Cambiar la cuota del sistema?', 'Aplica a las cuotas que se generen desde ahora en todas las sedes. Las cuotas ya generadas no cambian.', [['Cuota del sistema', plata(ant), plata(v)]], 'Cambiar cuota', function () {
-            return API.guardarConfiguracion({ cuota_sistema: v }, 'Cambió la cuota del sistema de ' + plata(ant) + ' a ' + plata(v) + ' por mes.')
-                .then(function () { cobros.cargar(); ejemplo(); toast('La cuota del sistema quedó en ' + plata(v) + ' por mes.'); });
+            return enviar('PUT', '/general/configuracion/cobros', { cuota_sistema: v });
         });
     });
 
@@ -157,13 +185,12 @@
         if (malo) { malo.parentNode.querySelector('input').focus(); return; }
         var ref = seg.ref(), cambios = seg.difs().map(function (c) { return [c.etiqueta, String(ref[c.k]), String(v[c.k])]; });
         confirmar('¿Guardar las reglas de acceso?', 'Aplican desde ya a todas las cuentas de todas las sedes.', cambios, 'Guardar', function () {
-            return API.guardarConfiguracion({ seguridad: v }, 'Cambió las reglas de acceso: ' + cambios.map(function (c) { return c[0].toLowerCase() + ' de ' + c[1] + ' a ' + c[2]; }).join('; ') + '.')
-                .then(function () { seg.cargar(); toast('Se guardaron las reglas de acceso.'); });
+            return enviar('PUT', '/general/configuracion/seguridad', v);
         });
     });
 
     /* ── Cuentas bloqueadas ─────────────────────── */
-    var MOTIVO = { intentos_fallidos: 'Demasiados intentos fallidos', inactividad: 'Mucho tiempo sin entrar', manual: 'Bloqueada por la secretaría' };
+    var MOTIVO = D.configuracion.motivos;
     function pintarBloqueadas() {
         var l = C().bloqueadas || [];
         var n = $('cfg-num-bloq'); n.textContent = l.length; n.hidden = !l.length;
@@ -179,8 +206,7 @@
         var btn = e.target.closest('[data-desbloquear]'); if (!btn) return;
         var b = C().bloqueadas.find(function (x) { return x.id === +btn.dataset.desbloquear; }), s = sedePorId(b.sede_id);
         confirmar('¿Desbloquear la cuenta de ' + b.nombre + '?', 'Podrá entrar otra vez con su correo y su clave. Si no recuerda la clave, la secretaría de la sede puede restablecerla.', [], 'Desbloquear', function () {
-            return API.guardarConfiguracion({ bloqueadas: C().bloqueadas.filter(function (x) { return x.id !== b.id; }) }, 'Desbloqueó la cuenta de ' + b.nombre + ' (' + b.rol.toLowerCase() + ', sede ' + (s ? s.nombre : '') + ').')
-                .then(function () { pintarBloqueadas(); toast('Se desbloqueó la cuenta de ' + b.nombre + '.'); });
+            return enviar('PATCH', '/general/configuracion/bloqueadas/' + b.id);
         });
     });
 
@@ -221,4 +247,6 @@
     });
 
     inst.cargar(); cobros.cargar(); seg.cargar(); ejemplo(); pintarBloqueadas(); mostrarTab(); refrescar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

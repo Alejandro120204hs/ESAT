@@ -378,7 +378,7 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 `tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
-Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
+Panel Admin general: `tests/Feature/AdminGeneral/`. Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
 guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
 Sitio público (una página por programa, línea y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
@@ -479,18 +479,21 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   usuario (perfil real conectado a `route('profile.edit')` + cerrar
   sesión).
 
-## Panel Admin general (solo frontend, con datos de ejemplo)
+## Panel Admin general (backend real)
 
 - Rol `admin_general` (migración `2026_11_09_000001_add_admin_general_to_users_role`), `User::isAdminGeneral()`,
-  `panelUrl()` → `general.dashboard`. Rutas `/general` (closures con `role:admin_general`). Layout propio:
+  `panelUrl()` → `general.dashboard`. Rutas `/general` (`role:admin_general`, un controlador por pantalla en
+  `AdminGeneral/{Panel}/`, Form Requests en `Requests/AdminGeneral/{Panel}/`). Layout propio:
   `admin_general/layout.blade.php` + `partials/{sidebar,topbar}` (copiado del Docente), CSS/JS en
   `public/assets/{css,js}/admin_general/`. **Mi perfil** sí tiene backend real: `admin_general/profile.blade.php` +
   `profile.css` (el diseño del de la secretaría), guarda con `ProfileController@update` y la clave con `password.update`.
 - **Catálogo (decidido con el usuario, 2026-11-09)**: el **Admin** crea y edita escuelas y programas (malla, duración,
   cupo, jornadas) y fija el **precio, uno solo para todas las sedes**. La **secretaría solo elige cuáles programas del
-  catálogo ofrece su sede** (`programa_sede`) y ya no crea programas ni cambia precios: al conectar el backend hay que
-  ajustar Programas de la secretaría (`Admin/Programas/ProgramaController`) a esa regla. Un secretario solo cambia lo de su sede.
-- Pantallas (cada una con su Blade/CSS/JS y su prefijo; menú: Principal, Estructura, Personas, Seguimiento, Comunicación, Supervisión):
+  catálogo ofrece su sede** (`programa_sede`): Secretaría › Programas solo consulta y tiene "Agregar del catálogo" / "Dejar
+  de ofrecer en mi sede" (`PATCH admin/programas/{programa}/oferta`, no con grupos vigentes ni un inactivo); ya no tiene
+  rutas para crear/editar programas ni escuelas (su pestaña Escuelas es solo consulta).
+- Pantallas (cada una con su Blade/CSS/JS y su prefijo; menú: Principal, Estructura, Personas, Seguimiento, Comunicación y
+  Supervisión, que se despliega a un lado como Finanzas/Comunicación en la secretaría: `$desplegables` en el sidebar):
   - **Inicio** (`dashboard`, `gen-`): filtro de sede (chips, se recuerda), KPI con variación, comparación de sedes
     (fila = filtrar, botón "Entrar"), ingresos de 6 meses apilados por sede (8 colores fijos validados para daltonismo,
     `--sede-1..8`, también en Finanzas; la 9.ª sede repite color), alertas (sin secretaría, secretaría sin entrar 30+ días, mora ≥ 20 %,
@@ -513,7 +516,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     vincular (reemplaza al acudiente anterior) y desvincular (nunca a un menor), activar/desactivar cuenta, restablecer clave.
   - **Docentes** (`docentes/index`, `dcn-`): crear/editar en 3 pasos (sede, escuela, título, especialidad, vinculación),
     activar/desactivar (no con grupos vigentes), restablecer clave; no cambia de sede con grupos vigentes allá.
-  - En los tres, documento y correo no se repiten entre ninguna cuenta (secretarías, docentes, acudientes, estudiantes).
+  - En los tres, documento y correo no se repiten entre ninguna cuenta: lo revisa el servidor (el navegador ya no recibe
+    los documentos y correos de todas las cuentas para eso).
   - **Académico** (`academico/index`, `aca-`): solo consulta; sede + pestañas Grupos (avance por módulo),
     Asistencia (informativa) y Notas (módulos sin nota, por habilitar), detalle del grupo con su malla, exportar.
   - **Foro** (`foro/index`, `for-`): foros de todas las sedes; modera (ocultar con motivo —el primer mensaje oculta el
@@ -527,18 +531,44 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - **Auditoría** (`auditoria/index`, `aud-`): filtros de periodo, sede, persona y acción; detalle; exportar.
   - **Configuración** (`configuracion/index`, `cfg-`): institución (datos reales), cuota del sistema, reglas de acceso
     (intentos, días de inactividad) y desbloquear cuentas; cada formulario con Deshacer y confirmación.
-- "Entrar a la sede" (Inicio, Sedes, Estudiantes) solo abre el modal: falta el backend (sede elegida en la sesión +
-  pantallas de la secretaría con una franja). El Superadmin todavía conserva Sedes, Administradores y sus maquetas:
-  quitarle lo que pasó al Admin queda pendiente.
-- **Datos de ejemplo**: `public/assets/js/admin_general/datos-ejemplo.js` (`GEN_DATOS`, semilla fija; catálogo real de la
-  BD —10 programas con módulos, sin los 3 de prueba—, grupos con docente y estudiantes adentro, acudientes como registros
-  propios (`estudiante.acudiente_id` + `parentesco`; `sincronizar()` rearma `e.acudiente`), foro; cuadran entre
-  pantallas: recibos = ingresos del Inicio, morosos = cartera). Sedes, programas, NIT, licencia, teléfonos y cuota del
-  sistema son reales; personas y montos ficticios. `GEN_API.guardar()` / `guardarConfiguracion()` (Promise) es lo único
-  que escribe (sessionStorage por pestaña) y deja su evento en la auditoría. `window.GEN_YO` (layout) es el nombre del
-  Admin. Al conectar el backend: un controlador por pantalla en `AdminGeneral/{Panel}/` que pase los datos con `@json`
-  en la misma forma, y GEN_API por `fetch` con Form Requests.
-- Pruebas: `tests/Feature/AdminGeneral/PanelGeneralTest.php`.
+- **"Entrar a la sede" (backend real)**: `POST /general/sedes/{sede}/entrar` (`AdminGeneral/Sedes/EntrarSedeController`,
+  `destino` opcional de una lista cerrada) guarda la sede en la sesión (`User::SESION_SEDE`) y lleva a las pantallas
+  REALES de la secretaría (`/admin`, rutas con `role:admin,admin_general` + middleware `sede.trabajo` =
+  `EnsureSedeDeTrabajo`: sin sede elegida vuelve a `/general`, a un fetch 409). `POST /general/salir-de-sede` la quita.
+  El layout de la secretaría muestra la franja "Estás trabajando en la sede X como Admin · Volver al panel general".
+  **Regla**: toda pantalla, Form Request y vista de la secretaría lee la sede con `User::sedeTrabajoId()` /
+  `sedeTrabajo()` (la propia de la secretaría, o la elegida por el Admin), **nunca `sede_id` del usuario directo**.
+  `auditorias.sede_id` guarda la sede de cada acción (migración `2026_11_10_000001`); la actividad del Inicio de la
+  secretaría incluye lo que hizo el Admin en ella. Pruebas en `tests/Feature/AdminGeneral/EntrarSedeTest.php`.
+- El Superadmin todavía conserva Sedes, Administradores y sus maquetas: quitarle lo que pasó al Admin queda pendiente.
+- **Datos (backend real, 2026-11-10)**: cada controlador pasa lo de su pantalla con `window.GEN_DATOS = @json($datos)`
+  (la forma que leen los JS; ya no hay datos de ejemplo). Servicios en `app/Services/General/`: `EstructuraService` (sedes
+  con sus cifras de hoy y del cierre del mes anterior —activos, grupos, cupos, ingresos de 6 meses, mora con
+  `InicioService::mora`—, secretarías, escuelas, programas con malla y `con_notas`), `PersonasService` (estudiantes con
+  su matrícula, pagos de `PagoService::resumen`, asistencia y promedio; recibos con quién los registró; acudientes;
+  docentes con sus grupos), `AcademicoService` (grupos con los resúmenes de `AsistenciaService`/`CalificacionService` de
+  cada sede), `FinanzasService` (Finanzas y Reportes: recibos, egresos sin anular y devoluciones del último año),
+  `ComunicacionService` (comunicados agrupados por lote) y `SupervisionService` (auditoría del último año).
+- **Escrituras**: `fetch` con CSRF (`enviar()` en el JS de cada pantalla; 401/419 recarga, 422 marca el campo) y al
+  terminar `recargarConAviso()` (los datos y cifras vuelven del servidor). **Las reglas son las de la secretaría**: las Form
+  Requests del panel general **extienden** las de `Admin/` y solo cambian la sede (las de personas leen la sede de
+  `sedeId()`, que el general sobrescribe con la elegida) o agregan lo propio (malla del programa, sedes de un comunicado).
+  Todo queda en la auditoría con la sede afectada (`Auditoria::registrar(..., $sedeId)`).
+  - Programas: la malla se guarda en orden (conserva ids), las horas del programa = suma de módulos, y con notas puestas la
+    malla no cambia. Escuelas: sigla automática y fija (`siglaLibre`), no se eliminan con programas ni docentes.
+  - Estudiantes: el formulario pide lo mismo que la secretaría (nacimiento, residencia con el listado de Colombia —regla
+    `App\Rules\CiudadDeColombia`—); un menor puede registrarse con un acudiente nuevo en el mismo formulario.
+  - Comunicados a varias sedes: **una fila por sede con el mismo `comunicados.lote`** (migración `2026_11_10_000002`);
+    el Admin los ve, edita, archiva y elimina como uno solo. Destinos: todos (= sede), estudiantes, docentes, acudientes
+    (no hay destino "secretarías"). Sin adjunto. La secretaría no edita ni elimina los del Admin (sí los archiva en su sede).
+  - Foro: `ForoService` de la secretaría con Form Requests que extienden las suyas; sin adjuntos desde el panel general.
+  - Configuración: datos de la institución en `configuraciones` (`institucion_*`, por defecto los reales de
+    `Configuracion::INSTITUCION`) y salen en el encabezado de los documentos impresos de la secretaría; cuota del sistema;
+    reglas de acceso (`seguridad_intentos_maximos`, `seguridad_dias_inactividad`). **Bloqueo de cuentas real**
+    (`Sistema/BloqueoService`): intentos fallidos seguidos (`LoginRequest`) e inactividad (solo cuentas que ya ingresaron);
+    `EnsureAccountIsEnabled::motivo` no deja entrar a una bloqueada (el aviso solo sale con la clave correcta); el Admin y el
+    superadmin nunca se bloquean; el Admin desbloquea. Restablecer clave (`Sistema/SesionesService`) también cierra sus sesiones.
+- Pruebas: `tests/Feature/AdminGeneral/{PanelGeneral,EntrarSede,Estructura,Personas,ComunicacionConfiguracion}Test.php`.
 
 ## Panel Docente (datos reales)
 

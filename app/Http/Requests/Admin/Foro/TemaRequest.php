@@ -15,7 +15,7 @@ class TemaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()->sede_id;
+        return (bool) $this->user()->sedeTrabajoId();
     }
 
     protected function prepareForValidation(): void

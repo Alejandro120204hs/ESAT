@@ -65,7 +65,7 @@ trait ValidaAcudiente
                 $v->errors()->add('acudiente.id', 'Ese acudiente no está registrado.');
                 return;
             }
-            if ($acudiente->sede_id !== (int) $this->user()->sede_id) {
+            if ($acudiente->sede_id !== $this->sedeId()) {
                 $v->errors()->add('acudiente.id', 'Ese acudiente no está registrado en tu sede.');
                 return;
             }

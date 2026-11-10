@@ -94,7 +94,7 @@ class MatriculaController extends Controller
                 'metodos'         => Pago::METODOS,
                 'dia_vencimiento' => Pago::DIA_VENCIMIENTO,
                 'hoy'             => today()->toDateString(),
-                'sede'            => auth()->user()->sede?->nombre,
+                'sede'            => auth()->user()->sedeTrabajo()?->nombre,
             ],
         ]);
     }
@@ -210,7 +210,7 @@ class MatriculaController extends Controller
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return $sedeId;

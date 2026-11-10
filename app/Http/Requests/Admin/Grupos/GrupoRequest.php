@@ -38,7 +38,7 @@ class GrupoRequest extends FormRequest
                 return;
             }
 
-            $sedeId   = (int) $this->user()->sede_id;
+            $sedeId   = (int) $this->user()->sedeTrabajoId();
             $curso    = $this->route('curso');
             $programa = Programa::find($this->integer('programa_id'));
 

@@ -1,11 +1,12 @@
 /* =========================================================
    ESAT — Panel Admin (ESAT general): Comunicados
    Los comunicados de todo ESAT: lista con filtros, detalle, crear/editar/duplicar (todas o algunas sedes, por
-   rol; publicar, programar o borrador), archivar con motivo y eliminar borradores propios. Guardar usa GEN_API
-   mientras no hay backend. Todo lo de los datos va por esc().
+   rol; publicar, programar o borrador), archivar con motivo y eliminar borradores propios. Los datos llegan en
+   window.GEN_DATOS (AdminGeneral ComunicadoController@index); guardar va por fetch a /general/comunicados y recarga
+   con el aviso. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 10;
@@ -38,6 +39,36 @@
         toastEl.textContent = msg; toastEl.hidden = false;
         requestAnimationFrame(function () { toastEl.classList.add('is-visible'); });
         toastT = setTimeout(function () { toastEl.classList.remove('is-visible'); setTimeout(function () { toastEl.hidden = true; }, 220); }, 3800);
+    }
+
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
     }
 
     /* Paginación: botones numerados con saltos (…) */
@@ -127,11 +158,11 @@
 
     /* ── Datos ──────────────────────────────────── */
     var HOY = Date.now();
-    var DESTINO = { todos: 'Todos', estudiantes: 'Estudiantes', docentes: 'Docentes', acudientes: 'Acudientes', secretarias: 'Secretarías', grupo: 'Un grupo' };
+    var DESTINO = { todos: 'Todos', estudiantes: 'Estudiantes', docentes: 'Docentes', acudientes: 'Acudientes', grupo: 'Un grupo' };
     var ESTADO = { borrador: ['Borrador', 'muted'], programado: ['Programado', 'info'], publicado: ['Publicado', 'active'], archivado: ['Archivado', 'warn'] };
     var AUTOR = { admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente' };
     function sedePorId(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
-    function vivos() { return D.comunicados.filter(function (c) { return !c.eliminado; }); }
+    function vivos() { return D.comunicados; }
     /* Un programado sale solo cuando llega su hora */
     function estado(c) { return c.estado === 'programado' && new Date(c.publicado_en).getTime() <= HOY ? 'publicado' : c.estado; }
     function sedesDe(c) { return c.sedes === 'todas' ? D.sedes.map(function (s) { return s.id; }) : c.sedes; }
@@ -139,17 +170,12 @@
         var sedes = c.sedes === 'todas' ? 'Todas las sedes' : c.sedes.map(function (id) { var s = sedePorId(id); return s ? s.nombre : ''; }).join(', ');
         return { sedes: sedes, a: c.destino === 'grupo' ? c.grupo : DESTINO[c.destino] };
     }
-    /* Cuántos lo recibirían hoy (estudiantes activos, sus acudientes, docentes de los grupos y secretarías activas) */
+    /* Cuántos lo recibirían hoy: estudiantes con matrícula vigente, docentes y acudientes activos de cada sede (lo calcula el servidor) */
     function alcance(ids, destino) {
-        var n = 0;
-        ids.forEach(function (id) {
-            var s = sedePorId(id); if (!s) return;
-            var est = D.estudiantes.filter(function (e) { return e.sede_id === s.id && (e.estado === 'activo' || e.estado === 'aplazado'); });
-            var cuenta = { estudiantes: est.length, acudientes: est.filter(function (e) { return e.acudiente; }).length, docentes: s.grupos || 0,
-                secretarias: D.secretarias.filter(function (x) { return x.sede_id === s.id && x.activo; }).length };
-            n += destino === 'todos' ? cuenta.estudiantes + cuenta.acudientes + cuenta.docentes + cuenta.secretarias : (cuenta[destino] || 0);
-        });
-        return n;
+        return ids.reduce(function (n, id) {
+            var a = D.alcance[id]; if (!a) return n;
+            return n + (destino === 'todos' ? a.estudiantes + a.docentes + a.acudientes : (a[destino] || 0));
+        }, 0);
     }
     function pct(c) { return c.destinatarios ? Math.round(c.leidos / c.destinatarios * 100) : 0; }
     function fechaHora(f) { var d = new Date(f); return fechaLarga(f) + ', ' + d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }); }
@@ -280,15 +306,13 @@
             $('com-e-motivo').textContent = 'Escribe el motivo (mínimo 5 caracteres).'; $('com-e-motivo').hidden = false; $('com-conf-motivo').classList.add('is-invalid'); $('com-conf-motivo').focus(); return;
         }
         var btn = $('com-conf-ok'); btn.disabled = true;
-        var sedeAud = c.sedes !== 'todas' && c.sedes.length === 1 ? c.sedes[0] : null;
-        var cambio = accion === 'archivar' ? { id: c.id, estado: 'archivado', motivo_archivo: motivo } : { id: c.id, eliminado: true };
-        var texto = accion === 'archivar' ? 'Archivó el comunicado «' + c.titulo + '»: ' + motivo + '.' : 'Eliminó el borrador «' + c.titulo + '».';
-        API.guardar('comunicados', cambio, texto, accion === 'archivar' ? 'editar' : 'eliminar', sedeAud).then(function () {
-            btn.disabled = false; cerrarModal();
-            if (accion === 'eliminar') cerrarDrawer(); else abrirDrawer(c.id);
-            pintarKpis(); filtrar();
-            toast(accion === 'archivar' ? 'Se archivó el comunicado.' : 'Se eliminó el borrador.');
-        });
+        (accion === 'archivar' ? enviar('PATCH', '/general/comunicados/' + c.id + '/archivar', { motivo: motivo }) : enviar('DELETE', '/general/comunicados/' + c.id))
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                if (fallo.errores && fallo.errores.motivo) { $('com-e-motivo').textContent = fallo.errores.motivo[0]; $('com-e-motivo').hidden = false; $('com-conf-motivo').classList.add('is-invalid'); }
+                else { cerrarModal(); toast(fallo.message); }
+            });
     });
 
     /* ── Crear / editar ─────────────────────────── */
@@ -352,25 +376,21 @@
         var malo = document.querySelector('#com-form .com-field-error:not([hidden])');
         if (malo) { var campo = malo.parentNode.querySelector('input:not([type=radio]):not([type=checkbox]), textarea'); if (campo) campo.focus(); return; }
 
-        var destino = radio('destino'), ahora = new Date().toISOString(), ids = sedes === 'todas' ? D.sedes.map(function (s) { return s.id; }) : sedes;
-        var reg = editando ? { id: editando.id, titulo: titulo, mensaje: mensaje } : { autor: { tipo: 'admin', nombre: D.yo }, creado: ahora, leidos: 0 };
-        reg.titulo = titulo; reg.mensaje = mensaje;
-        if (!publicado) {
-            reg.sedes = sedes; reg.destino = destino;
-            reg.estado = cuando === 'ahora' ? 'publicado' : cuando === 'programar' ? 'programado' : 'borrador';
-            reg.publicado_en = cuando === 'ahora' ? ahora : cuando === 'programar' ? fecha.toISOString() : null;
-            reg.destinatarios = cuando === 'ahora' ? alcance(ids, destino) : 0;
-        }
-        var verbo = publicado ? 'Editó' : cuando === 'ahora' ? 'Publicó' : cuando === 'programar' ? 'Programó' : 'Guardó el borrador de';
-        var texto = verbo + ' el comunicado «' + titulo + '» para ' + (sedes === 'todas' ? 'todas las sedes' : ids.map(function (id) { return sedePorId(id).nombre; }).join(', ')) + '.';
+        var cuerpo = { sedes: sedes, destino: radio('destino'), titulo: titulo, mensaje: mensaje,
+            accion: { ahora: 'publicar', programar: 'programar', borrador: 'borrador' }[cuando], publicar_en: cuando === 'programar' ? $('com-f-fecha').value : null };
         var btn = $('com-guardar'); btn.disabled = true;
-        API.guardar('comunicados', reg, texto, editando ? 'editar' : 'crear', ids.length === 1 && sedes !== 'todas' ? ids[0] : null).then(function (r) {
-            btn.disabled = false; cerrarModal(); pintarKpis(); filtrar();
-            if (drawer.classList.contains('is-open')) abrirDrawer(r.id);
-            toast(cuando === 'programar' ? 'Quedó programado para el ' + fechaHora(reg.publicado_en) + '.' : cuando === 'borrador' ? 'Se guardó el borrador.' : publicado ? 'Se guardaron los cambios.' : 'Se publicó el comunicado.');
-        });
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/comunicados/' + editando.id : '/general/comunicados', cuerpo)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                var CAMPO = { sedes: 'sedes', 'sedes.0': 'sedes', titulo: 'titulo', mensaje: 'mensaje', publicar_en: 'fecha', destino: 'sedes' };
+                var k = Object.keys(fallo.errores || {}).find(function (c) { return CAMPO[c]; });
+                if (k) err(CAMPO[k], fallo.errores[k][0]); else toast(fallo.message);
+            });
     });
 
     pintarKpis();
     filtrar();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

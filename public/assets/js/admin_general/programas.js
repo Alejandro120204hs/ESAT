@@ -2,10 +2,12 @@
    ESAT — Panel Admin (ESAT general): Programas
    Catálogo de todo ESAT: programas (crear/editar en 3 pasos con malla, precio único para todas las sedes,
    activar/desactivar) y escuelas; en el detalle, a qué sedes se ofrece (la secretaría también lo elige en su sede).
-   Editar no puede invalidar grupos vigentes (cupo, jornadas). Guardar usa GEN_API. Todo lo de los datos va por esc().
+   Editar no puede invalidar grupos vigentes (cupo, jornadas, horas). Los datos llegan en window.GEN_DATOS
+   (AdminGeneral ProgramaController@index); guardar va por fetch a /general/programas y /general/escuelas (Form Requests
+   con las mismas reglas) y recarga con el aviso. Todo lo de los datos va por esc().
    ========================================================= */
 (function () {
-    var D = window.GEN_DATOS, API = window.GEN_API;
+    var D = window.GEN_DATOS;
     if (!D) return;
 
     var POR_PAGINA = 10;
@@ -129,19 +131,53 @@
         root.isOpen = function () { return !panel.hidden; };
     }
 
+    /* ── Guardar en el servidor (fetch con CSRF). 401/419: la sesión se cerró → recarga y el login explica el motivo ── */
+    var CSRF = document.querySelector('meta[name="csrf-token"]').content, AVISO = 'esat.general.aviso';
+    function enviar(metodo, url, cuerpo) {
+        var esForm = cuerpo instanceof FormData;
+        var h = { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF };
+        if (cuerpo && !esForm) h['Content-Type'] = 'application/json';
+        return fetch(url, { method: metodo, headers: h, body: cuerpo ? (esForm ? cuerpo : JSON.stringify(cuerpo)) : undefined })
+            .catch(function () { throw new Error('No hay conexión con el servidor. Revisa tu internet e intenta de nuevo.'); })
+            .then(function (r) {
+                if (r.status === 401 || r.status === 419) { location.reload(); return new Promise(function () {}); }
+                return r.json().catch(function () { return {}; }).then(function (j) {
+                    if (r.ok) return j;
+                    var errores = j.errors || null, primero = errores && errores[Object.keys(errores)[0]];
+                    var err = new Error((primero && primero[0]) || j.message || 'No se pudo guardar. Intenta de nuevo.');
+                    err.errores = errores;
+                    throw err;
+                });
+            });
+    }
+    /* Después de guardar se recarga la página (los datos y las cifras vuelven del servidor) y se muestra el aviso */
+    function recargarConAviso(msg) {
+        try { sessionStorage.setItem(AVISO, msg || 'Listo.'); } catch (e) { /* sin almacenamiento: recarga sin aviso */ }
+        var u = new URL(location.href);
+        ['nueva'].forEach(function (k) { u.searchParams.delete(k); });
+        location.replace(u.toString());
+    }
+    function avisoPendiente() {
+        try { var m = sessionStorage.getItem(AVISO); sessionStorage.removeItem(AVISO); return m; } catch (e) { return null; }
+    }
+
     function plata(n) { return '$ ' + num(n); }
     function digitos(t) { return String(t || '').replace(/\D/g, ''); }
 
     /* ── Datos ──────────────────────────────────── */
     var ESTADO = { activo: ['Activo', 'active'], en_aprobacion: ['En aprobación', 'warn'], inactivo: ['Inactivo', 'muted'] };
     var JORNADAS = ['Mañana', 'Tarde', 'Noche', 'Fines de semana'];
-    function escuelas() { return D.escuelas.filter(function (e) { return !e.eliminado; }); }
+    function escuelas() { return D.escuelas; }
     function escuela(id) { return D.escuelas.find(function (e) { return e.id === +id; }); }
     function programa(id) { return D.programas.find(function (p) { return p.id === +id; }); }
     function sedesQueOfrecen(p) { return D.sedes.filter(function (s) { return (s.programas || []).indexOf(p.id) >= 0; }); }
     function vigentes(p, sedeId) { return D.grupos.filter(function (g) { return g.programa_id === p.id && g.estado !== 'finalizado' && (!sedeId || g.sede_id === sedeId); }); }
-    function activosDe(p, sedeId) { return D.estudiantes.filter(function (e) { return e.programa_id === p.id && e.estado === 'activo' && (!sedeId || e.sede_id === sedeId); }).length; }
-    function horas(p) { return (p.modulos || []).reduce(function (t, m) { return t + m.horas; }, 0); }
+    function activosDe(p, sedeId) {
+        var a = p.activos || {};
+        return sedeId ? (a[sedeId] || 0) : Object.keys(a).reduce(function (t, k) { return t + a[k]; }, 0);
+    }
+    /* Las horas son la suma de la malla; un programa todavía sin malla muestra las que tiene registradas */
+    function horas(p) { return (p.modulos || []).length ? p.modulos.reduce(function (t, m) { return t + m.horas; }, 0) : (p.horas || 0); }
     function mensual(p) { return Math.round(p.precio_total / p.duracion_meses); }
     function tag(e) { return '<span class="app-status-tag app-status-' + ESTADO[e][1] + '">' + ESTADO[e][0] + '</span>'; }
 
@@ -160,7 +196,7 @@
     /* ── KPI ────────────────────────────────────── */
     function pintarKpis() {
         var act = D.programas.filter(function (p) { return p.estado === 'activo'; }).length, apr = D.programas.filter(function (p) { return p.estado === 'en_aprobacion'; }).length;
-        var est = D.estudiantes.filter(function (e) { return e.estado === 'activo'; }).length;
+        var est = D.programas.reduce(function (t, p) { return t + activosDe(p); }, 0);
         var k = [['green', 'libro', num(act), 'Programas activos'], ['orange', 'reloj', num(apr), 'En aprobación'], ['blue', 'escuela', num(escuelas().length), 'Escuelas'], ['blue', 'persona', num(est), 'Estudiantes activos']];
         $('prg-kpis').innerHTML = k.map(function (x) { return '<div class="prg-kpi prg-kpi-' + x[0] + '"><div class="prg-kpi-icon">' + ICON[x[1]] + '</div><div><div class="prg-kpi-val">' + esc(x[2]) + '</div><div class="prg-kpi-lbl">' + esc(x[3]) + '</div></div></div>'; }).join('');
     }
@@ -247,12 +283,10 @@
         var b = e.target.closest('[data-sede]'); if (!b || b.disabled) return;
         var s = D.sedes.find(function (x) { return x.id === +b.dataset.sede; }), p = actual, on = (s.programas || []).indexOf(p.id) >= 0;
         if (on && vigentes(p, s.id).length) { toast('No se puede quitar de ' + s.nombre + ': tiene ' + vigentes(p, s.id).length + ' grupo(s) vigente(s). Se quita cuando terminen.'); return; }
-        var lista = on ? s.programas.filter(function (x) { return x !== p.id; }) : (s.programas || []).concat([p.id]);
         b.disabled = true;
-        API.guardar('sedes', { id: s.id, programas: lista }, (on ? 'Quitó' : 'Asignó') + ' el programa ' + p.nombre + (on ? ' de' : ' a') + ' la sede ' + s.nombre + '.', 'editar', s.id).then(function () {
-            pintarSedesDrawer(); pintarTabla();
-            toast(on ? 'La sede ' + s.nombre + ' ya no ofrece ' + p.nombre.replace('Técnico Laboral en ', '') + '.' : 'La sede ' + s.nombre + ' ya puede abrir grupos de ' + p.nombre.replace('Técnico Laboral en ', '') + '.');
-        });
+        enviar('PATCH', '/general/programas/' + p.id + '/sedes/' + s.id)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (err) { b.disabled = false; toast(err.message); });
     });
     function cerrarDrawer() { drawer.classList.remove('is-open'); drawer.setAttribute('aria-hidden', 'true'); if (volverDrawer && document.contains(volverDrawer)) volverDrawer.focus(); }
     drawer.querySelectorAll('[data-cerrar-drawer]').forEach(function (b) { b.addEventListener('click', cerrarDrawer); });
@@ -278,7 +312,10 @@
         $('prg-conf-titulo').textContent = titulo; $('prg-conf-texto').textContent = texto; $('prg-conf-ok').textContent = boton;
         alConfirmar = accion; abrirModal('prg-confirmar', $('prg-conf-ok'));
     }
-    $('prg-conf-ok').addEventListener('click', function () { var b = this; b.disabled = true; alConfirmar().then(function () { b.disabled = false; cerrarModal(); }); });
+    $('prg-conf-ok').addEventListener('click', function () {
+        var b = this; b.disabled = true;
+        alConfirmar().catch(function (err) { b.disabled = false; cerrarModal(); toast(err.message); });
+    });
 
     /* Activar / desactivar */
     $('prg-dw-estado').addEventListener('click', function () {
@@ -287,15 +324,14 @@
             var gv = vigentes(p).length;
             if (gv) { toast('No se puede desactivar: tiene ' + gv + ' grupo(s) vigente(s) en las sedes. Se desactiva cuando terminen.'); return; }
             confirmar('¿Desactivar ' + p.nombre + '?', 'Ninguna sede podrá abrir grupos nuevos de este programa. Los estudiantes que ya lo terminaron conservan su historial.', 'Desactivar', function () {
-                return API.guardar('programas', { id: p.id, estado: 'inactivo' }, 'Desactivó el programa ' + p.nombre + '.', 'desactivar', null).then(function () { refrescar(p.id); toast('Se desactivó el programa.'); });
+                return enviar('PATCH', '/general/programas/' + p.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
             });
         } else {
             confirmar('¿Activar ' + p.nombre + '?', 'Las sedes que lo ofrecen podrán volver a abrir grupos.', 'Activar', function () {
-                return API.guardar('programas', { id: p.id, estado: 'activo' }, 'Activó el programa ' + p.nombre + '.', 'activar', null).then(function () { refrescar(p.id); toast('Se activó el programa.'); });
+                return enviar('PATCH', '/general/programas/' + p.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
             });
         }
     });
-    function refrescar(id) { pintarKpis(); pintarTabla(); pintarEscuelas(); if (id && drawer.classList.contains('is-open')) abrirDrawer(id, drawer.querySelector('.prg-tab.is-active').dataset.tab); }
 
     /* ── Formulario de programa (3 pasos) ───────── */
     var paso = 1, editando = null, malla = [];
@@ -319,13 +355,14 @@
     }
     f('meses').addEventListener('input', resumenPrecio); f('periodo').addEventListener('change', resumenPrecio);
     function pintarMalla() {
+        var bloq = editando && editando.con_notas ? ' disabled' : '';
         $('prg-malla-edit').innerHTML = malla.map(function (m, i) {
             return '<li data-i="' + i + '"><span class="prg-malla-n">' + (i + 1) + '</span>' +
-                '<input type="text" class="prg-mod-nombre" value="' + esc(m.nombre) + '" maxlength="100" placeholder="Nombre del módulo" aria-label="Nombre del módulo ' + (i + 1) + '">' +
-                '<input type="number" class="prg-mod-horas" value="' + (m.horas || '') + '" min="8" max="2000" step="8" placeholder="Horas" aria-label="Horas del módulo ' + (i + 1) + '">' +
-                '<span class="prg-mod-acc"><button type="button" class="prg-icon-btn" data-mover="-1" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>' + ICON.arriba + '</button>' +
-                '<button type="button" class="prg-icon-btn" data-mover="1" aria-label="Bajar"' + (i === malla.length - 1 ? ' disabled' : '') + '>' + ICON.abajo + '</button>' +
-                '<button type="button" class="prg-icon-btn" data-quitar aria-label="Quitar módulo"' + (malla.length <= 1 ? ' disabled' : '') + '>' + ICON.quitar + '</button></span></li>';
+                '<input type="text" class="prg-mod-nombre" value="' + esc(m.nombre) + '"' + bloq + ' maxlength="100" placeholder="Nombre del módulo" aria-label="Nombre del módulo ' + (i + 1) + '">' +
+                '<input type="number" class="prg-mod-horas" value="' + (m.horas || '') + '"' + bloq + ' min="8" max="2000" step="8" placeholder="Horas" aria-label="Horas del módulo ' + (i + 1) + '">' +
+                '<span class="prg-mod-acc"><button type="button" class="prg-icon-btn" data-mover="-1" aria-label="Subir"' + (i === 0 || bloq ? ' disabled' : '') + '>' + ICON.arriba + '</button>' +
+                '<button type="button" class="prg-icon-btn" data-mover="1" aria-label="Bajar"' + (i === malla.length - 1 || bloq ? ' disabled' : '') + '>' + ICON.abajo + '</button>' +
+                '<button type="button" class="prg-icon-btn" data-quitar aria-label="Quitar módulo"' + (malla.length <= 1 || bloq ? ' disabled' : '') + '>' + ICON.quitar + '</button></span></li>';
         }).join('');
         totalMalla();
     }
@@ -346,9 +383,8 @@
     function validar(p) {
         var v = function (id) { return f(id).value.trim(); };
         if (p === 1) {
-            var otro = function (k, val) { return D.programas.some(function (x) { return normal(x[k]) === normal(val) && (!editando || x.id !== editando.id); }); };
-            err('nombre', v('nombre').length < 10 ? 'Escribe el nombre completo del programa.' : otro('nombre', v('nombre')) ? 'Ya hay un programa con ese nombre.' : '');
-            err('codigo', !/^[A-Za-z0-9-]{4,20}$/.test(v('codigo')) ? 'Escribe el código (letras, números y guiones).' : otro('codigo', v('codigo')) ? 'Ese código ya lo tiene otro programa.' : '');
+            err('nombre', v('nombre').length < 10 ? 'Escribe el nombre completo del programa.' : '');
+            err('codigo', !/^[A-Za-z0-9-]{4,20}$/.test(v('codigo')) ? 'Escribe el código (letras, números y guiones).' : '');
             err('escuela', v('escuela') ? '' : 'Elige la escuela.');
             err('resolucion', v('resolucion').length < 5 ? 'Escribe la resolución o «En trámite».' : '');
             var jor = jornadasMarcadas(), usadas = editando ? vigentes(editando).map(function (g) { return g.jornada; }) : [];
@@ -382,16 +418,19 @@
     }
     function abrirForm(id) {
         editando = id ? programa(id) : null;
-        var p = editando || { nombre: '', codigo: '', escuela_id: '', modalidad: 'Presencial', estado: 'activo', resolucion: '', jornadas: [], cupo: 25, duracion_meses: 10, tipo_periodo: 'trimestre', precio_total: '', matricula: '', modulos: [{ nombre: '', horas: 0 }] };
-        f('nombre').value = p.nombre; f('codigo').value = p.codigo; f('escuela').value = p.escuela_id || ''; f('modalidad').value = p.modalidad;
+        var p = editando || { nombre: '', codigo: '', escuela_id: '', nivel: 'Técnico Laboral', modalidad: 'Presencial', estado: 'activo', resolucion: '', jornadas: [], cupo: 25, duracion_meses: 10, tipo_periodo: 'trimestre', precio_total: '', matricula: '', modulos: [{ nombre: '', horas: 0 }] };
+        f('nombre').value = p.nombre; f('codigo').value = p.codigo; f('escuela').value = p.escuela_id || ''; f('modalidad').value = p.modalidad; f('nivel').value = p.nivel || 'Técnico Laboral';
         f('estado').value = p.estado === 'inactivo' ? 'activo' : p.estado; f('resolucion').value = p.resolucion; f('cupo').value = p.cupo;
         document.querySelectorAll('#prg-f-jornadas input').forEach(function (i) { i.checked = p.jornadas.indexOf(i.value) >= 0; });
         f('meses').value = p.duracion_meses; f('periodo').value = p.tipo_periodo;
         f('precio').value = p.precio_total ? num(p.precio_total) : ''; f('matricula').value = p.matricula !== '' ? num(p.matricula) : '';
-        malla = p.modulos.map(function (m) { return { nombre: m.nombre, horas: m.horas }; });
+        malla = p.modulos.length ? p.modulos.map(function (m) { return { nombre: m.nombre, horas: m.horas }; }) : [{ nombre: '', horas: 0 }];
         document.querySelectorAll('#prg-form .prg-field-error').forEach(function (e) { e.hidden = true; });
         document.querySelectorAll('#prg-form .is-invalid').forEach(function (e) { e.classList.remove('is-invalid'); });
         $('prg-modal-titulo').textContent = editando ? 'Editar ' + editando.nombre.replace('Técnico Laboral en ', '') : 'Nuevo programa';
+        /* Con notas puestas la malla ya no se cambia (el servidor también lo revisa) */
+        $('prg-malla-bloqueada').hidden = !(editando && editando.con_notas);
+        $('prg-mod-agregar').hidden = !!(editando && editando.con_notas);
         abrirModal('prg-modal', f('nombre'));
         irPaso(1);
     }
@@ -404,32 +443,32 @@
         e.preventDefault();
         if (!validar(paso)) return;
         if (paso < 3) { irPaso(paso + 1); return; }
-        var meses = +f('meses').value;
-        var reg = { nombre: f('nombre').value.trim(), codigo: f('codigo').value.trim().toUpperCase(), escuela_id: +f('escuela').value, nivel: 'Técnico Laboral', modalidad: f('modalidad').value,
-            estado: f('estado').value, resolucion: f('resolucion').value.trim(), jornadas: JORNADAS.filter(function (j) { return jornadasMarcadas().indexOf(j) >= 0; }), cupo: +f('cupo').value,
-            duracion_meses: meses, tipo_periodo: f('periodo').value, duracion_periodos: periodos(), precio_total: dinero('precio'), matricula: dinero('matricula'),
+        var reg = { nombre: f('nombre').value.trim(), codigo: f('codigo').value.trim().toUpperCase(), escuela_id: +f('escuela').value, nivel: f('nivel').value,
+            modalidad: f('modalidad').value, estado: editando && editando.estado === 'inactivo' ? 'inactivo' : f('estado').value, resolucion: f('resolucion').value.trim(),
+            jornadas: JORNADAS.filter(function (j) { return jornadasMarcadas().indexOf(j) >= 0; }), cupo_grupo: +f('cupo').value,
+            duracion_meses: +f('meses').value, tipo_periodo: f('periodo').value, precio_total: dinero('precio'), matricula: dinero('matricula'),
             modulos: malla.map(function (m) { return { nombre: m.nombre.trim(), horas: +m.horas }; }) };
-        reg.horas = reg.modulos.reduce(function (t, m) { return t + m.horas; }, 0);
-        var eraNuevo = !editando, cambios = [];
-        if (editando) {
-            reg.id = editando.id;
-            if (editando.precio_total !== reg.precio_total) cambios.push('precio de ' + plata(editando.precio_total) + ' a ' + plata(reg.precio_total));
-            if (editando.matricula !== reg.matricula) cambios.push('matrícula de ' + plata(editando.matricula) + ' a ' + plata(reg.matricula));
-            if (editando.duracion_meses !== reg.duracion_meses) cambios.push('duración de ' + editando.duracion_meses + ' a ' + reg.duracion_meses + ' meses (se recalcula el fin de sus grupos)');
-        }
-        var texto = eraNuevo ? 'Creó el programa ' + reg.nombre + ' (' + reg.codigo + ') por ' + plata(reg.precio_total) + '.' : 'Editó el programa ' + reg.nombre + (cambios.length ? ': ' + cambios.join('; ') : '') + '.';
         var btn = $('prg-siguiente'); btn.disabled = true;
-        API.guardar('programas', reg, texto, eraNuevo ? 'crear' : 'editar', null).then(function (r) {
-            btn.disabled = false; cerrarModal(); refrescar(drawer.classList.contains('is-open') ? reg.id : null);
-            toast(eraNuevo ? 'Se creó el programa. Ahora asígnalo a las sedes o deja que cada secretaría lo active.' : 'Se guardaron los cambios del programa' + (cambios.length ? ': ' + cambios.join('; ') : '') + '.');
-            if (eraNuevo) abrirDrawer(r.id, 'sedes');
-        });
+        enviar(editando ? 'PUT' : 'POST', editando ? '/general/programas/' + editando.id : '/general/programas', reg)
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) {
+                btn.disabled = false;
+                /* Lleva al paso del primer campo con error */
+                var CAMPO = { nombre: ['nombre', 1], codigo: ['codigo', 1], escuela_id: ['escuela', 1], resolucion: ['resolucion', 1], jornadas: ['jornadas', 1],
+                    cupo_grupo: ['cupo', 1], nivel: ['nombre', 1], modalidad: ['nombre', 1], estado: ['nombre', 1], duracion_meses: ['meses', 2], tipo_periodo: ['meses', 2],
+                    precio_total: ['precio', 2], matricula: ['matricula', 2], horas: ['malla', 3], modulos: ['malla', 3] };
+                var claves = Object.keys(fallo.errores || {});
+                var k = claves.find(function (c) { return CAMPO[c.indexOf('modulos.') === 0 ? 'modulos' : c]; });
+                if (!k) { toast(fallo.message); return; }
+                var c = CAMPO[k.indexOf('modulos.') === 0 ? 'modulos' : k];
+                irPaso(c[1]); err(c[0], fallo.errores[k][0]);
+            });
     });
 
     /* ── Escuelas ───────────────────────────────── */
     function pintarEscuelas() {
         $('prg-esc-body').innerHTML = escuelas().map(function (e) {
-            var np = D.programas.filter(function (p) { return p.escuela_id === e.id; }).length, nd = D.docentes.filter(function (d) { return d.escuela_id === e.id; }).length;
+            var np = e.programas, nd = e.docentes;
             return '<tr class="prg-row" tabindex="0" data-esc="' + e.id + '"><td class="prg-strong">' + esc(e.nombre) + '</td><td>' + esc(e.sigla) + '</td><td class="prg-num">' + np + '</td><td class="prg-num">' + nd + '</td>' +
                 '<td class="prg-actions"><button type="button" class="prg-icon-btn" data-esc-editar="' + e.id + '" aria-label="Editar ' + esc(e.nombre) + '">' + ICON.editar + '</button></td></tr>';
         }).join('');
@@ -440,7 +479,8 @@
     function abrirEscuela(id) {
         escEditando = id ? escuela(id) : null;
         $('prg-e-nombre').value = escEditando ? escEditando.nombre : ''; $('prg-e-sigla').value = escEditando ? escEditando.sigla : '';
-        errE('e-nombre', ''); errE('e-sigla', '');
+        $('prg-e-sigla-campo').hidden = !escEditando;   // la sigla se genera al crearla y no cambia
+        errE('e-nombre', '');
         $('prg-esc-titulo').textContent = escEditando ? 'Editar escuela' : 'Nueva escuela';
         $('prg-esc-guardar').textContent = escEditando ? 'Guardar cambios' : 'Crear escuela';
         $('prg-esc-eliminar').hidden = !escEditando;
@@ -448,29 +488,27 @@
     }
     $('prg-esc-body').addEventListener('click', function (e) { var tr = e.target.closest('[data-esc]'); if (tr) abrirEscuela(+tr.dataset.esc); });
     $('prg-esc-body').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-esc]')) { e.preventDefault(); abrirEscuela(+e.target.dataset.esc); } });
-    ['e-nombre', 'e-sigla'].forEach(function (c) { $('prg-' + c).addEventListener('input', function () { errE(c, ''); }); });
+    $('prg-e-nombre').addEventListener('input', function () { errE('e-nombre', ''); });
     $('prg-esc-form').addEventListener('submit', function (ev) {
         ev.preventDefault();
-        var nombre = $('prg-e-nombre').value.trim(), sigla = $('prg-e-sigla').value.trim().toUpperCase();
-        var otra = function (k, v) { return escuelas().some(function (x) { return normal(x[k]) === normal(v) && (!escEditando || x.id !== escEditando.id); }); };
-        errE('e-nombre', nombre.length < 3 ? 'Escribe el nombre.' : otra('nombre', nombre) ? 'Ya hay una escuela con ese nombre.' : '');
-        errE('e-sigla', !/^[A-ZÑ]{3,4}$/.test(sigla) ? 'Escribe 3 o 4 letras.' : otra('sigla', sigla) ? 'Esa sigla ya la tiene otra escuela.' : '');
-        if (!document.querySelector('#prg-esc-form .prg-field-error:not([hidden])')) {
-            var reg = { nombre: nombre, sigla: sigla }; if (escEditando) reg.id = escEditando.id;
-            API.guardar('escuelas', reg, (escEditando ? 'Editó la escuela ' : 'Creó la escuela ') + nombre + ' (' + sigla + ').', escEditando ? 'editar' : 'crear', null).then(function () {
-                cerrarModal(); pintarEscuelas(); pintarKpis(); pintarTabla(); toast(escEditando ? 'Se guardó la escuela.' : 'Se creó la escuela ' + nombre + '.');
-            });
-        }
+        var nombre = $('prg-e-nombre').value.trim().replace(/\s+/g, ' ');
+        var otra = escuelas().some(function (x) { return normal(x.nombre) === normal(nombre) && (!escEditando || x.id !== escEditando.id); });
+        errE('e-nombre', nombre.length < 3 ? 'Escribe el nombre.' : otra ? 'Ya hay una escuela con ese nombre.' : '');
+        if (document.querySelector('#prg-esc-form .prg-field-error:not([hidden])')) return;
+        var btn = $('prg-esc-guardar'); btn.disabled = true;
+        enviar(escEditando ? 'PUT' : 'POST', escEditando ? '/general/escuelas/' + escEditando.id : '/general/escuelas', { nombre: nombre })
+            .then(function (r) { recargarConAviso(r.mensaje); })
+            .catch(function (fallo) { btn.disabled = false; if (fallo.errores && fallo.errores.nombre) errE('e-nombre', fallo.errores.nombre[0]); else toast(fallo.message); });
     });
     $('prg-esc-eliminar').addEventListener('click', function () {
-        var e = escEditando, np = D.programas.filter(function (p) { return p.escuela_id === e.id; }).length, nd = D.docentes.filter(function (d) { return d.escuela_id === e.id; }).length;
+        var e = escEditando, np = e.programas, nd = e.docentes;
         if (np || nd) { toast('No se puede eliminar: tiene ' + np + ' programa(s) y ' + nd + ' docente(s). Pásalos a otra escuela primero.'); return; }
         confirmar('¿Eliminar la escuela ' + e.nombre + '?', 'No tiene programas ni docentes. Se borra del catálogo.', 'Eliminar', function () {
-            return API.guardar('escuelas', { id: e.id, eliminado: true }, 'Eliminó la escuela ' + e.nombre + '.', 'eliminar', null).then(function () {
-                $('prg-confirmar').hidden = true; pila = []; modalAbierto = $('prg-esc-modal'); cerrarModal(); pintarEscuelas(); pintarKpis(); toast('Se eliminó la escuela.');
-            });
+            return enviar('DELETE', '/general/escuelas/' + e.id).then(function (r) { recargarConAviso(r.mensaje); });
         });
     });
 
     pintarKpis(); pintarTabla(); pintarEscuelas();
+    var aviso = avisoPendiente();
+    if (aviso) toast(aviso);
 }());

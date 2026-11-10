@@ -1,7 +1,6 @@
-{{-- Secretarías (Admin de ESAT general) — SOLO FRONTEND con datos de ejemplo (public/assets/js/admin_general/datos-ejemplo.js).
-     Las personas son ficticias; las sedes son reales. Cuentas con rol "admin" (= secretaría de una sede): crear con
-     asistente de 3 pasos (la clave inicial es el documento), editar, activar/desactivar y restablecer la clave.
-     Pasa del Superadmin (Administradores). Lo creado se guarda solo en la pestaña (GEN_API). --}}
+{{-- Secretarías (Admin de ESAT general). Datos reales: SecretariaController@index los pasa en window.GEN_DATOS.
+     Cuentas rol admin de cada sede: crear/editar (SecretariaRequest), activar/desactivar y restablecer la clave
+     (vuelve al número de documento y cierra sus sesiones). Todo queda en la auditoría. secretarias.js escapa todo. --}}
 @extends('admin_general.layout')
 
 @section('title', 'Secretarías')
@@ -195,6 +194,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/admin_general/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/admin_general/datos-ejemplo.js')) }}"></script>
+    <script>window.GEN_DATOS = @json($datos);</script>
     <script src="{{ asset('assets/js/admin_general/secretarias.js') }}?v={{ filemtime(public_path('assets/js/admin_general/secretarias.js')) }}" defer></script>
 @endpush

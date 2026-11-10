@@ -31,6 +31,9 @@
             ['configuracion', 'general.configuracion', 'Configuración', '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'],
         ],
     ];
+
+    // Grupos que se despliegan a un lado en vez de mostrar sus opciones en el menú
+    $desplegables = ['Supervisión'];
 @endphp
 
 <aside class="app-sidebar">
@@ -45,6 +48,17 @@
     {{-- Navegación --}}
     <nav class="app-sidebar-nav" aria-label="Menú principal">
         @foreach ($menu as $grupo => $items)
+        @if (in_array($grupo, $desplegables, true))
+        {{-- Grupo que se despliega a un lado (como Finanzas y Comunicación en la secretaría) --}}
+        <div class="app-nav-group app-nav-group--flyout">
+            <button type="button"
+                class="app-nav-flyout-btn {{ in_array($active, array_column($items, 0), true) ? 'is-active' : '' }}"
+                data-flyout="flyout-{{ \Illuminate\Support\Str::slug($grupo) }}" aria-haspopup="true" aria-expanded="false">
+                {{ $grupo }}
+                <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+            </button>
+        </div>
+        @else
         <div class="app-nav-group">
             <div class="app-nav-group-label">{{ $grupo }}</div>
             <ul class="app-nav">
@@ -58,6 +72,7 @@
                 @endforeach
             </ul>
         </div>
+        @endif
         @endforeach
     </nav>
 
@@ -70,5 +85,24 @@
         </div>
     </div>
 </aside>
+
+{{-- Paneles de los grupos desplegables (fuera del sidebar: position fixed, al lado del botón) --}}
+@foreach ($menu as $grupo => $items)
+@if (in_array($grupo, $desplegables, true))
+<div id="flyout-{{ \Illuminate\Support\Str::slug($grupo) }}" class="app-nav-flyout" role="menu" aria-label="{{ $grupo }}">
+    <div class="app-nav-flyout-header">{{ $grupo }}</div>
+    <ul class="app-nav">
+        @foreach ($items as [$clave, $ruta, $texto, $icono])
+        <li>
+            <a href="{{ route($ruta) }}" class="app-nav-link {{ $active === $clave ? 'is-active' : '' }}" role="menuitem" @if ($active === $clave) aria-current="page" @endif>
+                <svg viewBox="0 0 24 24">{!! $icono !!}</svg>
+                {{ $texto }}
+            </a>
+        </li>
+        @endforeach
+    </ul>
+</div>
+@endif
+@endforeach
 
 <div class="app-sidebar-backdrop"></div>
