@@ -71,6 +71,10 @@
                     </li>
                 @endforeach
             </ul>
+            @if (! empty($sitio['franquicias']))
+                {{-- Cada municipio con espacios que no se parten ("San Francisco" no se corta entre líneas) --}}
+                <p class="pie-franquicias"><strong>Sedes de franquicia</strong> {{ implode(' · ', array_map(fn ($m) => str_replace(' ', "\u{00A0}", $m), $sitio['franquicias'])) }}</p>
+            @endif
             {{-- En el inicio el mapa grande está en la sección Sedes. --}}
             @unless (request()->routeIs('home'))
             <div class="footer-sedes-map-wrap">

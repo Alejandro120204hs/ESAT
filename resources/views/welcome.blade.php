@@ -19,6 +19,10 @@
     $escuelas = $sitio['escuelas'];
     $totalProgramas = array_sum(array_map(fn ($e) => count($e['programas']), $escuelas));
     $municipios = ['Villeta', 'Cachipay', 'Albán', 'La Vega', 'Supatá', 'Anolaima', 'Guaduas', 'La Dorada'];
+    // Las sedes propias y las de franquicia se cuentan de config/sitio.php y se escriben en letras en los textos
+    $letras = fn (int $n) => [1 => 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce'][$n] ?? (string) $n;
+    $sedesPropias = $letras(count($sitio['sedes']));
+    $sedesFranquicia = $letras(count($sitio['franquicias'] ?? []));
     $img = fn (string $nombre) => asset('assets/img/' . $nombre . '.webp');
     $srcset = fn (string $nombre) => asset('assets/img/' . $nombre . '-960.webp') . ' 960w, ' . asset('assets/img/' . $nombre . '.webp') . ' 1920w';
 @endphp
@@ -37,7 +41,7 @@
 
             <div class="ini-hero-texto">
                 <h1 data-revelar>Tu futuro empieza con la <span class="resalte">formación correcta</span></h1>
-                <p class="ini-hero-sub" data-revelar data-retraso="0.12">Formación técnica certificada, práctica desde el primer día y con proyección real. Siete escuelas, cuatro sedes, un mismo propósito: que crezcas en lo que te apasiona.</p>
+                <p class="ini-hero-sub" data-revelar data-retraso="0.12">Formación técnica certificada, práctica desde el primer día y con proyección real. Siete escuelas, {{ $sedesPropias }} sedes propias y {{ $sedesFranquicia }} de franquicia, un mismo propósito: que crezcas en lo que te apasiona.</p>
                 <div class="ini-hero-acciones" data-revelar data-retraso="0.22">
                     <a href="#escuelas" class="btn btn-accent btn-lg">
                         Ver programas técnicos
@@ -68,7 +72,7 @@
                     <dd><span aria-hidden="true" data-contar="{{ $totalProgramas }}">{{ $totalProgramas }}</span><span class="sr-only">{{ $totalProgramas }}</span></dd>
                 </div>
                 <div>
-                    <dt>Sedes en Cundinamarca y Caldas</dt>
+                    <dt>Sedes propias en Cundinamarca y Caldas</dt>
                     <dd><span aria-hidden="true" data-contar="{{ count($sitio['sedes']) }}">{{ count($sitio['sedes']) }}</span><span class="sr-only">{{ count($sitio['sedes']) }}</span></dd>
                 </div>
                 <div>
@@ -103,7 +107,7 @@
                             ['ico-tool', 'Formación práctica orientada al empleo', 'Talleres, prácticas y casos reales desde el primer módulo, no al final de la carrera.'],
                             ['ico-cert', 'Certificaciones reconocidas', 'Programas amparados por la Secretaría de Educación de Cundinamarca y el Ministerio de Educación Nacional.'],
                             ['ico-admin', 'Docentes con experiencia real', 'Instructores que ejercen o ejercieron el oficio que enseñan.'],
-                            ['ico-idiomas', 'Modalidades flexibles', 'Presencial en cualquiera de nuestras cuatro sedes, o virtual desde donde estés.'],
+                            ['ico-idiomas', 'Modalidades flexibles', 'Presencial en nuestras sedes propias y de franquicia, o virtual desde donde estés.'],
                             ['ico-arrow', 'Acceso rápido al mercado laboral', 'Programas técnicos diseñados para que empieces a trabajar en meses, no en años.'],
                         ] as [$icono, $titulo, $texto])
                             <li>
@@ -275,8 +279,8 @@
     <section class="ini-sedes" id="sedes">
         <div class="section-inner">
             <div class="section-head es-dividida" data-revelar>
-                <h2>Cuatro sedes, una misma formación</h2>
-                <p>Estudia cerca de casa, en Cundinamarca y Caldas.</p>
+                <h2>Una misma formación en cada sede</h2>
+                <p>{{ ucfirst($sedesPropias) }} sedes propias y {{ $sedesFranquicia }} de franquicia en Cundinamarca y Caldas. Estudia cerca de casa.</p>
             </div>
         </div>
         <div class="section-inner ini-sedes-grid">
@@ -302,6 +306,25 @@
                         </div>
                     </article>
                 @endforeach
+
+                {{-- Sedes de franquicia: solo el municipio (sin dirección todavía, ver config/sitio.php);
+                     cada una abre WhatsApp para preguntar dónde queda. --}}
+                @if (! empty($sitio['franquicias']))
+                    <div class="ini-franquicias" data-revelar>
+                        <h3>Sedes de franquicia</h3>
+                        <p>La formación de ESAT también llega a estos municipios. Escríbenos y te contamos dónde queda la sede.</p>
+                        <ul class="ini-franquicias-lista">
+                            @foreach ($sitio['franquicias'] as $municipio)
+                                <li>
+                                    <a href="{{ $wa('la sede de franquicia de ' . $municipio) }}" target="_blank" rel="noopener"
+                                       aria-label="{{ 'Preguntar por WhatsApp por la sede de ' . $municipio }}">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-pin"/></svg>{{ $municipio }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
         </div>
     </section>

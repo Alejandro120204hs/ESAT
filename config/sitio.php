@@ -118,6 +118,11 @@ return [
         ['nombre' => 'La Dorada', 'direccion' => 'Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas', 'lat' => 5.4544, 'lng' => -74.6379],
     ],
 
+    // Sedes de franquicia: la lista que envió ESAT el 10-11-2026, en ese orden. Todavía sin dirección ni
+    // contacto propio: el sitio solo nombra el municipio (sin mapa) y ofrece preguntar por WhatsApp.
+    // Cuando llegue la dirección de una, pasa a 'sedes' con sus coordenadas reales.
+    'franquicias' => ['La Dorada', 'La Vega', 'El Vino', 'Supatá', 'San Francisco', 'El Rosal', 'Anolaima', 'Cachipay', 'Albán'],
+
     // Números de WhatsApp: [número internacional, como se muestra].
     'whatsapp' => [
         ['573152957588', '315 295 75 88'],

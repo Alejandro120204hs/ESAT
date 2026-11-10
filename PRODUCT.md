@@ -61,6 +61,8 @@ A regionally-rooted, officially licensed institution (Licencia de Funcionamiento
 - Guaduas — Cra 2 No. 1-83, Calle de la Pola, Cundinamarca
 - La Dorada — Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas
 
+**Sedes de franquicia** (list sent by ESAT on 2026-11-10, municipality names only — no addresses, phones or photos yet; never invent them): La Dorada, La Vega, El Vino, Supatá, San Francisco, El Rosal, Anolaima, Cachipay, Albán. Shown on the site as a separate strip under the four sedes (each name opens WhatsApp to ask where it is) and as a footer line, without map pins.
+
 **7 Schools and programs:**
 1. Escuela de Salud — Servicios Geriátricos; Seguridad Ocupacional y Laboral; Auxiliar de Psiquiatría; Camillero Hospitalario.
 2. Escuela de Cocina y Turismo — Servicios Hoteleros y Turísticos; Cocina Nacional e Internacional; Sommelier; Inspector de Calidad de Alimentos y Bebidas.

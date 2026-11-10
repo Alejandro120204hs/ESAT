@@ -13,7 +13,9 @@ dos partes:
 ## Sitio público
 
 - **Datos, no vistas sueltas.** `config/sitio.php`: escuelas (con su foto y sus programas
-  `[nombre, slug]`), Educación Continuada, sedes (dirección y coordenadas reales), WhatsApp y
+  `[nombre, slug]`), Educación Continuada, sedes (dirección y coordenadas reales), sedes de franquicia
+  (`franquicias`: solo el municipio, la lista que envió ESAT el 10-11-2026; van en una franja bajo las sedes del inicio
+  —cada chip pregunta por WhatsApp— y en una línea del footer, sin mapa hasta tener su dirección), WhatsApp y
   redes (vacías hasta tener las URL reales). `config/contenido.php`: el texto de cada programa
   (`programas.{slug}`) y de cada línea de Educación Continuada (`continuada.{slug}`). Header,
   footer, inicio y subpáginas leen de ahí: un programa o una sede se agrega en esos archivos,

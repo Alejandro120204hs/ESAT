@@ -466,6 +466,8 @@ svg.ico-relleno, .ico-relleno svg { fill: currentColor; stroke: none; }
 .pie-sede svg { grid-row: span 2; width: 17px; height: 17px; margin-top: 2px; color: rgba(255, 255, 255, 0.6); }
 .pie-sede strong { color: var(--white); font-weight: 700; }
 .pie-sede span { color: rgba(255, 255, 255, 0.7); }
+.pie-franquicias { margin: -4px 0 18px; font-size: 0.92rem; line-height: 1.6; color: rgba(255, 255, 255, 0.7); }
+.pie-franquicias strong { display: block; color: var(--white); font-weight: 700; }
 
 .footer-sedes-map-wrap {
     position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radius-md);

@@ -322,6 +322,21 @@
 .sede-direccion svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 3px; color: var(--navy-2); }
 .sede-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
 
+/* Sedes de franquicia: municipios sin dirección todavía; cada chip pregunta por WhatsApp (chip de contorno, DESIGN.md) */
+.ini-franquicias { padding-top: var(--s-5); border-top: 1.5px solid var(--line); }
+.ini-franquicias h3 { font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.55rem); }
+.ini-franquicias p { margin: 8px 0 var(--s-5); color: var(--muted); max-width: 52ch; }
+.ini-franquicias-lista { display: flex; flex-wrap: wrap; gap: 10px; }
+.ini-franquicias-lista a {
+    display: inline-flex; align-items: center; gap: 8px;
+    min-height: 46px; padding: 0 18px; border-radius: 999px;
+    background: var(--white); border: 1.5px solid var(--line-strong); color: var(--navy); font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.ini-franquicias-lista svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--navy-2); transition: color 0.2s; }
+.ini-franquicias-lista a:hover { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.ini-franquicias-lista a:hover svg { color: var(--white); }
+
 .sede-marcador { display: grid; place-items: center; }
 .sede-marcador span {
     width: 14px; height: 14px; border-radius: 50%;

@@ -65,6 +65,25 @@ class PaginasTest extends TestCase
         $this->get(route('home'))->assertSee('Tu formación técnica empieza con');
     }
 
+    public function test_el_inicio_y_el_footer_nombran_las_sedes_de_franquicia(): void
+    {
+        $franquicias = config('sitio.franquicias');
+        $this->assertCount(9, $franquicias);
+
+        $inicio = $this->get(route('home'))->assertOk()->assertSee('Sedes de franquicia')
+            ->assertSee('Siete escuelas, cuatro sedes propias y nueve de franquicia')
+            ->assertSee('Cuatro sedes propias y nueve de franquicia en Cundinamarca y Caldas')
+            ->assertDontSee('Cuatro sedes, una misma formación');
+        foreach ($franquicias as $municipio) {
+            $inicio->assertSee($municipio)
+                ->assertSee(rawurlencode('Hola ESAT, quiero información sobre: la sede de franquicia de ' . $municipio), false);
+        }
+        // En las demás páginas, la línea del footer
+        $this->get(route('escuelas.' . config('sitio.escuelas.0.slug')))
+            ->assertSee('Sedes de franquicia')
+            ->assertSee("San\u{00A0}Francisco · El\u{00A0}Rosal");
+    }
+
     public function test_una_escuela_que_no_existe_da_404(): void
     {
         $this->get('/escuelas/no-existe')->assertNotFound();
