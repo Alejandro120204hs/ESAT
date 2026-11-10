@@ -54,7 +54,6 @@
                     <input type="checkbox" id="tas-solo-sin" role="switch">
                     <span class="tas-switch-track" aria-hidden="true"></span>
                     <span class="tas-switch-txt">Solo sin registrar</span>
-                    <span class="tas-switch-num" id="tas-solo-num"></span>
                 </label>
             </div>
 
@@ -92,6 +91,12 @@
                         Todos presentes
                     </button>
                     <span class="tas-tools-hint" id="tas-todos-hint"></span>
+                    <span class="tas-claves" aria-hidden="true">
+                        <span><i class="tas-celda tas-c-P">P</i>presente</span>
+                        <span><i class="tas-celda tas-c-T">T</i>tarde</span>
+                        <span><i class="tas-celda tas-c-A">A</i>ausente</span>
+                        <span><i class="tas-celda tas-c-E">E</i>excusa</span>
+                    </span>
                 </div>
 
                 <div class="tas-confirmar" id="tas-confirmar" hidden>

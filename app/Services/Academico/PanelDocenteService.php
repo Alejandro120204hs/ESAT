@@ -267,6 +267,8 @@ class PanelDocenteService
             'nombre'       => $curso->nombre,
             'programa'     => $curso->programa->nombre,
             'escuela'      => $curso->programa->escuela?->nombre,
+            // Color de la escuela en el horario semanal (el mismo de Admin › Horarios)
+            'sigla'        => mb_strtolower($curso->programa->escuela?->sigla ?? ''),
             'jornada'      => $curso->jornada,
             'estado'       => $curso->estado,
             'soloConsulta' => $curso->estado === 'finalizado',

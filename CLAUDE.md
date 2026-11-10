@@ -575,6 +575,18 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   activa, módulo del programa, no por iniciar y que cursó en el grupo). Los errores salen uno a la vez con el nombre
   del estudiante (`asistencia.js` señala su fila). Guardan `registrado_por`, la fecha de la nota/habilitación cuando
   cambia y una línea en la auditoría (entidad `Curso`). No necesitó campos nuevos en la BD.
+- **Diseño** (simplificado el 9-11-2026, decidido con el usuario): cada cifra aparece **una sola vez** por pantalla y
+  ningún elemento está "porque sí". Sin filas de tarjetas de cifras (el saludo del Inicio y la línea de resumen de cada
+  pantalla las reemplazan), sin antetítulos sobre los títulos, sin chips de escuela ni círculos de letra de grupo.
+  Color con la semántica del Admin: naranja = acción o pendiente, rojo = riesgo, verde = bien, gris/azul de la marca =
+  neutro; la jornada no lleva color (se lee en la hora) y la escuela tampoco (`grp-esc-*` es un solo tono), salvo en
+  **Mi horario** del Inicio, que es el mismo horario semanal de Admin › Horarios (`.hor-cal`/`.hor-bloque` copiados como
+  `.ini-sem*`, `ini-c-{sigla}`): color por escuela (`grupo.sigla`), rango continuo de horas (mínimo 6), jornadas en la
+  columna de horas, separador a las 12 y 18 y duración en cada bloque; lo propio del docente es la fecha de cada día. Asistencia:
+  control segmentado P/T/A/E con la leyenda arriba (colores de la planilla del Admin: verde, ámbar, rojo, azul para la
+  excusa) y el conteo de la clase en la barra de guardar. Notas: la malla sin fechas (van en el encabezado del módulo) y
+  el resumen del módulo en una línea. En Mis grupos el número de pendientes va dentro del botón, y solo el botón con algo
+  pendiente es naranja. Al agregar algo, que diga algo que no esté ya en la pantalla.
 - Su perfil todavía es el de Breeze (roto, HALLAZGOS M7).
 
 ## Pendiente
@@ -582,8 +594,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 - Paneles Estudiante y Acudiente: sin construir.
   - Estudiante: elegir plan de pago (genera las cuotas). El bloqueo por derecho
     vencido ya corta también las sesiones abiertas (`EnsureAccountIsEnabled`).
-- Docente: su perfil, y simplificar el diseño de sus 4 pantallas (revisión del 9-11-2026: hay cifras repetidas en
-  varias partes de la misma pantalla).
+- Docente: su perfil.
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
   Agregar Form Requests y auditoría a Sedes y Administradores.

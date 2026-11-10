@@ -18,13 +18,14 @@
     var MESES   = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     var MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var SEMANA  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    var JORNADAS = ['Mañana', 'Tarde', 'Noche', 'Fines de semana'];
-    var JORNADA_CLS = { 'Mañana': 'manana', 'Tarde': 'tarde', 'Noche': 'noche', 'Fines de semana': 'fds' };
 
     var NB       = ' '; // espacio que no parte la línea
     var MAX_PEND = 4;    // pendientes visibles por bloque antes de "Ver N más"
-    var HORA_PX  = 46;   // alto de una hora en la grilla semanal
-    var CORTE_PX = 30;   // alto de la franja que recorta las horas sin clases
+    // Horario semanal: las mismas medidas de Admin › Horarios
+    var HORA_PX     = 56;   // alto de una hora
+    var RANGO_MIN_H = 6;    // alto mínimo del horario, en horas
+    var HORA_MIN    = 6;    // la jornada de la mañana empieza a las 6
+    var HORA_MAX    = 24;   // la de la noche termina a las 24
 
     var ICON = {
         ir:     '<svg class="ini-pend-ir" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>',
@@ -69,7 +70,6 @@
     function nota(v) { return v == null ? '—' : Number(v).toFixed(1).replace('.', ','); }
     function iniciales(n, a) { return ((n || '').charAt(0) + (a || '').charAt(0)).toUpperCase(); }
     function programaCorto(p) { return String(p || '').replace(/^Técnico laboral (por competencias )?en /i, ''); }
-    function jClase(j) { return 'ini-j-' + (JORNADA_CLS[j] || 'otra'); }
     function grupoTxt(g) { return g.programa + ' · ' + String(g.nombre).replace(/ /g, NB); }
     function enlace(base, params) {
         var q = Object.keys(params).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
@@ -151,35 +151,13 @@
 
     /* ── Encabezado y KPIs ────────────────────── */
     function pintarEncabezado() {
-        $('ini-fecha').textContent = capital(fechaLarga(D.hoy));
-
         var n = clasesHoy().length, p = pendientes().total, txt;
         var cosas = plural(p, 'cosa pendiente', 'cosas pendientes');
         if (n && p)       txt = 'Hoy tienes <b>' + esc(plural(n, 'clase', 'clases')) + '</b> y <b>' + esc(cosas) + '</b>.';
         else if (n)       txt = 'Hoy tienes <b>' + esc(plural(n, 'clase', 'clases')) + '</b> y estás al día con tus registros.';
         else if (p)       txt = 'Hoy no tienes clases. Te quedan <b>' + esc(cosas) + '</b>.';
         else              txt = 'Hoy no tienes clases y estás al día.';
-        $('ini-resumen').innerHTML = txt;
-    }
-
-    function kpi(id, valor, etiqueta) {
-        var el = $(id);
-        el.querySelector('[data-kpi-val]').textContent = valor;
-        el.querySelector('[data-kpi-lbl]').textContent = etiqueta;
-        el.classList.toggle('is-cero', !valor);
-    }
-    function pintarKpis() {
-        var gs = vigentes(), p = pendientes();
-        var asis = gs.reduce(function (s, g) { return s + (g.sinRegistrar || []).length; }, 0);
-        var notas = gs.reduce(function (s, g) {
-            return s + (g.modulosSinNota || []).reduce(function (t, x) { return t + x.faltan; }, 0);
-        }, 0);
-        var hab = gs.reduce(function (s, g) { return s + (g.porHabilitar || 0); }, 0);
-
-        kpi('ini-kpi-hoy', clasesHoy().length, 'Clases hoy');
-        kpi('ini-kpi-asis', asis, 'Asistencias sin registrar');
-        kpi('ini-kpi-notas', notas, 'Notas por poner' + (p.notas.length ? ' · ' + plural(p.notas.length, 'módulo', 'módulos') : ''));
-        kpi('ini-kpi-hab', hab, 'Por habilitar');
+        $('ini-resumen').innerHTML = esc(capital(fechaLarga(D.hoy))) + '. ' + txt;
     }
 
     /* ── Clases de hoy ────────────────────────── */
@@ -201,7 +179,7 @@
             ? '<a class="ini-btn ini-btn-ghost" href="' + esc(href) + '" aria-label="' + esc('Ver o corregir la asistencia de ' + grupoTxt(g)) + '">' + ICON.lapiz + 'Ver o corregir</a>'
             : '<a class="ini-btn ini-btn-primary" href="' + esc(href) + '" aria-label="' + esc('Tomar asistencia de ' + grupoTxt(g)) + '">' + ICON.check + 'Tomar asistencia</a>';
 
-        return '<li class="ini-clase ' + jClase(g.jornada) + ' is-' + est + '">' +
+        return '<li class="ini-clase is-' + est + '">' +
             '<div class="ini-clase-hora">' +
                 '<span class="ini-clase-ini">' + esc(c.ini) + '</span>' +
                 '<span class="ini-clase-fin">hasta ' + esc(c.fin) + '</span>' +
@@ -209,7 +187,6 @@
             '<div class="ini-clase-info">' +
                 '<div class="ini-clase-tags">' +
                     '<span class="app-status-tag ' + chip[0] + '">' + chip[1] + '</span>' +
-                    '<span class="ini-jornada">' + esc(g.jornada) + '</span>' +
                 '</div>' +
                 '<h4 class="ini-clase-prog">' + esc(grupoTxt(g)) + '</h4>' +
                 '<p class="ini-clase-meta">' +
@@ -225,8 +202,7 @@
     function proximaHtml(x, conBoton) {
         var cuando = capital(cuandoLargo(x.c.fecha));
         return '<div class="ini-proxima-txt">' +
-                '<div class="ini-proxima-lbl">Tu próxima clase</div>' +
-                '<div class="ini-proxima-cuando">' + esc(cuando) + ' · ' + esc(rango(x.c.ini, x.c.fin)) + '</div>' +
+                '<div class="ini-proxima-cuando"><span>Próxima clase:</span> ' + esc(cuando) + ' · ' + esc(rango(x.c.ini, x.c.fin)) + '</div>' +
                 '<div class="ini-proxima-que">' + esc(grupoTxt(x.g)) + ' · ' + esc(x.g.jornada) + '</div>' +
             '</div>' +
             (conBoton ? '<a class="ini-btn ini-btn-ghost" href="' + esc(enlace(URL_GRUPOS, { grupo: x.g.id })) + '">' + ICON.grupo + 'Ver el grupo</a>' : '');
@@ -308,7 +284,7 @@
             return itemHtml(
                 enlace(URL_ASIS, { grupo: x.g.id, fecha: x.fecha }),
                 '<span class="ini-ficha ini-ficha-asis" aria-hidden="true"><small>' + DIAS_C[f.getDay()] + '</small><b>' + f.getDate() + '</b></span>',
-                grupoTxt(x.g),
+                programaCorto(x.g.programa) + ' · ' + x.g.nombre,
                 capital(fechaCorta(x.fecha)) + ' · ' + horas + hace(x.fecha)
             );
         });
@@ -335,7 +311,6 @@
             bloqueHtml('hab', 'Habilitaciones por calificar', hab);
 
         $('ini-pend-empty').hidden = p.total > 0;
-        $('ini-pend-num').textContent = p.total ? String(p.total) : '';
     }
 
     // "Ver N más" / "Ver menos": muestra el resto de un bloque sin volver a pintarlo (el foco se queda en el botón)
@@ -351,12 +326,11 @@
     /* ── Estudiantes para acompañar ───────────── */
     function pintarAcompanar() {
         var lista = paraAcompanar();
-        $('ini-acomp-num').textContent = lista.length ? String(lista.length) : '';
         $('ini-acomp-empty').hidden = lista.length > 0;
         $('ini-acomp-lista').innerHTML = lista.map(function (x) {
             var e = x.e, a = e.asistencia, pct = a.pct == null ? 0 : a.pct;
             var nombre = e.nombres + ' ' + e.apellidos;
-            return '<li><a class="ini-acomp-item ' + jClase(x.g.jornada) + '" href="' + esc(enlace(URL_GRUPOS, { grupo: x.g.id })) + '">' +
+            return '<li><a class="ini-acomp-item" href="' + esc(enlace(URL_GRUPOS, { grupo: x.g.id })) + '">' +
                 '<span class="ini-avatar" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</span>' +
                 '<span class="ini-acomp-info">' +
                     '<span class="ini-acomp-nombre">' + esc(nombre) + '</span>' +
@@ -383,29 +357,18 @@
         return out.sort(function (a, b) { return a.d - b.d || a.ini - b.ini; });
     }
 
-    // Tramos de horas con clase; las horas vacías entre tramos se recortan en una franja delgada
-    function tramos(ses) {
-        var iv = ses.map(function (s) { return [Math.floor(s.ini / 60), Math.ceil(s.fin / 60)]; })
-            .sort(function (a, b) { return a[0] - b[0]; });
-        var unidos = [];
-        iv.forEach(function (x) {
-            var u = unidos[unidos.length - 1];
-            if (u && x[0] <= u[1] + 1) u[1] = Math.max(u[1], x[1]);
-            else unidos.push([x[0], x[1]]);
-        });
-        var y = 0;
-        return unidos.map(function (t) {
-            var r = { ini: t[0], fin: t[1], y: y };
-            y += (t[1] - t[0]) * HORA_PX + CORTE_PX;
-            return r;
-        });
+    // Igual que Admin › Horarios: jornada de una hora, clase CSS de la jornada y duración "4h" / "1h 30m"
+    function jornadaDeHora(h) { return h < 12 ? 'Mañana' : (h < 18 ? 'Tarde' : 'Noche'); }
+    function jornadaClase(j) { return j === 'Fines de semana' ? 'fds' : j.toLowerCase().replace('ñ', 'n'); }
+    function fmtDuracion(min) {
+        var h = Math.floor(min / 60), m = min % 60;
+        if (!h) return m + ' min';
+        return m ? h + 'h ' + m + 'm' : h + 'h';
     }
-    function yDe(min, trs) {
-        for (var i = 0; i < trs.length; i++) {
-            var t = trs[i];
-            if (min >= t.ini * 60 && min <= t.fin * 60) return t.y + (min - t.ini * 60) / 60 * HORA_PX;
-        }
-        return null;
+    // Posición vertical de una hora (en minutos) dentro del rango del horario, o null si queda fuera
+    function yDe(min) {
+        if (!rangoActual || min < rangoActual.ini * 60 || min > rangoActual.fin * 60) return null;
+        return (min - rangoActual.ini * 60) / 60 * HORA_PX;
     }
     // Carriles por si dos sesiones del mismo día se cruzan (no debería pasar: HorarioService lo impide)
     function carriles(lista) {
@@ -424,7 +387,7 @@
         return iso === 7 ? masDias(h, 1) : masDias(h, 1 - iso);   // el domingo muestra la semana que empieza
     }
 
-    var ahoraEl = null, tramosActuales = [];
+    var ahoraEl = null, rangoActual = null;
 
     function pintarHorario() {
         var ses = sesiones();
@@ -440,10 +403,6 @@
         $('ini-horario-sub').textContent = vacio ? 'Sin clases esta semana' :
             plural(ses.length, 'clase', 'clases') + ' a la semana · ' + duracion(horas) + ' en ' + plural(grupos, 'grupo', 'grupos');
 
-        var presentes = JORNADAS.filter(function (j) { return ses.some(function (s) { return s.g.jornada === j; }); });
-        ses.forEach(function (s) { if (presentes.indexOf(s.g.jornada) === -1) presentes.push(s.g.jornada); });
-        $('ini-leyenda').innerHTML = presentes.map(function (j) { return '<li class="ini-jornada ' + jClase(j) + '">' + esc(j) + '</li>'; }).join('');
-
         if (vacio) { grid.innerHTML = ''; lista.innerHTML = ''; return; }
 
         var lunes = lunesDeLaSemana();
@@ -451,49 +410,51 @@
         var porDia = SEMANA.map(function () { return []; });
         ses.forEach(function (s) { porDia[s.d].push(s); });
 
-        var trs = tramos(ses);
-        tramosActuales = trs;
-        var ult = trs[trs.length - 1];
-        var alto = ult.y + (ult.fin - ult.ini) * HORA_PX;
+        // Rango de horas: solo el que usa el horario, con un mínimo de RANGO_MIN_H (como Admin › Horarios)
+        var hIni = Math.floor(Math.min.apply(null, ses.map(function (x) { return x.ini; })) / 60);
+        var hFin = Math.ceil(Math.max.apply(null, ses.map(function (x) { return x.fin; })) / 60);
+        while (hFin - hIni < RANGO_MIN_H) {
+            if (hFin < HORA_MAX) hFin++;
+            if (hFin - hIni < RANGO_MIN_H && hIni > HORA_MIN) hIni--;
+            if (hIni === HORA_MIN && hFin === HORA_MAX) break;
+        }
+        rangoActual = { ini: hIni, fin: hFin };
+        var alto = (hFin - hIni) * HORA_PX;
 
-        /* Grilla (pantallas anchas) */
+        /* Grilla (pantallas anchas): días con su fecha, porque es el horario de esta semana */
         var html = '<div class="ini-sem-esquina" aria-hidden="true"></div>';
         SEMANA.forEach(function (d, i) {
             var f = masDias(lunes, i);
             html += '<div class="ini-sem-head' + (i === hoyIdx ? ' is-hoy' : '') + (porDia[i].length ? '' : ' is-libre') + '">' +
-                '<span>' + DIAS_C[f.getDay()] + '</span><b>' + f.getDate() + '</b>' +
+                d + '<span class="ini-sem-fecha">' + f.getDate() + '</span>' +
                 (i === hoyIdx ? '<span class="ini-hoy-pill">Hoy</span>' : '') + '</div>';
         });
 
+        // Columna de horas con el inicio de cada jornada
         html += '<div class="ini-sem-horas" style="height:' + alto + 'px" aria-hidden="true">';
-        trs.forEach(function (t, ti) {
-            for (var h = t.ini; h <= t.fin; h++) {
-                var cls = (ti === 0 && h === t.ini) ? ' is-primera' : ((ti === trs.length - 1 && h === t.fin) ? ' is-ultima' : '');
-                html += '<span class="ini-sem-hora' + cls + '" style="top:' + (t.y + (h - t.ini) * HORA_PX) + 'px">' + pad(h) + ':00</span>';
-            }
-        });
+        for (var h = hIni; h <= hFin; h++) {
+            var jor = h === 12 ? 'Tarde' : (h === 18 ? 'Noche' : (h === hIni ? jornadaDeHora(h) : ''));
+            html += '<span class="ini-sem-hora" style="top:' + ((h - hIni) * HORA_PX) + 'px">' + pad(h) + ':00' +
+                (jor && h < hFin ? '<em class="ini-sem-jor ini-sem-jor-' + jornadaClase(jor) + '">' + jor + '</em>' : '') + '</span>';
+        }
         html += '</div>';
 
         SEMANA.forEach(function (d, i) {
             html += '<div class="ini-sem-col' + (i === hoyIdx ? ' is-hoy' : '') + '" style="height:' + alto + 'px">';
-            trs.forEach(function (t, ti) {
-                for (var h = t.ini + 1; h < t.fin; h++) html += '<span class="ini-sem-linea" style="top:' + (t.y + (h - t.ini) * HORA_PX) + 'px"></span>';
-                if (ti < trs.length - 1) {
-                    html += '<span class="ini-sem-corte" style="top:' + (t.y + (t.fin - t.ini) * HORA_PX) + 'px;height:' + CORTE_PX + 'px"></span>';
-                }
+            [12, 18].forEach(function (hj) {
+                if (hj > hIni && hj < hFin) html += '<span class="ini-sem-sep" style="top:' + ((hj - hIni) * HORA_PX) + 'px"></span>';
             });
             carriles(porDia[i]);
             porDia[i].forEach(function (s) {
-                var top = yDe(s.ini, trs), bajo = yDe(s.fin, trs);
-                var altoB = bajo - top, ancho = 100 / s.carriles;
+                var top = yDe(s.ini), altoB = (s.fin - s.ini) / 60 * HORA_PX, ancho = 100 / s.carriles;
                 var etiqueta = SEMANA[s.d] + ', de ' + s.h.ini + ' a ' + s.h.fin + ': ' + grupoTxt(s.g) + ' (' + s.g.jornada + ')';
-                html += '<a class="ini-sem-bloque ' + jClase(s.g.jornada) + (altoB < 76 ? ' is-corto' : '') + '"' +
+                html += '<a class="ini-sem-bloque ini-c-' + esc(s.g.sigla || 'otra') + (altoB < 90 ? ' is-corto' : '') + '"' +
                     ' href="' + esc(enlace(URL_GRUPOS, { grupo: s.g.id })) + '"' +
                     ' title="' + esc(etiqueta) + '" aria-label="' + esc(etiqueta) + '"' +
                     ' style="top:' + (top + 3) + 'px;height:' + (altoB - 6) + 'px;left:calc(' + (s.carril * ancho) + '% + 5px);width:calc(' + ancho + '% - 10px)">' +
-                        '<span class="ini-sem-bloque-hora">' + esc(s.h.ini + ' – ' + s.h.fin) + '</span>' +
+                        '<span class="ini-sem-bloque-hora">' + esc(s.h.ini + ' – ' + s.h.fin) + '<span class="ini-sem-bloque-dur">' + esc(fmtDuracion(s.fin - s.ini)) + '</span></span>' +
                         '<span class="ini-sem-bloque-prog">' + esc(programaCorto(s.g.programa)) + '</span>' +
-                        '<span class="ini-sem-bloque-grupo">' + esc(s.g.nombre) + '</span>' +
+                        '<span class="ini-sem-bloque-grupo">' + esc(s.g.nombre + ' · ' + s.g.codigo) + '</span>' +
                     '</a>';
             });
             if (i === hoyIdx) html += '<span class="ini-sem-ahora" data-ahora hidden></span>';
@@ -511,18 +472,18 @@
                 '<h4 class="ini-dia-nombre">' + d + ' <span>' + f.getDate() + ' ' + MESES_C[f.getMonth()] + '</span>' +
                     (i === hoyIdx ? '<span class="ini-hoy-pill">Hoy</span>' : '') + '</h4>' +
                 '<ul class="ini-dia-lista">' + porDia[i].map(function (s) {
-                    return '<li><a class="ini-dia-clase ' + jClase(s.g.jornada) + '" href="' + esc(enlace(URL_GRUPOS, { grupo: s.g.id })) + '">' +
-                        '<span class="ini-dia-hora">' + esc(rango(s.h.ini, s.h.fin)) + '</span>' +
-                        '<span class="ini-dia-info"><b>' + esc(s.g.programa) + '</b><small>' + esc(s.g.nombre + ' · ' + s.g.jornada) + '</small></span>' +
+                    return '<li><a class="ini-dia-clase ini-c-' + esc(s.g.sigla || 'otra') + '" href="' + esc(enlace(URL_GRUPOS, { grupo: s.g.id })) + '">' +
+                        '<span class="ini-dia-hora">' + esc(rango(s.h.ini, s.h.fin)) + '<span class="ini-sem-bloque-dur">' + esc(fmtDuracion(s.fin - s.ini)) + '</span></span>' +
+                        '<span class="ini-dia-info"><b>' + esc(programaCorto(s.g.programa)) + '</b><small>' + esc(s.g.nombre + ' · ' + s.g.jornada) + '</small></span>' +
                     '</a></li>';
                 }).join('') + '</ul></div>';
         }).join('');
     }
 
-    // Línea de "ahora" en la columna de hoy, solo si la hora cae dentro de un tramo con clases
+    // Línea de "ahora" en la columna de hoy, solo si la hora cae dentro del rango del horario
     function moverAhora() {
         if (!ahoraEl) return;
-        var y = yDe(ahoraMin(), tramosActuales);
+        var y = yDe(ahoraMin());
         ahoraEl.hidden = y === null;
         if (y !== null) ahoraEl.style.top = y + 'px';
     }
@@ -542,7 +503,6 @@
 
     function pintarTodo() {
         pintarEncabezado();
-        pintarKpis();
         pintarHoy();
         pintarPendientes();
         pintarAcompanar();

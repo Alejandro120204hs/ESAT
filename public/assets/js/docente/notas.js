@@ -68,12 +68,6 @@
     }
     /* Aplazados y retirados: lo que no tienen no es tarea pendiente del docente */
     function seFue(e) { return e.matricula.estado === 'aplazado' || e.matricula.estado === 'retirado'; }
-    function sigla(escuela) {
-        var t = String(escuela || '').toLowerCase();
-        var mapa = [['salud', 'sal'], ['turis', 'tur'], ['admin', 'adm'], ['educa', 'edu'], ['deport', 'dep'], ['ciencia', 'cie'], ['belleza', 'bel']];
-        for (var i = 0; i < mapa.length; i++) if (t.indexOf(mapa[i][0]) !== -1) return mapa[i][1];
-        return 'otra';
-    }
     function promedio(lista) {
         if (!lista.length) return null;
         return Math.round(lista.reduce(function (s, v) { return s + v; }, 0) / lista.length * 10) / 10;
@@ -165,7 +159,7 @@
     var $ = function (id) { return document.getElementById(id); };
     var elVigentes = $('not-grupos-vigentes'), elFinalizados = $('not-grupos-finalizados'), elFinZona = $('not-grupos-fin-zona');
     var elModulos = $('not-modulos'), elHoja = $('not-hoja'), elHojaHead = $('not-hoja-head'), elAvisos = $('not-hoja-avisos');
-    var elKpis = $('not-kpis'), elTablaWrap = $('not-tabla-wrap'), elFilas = $('not-filas'), elPie = $('not-tabla-pie');
+    var elKpis = $('not-resumen'), elTablaWrap = $('not-tabla-wrap'), elFilas = $('not-filas'), elPie = $('not-tabla-pie');
     var elVacia = $('not-hoja-vacia'), elVaciaTxt = $('not-hoja-vacia-txt');
     var elBarra = $('not-guardar'), elCambios = $('not-cambios'), btnGuardar = $('not-guardar-btn'), txtGuardar = $('not-guardar-txt');
     var btnDescartar = $('not-descartar'), elErrGuardar = $('not-guardar-error');
@@ -178,22 +172,19 @@
         var faltan = notasPorPoner(g), hab = g.soloConsulta ? 0 : g.porHabilitar;
         var tags = '';
         if (g.soloConsulta) {
-            tags = '<span class="not-tag not-tag-gris">Terminó el ' + esc(fechaCorta(g.fin)) + '</span>' +
-                (g.graduados ? '<span class="not-tag not-tag-ok">' + plural(g.graduados, 'graduado', 'graduados') + '</span>' : '');
+            tags = '<span class="not-tag not-tag-gris">Terminó el ' + esc(fechaCorta(g.fin)) + '</span>';
         } else {
             if (faltan) tags += '<span class="not-tag not-tag-sin">' + plural(faltan, 'nota por poner', 'notas por poner') + '</span>';
             if (hab) tags += '<span class="not-tag not-tag-hab">' + hab + ' por habilitar</span>';
-            if (!faltan && !hab) tags = '<span class="not-tag not-tag-ok">Notas al día</span>';
         }
         var sub = g.nombre + ' · ' + g.jornada + ' · ' + (g.soloConsulta
             ? plural(g.estudiantes.length, 'estudiante', 'estudiantes')
             : plural(g.activos, 'activo', 'activos'));
         return '<button type="button" class="not-grupo' + (activo ? ' is-activo' : '') + (g.soloConsulta ? ' is-fin' : '') + '" data-grupo="' + g.id + '" aria-pressed="' + (activo ? 'true' : 'false') + '">' +
-            '<span class="not-grupo-avatar not-esc-' + sigla(g.escuela) + '" aria-hidden="true">' + esc(g.nombre.slice(-1)) + '</span>' +
             '<span class="not-grupo-info">' +
                 '<span class="not-grupo-prog">' + esc(g.programa) + '</span>' +
                 '<span class="not-grupo-sub">' + esc(sub) + '</span>' +
-                '<span class="not-grupo-tags">' + tags + '</span>' +
+                (tags ? '<span class="not-grupo-tags">' + tags + '</span>' : '') +
             '</span></button>';
     }
     function pintarGrupos() {
@@ -217,7 +208,7 @@
     function pintarContexto() {
         var g = st.g;
         $('not-ctx-titulo').textContent = g.programa + ' · ' + g.nombre;
-        var partes = [g.jornada, g.escuela, rango(g.inicio, g.fin)];
+        var partes = [g.jornada, rango(g.inicio, g.fin)];
         partes.push(g.soloConsulta ? 'Finalizado · solo consulta' : plural(g.activos, 'estudiante activo', 'estudiantes activos'));
         $('not-ctx-sub').textContent = partes.join(' · ');
     }
@@ -240,9 +231,9 @@
             return '<button type="button" role="tab" id="not-tab-mod-' + m.id + '" class="not-mod' + (sin ? ' is-sin' : '') + ' is-' + m.estado + (activo ? ' is-activo' : '') + '"' +
                 ' data-modulo="' + m.id + '" aria-selected="' + (activo ? 'true' : 'false') + '" aria-controls="not-hoja" aria-label="' + esc(etiqueta) + '"' +
                 ' tabindex="' + (activo ? '0' : '-1') + '"' + (m.estado === 'por_iniciar' ? ' disabled' : '') + '>' +
-                '<span class="not-mod-top"><span class="not-mod-n">' + (i + 1) + '</span><span class="not-mod-estado">' + ESTADO_MOD[m.estado] + '</span></span>' +
+                '<span class="not-mod-top"><span class="not-mod-n">' + (i + 1) + '</span>' +
+                    (m.estado === 'terminado' ? '' : '<span class="not-mod-estado">' + ESTADO_MOD[m.estado] + '</span>') + '</span>' +
                 '<span class="not-mod-nombre">' + esc(m.nombre) + '</span>' +
-                '<span class="not-mod-fechas">' + esc(rango(m.ini, m.fin)) + '</span>' +
                 '<span class="not-mod-pie">' + pie + '</span></button>';
         }).join('');
         // Si no hay módulo elegido, el primero que se pueda abrir recibe el foco con Tab
@@ -303,11 +294,10 @@
         elHojaHead.hidden = false;
         elHojaHead.innerHTML =
             '<div class="not-min0">' +
-                '<div class="not-hoja-kicker">Módulo ' + (idx + 1) + ' de ' + g.modulos.length + '</div>' +
                 '<h3 class="not-hoja-titulo" id="not-hoja-titulo" tabindex="-1">' + esc(m.nombre) + '</h3>' +
-                '<div class="not-hoja-sub">' + esc(rango(m.ini, m.fin)) + ' · ' + m.horas + ' horas</div>' +
-            '</div>' +
-            '<span class="app-status-tag ' + (enCurso ? 'app-status-active' : 'app-status-muted') + '">' + ESTADO_MOD[m.estado] + '</span>';
+                '<div class="not-hoja-sub">Módulo ' + (idx + 1) + ' de ' + g.modulos.length + ' · ' + esc(rango(m.ini, m.fin)) + ' · ' + m.horas + ' horas' +
+                    (enCurso ? ' · <b>en curso</b>' : '') + '</div>' +
+            '</div>';
 
         var personas = ordenados(g);
         var editableGrupo = !g.soloConsulta;
@@ -412,7 +402,7 @@
         }
         return '<tr class="not-fila' + (seFue(e) ? ' is-inactiva' : '') + '" data-id="' + e.id + '">' +
             '<td><div class="not-person-cell">' +
-                '<div class="not-avatar not-esc-' + sigla(st.g.escuela) + '" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</div>' +
+                '<div class="not-avatar" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</div>' +
                 '<div class="not-min0"><div class="not-person-name">' + esc(e.nombres + ' ' + e.apellidos) +
                     '<span class="not-sucio" title="Cambios sin guardar"></span></div>' +
                 '<div class="not-person-sub">' + esc(e.tipoDoc + ' ' + e.documento) + '</div>' + chips + '</div>' +
@@ -482,12 +472,16 @@
             else if (s === 'reprobado') c.rep++;
             else if (s === 'sin_nota') c.sin++;
         });
-        var prom = promedio(finales), elProm = $('not-k-prom');
-        elProm.textContent = fmt(prom);
-        $('not-k-aprob').textContent = c.aprob;
-        $('not-k-hab').textContent = c.hab;
-        $('not-k-rep').textContent = c.rep;
-        $('not-k-sin').textContent = c.sin;
+        var prom = promedio(finales);
+        if (prom == null) {
+            elKpis.textContent = 'Todavía no hay notas en este módulo.';
+            return;
+        }
+        var partes = ['<span>Promedio <b class="not-tono-' + tono(prom) + '">' + fmt(prom) + '</b></span>'];
+        if (c.aprob) partes.push('<span><b class="not-tono-ok">' + c.aprob + '</b> ' + (c.aprob === 1 ? 'aprobó' : 'aprobaron') + '</span>');
+        if (c.hab) partes.push('<span><b class="not-tono-warn">' + c.hab + '</b> por habilitar</span>');
+        if (c.rep) partes.push('<span><b class="not-tono-bad">' + c.rep + '</b> ' + (c.rep === 1 ? 'reprobó' : 'reprobaron') + '</span>');
+        elKpis.innerHTML = partes.join('<span class="not-punto" aria-hidden="true"></span>');
     }
 
     function cambiadas() { return st.filas.filter(function (f) { return f.cambiada; }); }

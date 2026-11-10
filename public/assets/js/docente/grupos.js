@@ -21,10 +21,8 @@
     var MES_C  = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
     var ICON = {
-        reloj:  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
         check:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
         estrella: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
-        ok:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
         flecha: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>',
         cal:    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
         wa:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>'
@@ -179,17 +177,29 @@
         });
     }
 
-    // Finalizado (solo consulta) · Por iniciar (en planificación) · Activo
+    // Finalizado (solo consulta) · Por iniciar (en planificación) · Activo (en la ficha; en la tarjeta lo dice la pestaña)
     function estadoTag(g) {
         if (g.soloConsulta) return '<span class="app-status-tag app-status-muted">Finalizado</span>';
         if (g.estado === 'planificacion') return '<span class="app-status-tag app-status-muted">Por iniciar</span>';
         return '<span class="app-status-tag app-status-active">Activo</span>';
     }
 
+    // Botón de la tarjeta: naranja solo el que tiene algo pendiente primero; el número es lo que falta
+    function botonAccion(href, icono, texto, n, primario) {
+        return '<a class="grp-btn ' + (primario ? 'grp-btn-primary' : 'grp-btn-ghost') + ' grp-btn-sm" data-accion href="' + esc(href) + '"' +
+            (n ? ' aria-label="' + esc(texto + ': ' + n + ' por registrar') + '"' : '') + '>' +
+            icono + texto + (n ? '<span class="grp-btn-num" aria-hidden="true">' + n + '</span>' : '') + '</a>';
+    }
+
+    /* Tarjeta: qué grupo es, cuándo tiene clase, en qué va, cómo va su gente y qué le falta al docente.
+       Lo demás (escuela, fechas, cupo, malla) está en la ficha. */
     function tarjeta(g) {
-        var r = resumen(g), sg = sigla(g.escuela);
+        var r = resumen(g);
         var fin = g.soloConsulta;
-        var estado = estadoTag(g);
+        var hoyPendiente = r.deHoy && r.deHoy.estado !== 'registrada';
+
+        var marca = fin || g.estado === 'planificacion' ? estadoTag(g)
+            : (hoyPendiente ? '<span class="grp-hoy-tag">Clase hoy</span>' : '');
 
         var modulo;
         if (fin) {
@@ -197,53 +207,50 @@
         } else if (g.moduloActual) {
             modulo = '<span>Módulo ' + numeroModulo(g, g.moduloActual) + ' de ' + g.modulos.length + ':</span> <strong>' + esc(g.moduloActual.nombre) + '</strong>';
         } else if (r.siguiente) {
-            modulo = '<span>Sigue el módulo ' + numeroModulo(g, r.siguiente) + ':</span> <strong>' + esc(r.siguiente.nombre) + '</strong> <span>desde el ' + esc(fCorta(r.siguiente.ini)) + '</span>';
+            modulo = '<span>Empieza con el módulo ' + numeroModulo(g, r.siguiente) + ':</span> <strong>' + esc(r.siguiente.nombre) + '</strong> <span>el ' + esc(fCorta(r.siguiente.ini)) + '</span>';
         } else {
             modulo = '<span>Sin módulos en curso</span>';
         }
 
-        var estudiantes = fin
-            ? '<span class="grp-dato-val">' + g.graduados + '</span><span class="grp-dato-sub">graduados de ' + g.estudiantes.length + '</span>'
-            : '<span class="grp-dato-val">' + g.activos + ' <small>/ ' + g.cupo + '</small></span><span class="grp-dato-sub">activos / cupo</span>';
-        var t = tonoPct(g.pct);
-        var asistencia = '<span class="grp-dato-val grp-tono-' + t + '">' + esc(pctTxt(g.pct)) + '</span>' +
-            '<span class="grp-dato-sub">' + (g.bajoMinimo ? plural(g.bajoMinimo, 'estudiante', 'estudiantes') + ' bajo el ' + D.MINIMO + ' %' : 'del grupo') + '</span>';
+        var gente = '<span>' + (fin
+            ? esc(plural(g.graduados, 'graduado', 'graduados') + ' de ' + g.estudiantes.length)
+            : esc(plural(g.activos, 'estudiante', 'estudiantes') + ' de ' + g.cupo + ' cupos')) + '</span>';
+        var asistencia = g.pct == null
+            ? '<span>sin asistencia registrada</span>'
+            : '<span><b class="grp-tono-' + tonoPct(g.pct) + '">' + esc(pctTxt(g.pct)) + '</b> de asistencia</span>';
+        var bajo = !fin && g.bajoMinimo
+            ? '<span class="grp-tono-bad">' + esc(plural(g.bajoMinimo, 'estudiante', 'estudiantes') + ' bajo el ' + D.MINIMO + ' %') + '</span>'
+            : '';
 
-        var pend = [];
+        var pie;
         if (fin) {
-            pend.push('<span class="grp-pend grp-pend-muted">Solo consulta</span>');
+            pie = '<span class="grp-card-nota">Solo consulta</span>';
         } else {
-            if (g.sinRegistrar.length) pend.push('<span class="grp-pend grp-pend-asis">' + ICON.reloj + plural(g.sinRegistrar.length, 'asistencia sin registrar', 'asistencias sin registrar') + '</span>');
-            if (r.notasPorPoner) pend.push('<span class="grp-pend grp-pend-notas">' + ICON.estrella + plural(r.notasPorPoner, 'nota por poner', 'notas por poner') + '</span>');
-            if (!pend.length) pend.push('<span class="grp-pend grp-pend-ok">' + ICON.ok + 'Al día</span>');
+            var asisPend = g.sinRegistrar.length;
+            var primeroAsis = asisPend > 0 || hoyPendiente;
+            pie = botonAccion(urlAsistencia(g), ICON.check, 'Tomar asistencia', asisPend, primeroAsis) +
+                  botonAccion(urlNotas(g), ICON.estrella, 'Poner notas', r.notasPorPoner, !primeroAsis && r.notasPorPoner > 0);
         }
 
-        var pie = fin
-            ? '<span class="grp-card-nota">Consulta su asistencia y sus notas</span>'
-            : '<a class="grp-btn grp-btn-primary grp-btn-sm" data-accion href="' + esc(urlAsistencia(g)) + '">' + ICON.check + 'Tomar asistencia</a>' +
-              '<a class="grp-btn grp-btn-ghost grp-btn-sm" data-accion href="' + esc(urlNotas(g)) + '">' + ICON.estrella + 'Poner notas</a>';
-
-        var hoyTag = r.deHoy ? '<span class="grp-hoy-tag">Clase hoy</span>' : '';
-
-        return '<article class="grp-card grp-esc-' + sg + (fin ? ' is-finalizado' : '') + '" tabindex="0" data-id="' + g.id + '"' +
+        return '<article class="grp-card' + (fin ? ' is-finalizado' : '') + '" tabindex="0" data-id="' + g.id + '"' +
                 ' aria-labelledby="grp-c' + g.id + '-t grp-c' + g.id + '-s">' +
-            '<div class="grp-card-top"><span class="grp-esc-tag">' + esc(g.escuela) + '</span>' + estado + '</div>' +
             '<div class="grp-card-head">' +
-                '<h3 class="grp-card-prog" id="grp-c' + g.id + '-t">' + esc(g.programa) + '</h3>' +
-                '<span class="grp-card-grupo" id="grp-c' + g.id + '-s">' + esc(g.nombre) + ' · ' + esc(g.codigo) + '</span>' +
+                '<div class="grp-card-titulos">' +
+                    '<h3 class="grp-card-prog" id="grp-c' + g.id + '-t">' + esc(g.programa) + '</h3>' +
+                    '<span class="grp-card-grupo" id="grp-c' + g.id + '-s">' + esc(g.nombre) + ' · ' + esc(g.codigo) + '</span>' +
+                '</div>' + marca +
             '</div>' +
-            '<div class="grp-card-horario"><span class="grp-jornada-tag">' + esc(g.jornada) + '</span>' + horarioHtml(g) + hoyTag + '</div>' +
+            '<p class="grp-card-horario"><span class="grp-jornada">' + esc(g.jornada) + '</span>' + horarioHtml(g) + '</p>' +
             '<div class="grp-avance">' +
-                '<div class="grp-avance-fila"><span>' + esc(fCorta(g.inicio, true)) + ' → ' + esc(fCorta(g.fin, true)) + '</span><span><b>' + r.avance + ' %</b> de las clases</span></div>' +
-                '<div class="grp-barra" role="progressbar" aria-label="Clases dadas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + r.avance + '"' +
-                    ' aria-valuetext="' + r.dadas + ' de ' + r.total + ' clases dadas"><span style="width:' + r.avance + '%"></span></div>' +
                 '<p class="grp-modulo">' + modulo + '</p>' +
+                '<div class="grp-avance-fila">' +
+                    '<div class="grp-barra" role="progressbar" aria-label="Clases dadas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + r.avance + '"' +
+                        ' aria-valuetext="' + r.dadas + ' de ' + r.total + ' clases dadas"><span style="width:' + r.avance + '%"></span></div>' +
+                    '<span class="grp-avance-pct" aria-hidden="true">' + r.avance + ' %</span>' +
+                '</div>' +
             '</div>' +
-            '<div class="grp-card-datos">' +
-                '<div class="grp-card-dato"><span class="grp-dato-lbl">Estudiantes</span>' + estudiantes + '</div>' +
-                '<div class="grp-card-dato"><span class="grp-dato-lbl">Asistencia</span>' + asistencia + '</div>' +
-            '</div>' +
-            '<div class="grp-pendientes">' + pend.join('') + '</div>' +
+            '<p class="grp-card-resumen">' + gente + '<span class="grp-sep" aria-hidden="true"></span>' + asistencia +
+                (bajo ? '<span class="grp-sep" aria-hidden="true"></span>' + bajo : '') + '</p>' +
             '<div class="grp-card-pie">' + pie + '<span class="grp-card-ver" aria-hidden="true">Ver ficha' + ICON.flecha + '</span></div>' +
         '</article>';
     }
