@@ -42,10 +42,10 @@
 .asi-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .asi-kpi-de  { font-size: 0.95rem; font-weight: 700; color: var(--muted); }
 .asi-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.asi-kpi-blue   .asi-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.asi-kpi-blue   .asi-kpi-val  { color: #1D4ED8; }
-.asi-kpi-green  .asi-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.asi-kpi-green  .asi-kpi-val  { color: #065F46; }
+.asi-kpi-blue   .asi-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.asi-kpi-blue   .asi-kpi-val  { color: var(--navy-3); }
+.asi-kpi-green  .asi-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.asi-kpi-green  .asi-kpi-val  { color: #2D6A27; }
 .asi-kpi-orange .asi-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .asi-kpi-orange .asi-kpi-val  { color: var(--orange-2); }
 .asi-kpi-red    .asi-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -181,13 +181,13 @@ td > .asi-sin-tag:first-child { margin-left: 0; }
 .asi-empty p   { font-size: 0.88rem; margin: 0; }
 
 /* ── Colores por escuela ────────────────────────────── */
-.asi-avatar.asi-esc-sal { background: #DC2626; }
-.asi-avatar.asi-esc-tur { background: #EA580C; }
-.asi-avatar.asi-esc-adm { background: #2563EB; }
-.asi-avatar.asi-esc-edu { background: #059669; }
-.asi-avatar.asi-esc-dep { background: #D97706; }
-.asi-avatar.asi-esc-cie { background: #4F46E5; }
-.asi-avatar.asi-esc-bel { background: #DB2777; }
+.asi-avatar.asi-esc-sal { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-tur { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-adm { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-edu { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-dep { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-cie { background: #E6ECF4; color: var(--navy-2); }
+.asi-avatar.asi-esc-bel { background: #E6ECF4; color: var(--navy-2); }
 
 /* ── Paginación ─────────────────────────────────────── */
 .asi-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0 4px; flex-wrap: wrap; }

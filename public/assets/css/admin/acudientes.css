@@ -56,10 +56,10 @@
 .acu-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .acu-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; }
 .acu-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.acu-kpi-blue   .acu-kpi-icon { background: rgba(59,130,246,0.1);  color: #2563EB; }
-.acu-kpi-blue   .acu-kpi-val  { color: #1D4ED8; }
-.acu-kpi-green  .acu-kpi-icon { background: rgba(16,185,129,0.1);  color: #059669; }
-.acu-kpi-green  .acu-kpi-val  { color: #065F46; }
+.acu-kpi-blue   .acu-kpi-icon { background: #EEF2F7;  color: var(--navy-2); }
+.acu-kpi-blue   .acu-kpi-val  { color: var(--navy-3); }
+.acu-kpi-green  .acu-kpi-icon { background: #E6F4E4;  color: #2D6A27; }
+.acu-kpi-green  .acu-kpi-val  { color: #2D6A27; }
 .acu-kpi-orange .acu-kpi-icon { background: rgba(217,123,46,0.1);  color: var(--orange); }
 .acu-kpi-orange .acu-kpi-val  { color: var(--orange); }
 .acu-kpi-navy   .acu-kpi-icon { background: rgba(10,27,51,0.08);   color: var(--navy-3); }
@@ -83,15 +83,15 @@
 }
 
 /* ── Colores por escuela: los mismos de Docentes (sólido = avatar, tinte = etiqueta) ── */
-.acu-esc-sal { --esc: #DC2626; --esc-suave: rgba(239,68,68,0.12);  --esc-ink: #991B1B; }
-.acu-esc-tur { --esc: #EA580C; --esc-suave: rgba(249,115,22,0.12); --esc-ink: #9A3412; }
-.acu-esc-adm { --esc: #2563EB; --esc-suave: rgba(59,130,246,0.12); --esc-ink: #1E3A8A; }
-.acu-esc-edu { --esc: #059669; --esc-suave: rgba(16,185,129,0.12); --esc-ink: #065F46; }
-.acu-esc-dep { --esc: #D97706; --esc-suave: rgba(234,179,8,0.12);  --esc-ink: #713F12; }
-.acu-esc-cie { --esc: #4F46E5; --esc-suave: rgba(99,102,241,0.12); --esc-ink: #312E81; }
-.acu-esc-bel { --esc: #DB2777; --esc-suave: rgba(236,72,153,0.12); --esc-ink: #9D174D; }
+.acu-esc-sal { --esc: var(--navy-2); --esc-suave: #EEF2F7;  --esc-ink: var(--navy-3); }
+.acu-esc-tur { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
+.acu-esc-adm { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
+.acu-esc-edu { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
+.acu-esc-dep { --esc: var(--navy-2); --esc-suave: #EEF2F7;  --esc-ink: var(--navy-3); }
+.acu-esc-cie { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
+.acu-esc-bel { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
 /* Estudiante sin matrícula: todavía no tiene escuela */
-.acu-esc-sin { --esc: #94A3B8; --esc-suave: rgba(148,163,184,0.14); --esc-ink: #475569; }
+.acu-esc-sin { --esc: var(--navy-2); --esc-suave: #EEF2F7; --esc-ink: var(--navy-3); }
 .acu-esc-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--esc-suave); color: var(--esc-ink); font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
 
 /* ═══ TABLA (mismos estilos que la tabla de Docentes) ═══ */
@@ -434,8 +434,8 @@
 .acu-wstep span { font-size: 0.74rem; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color 0.2s; }
 .acu-wstep.is-active .acu-wstep-dot { border-color: var(--orange); background: var(--orange); }
 .acu-wstep.is-active span { color: var(--orange); }
-.acu-wstep.is-done .acu-wstep-dot { border-color: #059669; background: #059669; }
-.acu-wstep.is-done span { color: #059669; }
+.acu-wstep.is-done .acu-wstep-dot { border-color: #2D7A3A; background: #2D7A3A; }
+.acu-wstep.is-done span { color: #2D7A3A; }
 .acu-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
 
 .acu-modal-body { flex: 1; overflow-y: auto; }

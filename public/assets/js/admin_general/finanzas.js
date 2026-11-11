@@ -218,7 +218,7 @@
         var total = sum(validos, 'valor');
         kpis('fin-rec-kpis', [['green', 'plata', plata(total), 'Recaudado en ' + MESES[inicioMes(mes).getMonth()]],
             ['blue', 'recibo', num(validos.length), validos.length === 1 ? 'Recibo' : 'Recibos'],
-            ['orange', 'plata', plata(validos.length ? total / validos.length : 0), 'Promedio por recibo'],
+            ['blue', 'plata', plata(validos.length ? total / validos.length : 0), 'Promedio por recibo'],
             [anulados.length ? 'red' : 'green', 'anular', num(anulados.length), anulados.length === 1 ? 'Recibo anulado' : 'Recibos anulados']]);
         $('fin-rec-sede-sub').textContent = 'Lo recaudado en ' + nombreMes(mes);
         var porSede = sedesVisibles().map(function (s) {
@@ -346,7 +346,7 @@
     function pintarContabilidad() {
         var ss = sedesVisibles();
         var ing = sum(ss.map(function (s) { return ingresosDe(s.id, mes); })), eg = sum(ss.map(function (s) { return egresosDe(s.id, mes); }));
-        kpis('fin-con-kpis', [['green', 'plata', plata(ing), 'Ingresos'], ['orange', 'recibo', plata(eg), 'Egresos'],
+        kpis('fin-con-kpis', [['green', 'plata', plata(ing), 'Ingresos'], ['blue', 'recibo', plata(eg), 'Egresos'],
             [ing - eg < 0 ? 'red' : 'green', 'plata', (ing - eg < 0 ? '−' : '') + plata(Math.abs(ing - eg)), ing - eg < 0 ? 'Pérdida del mes' : 'Utilidad del mes'],
             ['blue', 'reloj', ing ? Math.round(eg / ing * 100) + ' %' : '—', 'De los ingresos se fue en egresos']]);
         $('fin-con-sede-sub').textContent = nombreMes(mes).charAt(0).toUpperCase() + nombreMes(mes).slice(1) + (mes === 5 ? ', hasta hoy' : '');

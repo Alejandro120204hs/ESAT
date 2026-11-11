@@ -185,7 +185,7 @@
         var gente = {}; l.forEach(function (a) { gente[a.quien] = 1; });
         var k = [['blue', 'lista', num(l.length), l.length === 1 ? 'Evento' : 'Eventos'], ['green', 'persona', num(Object.keys(gente).length), 'Personas con actividad'],
             ['red', 'anular', num(l.filter(function (a) { return a.tipo === 'anular' || a.tipo === 'eliminar' || a.tipo === 'desactivar'; }).length), 'Anulaciones y bajas'],
-            ['orange', 'sede', num(l.filter(function (a) { return a.rol === 'admin'; }).length), 'Hechas por el Admin']];
+            ['blue', 'sede', num(l.filter(function (a) { return a.rol === 'admin'; }).length), 'Hechas por el Admin']];
         $('aud-kpis').innerHTML = k.map(function (x) {
             return '<div class="aud-kpi aud-kpi-' + x[0] + '"><div class="aud-kpi-icon">' + ICON[x[1]] + '</div><div><div class="aud-kpi-val">' + esc(x[2]) + '</div><div class="aud-kpi-lbl">' + esc(x[3]) + '</div></div></div>';
         }).join('');

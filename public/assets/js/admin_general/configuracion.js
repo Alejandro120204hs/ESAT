@@ -220,7 +220,7 @@
     function pintarKpis() {
         var c = C(), n = (c.bloqueadas || []).length;
         var k = [['green', 'plata', plata(c.cuota_sistema), 'Cuota del sistema por mes'], ['blue', 'llave', c.seguridad.intentos_maximos + ' intentos', 'Antes de bloquear una cuenta'],
-            ['orange', 'reloj', c.seguridad.dias_inactividad + ' días', 'Sin entrar para bloquear'], [n ? 'red' : 'green', 'bloqueo', num(n), n === 1 ? 'Cuenta bloqueada' : 'Cuentas bloqueadas']];
+            ['blue', 'reloj', c.seguridad.dias_inactividad + ' días', 'Sin entrar para bloquear'], [n ? 'red' : 'green', 'bloqueo', num(n), n === 1 ? 'Cuenta bloqueada' : 'Cuentas bloqueadas']];
         $('cfg-kpis').innerHTML = k.map(function (x) {
             return '<div class="cfg-kpi cfg-kpi-' + x[0] + '"><div class="cfg-kpi-icon">' + ICON[x[1]] + '</div><div><div class="cfg-kpi-val">' + esc(x[2]) + '</div><div class="cfg-kpi-lbl">' + esc(x[3]) + '</div></div></div>';
         }).join('');

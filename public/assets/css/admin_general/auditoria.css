@@ -35,8 +35,8 @@
 .aud-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .aud-kpi-val { font: 900 1.45rem "Archivo", system-ui, sans-serif; line-height: 1; color: var(--navy-3); font-variant-numeric: tabular-nums; }
 .aud-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.aud-kpi-blue .aud-kpi-icon   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
-.aud-kpi-green .aud-kpi-icon  { background: rgba(64,118,58,0.12); color: var(--green); }
+.aud-kpi-blue .aud-kpi-icon   { background: #EEF2F7; color: var(--navy-2); }
+.aud-kpi-green .aud-kpi-icon  { background: #E6F4E4; color: #2D6A27; }
 .aud-kpi-orange .aud-kpi-icon { background: rgba(217,123,46,0.12); color: var(--orange-2); }
 .aud-kpi-red .aud-kpi-icon    { background: rgba(185,28,28,0.1); color: var(--red); }
 

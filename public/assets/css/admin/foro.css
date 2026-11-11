@@ -45,11 +45,11 @@
 .for-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .for-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .for-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.for-kpi-blue   .for-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.for-kpi-blue   .for-kpi-val  { color: #1D4ED8; }
+.for-kpi-blue   .for-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.for-kpi-blue   .for-kpi-val  { color: var(--navy-3); }
 .for-kpi-blue   .for-kpi-val.is-rojo { color: var(--red); }
-.for-kpi-green  .for-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.for-kpi-green  .for-kpi-val  { color: #065F46; }
+.for-kpi-green  .for-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.for-kpi-green  .for-kpi-val  { color: #2D6A27; }
 .for-kpi-orange .for-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .for-kpi-orange .for-kpi-val  { color: var(--orange-2); }
 .for-kpi-red    .for-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -130,7 +130,7 @@
 .for-comprobante { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.84rem; color: var(--navy-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .for-monto { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-3); }
 .for-monto.is-rojo    { color: var(--red); }
-.for-monto.is-verde   { color: #065F46; }
+.for-monto.is-verde   { color: #2D6A27; }
 .for-monto.is-tachado { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 
 /* Acciones */
@@ -359,10 +359,10 @@
 
 /* Categoría: etiqueta de color (misma forma que app-status-tag) */
 .for-cat { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
-.for-cat.c-academico { background: #E0EAFF; color: #1E40AF; }
-.for-cat.c-practicas { background: #F1E8FD; color: #6B21A8; }
-.for-cat.c-tramites  { background: #E6F4E4; color: #2D6A27; }
-.for-cat.c-vida      { background: #FDF1E6; color: #8A4B14; }
+.for-cat.c-academico { background: #EEF2F7; color: var(--navy-3); }
+.for-cat.c-practicas { background: #EEF2F7; color: var(--navy-3); }
+.for-cat.c-tramites  { background: #EEF2F7; color: var(--navy-3); }
+.for-cat.c-vida      { background: #EEF2F7; color: var(--navy-3); }
 
 /* Rol de la persona (punto de color + texto) */
 .for-rol { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
@@ -370,7 +370,7 @@
 .for-rol i.r-e { background: var(--navy-2); }
 .for-rol i.r-d { background: var(--orange); }
 .for-rol i.r-a { background: #2D7A3A; }
-.for-rol i.r-x { background: #7C3AED; }
+.for-rol i.r-x { background: #475569; }
 
 /* Datos en línea (mismo formato que Pagos) */
 .for-datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1.5px solid var(--line); border-radius: var(--radius-md); }
@@ -381,10 +381,10 @@
 .for-dato-val small { display: block; margin-top: 2px; font-size: 0.74rem; font-weight: 600; color: var(--muted); }
 
 /* Avatar del cajón por categoría */
-.for-drawer-avatar.c-academico { background: #2563EB; }
-.for-drawer-avatar.c-practicas { background: #7C3AED; }
-.for-drawer-avatar.c-tramites  { background: #2D7A3A; }
-.for-drawer-avatar.c-vida      { background: #C2620F; }
+.for-drawer-avatar.c-academico { background: var(--navy-2); }
+.for-drawer-avatar.c-practicas { background: var(--navy-2); }
+.for-drawer-avatar.c-tramites  { background: var(--navy-2); }
+.for-drawer-avatar.c-vida      { background: var(--navy-2); }
 .for-drawer-panel { width: 640px; }
 
 /* Conversación */
@@ -402,7 +402,7 @@
 .for-av.r-e { background: var(--navy-2); }
 .for-av.r-d { background: var(--orange); }
 .for-av.r-a { background: #2D7A3A; }
-.for-av.r-x { background: #7C3AED; }
+.for-av.r-x { background: #475569; }
 .for-msg-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .for-msg-quien { min-width: 0; }
 .for-msg-nombre { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); }

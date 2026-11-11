@@ -49,10 +49,10 @@
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .cur-kpi-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cur-kpi-icon-blue  { background: #eff6ff; color: #2563eb; }
-.cur-kpi-icon-green { background: #f0fdf4; color: #16a34a; }
-.cur-kpi-icon-orange{ background: #fff7ed; color: var(--orange); }
-.cur-kpi-icon-purple{ background: #f5f3ff; color: #7c3aed; }
+.cur-kpi-icon-blue  { background: #EEF2F7; color: var(--navy-2); }
+.cur-kpi-icon-green { background: #E6F4E4; color: #2D6A27; }
+.cur-kpi-icon-orange{ background: #EEF2F7; color: var(--navy-2); }
+.cur-kpi-icon-purple{ background: #EEF2F7; color: var(--navy-2); }
 .cur-kpi-val { font-family: "Archivo", system-ui, sans-serif; font-size: 1.7rem; font-weight: 900; color: var(--navy-3); line-height: 1; }
 .cur-kpi-lbl { font-size: 0.78rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
 
@@ -110,7 +110,7 @@
 .cur-cupo-bar { height: 5px; background: var(--bg-2); border-radius: 99px; overflow: hidden; }
 .cur-cupo-fill { height: 100%; border-radius: 99px; background: var(--orange); }
 .cur-cupo-fill.is-full { background: #dc2626; }
-.cur-cupo-fill.is-low  { background: #16a34a; }
+.cur-cupo-fill.is-low  { background: #2D7A3A; }
 
 /* Tags */
 .cur-jornada-tag {
@@ -122,13 +122,13 @@
     font-size: 0.72rem; font-weight: 700;
     background: #F1F5F9; color: #475569; /* escuelas nuevas sin color propio */
 }
-.cur-esc-sal { background: #fef2f2; color: #b91c1c; }
-.cur-esc-tur { background: #fff7ed; color: #c2410c; }
-.cur-esc-adm { background: #eff6ff; color: #1d4ed8; }
-.cur-esc-edu { background: #f0fdf4; color: #15803d; }
-.cur-esc-dep { background: #faf5ff; color: #7e22ce; }
-.cur-esc-cie { background: #f0f9ff; color: #0369a1; }
-.cur-esc-bel { background: #fdf4ff; color: #86198f; }
+.cur-esc-sal { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-tur { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-adm { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-edu { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-dep { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-cie { background: #EEF2F7; color: var(--navy-3); }
+.cur-esc-bel { background: #EEF2F7; color: var(--navy-3); }
 
 /* Acciones tabla */
 .cur-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
@@ -145,7 +145,7 @@
     display: inline-block; padding: 4px 10px; border-radius: 99px;
     font-size: 0.72rem; font-weight: 700; white-space: nowrap;
 }
-.cur-estado-activo       { background: #f0fdf4; color: #15803d; }
+.cur-estado-activo       { background: #E6F4E4; color: #2D6A27; }
 .cur-estado-planificacion{ background: #fffbeb; color: #b45309; }
 .cur-estado-finalizado   { background: #f1f5f9; color: #64748b; }
 
