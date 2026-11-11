@@ -21,37 +21,38 @@
 
 /* ── Bienvenida ─────────────────────────────── */
 .gen-welcome {
-    background: linear-gradient(115deg, var(--navy-3) 0%, var(--navy-2) 55%, #1D4E8F 100%);
-    border-radius: var(--radius-lg);
-    padding: 28px 32px; min-height: 150px;
+    /* Encabezado claro, como el "Hola, …" del panel Docente (antes, franja azul oscura) */
+    background: transparent;
+    border-radius: 0;
+    padding: 0; min-height: 0;
     display: flex; align-items: center; justify-content: space-between; gap: 24px;
     margin-bottom: 18px; position: relative; overflow: hidden;
 }
 .gen-welcome-mark {
     position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-    width: 110px; height: 110px; object-fit: contain; opacity: 0.35;
+    width: 72px; height: 72px; object-fit: contain; opacity: 0.28;
     pointer-events: none; user-select: none;
 }
 .gen-welcome-text { position: relative; z-index: 1; }
 .gen-welcome-title {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 1.85rem; color: var(--white);
+    font-weight: 900; font-size: 1.85rem; color: var(--navy-3);
     line-height: 1.2; margin-bottom: 6px;
 }
-.gen-welcome-title span { color: var(--orange); }
-.gen-welcome-desc { font-size: 0.97rem; color: rgba(255,255,255,0.7); max-width: 520px; line-height: 1.55; }
+.gen-welcome-title span { color: var(--orange-2); }
+.gen-welcome-desc { font-size: 0.95rem; color: #4B5563; /* ≥ 4,5:1 sobre el fondo gris */ max-width: 520px; line-height: 1.55; }
 .gen-welcome-badge {
     position: relative; z-index: 1; flex-shrink: 0;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
-    background: rgba(255,255,255,0.08); border-radius: var(--radius-lg);
-    border: 1px solid rgba(255,255,255,0.12); padding: 16px 24px;
+    background: rgba(255,255,255,0.72); border-radius: var(--radius-lg);
+    border: 1.5px solid var(--line); padding: 16px 24px;
 }
 .gen-welcome-badge-num {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 2.2rem; color: var(--orange); letter-spacing: -0.03em; line-height: 1;
+    font-weight: 900; font-size: 2.2rem; color: var(--navy-3); letter-spacing: -0.03em; line-height: 1;
 }
-.gen-welcome-badge-label { font-size: 0.77rem; color: rgba(255,255,255,0.6); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-@media (max-width: 700px) { .gen-welcome-badge { display: none; } .gen-welcome { padding: 22px 20px; } .gen-welcome-title { font-size: 1.5rem; } }
+.gen-welcome-badge-label { font-size: 0.77rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+@media (max-width: 700px) { .gen-welcome-badge { display: none; } .gen-welcome { padding: 0; } .gen-welcome-title { font-size: 1.5rem; } }
 
 /* ── Filtro de sede ─────────────────────────── */
 .gen-filtro { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
@@ -93,15 +94,15 @@
 .gen-kpi-blue::before   { background: var(--navy-2); }
 .gen-kpi-green::before  { background: var(--green); }
 .gen-kpi-red::before    { background: var(--red); }
-.gen-kpi-orange::before { background: var(--orange); }
+.gen-kpi-orange::before { background: var(--navy-2); }
 
 .gen-kpi-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .gen-kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
 .gen-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.gen-kpi-icon-blue   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
-.gen-kpi-icon-green  { background: rgba(64,118,58,0.12); color: var(--green); }
+.gen-kpi-icon-blue   { background: #EEF2F7; color: var(--navy-2); }
+.gen-kpi-icon-green  { background: #E6F4E4; color: #2D6A27; }
 .gen-kpi-icon-red    { background: rgba(185,28,28,0.1); color: var(--red); }
-.gen-kpi-icon-orange { background: rgba(217,123,46,0.12); color: var(--orange-2); }
+.gen-kpi-icon-orange { background: #EEF2F7; color: var(--navy-2); }
 
 .gen-delta {
     display: inline-flex; align-items: center; gap: 3px;

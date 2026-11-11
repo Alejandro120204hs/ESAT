@@ -115,6 +115,26 @@ contraseña en los formularios de alta, se genera sola.
    ejemplo (precios, personas, matrículas) sí pueden ser ficticios, pero
    deben marcarse como tal en un comentario al inicio del archivo Blade.
 
+## Diseño de los paneles (regla general)
+
+**Todo panel por rol, también los que faltan (Estudiante y Acudiente), sigue `DESIGN-PANELES.md`.** `DESIGN.md` es solo
+del sitio público y no se usa en los paneles (los avisos `design-system-*` del detector comparan con él: no aplican aquí).
+- **Partir del panel Docente**, que es la referencia viva: copiar `docente/layout.blade.php` + `partials/{sidebar,topbar}`,
+  `layout.css` y `layout.js` a la carpeta del rol, y copiar los componentes de una pantalla parecida (tabla con filtros,
+  ficha en cajón, planilla con barra de guardar, horario semanal) antes de inventar uno nuevo.
+- **Contenido**: cada cifra aparece una sola vez por pantalla y ningún elemento está "porque sí"; título + una línea de
+  explicación, sin antetítulos; en las pantallas de trabajo, un resumen en una línea en vez de filas de tarjetas de
+  cifras; un solo botón naranja por bloque, y el número de pendientes dentro del botón que los resuelve.
+- **Color con significado** (aplicado a Docente, Secretaría y Admin el 11-11-2026 sin quitar ningún elemento,
+  comprobado con un inventario de antes y después de las 31 pantallas): naranja = acción o pendiente, rojo = riesgo,
+  verde = bien (el del panel: `#2D7A3A`/`#2D6A27`/`#E6F4E4`, no esmeralda), gris/azul de la marca = neutro (`#EEF2F7` +
+  `--navy-2`/`--navy-3`). Las tarjetas de cifras llevan color solo si la cifra es un pendiente, un riesgo o algo bueno;
+  escuela, jornada, vinculación y categorías no llevan color (avatares `#E6ECF4` + `--navy-2`). Excepciones, porque el
+  color codifica datos: el horario semanal (`hor-c-*`, `ini-c-*`), la paleta de sedes (`--sede-*`), las leyendas de
+  gráficas de Contabilidad/Pagos, P/T/A/E de la asistencia, la categoría "Urgente" y los roles del foro. Los Inicios de
+  la Secretaría y del Admin usan el encabezado claro del Docente ("Hola, …"), no la franja azul.
+- Al cambiar algo general del diseño de un panel, actualizar `DESIGN-PANELES.md` en el mismo cambio.
+
 ## Convención de CSS/JS
 
 Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
@@ -125,6 +145,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cargado vía `@push('styles')`/`@push('scripts')` desde su vista. Esto
   significa que hay bastante CSS/JS duplicado entre archivos (tablas,
   modales, botones) — es intencional, no "arreglar" unificándolo.
+- Colores, componentes y reglas de contenido: ver "Diseño de los paneles" arriba y `DESIGN-PANELES.md`.
 
 ## Estructura del backend (MVC)
 
@@ -607,7 +628,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   activa, módulo del programa, no por iniciar y que cursó en el grupo). Los errores salen uno a la vez con el nombre
   del estudiante (`asistencia.js` señala su fila). Guardan `registrado_por`, la fecha de la nota/habilitación cuando
   cambia y una línea en la auditoría (entidad `Curso`). No necesitó campos nuevos en la BD.
-- **Diseño** (simplificado el 9-11-2026, decidido con el usuario): cada cifra aparece **una sola vez** por pantalla y
+- **Diseño** (simplificado el 9-11-2026, decidido con el usuario; es la referencia de `DESIGN-PANELES.md`): cada cifra aparece **una sola vez** por pantalla y
   ningún elemento está "porque sí". Sin filas de tarjetas de cifras (el saludo del Inicio y la línea de resumen de cada
   pantalla las reemplazan), sin antetítulos sobre los títulos, sin chips de escuela ni círculos de letra de grupo.
   Color con la semántica del Admin: naranja = acción o pendiente, rojo = riesgo, verde = bien, gris/azul de la marca =

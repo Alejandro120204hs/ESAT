@@ -154,7 +154,7 @@ components:
 
 # Design System: ESAT · Sitio público
 
-> **Alcance.** Este documento describe solo el **sitio público** de ESAT: `resources/views/layouts/app.blade.php`, `partials/{header,footer,icon-sprite}`, `welcome.blade.php`, `paginas/{programa,continuada,escuela}` y `paginas/partes/*`, con sus estilos en `public/assets/css/sitio/` y su movimiento en `public/assets/js/sitio/`. La **plataforma interna** (paneles de superadmin, admin, docente, login: `resources/views/{admin,superadmin,docente}/**`, `public/assets/{css,js}/{admin,superadmin,docente,login}/**`) es otro mundo visual y **no** se rige por estos tokens ni reglas.
+> **Alcance.** Este documento describe solo el **sitio público** de ESAT: `resources/views/layouts/app.blade.php`, `partials/{header,footer,icon-sprite}`, `welcome.blade.php`, `paginas/{programa,continuada,escuela}` y `paginas/partes/*`, con sus estilos en `public/assets/css/sitio/` y su movimiento en `public/assets/js/sitio/`. La **plataforma interna** (paneles de superadmin, admin, docente, login: `resources/views/{admin,superadmin,docente}/**`, `public/assets/{css,js}/{admin,superadmin,docente,login}/**`) es otro mundo visual y **no** se rige por estos tokens ni reglas. Su sistema visual está en **`DESIGN-PANELES.md`** (vale para todos los paneles, también los que faltan).
 
 ## Overview
 

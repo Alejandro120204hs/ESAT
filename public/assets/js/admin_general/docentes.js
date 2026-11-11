@@ -198,7 +198,7 @@
         var act = D.docentes.filter(function (d) { return d.estado === 'activo'; });
         var sinGrupo = act.filter(function (d) { return !gruposDe(d, true).length; }).length;
         var k = [['blue', 'docente', num(D.docentes.length), 'Docentes'], ['green', 'ok', num(act.length), act.length === 1 ? 'Activo' : 'Activos'],
-            ['orange', 'reloj', num(act.filter(function (d) { return d.vinculacion === 'tiempo_completo'; }).length), 'Tiempo completo'],
+            ['blue', 'reloj', num(act.filter(function (d) { return d.vinculacion === 'tiempo_completo'; }).length), 'Tiempo completo'],
             [sinGrupo ? 'red' : 'green', 'alerta', num(sinGrupo), 'Activos sin grupos vigentes']];
         $('dcn-kpis').innerHTML = k.map(function (x) { return '<div class="dcn-kpi dcn-kpi-' + x[0] + '"><div class="dcn-kpi-icon">' + ICON[x[1]] + '</div><div><div class="dcn-kpi-val">' + esc(x[2]) + '</div><div class="dcn-kpi-lbl">' + esc(x[3]) + '</div></div></div>'; }).join('');
     }

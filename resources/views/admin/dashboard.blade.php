@@ -26,7 +26,7 @@
             Hola, <span>{{ $nombreAdmin }}.</span>
         </div>
         <div class="dash-welcome-desc">
-            Panel de gestión de la sede <strong style="color:rgba(255,255,255,0.85);">{{ $sedeName }}</strong>.
+            Panel de gestión de la sede <strong>{{ $sedeName }}</strong>.
             Aquí tienes un resumen de lo que está pasando hoy con tus estudiantes, programas y pagos.
         </div>
     </div>

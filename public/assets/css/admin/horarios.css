@@ -15,10 +15,10 @@
 }
 .hor-kpi-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .hor-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.hor-kpi-icon-blue   { background: #EFF6FF; color: #2563EB; }
-.hor-kpi-icon-orange { background: #FFF7ED; color: var(--orange); }
-.hor-kpi-icon-green  { background: #F0FDF4; color: #16A34A; }
-.hor-kpi-icon-purple { background: #F5F3FF; color: #7C3AED; }
+.hor-kpi-icon-blue   { background: #EEF2F7; color: var(--navy-2); }
+.hor-kpi-icon-orange { background: #EEF2F7; color: var(--navy-2); }
+.hor-kpi-icon-green  { background: #EEF2F7; color: var(--navy-2); }
+.hor-kpi-icon-purple { background: #EEF2F7; color: var(--navy-2); }
 .hor-kpi-val { font-size: 1.6rem; font-weight: 800; color: var(--navy-3); line-height: 1; }
 .hor-kpi-lbl { font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -77,13 +77,13 @@
 
 /* Escuela badge */
 .hor-esc-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; background: #F1F5F9; color: #475569; /* escuelas nuevas sin color propio */ }
-.hor-esc-sal { background: #FEE2E2; color: #991B1B; }
-.hor-esc-tur { background: #FEF3C7; color: #92400E; }
-.hor-esc-adm { background: #DBEAFE; color: #1E40AF; }
-.hor-esc-edu { background: #D1FAE5; color: #065F46; }
-.hor-esc-dep { background: #EDE9FE; color: #5B21B6; }
-.hor-esc-cie { background: #E0F2FE; color: #0C4A6E; }
-.hor-esc-bel { background: #FCE7F3; color: #9D174D; }
+.hor-esc-sal { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-tur { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-adm { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-edu { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-dep { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-cie { background: #EEF2F7; color: var(--navy-3); }
+.hor-esc-bel { background: #EEF2F7; color: var(--navy-3); }
 
 /* Chips días */
 .hor-dias-wrap { display: flex; gap: 3px; flex-wrap: wrap; }
@@ -106,10 +106,10 @@
 /* Jornada tag */
 .hor-jornadas-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .hor-jornada-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
-.hor-jornada-manana  { background: #FFF7ED; color: #C05621; }
-.hor-jornada-tarde   { background: #EFF6FF; color: #1E40AF; }
-.hor-jornada-noche   { background: #F5F3FF; color: #5B21B6; }
-.hor-jornada-fds     { background: #ECFDF5; color: #047857; }
+.hor-jornada-manana  { background: #EEF2F7; color: var(--navy-3); }
+.hor-jornada-tarde   { background: #EEF2F7; color: var(--navy-3); }
+.hor-jornada-noche   { background: #EEF2F7; color: var(--navy-3); }
+.hor-jornada-fds     { background: #EEF2F7; color: var(--navy-3); }
 
 /* Acciones */
 .hor-action-btn {
