@@ -73,7 +73,11 @@ class ProgramaRequest extends FormRequest
                 $v->errors()->add('jornadas', "El {$sinJornada->nombre} ({$sinJornada->codigo}) es de jornada ".mb_strtolower($sinJornada->jornada).': no puedes quitarla.');
             }
 
-            // Con las nuevas horas y meses, los horarios ya armados deben seguir cabiendo
+            // Con las nuevas horas y meses, los horarios ya armados deben seguir cabiendo (si no cambian, no se revisa:
+            // editar otra cosa no debe bloquearse por lo que ya estaba guardado)
+            if ($this->integer('horas') === (int) $programa->horas && $this->integer('duracion_meses') === (int) $programa->duracion_meses) {
+                return;
+            }
             $nuevo   = new Programa(['horas' => $this->integer('horas'), 'duracion_meses' => $this->integer('duracion_meses')]);
             $horario = app(HorarioService::class);
             foreach ($grupos->filter(fn ($g) => $g->sesiones->isNotEmpty()) as $g) {

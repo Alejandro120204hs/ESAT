@@ -214,11 +214,15 @@
 .cfg-card-title { font: 800 1rem "Archivo", system-ui, sans-serif; color: var(--navy-3); }
 .cfg-card-sub { font-size: 0.83rem; color: var(--muted); margin-top: 2px; line-height: 1.5; }
 .cfg-card-body { padding: 20px 22px; }
-.cfg-card-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); }
+.cfg-card-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); }
 .cfg-hint { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
 .cfg-prefijo { position: relative; }
 .cfg-prefijo span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; pointer-events: none; }
 .cfg-prefijo input { padding-left: 28px; }
+/* Porcentaje: el símbolo va al final */
+.cfg-sufijo span { left: auto; right: 12px; }
+.cfg-sufijo { max-width: 140px; }
+.cfg-sufijo input { padding-left: 12px; padding-right: 32px; }
 .cfg-ejemplo { padding: 14px 16px; border-radius: 12px; background: var(--bg); font-size: 0.86rem; color: var(--navy-3); line-height: 1.6; }
 .cfg-ejemplo strong { font-family: "Archivo", system-ui, sans-serif; }
 .cfg-cambios { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 0.86rem; }

@@ -96,10 +96,26 @@ class Programa extends Model
         return $this->hasMany(Curso::class);
     }
 
-    /** Cuántos meses dura cada periodo (semestre/trimestre) de este programa. */
-    public function mesesPorPeriodo(): float
+    /**
+     * Meses que dura el periodo $i (desde 0): cada uno dura lo de su tipo (trimestre 3, semestre 6) y el último lo que
+     * quede. Así 8 meses por trimestre son 3 + 3 + 2 y la cuota del sistema suma justo los 8 meses (HALLAZGOS B28).
+     */
+    public function mesesDelPeriodo(int $i): int
     {
-        return $this->duracion_meses / $this->duracion_periodos;
+        $largo = $this->largoPeriodo();
+
+        return max(0, min($largo, $this->duracion_meses - $i * $largo));
+    }
+
+    /** Mes (desde 0, contado desde el inicio) en que empieza el periodo $i. */
+    public function inicioDelPeriodo(int $i): int
+    {
+        return $i * $this->largoPeriodo();
+    }
+
+    private function largoPeriodo(): int
+    {
+        return self::PERIODOS[$this->tipo_periodo] ?? max(1, (int) $this->duracion_meses);
     }
 
     /** Cuota del sistema vigente, tomada de configuraciones (ver Configuracion). */
@@ -114,11 +130,11 @@ class Programa extends Model
         return ($this->precio_total / $this->duracion_meses) + static::cuotaSistemaMensual();
     }
 
-    /** Lo que paga el estudiante de una vez si eligió pagar por periodo completo. */
+    /** Lo que paga el estudiante de una vez si eligió pagar por periodo completo (un periodo completo; el último puede ser más corto). */
     public function cuotaPorPeriodo(): float
     {
         $valorPrograma = $this->precio_total / $this->duracion_periodos;
-        $cuotaSistema = static::cuotaSistemaMensual() * $this->mesesPorPeriodo();
+        $cuotaSistema = static::cuotaSistemaMensual() * $this->mesesDelPeriodo(0);
 
         return $valorPrograma + $cuotaSistema;
     }

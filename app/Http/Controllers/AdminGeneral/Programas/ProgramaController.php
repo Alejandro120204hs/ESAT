@@ -32,10 +32,13 @@ class ProgramaController extends Controller
             ->map(fn (Curso $c) => ['id' => $c->id, 'programa_id' => $c->programa_id, 'sede_id' => $c->sede_id, 'nombre' => $c->nombre,
                 'jornada' => $c->jornada, 'estado' => $c->estado, 'estudiantes' => $c->estudiantes_activos_count])->all();
 
+        // Con matrículas vigentes la duración no se cambia (ProgramaRequest)
+        $vigentes = Matricula::whereIn('estado', Matricula::VIGENTES)->selectRaw('programa_id, count(*) as n')->groupBy('programa_id')->pluck('n', 'programa_id');
+
         $docentes = DB::table('docente_perfiles')->selectRaw('escuela_id, count(*) as n')->groupBy('escuela_id')->pluck('n', 'escuela_id');
 
         return view('admin_general.programas.index', ['datos' => [
-            'programas'     => collect($estructura->programas())->map(fn ($p) => $p + ['activos' => $activos->get($p['id'], (object) [])])->all(),
+            'programas'     => collect($estructura->programas())->map(fn ($p) => $p + ['activos' => $activos->get($p['id'], (object) []), 'vigentes' => (int) ($vigentes[$p['id']] ?? 0)])->all(),
             'escuelas'      => collect($estructura->escuelas())->map(fn ($e) => $e + ['docentes' => (int) ($docentes[$e['id']] ?? 0)])->all(),
             'sedes'         => collect($estructura->sedes())->map(fn ($s) => collect($s)->only(['id', 'nombre', 'ciudad', 'programas']))->all(),
             'grupos'        => $grupos,
@@ -53,8 +56,12 @@ class ProgramaController extends Controller
             return $programa;
         });
         Auditoria::registrar('crear', $programa, "Creó el programa {$programa->nombre} ({$programa->codigo}) por $ ".$this->plata($programa->precio_total).'.');
+        [$agregadas] = $this->ofrecerEn($programa, $request->validated('sedes') ?? []);
+        $n = count($agregadas);
+        $donde = $n === 0 ? 'Queda en el catálogo: cada secretaría lo agrega a su sede cuando lo vaya a ofrecer.'
+            : ($n === Sede::count() && $n > 1 ? 'Se ofrece en todas las sedes.' : 'Se ofrece en '.collect($agregadas)->pluck('nombre')->join(', ', ' y ').'.');
 
-        return response()->json(['mensaje' => 'Se creó el programa. Ahora asígnalo a las sedes o deja que cada secretaría lo ofrezca.', 'id' => $programa->id], 201);
+        return response()->json(['mensaje' => "Se creó el programa. {$donde}", 'id' => $programa->id], 201);
     }
 
     public function update(ProgramaRequest $request, Programa $programa): JsonResponse
@@ -74,15 +81,25 @@ class ProgramaController extends Controller
         DB::transaction(function () use ($programa, $datos, $request) {
             $programa->update($datos);
             $this->guardarMalla($programa, $request->validated('modulos'));
-            // La fecha de fin de cada grupo es su inicio + la duración del programa
+            // La fecha de fin de cada grupo es su inicio + la duración del programa; los finalizados conservan la suya
             if ($programa->wasChanged('duracion_meses')) {
-                $programa->cursos->each(fn (Curso $c) => $c->update(['fecha_fin' => Curso::finPara($c->fecha_inicio, $programa)]));
+                $programa->cursos()->where('estado', '!=', 'finalizado')->get()
+                    ->each(fn (Curso $c) => $c->update(['fecha_fin' => Curso::finPara($c->fecha_inicio, $programa)]));
             }
         });
         $detalle = $cambios ? ': '.implode('; ', $cambios) : '';
         Auditoria::registrar('editar', $programa, "Editó el programa {$programa->nombre} ({$programa->codigo}){$detalle}.");
+        $sedes = '';
+        if ($request->has('sedes')) {
+            [$agregadas, $quitadas] = $this->ofrecerEn($programa, $request->validated('sedes'));
+            $partes = array_filter([
+                $agregadas ? 'ahora se ofrece en '.collect($agregadas)->pluck('nombre')->join(', ', ' y ') : null,
+                $quitadas ? 'ya no se ofrece en '.collect($quitadas)->pluck('nombre')->join(', ', ' y ') : null,
+            ]);
+            $sedes = $partes ? ' '.ucfirst(implode('; ', $partes)).'.' : '';
+        }
 
-        return response()->json(['mensaje' => "Se guardaron los cambios del programa{$detalle}."]);
+        return response()->json(['mensaje' => "Se guardaron los cambios del programa{$detalle}.{$sedes}"]);
     }
 
     /** Activo ⇄ inactivo. No se desactiva con grupos vigentes en alguna sede. */
@@ -123,6 +140,29 @@ class ProgramaController extends Controller
     }
 
     /* ── Auxiliares ── */
+
+    /**
+     * Deja el programa ofrecido justo en esas sedes (paso 4 del formulario; las reglas las revisa ProgramaRequest). Cada
+     * sede que entra o sale queda en la auditoría de esa sede, como con el interruptor de la ficha.
+     *
+     * @param  int[]  $sedes
+     * @return array{0: Sede[], 1: Sede[]} [agregadas, quitadas]
+     */
+    private function ofrecerEn(Programa $programa, array $sedes): array
+    {
+        $actuales = $programa->sedes()->pluck('sedes.id')->all();
+        $agregadas = Sede::whereIn('id', array_diff($sedes, $actuales))->orderBy('nombre')->get()->all();
+        $quitadas = Sede::whereIn('id', array_diff($actuales, $sedes))->orderBy('nombre')->get()->all();
+        DB::transaction(fn () => $programa->sedes()->sync($sedes));
+        foreach ($agregadas as $s) {
+            Auditoria::registrar('editar', $programa, "Asignó el programa {$programa->nombre} a la sede {$s->nombre}.", $s->id);
+        }
+        foreach ($quitadas as $s) {
+            Auditoria::registrar('editar', $programa, "Quitó el programa {$programa->nombre} de la sede {$s->nombre}.", $s->id);
+        }
+
+        return [$agregadas, $quitadas];
+    }
 
     private function datos(ProgramaRequest $request): array
     {

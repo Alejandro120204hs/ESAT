@@ -221,7 +221,7 @@ class MatriculaController extends Controller
     {
         $e     = $m->estudiante;
         $acu   = $e->acudientes->first();
-        $total = $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : $m->programa->duracion_periodos;
+        $total = $m->totalCuotas($m->pagos);
 
         return array_merge([
             'id'            => $m->id,
@@ -246,6 +246,7 @@ class MatriculaController extends Controller
             'documentos_pendientes' => EstudianteDocumento::pendientesDe($e),
             // Módulos de la malla sin aprobar (graduar exige que no quede ninguno)
             'modulos_pendientes'    => $m->estado === 'activo' ? $this->calificaciones->pendientesParaGraduar($m) : [],
+            'sin_malla'             => $m->programa->modulos->isEmpty(),
             'descuento_pct'    => (float) $m->descuento_pct,
             'descuento_motivo' => $m->descuento_motivo,
             'cobros'        => $m->pagos->map(fn (Pago $p) => [
@@ -260,6 +261,7 @@ class MatriculaController extends Controller
                 'valor_sistema'  => (int) round($p->monto_sistema),
                 'abonado'     => (int) round($p->disponible()),
                 'reembolsado' => (int) round($p->reembolsado),
+                'retenido'    => (int) round($p->retenido),
                 'restante'    => (int) round($p->restante()),
                 'estado'      => $p->estadoActual(),
                 'fecha_pago'  => $p->fecha_pago?->format('Y-m-d'),
@@ -368,6 +370,9 @@ class MatriculaController extends Controller
             'tipo_periodo'=> $p->tipo_periodo,
             'cuota_mensual' => (int) round($p->cuotaMensual()),
             'cuota_periodo' => (int) round($p->cuotaPorPeriodo()),
+            // El último periodo puede ser más corto (10 meses por trimestre: 3 + 3 + 3 + 1)
+            'meses_ultimo'  => $p->mesesDelPeriodo(max(0, $p->duracion_periodos - 1)),
+            'meses_periodo' => $p->mesesDelPeriodo(0),
         ];
     }
 }

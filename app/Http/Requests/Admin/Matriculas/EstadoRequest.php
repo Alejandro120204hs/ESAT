@@ -50,9 +50,15 @@ class EstadoRequest extends FormRequest
             $m = $this->route('matricula');
 
             if ($this->input('estado') === 'graduado') {
+                // Por fecha, aunque el grupo esté finalizado: uno cerrado antes de tiempo no adelanta el grado (HALLAZGOS A8)
                 $g = $m->curso;
-                if ($g && $g->estado !== 'finalizado' && $g->fecha_fin->gt(today())) {
-                    $v->errors()->add('estado', "Solo se gradúa cuando su grupo termina ({$g->fecha_fin->format('d/m/Y')}).");
+                if ($g && $g->fin()->gt(today())) {
+                    $v->errors()->add('estado', "Solo se gradúa cuando su grupo termina ({$g->fin()->format('d/m/Y')}).");
+                    return;
+                }
+                // Sin malla no hay módulos que aprobar: no se gradúa hasta que el Admin se la cargue
+                if ($m->programa->modulos()->doesntExist()) {
+                    $v->errors()->add('estado', 'El programa todavía no tiene malla: el Admin debe cargarle los módulos antes de graduar a alguien.');
                     return;
                 }
                 // Todos los módulos de la malla aprobados (con nota o en habilitación)
@@ -74,7 +80,7 @@ class EstadoRequest extends FormRequest
                     $v->errors()->add('estado', 'No ha elegido su plan de pago, así que no ha pagado el programa. No se puede graduar.');
                     return;
                 }
-                $total   = $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : $m->programa->duracion_periodos;
+                $total   = $m->totalCuotas();
                 $pagadas = $m->pagos->where('tipo', $m->plan_pago)->where('estado', 'pagado')->count();
                 if ($pagadas < $total) {
                     $v->errors()->add('estado', "Solo ha pagado {$pagadas} de {$total} cuotas del programa. No se puede graduar.");
@@ -86,6 +92,9 @@ class EstadoRequest extends FormRequest
                 $recibos = $m->recaudos()->whereNull('anulado_en')->pluck('recibo');
                 if ($recibos->isNotEmpty()) {
                     $v->errors()->add('estado', 'Tiene pagos registrados ('.$recibos->join(', ').'). Anúlalos primero si fueron un error; si el estudiante se va, usa Retirar.');
+                } elseif (($dinero = app(PagoService::class)->dineroEn($m)) > 0) {
+                    // Plata que llegó de otra matrícula (cambio de programa): anulada, desaparecería de todas las vistas
+                    $v->errors()->add('estado', 'Tiene $ '.number_format($dinero, 0, ',', '.').' que llegaron de otra matrícula. Si el estudiante se va, usa Retirar: así ese dinero se puede devolver o trasladar.');
                 }
             }
 

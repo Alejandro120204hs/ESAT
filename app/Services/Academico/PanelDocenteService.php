@@ -43,7 +43,7 @@ class PanelDocenteService
         return $docente->cursosComoDocente()
             ->whereHas('sesiones')
             ->with([
-                'programa.escuela', 'programa.modulos', 'sesiones',
+                'programa.escuela', 'programa.modulos', 'sesiones', 'historialSesiones',
                 'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('estudiante.acudientes'),
             ])
             ->get()
@@ -152,10 +152,9 @@ class PanelDocenteService
     public function esDiaDeClase(Curso $curso, string $fecha): bool
     {
         $d = Carbon::parse($fecha)->startOfDay();
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
-        $dias = $curso->sesiones->map(fn (CursoSesion $s) => self::DIA_ISO[$s->dia])->all();
+        $fin = $curso->fin();
 
-        return $d->gte($curso->fecha_inicio->copy()->startOfDay()) && $d->lt($fin) && in_array($d->dayOfWeekIso, $dias, true);
+        return $d->gte($curso->fecha_inicio->copy()->startOfDay()) && $d->lt($fin) && $curso->sesionEn($d) !== null;
     }
 
     /** El módulo de la malla del grupo con sus fechas y estado (terminado · en_curso · por_iniciar), o null. */
@@ -259,7 +258,7 @@ class PanelDocenteService
 
     private function grupo(Curso $curso, Collection $estudiantes, CarbonInterface $ahora): array
     {
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
+        $fin = $curso->fin();
 
         return [
             'id'           => $curso->id,
@@ -279,6 +278,11 @@ class PanelDocenteService
             'horario'      => $curso->sesiones->map(fn (CursoSesion $s) => [
                 'dia' => $s->dia, 'diaIso' => self::DIA_ISO[$s->dia], 'ini' => $s->inicio(), 'fin' => $s->fin(),
             ])->sortBy('diaIso')->values(),
+            // Todos los horarios que ha tenido, con desde/hasta: datos.js arma las clases con el que regía cada día
+            'historial'    => $curso->historialSesiones->map(fn (CursoSesion $s) => [
+                'dia' => $s->dia, 'diaIso' => self::DIA_ISO[$s->dia], 'ini' => $s->inicio(), 'fin' => $s->fin(),
+                'desde' => $s->desde?->toDateString(), 'hasta' => $s->hasta?->toDateString(),
+            ])->values(),
             'modulos'      => collect($this->calificaciones->fechasModulos($curso, $ahora))
                 ->map(fn (array $m) => array_intersect_key($m, array_flip(['id', 'nombre', 'horas', 'ini', 'fin', 'estado'])))
                 ->values(),

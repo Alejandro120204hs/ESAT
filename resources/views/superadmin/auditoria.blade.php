@@ -177,7 +177,7 @@
         </div>
     </div>
 
-    <script type="application/json" id="app-eventos-data">{!! json_encode($eventos) !!}</script>
+    <script type="application/json" id="app-eventos-data">@json($eventos)</script>
 @endsection
 
 @push('scripts')

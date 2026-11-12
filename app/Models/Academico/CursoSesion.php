@@ -2,6 +2,7 @@
 
 namespace App\Models\Academico;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,7 +16,18 @@ class CursoSesion extends Model
 
     protected $table = 'curso_sesiones';
 
-    protected $fillable = ['curso_id', 'dia', 'hora_inicio', 'hora_fin'];
+    protected $fillable = ['curso_id', 'dia', 'hora_inicio', 'hora_fin', 'desde', 'hasta'];
+
+    protected function casts(): array
+    {
+        return ['desde' => 'date', 'hasta' => 'date'];
+    }
+
+    /** ¿Esta sesión regía ese día? (desde/hasta null = desde el inicio / hasta el fin del grupo) */
+    public function rigeEn(CarbonInterface $d): bool
+    {
+        return (! $this->desde || $this->desde->lte($d)) && (! $this->hasta || $this->hasta->gte($d));
+    }
 
     public function curso(): BelongsTo
     {

@@ -30,7 +30,7 @@ class HorarioController extends Controller
         // Los grupos finalizados ya no tienen clases: no se muestran
         $grupos = Curso::deSede($sedeId)
             ->where('estado', '!=', 'finalizado')
-            ->with(['programa.escuela', 'sesiones', 'docentes'])
+            ->with(['programa.escuela', 'sesiones', 'historialSesiones', 'docentes'])
             ->orderBy('codigo')
             ->get();
 
@@ -55,8 +55,20 @@ class HorarioController extends Controller
         $nuevo = ! $curso->sesiones()->exists();
 
         DB::transaction(function () use ($request, $curso) {
-            $curso->sesiones()->delete();
-            $curso->sesiones()->createMany($request->sesiones());
+            $nuevas = $request->sesiones();
+            $iguales = fn () => $curso->sesiones->map(fn ($s) => [$s->dia, $s->inicio(), $s->fin()])->sort()->values()->all()
+                === collect($nuevas)->map(fn ($s) => [$s['dia'], substr($s['hora_inicio'], 0, 5), substr($s['hora_fin'], 0, 5)])->sort()->values()->all();
+            if (! $curso->conservaHorarioAnterior()) {
+                // Nada registrado: cambiarlo es corregirlo, se reemplaza completo
+                $curso->historialSesiones()->delete();
+                $curso->sesiones()->createMany($nuevas);
+            } elseif (! $iguales()) {
+                // Lo ya dictado no cambia (HALLAZGOS A7): el de antes rige hasta hoy y el nuevo desde mañana
+                $manana = today()->addDay();
+                $curso->historialSesiones()->whereDate('desde', '>=', $manana->toDateString())->delete();   // un cambio de hoy que no alcanzó a regir
+                $curso->sesiones()->update(['hasta' => today()->toDateString()]);
+                $curso->sesiones()->createMany(array_map(fn ($s) => $s + ['desde' => $manana->toDateString()], $nuevas));
+            }
             $curso->docentes()->sync([$request->integer('docente_id')]);
         });
 
@@ -80,6 +92,7 @@ class HorarioController extends Controller
     private function paraVista(Curso $c): array
     {
         $docente  = $c->docente();
+        $rige     = $c->sesiones->isNotEmpty() && $c->conservaHorarioAnterior() ? today()->addDay() : $c->fecha_inicio;
         $sesiones = $c->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()])->values();
 
         return [
@@ -96,9 +109,12 @@ class HorarioController extends Controller
             'sesiones'         => $sesiones,
             // Para el tope: el horario no puede sumar más horas que las del programa
             'horas_programa'   => $c->programa->horas,
-            'horas_programadas'=> round($this->horario->horasProgramadas($sesiones, $c->fecha_inicio, $c->fecha_fin)),
+            'horas_programadas'=> round($this->horario->horasDelGrupo($c)),
             'fecha_inicio_iso' => $c->fecha_inicio->format('Y-m-d'),
             'fecha_fin_iso'    => $c->fecha_fin->format('Y-m-d'),
+            // Si ya tiene clases registradas, un cambio rige desde mañana y lo ya dictado suma con el horario de antes (A7)
+            'rige_desde_iso'   => $rige->format('Y-m-d'),
+            'horas_previas'    => $rige->gt($c->fecha_inicio) ? round($this->horario->horasDelGrupo($c, $rige), 1) : 0,
         ];
     }
 }

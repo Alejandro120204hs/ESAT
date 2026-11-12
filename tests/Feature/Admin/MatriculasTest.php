@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Academico\Calificacion;
 use App\Models\Academico\Curso;
 use App\Models\Academico\EstudianteDocumento;
 use App\Models\Academico\Programa;
@@ -189,11 +190,13 @@ class MatriculasTest extends TestCase
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
 
         // Grupo terminado pero con deuda
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
 
-        // A paz y salvo: paga todo lo que debe
+        // A paz y salvo (paga todo lo que debe) y con la malla aprobada
         $this->pagar($m, ['valor' => $this->debe($m), 'metodo_pago' => 'Efectivo'])->assertOk();
+        $modulo = $m->programa->modulos()->create(['nombre' => 'Fundamentos', 'horas' => 1600, 'orden' => 1]);
+        Calificacion::create(['matricula_id' => $m->id, 'programa_modulo_id' => $modulo->id, 'nota' => 4.0, 'fecha_nota' => '2026-10-01']);
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertOk();
         $this->assertSame('graduado', $m->fresh()->estado);
 
@@ -210,7 +213,7 @@ class MatriculasTest extends TestCase
             ['nombre' => 'Práctica empresarial', 'horas' => 800, 'orden' => 2],
         ]);
         $m = $this->matriculaConPlan('mensual');
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
         $this->pagar($m, ['valor' => $this->debe($m), 'metodo_pago' => 'Efectivo'])->assertOk();
         $nota = fn ($mod, $n, $h = null) => $m->calificaciones()->updateOrCreate(['programa_modulo_id' => $mod->id], [
             'curso_id' => $this->grupoA->id, 'nota' => $n, 'fecha_nota' => '2026-10-01', 'habilitacion' => $h,
@@ -238,7 +241,7 @@ class MatriculasTest extends TestCase
         $this->matricular($e, $this->grupoA)->assertOk();
         $m = $e->matriculas()->first();
         $m->pagos()->update(['estado' => 'pagado', 'fecha_pago' => now()]);   // solo pagó el derecho de matrícula
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
 
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
         $this->assertSame('activo', $m->fresh()->estado);

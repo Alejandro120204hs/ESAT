@@ -140,7 +140,9 @@
             sedes.forEach(function (s, i) {
                 var icono = L.divIcon({ className: "sede-marcador", html: "<span></span>", iconSize: [22, 22], iconAnchor: [11, 11] });
                 var m = L.marker([s.lat, s.lng], { icon: icono, keyboard: false }).addTo(mapa);
-                m.bindTooltip(s.nombre, { direction: "top", offset: [0, -12] });
+                var nombre = document.createElement("span");   // texto, no HTML (HALLAZGOS B36)
+                nombre.textContent = s.nombre;
+                m.bindTooltip(nombre, { direction: "top", offset: [0, -12] });
                 m.on("click", function () { activarSede(i, true); });
                 marcadores.push(m);
             });

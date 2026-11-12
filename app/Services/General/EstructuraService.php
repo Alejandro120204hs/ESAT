@@ -126,12 +126,12 @@ class EstructuraService
     /** Grupo dictando clases en esa fecha (la misma regla del Inicio de la secretaría). */
     public function enClases(Curso $c, CarbonInterface $d): bool
     {
-        return $c->estado === 'activo' && $c->fecha_inicio?->lte($d) && Curso::finPara($c->fecha_inicio, $c->programa)->gt($d);
+        return $c->estado === 'activo' && $c->fecha_inicio?->lte($d) && $c->fin()->gt($d);
     }
 
     private function termino(Curso $c, CarbonInterface $d): bool
     {
-        return $c->fecha_inicio && Curso::finPara($c->fecha_inicio, $c->programa)->lte($d);
+        return $c->fecha_inicio && $c->fin()->lte($d);
     }
 
     /** Estudiantes con matrícula activa en esa fecha (el estado solo cuenta desde su fecha). */

@@ -16,7 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Un grupo de un programa en una sede (panel Admin › Grupos).
  * "nombre" es el nombre del grupo: Grupo A, Grupo B...
  * La modalidad y el cupo son los del programa (programa->modalidad / programa->cupo_grupo).
- * fecha_fin no se escribe: siempre es fecha_inicio + duración del programa (ver finPara()).
+ * fecha_fin no se escribe: siempre es fecha_inicio + duración del programa (ver finPara()). Un grupo finalizado
+ * conserva la suya aunque después cambie la duración del programa (ver fin()).
  */
 class Curso extends Model
 {
@@ -128,10 +129,52 @@ class Curso extends Model
         return max(0, $this->programa->cupo_grupo - $this->estudiantesActivos()->count());
     }
 
-    /** Horario semanal: una sesión por día de clase. */
+    /** Horario semanal vigente: una sesión por día de clase (el de antes de un cambio queda en historialSesiones). */
     public function sesiones(): HasMany
     {
+        return $this->hasMany(CursoSesion::class)->whereNull('hasta')->orderByRaw(CursoSesion::ORDEN_DIAS)->orderBy('hora_inicio');
+    }
+
+    /**
+     * Todos los horarios que ha tenido el grupo, con desde/hasta (HALLAZGOS A7). Lo que calcula fechas de clase
+     * (asistencia, módulos, panel del docente) usa este, con sesionEn(): lo ya dictado no cambia si cambia el horario.
+     */
+    public function historialSesiones(): HasMany
+    {
         return $this->hasMany(CursoSesion::class)->orderByRaw(CursoSesion::ORDEN_DIAS)->orderBy('hora_inicio');
+    }
+
+    /**
+     * ¿Un cambio de horario debe conservar el de antes? Solo si el grupo ya empezó y tiene algo registrado (asistencia o
+     * notas): si no, cambiarlo es corregirlo y se reemplaza completo.
+     */
+    public function conservaHorarioAnterior(): bool
+    {
+        return $this->fecha_inicio && $this->fecha_inicio->lte(today())
+            && (Asistencia::where('curso_id', $this->id)->exists() || Calificacion::where('curso_id', $this->id)->exists());
+    }
+
+    /** La sesión que regía ese día (null si ese día no había clase). */
+    public function sesionEn(CarbonInterface $d): ?CursoSesion
+    {
+        $dia = CursoSesion::DIAS[$d->dayOfWeekIso - 1] ?? null;
+
+        return $this->historialSesiones->first(fn (CursoSesion $s) => $s->dia === $dia && $s->rigeEn($d));
+    }
+
+    /**
+     * Por qué no se puede finalizar todavía (null si se puede): antes de su fin, solo si no le quedan estudiantes con
+     * matrícula vigente (un grupo que se cierra porque no arrancó). HALLAZGOS A8.
+     */
+    public function impedimentoParaFinalizar(): ?string
+    {
+        if (! $this->fecha_inicio || $this->fin()->lte(today())) {
+            return null;
+        }
+        $n = $this->matriculas()->whereIn('estado', Matricula::VIGENTES)->count();
+
+        return $n ? "El {$this->nombre} ({$this->codigo}) termina el {$this->fin()->format('d/m/Y')} y tiene {$n} "
+            .($n === 1 ? 'estudiante con matrícula vigente' : 'estudiantes con matrícula vigente').': se finaliza desde ese día.' : null;
     }
 
     public function actividades(): HasMany
@@ -153,6 +196,14 @@ class Curso extends Model
     public static function finPara(CarbonInterface $inicio, Programa $programa): CarbonInterface
     {
         return $inicio->copy()->addMonthsNoOverflow($programa->duracion_meses);
+    }
+
+    /** Fin del grupo: el guardado si ya finalizó (su historial no cambia), si no inicio + duración del programa. */
+    public function fin(): CarbonInterface
+    {
+        return $this->estado === 'finalizado' && $this->fecha_fin
+            ? $this->fecha_fin->copy()
+            : static::finPara($this->fecha_inicio, $this->programa);
     }
 
     public function docente(): ?User

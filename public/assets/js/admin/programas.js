@@ -200,7 +200,7 @@
     if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
     if (drawerClose)   drawerClose.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeDrawer(); closeModal(); }
+        if (e.key === 'Escape') closeDrawer();
     });
 
     function fillDrawer(p) {

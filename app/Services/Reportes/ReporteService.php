@@ -32,7 +32,7 @@ class ReporteService
     public function datosSede(int $sedeId): array
     {
         $sede = Sede::findOrFail($sedeId);
-        $cursos = Curso::where('sede_id', $sedeId)->with(['programa.modulos', 'docentes', 'sesiones'])->orderBy('id')->get();
+        $cursos = Curso::where('sede_id', $sedeId)->with(['programa.modulos', 'docentes', 'sesiones', 'historialSesiones'])->orderBy('id')->get();
         $matriculas = Matricula::where('sede_id', $sedeId)->where('estado', '!=', 'anulado')
             ->with(['estudiante.acudientes'])->orderBy('id')->get();
 
@@ -80,7 +80,7 @@ class ReporteService
             'jornada'     => $c->jornada,
             'estado'      => $c->estado,
             'inicio'      => $c->fecha_inicio?->toDateString(),
-            'fin'         => Curso::finPara($c->fecha_inicio, $c->programa)->toDateString(),
+            'fin'         => $c->fin()->toDateString(),
             'horario'     => $tieneHorario ? $this->horario($c) : '',
             'docente'     => $docente ? trim($docente->nombres.' '.$docente->apellidos) : null,
             'fechas'      => $tieneHorario ? $this->asistencia->fechasDictadas($c) : [],

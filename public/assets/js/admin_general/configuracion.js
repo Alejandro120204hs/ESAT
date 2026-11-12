@@ -171,6 +171,26 @@
         });
     });
 
+    /* Devolución del derecho de matrícula al retirarse antes de clases */
+    var devolucion = formulario('cfg-f-devolucion', [
+        { k: 'pct', id: 'cfg-devolucion', etiqueta: 'Se devuelve', err: 'devolucion', desde: function () { return C().devolucion_derecho; }, leer: function (t) { return digitos(t) === '' ? '' : +digitos(t); }, texto: function (v) { return v + ' %'; } }
+    ]);
+    function ejemploDevolucion() {
+        var v = devolucion.leer().pct;
+        $('cfg-devolucion-ejemplo').textContent = v === '' || v > 100 ? 'Entre 0 y 100.' :
+            'Ejemplo: si pagó ' + plata(200000) + ', se le devuelven ' + plata(Math.round(200000 * v / 100)) + ' y ESAT se queda con ' + plata(200000 - Math.round(200000 * v / 100)) + '.';
+    }
+    $('cfg-devolucion').addEventListener('input', function () { this.value = digitos(this.value); ejemploDevolucion(); });
+    devolucion.form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var v = devolucion.leer().pct, ant = devolucion.ref().pct;
+        err(devolucion.form, 'devolucion', v === '' || v > 100 ? 'Escribe un porcentaje entre 0 y 100.' : '');
+        if (v === '' || v > 100) { $('cfg-devolucion').focus(); return; }
+        confirmar('¿Cambiar la devolución del derecho de matrícula?', 'Aplica a los retiros que se registren desde ahora en todas las sedes. Los retiros anteriores no cambian.', [['Se devuelve', ant + ' %', v + ' %']], 'Cambiar porcentaje', function () {
+            return enviar('PUT', '/general/configuracion/devolucion', { devolucion_derecho: v });
+        });
+    });
+
     /* Seguridad */
     var seg = formulario('cfg-f-seguridad', [
         { k: 'intentos_maximos', err: 'intentos', id: 'cfg-intentos', etiqueta: 'Intentos fallidos', desde: function () { return C().seguridad.intentos_maximos; }, leer: function (t) { return t === '' ? '' : +t; } },
@@ -246,7 +266,7 @@
         b.addEventListener('click', function () { ptab = b.dataset.ir; try { localStorage.setItem(TAB_KEY, ptab); } catch (e) {} mostrarTab(); });
     });
 
-    inst.cargar(); cobros.cargar(); seg.cargar(); ejemplo(); pintarBloqueadas(); mostrarTab(); refrescar();
+    inst.cargar(); cobros.cargar(); devolucion.cargar(); seg.cargar(); ejemplo(); ejemploDevolucion(); pintarBloqueadas(); mostrarTab(); refrescar();
     var aviso = avisoPendiente();
     if (aviso) toast(aviso);
 }());

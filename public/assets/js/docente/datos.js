@@ -52,13 +52,14 @@
     /* ── Lo registrado: asistencia por grupo y fecha, notas por grupo y módulo ── */
     var base = { registros: S.registros || {}, notas: S.notas || {} };
 
-    // Días del horario entre el inicio y el fin del grupo (AsistenciaService::fechasDictadas)
+    // Días de clase entre el inicio y el fin del grupo, cada uno con el horario que regía ese día (un cambio de horario
+    // no mueve lo ya dictado; AsistenciaService::fechasDictadas y Curso::sesionEn)
     function clasesDe(g) {
-        var dias = {}, out = [];
-        g.horario.forEach(function (s) { dias[s.diaIso] = s; });
+        var hist = g.historial || g.horario, out = [];
         for (var d = parse(g.inicio); ymd(d) < g.fin; d = masDias(d, 1)) {
-            var s = dias[diaIso(d)];
-            if (s) out.push({ fecha: ymd(d), dia: s.dia, ini: s.ini, fin: s.fin });
+            var f = ymd(d), iso = diaIso(d);
+            var s = hist.find(function (x) { return x.diaIso === iso && (!x.desde || x.desde <= f) && (!x.hasta || x.hasta >= f); });
+            if (s) out.push({ fecha: f, dia: s.dia, ini: s.ini, fin: s.fin });
         }
         return out;
     }

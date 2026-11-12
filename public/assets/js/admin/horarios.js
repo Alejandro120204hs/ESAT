@@ -11,7 +11,7 @@
 
     var DIAS_FULL = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     var DIA_COD   = { 'Lunes':'L','Martes':'M','Miércoles':'Mi','Jueves':'J','Viernes':'V','Sábado':'S' };
-    var JORNADAS  = ['Mañana','Tarde','Noche'];
+    var JORNADAS  = ['Mañana','Tarde','Noche','Fines de semana'];
     var HORA_MIN  = parseInt(rango.min, 10);
     var HORA_MAX  = parseInt(rango.max, 10);
 
@@ -624,7 +624,8 @@
         var celdas = {};   // 'Mañana|0' o 'Docente|0' -> [sesiones]
         var minDoc = {};   // minutos semanales de cada docente
         sel.sesiones.forEach(function (e) {
-            var fila = porDocente ? e.g.docente : jornadaDeHora(e.s.hora_inicio);
+            // La fila es la jornada del grupo, nunca la que se deduce de la hora (HALLAZGOS B32)
+            var fila = porDocente ? e.g.docente : e.g.jornada;
             var k = fila + '|' + DIAS_FULL.indexOf(e.s.dia);
             (celdas[k] = celdas[k] || []).push(e);
             minDoc[e.g.docente] = (minDoc[e.g.docente] || 0) + (e.fin - e.ini);
@@ -897,11 +898,13 @@
 
     /* ── Tope de horas: el horario no puede sumar más horas que las del programa
        durante las fechas del grupo (mismo cálculo que HorarioService) ── */
+    // Si el grupo ya tiene clases registradas, el horario nuevo rige desde mañana y lo ya dictado (horas_previas) se
+    // suma con el horario de antes (HALLAZGOS A7)
     function semanasDe(g) {
-        var dias = (new Date(g.fecha_fin_iso + 'T00:00:00') - new Date(g.fecha_inicio_iso + 'T00:00:00')) / 864e5;
+        var dias = (new Date(g.fecha_fin_iso + 'T00:00:00') - new Date((g.rige_desde_iso || g.fecha_inicio_iso) + 'T00:00:00')) / 864e5;
         return Math.max(0, dias) / 7;
     }
-    function horasTotales(g, ses) { return minutosSemana(ses) / 60 * semanasDe(g); }
+    function horasTotales(g, ses) { return (g.horas_previas || 0) + minutosSemana(ses) / 60 * semanasDe(g); }
     function fmtNum(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
 
     function grupoForm() {
@@ -922,6 +925,7 @@
         if (g) {
             var horas = horasTotales(g, validas);
             txt += ' · ' + fmtNum(Math.round(horas)) + ' h de ' + fmtNum(g.horas_programa) + ' h del programa';
+            if (g.horas_previas) txt += ' · rige desde mañana: lo ya dictado no cambia';
             resumenEl.classList.toggle('is-error', horas > g.horas_programa);
         }
         resumenEl.textContent = txt;
@@ -1059,7 +1063,7 @@
         var g = data.find(function (x) { return x.id === grupoId; });
         var horas = horasTotales(g, ses);
         if (horas > g.horas_programa) {
-            var maxSemana = Math.floor(g.horas_programa / Math.max(0.01, semanasDe(g)) * 10) / 10;
+            var maxSemana = Math.floor(Math.max(0, g.horas_programa - (g.horas_previas || 0)) / Math.max(0.01, semanasDe(g)) * 10) / 10;
             return 'El horario suma ' + fmtNum(horas) + ' horas (' + fmtNum(minutosSemana(ses) / 60) + ' h por semana durante ' +
                 fmtNum(semanasDe(g)) + ' semanas) y el programa tiene ' + fmtNum(g.horas_programa) +
                 ' horas. Con estas fechas el máximo es ' + fmtNum(maxSemana) + ' h por semana.';

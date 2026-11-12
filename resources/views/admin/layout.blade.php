@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if (auth()->user()->isAdminGeneral())
+    {{-- El Admin puede tener pestañas en sedes distintas: cada fetch dice de qué sede es la pestaña y el servidor
+         lo rechaza si en otra pestaña ya entró a otra sede (EnsureSedeDeTrabajo). Va antes de cualquier script. --}}
+    <script>
+        (function (sede, fetchOriginal) {
+            window.fetch = function (recurso, opciones) {
+                var url = new URL(recurso instanceof Request ? recurso.url : recurso, location.href);
+                if (url.origin !== location.origin) return fetchOriginal(recurso, opciones);
+                opciones = Object.assign({}, opciones);
+                var h = new Headers(opciones.headers || (recurso instanceof Request ? recurso.headers : undefined));
+                h.set('X-Sede-Trabajo', sede);
+                opciones.headers = h;
+                return fetchOriginal(recurso, opciones);
+            };
+        })(@json((string) auth()->user()->sedeTrabajoId()), window.fetch.bind(window));
+    </script>
+    @endif
     <title>@yield('title', 'Panel') — ESAT Secretaría</title>
 
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">

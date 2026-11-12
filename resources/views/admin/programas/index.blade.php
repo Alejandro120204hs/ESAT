@@ -137,7 +137,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 @foreach($programas as $p)
                 @php $esc = $p['sigla']; @endphp
                 <tr class="prg-row"
-                    data-nombre="{{ strtolower($p['nombre']) }}"
+                    data-nombre="{{ mb_strtolower($p['nombre']) }}"
                     data-escuela="{{ $p['escuela'] }}"
                     data-estado="{{ $p['estado'] }}"
                     data-id="{{ $p['id'] }}">

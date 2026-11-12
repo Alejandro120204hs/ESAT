@@ -38,14 +38,14 @@
             $historial = [];
             foreach ($meses as $i => $mes) {
                 if ($estadoPago === 'al_dia') {
-                    $historial[] = ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026'];
+                    $historial[] = ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026'];
                 } elseif ($estadoPago === 'pendiente') {
                     $historial[] = $i < 2
-                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026']
+                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026']
                         : ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pendiente', 'fecha_pago' => null];
                 } else {
                     $historial[] = $i < 1
-                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026']
+                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026']
                         : ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Vencido', 'fecha_pago' => null];
                 }
             }
@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <script type="application/json" id="app-estudiantes-data">{!! json_encode($estudiantes) !!}</script>
+    <script type="application/json" id="app-estudiantes-data">@json($estudiantes)</script>
 @endsection
 
 @push('scripts')

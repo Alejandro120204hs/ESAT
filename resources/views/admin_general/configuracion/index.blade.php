@@ -111,6 +111,30 @@
             <ul class="cfg-reglas"><li>Aplica a las cuotas que se generen desde que lo guardes, en todas las sedes.</li><li>Las cuotas que ya están generadas no cambian.</li><li>El cambio queda en la auditoría con tu nombre.</li></ul>
         </div>
     </aside>
+    <form class="cfg-card" id="cfg-f-devolucion" novalidate>
+        <div class="cfg-card-head">
+            <div class="cfg-card-icon cfg-card-icon-orange"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div>
+            <div>
+                <h2 class="cfg-card-title">Devolución del derecho de matrícula</h2>
+                <p class="cfg-card-sub">Si un estudiante se retira antes de que empiecen sus clases, se le devuelve este porcentaje de lo que pagó del derecho de matrícula. El resto se lo queda ESAT por la inscripción.</p>
+            </div>
+        </div>
+        <div class="cfg-card-body">
+            <div class="cfg-fields">
+                <div class="cfg-field">
+                    <label for="cfg-devolucion">Se devuelve</label>
+                    <div class="cfg-prefijo cfg-sufijo"><input type="text" id="cfg-devolucion" inputmode="numeric" maxlength="3"><span>%</span></div>
+                    <span class="cfg-hint" id="cfg-devolucion-ejemplo"></span>
+                    <span class="cfg-field-error" data-error="devolucion" hidden></span>
+                </div>
+            </div>
+        </div>
+        <div class="cfg-card-foot">
+            <span class="cfg-sin-cambios" data-sin-cambios>Sin cambios por guardar</span>
+            <button type="button" class="cfg-btn cfg-btn-ghost" data-deshacer>Deshacer</button>
+            <button type="submit" class="cfg-btn cfg-btn-primary">Guardar porcentaje</button>
+        </div>
+    </form>
     </div>
     </section>
 

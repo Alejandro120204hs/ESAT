@@ -19,7 +19,7 @@
         sin_plan: ['app-status-warn', 'Sin plan de pago'],
         al_dia:   ['app-status-active', 'Al día']
     };
-    var ESTADO_MAT = { aplazado: 'Aplazada', retirado: 'Retirada', graduado: 'Graduada' };
+    var ESTADO_MAT = { aplazado: 'Aplazada', retirado: 'Retirada', graduado: 'Graduada', anulado: 'Anulada' };
     var COBRO_TAG = { pagado: ['app-status-active', 'Pagado'], pendiente: ['app-status-muted', 'Pendiente'], vencido: ['app-status-danger', 'Vencido'] };
 
     /* ── Datos: cobros como objetos y recaudos con su matrícula ── */
@@ -390,21 +390,29 @@
     function textoRango(r) { return r[0] === r[1] ? larga(r[0]) : 'Del ' + larga(r[0]) + ' al ' + larga(r[1]); }
     function calcularCaja() {
         var r = rangoCaja();
-        var pagos = recaudos.filter(function (x) { return !x.anulado && x.fecha >= r[0] && x.fecha <= r[1]; });
-        var anulados = recaudos.filter(function (x) { return x.anulado && x.fecha >= r[0] && x.fecha <= r[1]; });
-        var devs = devoluciones.filter(function (x) { return x.fecha >= r[0] && x.fecha <= r[1]; });
-        var total = pagos.reduce(function (s, x) { return s + x.valor; }, 0);
-        var salidas = devs.reduce(function (s, x) { return s + x.valor; }, 0);
+        // Cada pago cuenta el día en que se registró y cada anulación el día en que se hizo: lo que se haga después no
+        // cambia un periodo ya cerrado (HALLAZGOS M25). Un recibo anulado dentro del mismo periodo no suma; uno de un
+        // periodo anterior anulado en este se resta aquí.
+        var dentro = function (f) { return f >= r[0] && f <= r[1]; };
+        var anuladoAlCorte = function (x) { return x.anulado && x.anulado.fecha <= r[1]; };
+        var pagos = recaudos.filter(function (x) { return dentro(x.registrado_en) && !anuladoAlCorte(x); });
+        var anulados = recaudos.filter(function (x) { return dentro(x.registrado_en) && anuladoAlCorte(x); });
+        var anulAnteriores = recaudos.filter(function (x) { return x.anulado && dentro(x.anulado.fecha) && x.registrado_en < r[0]; });
+        var devs = devoluciones.filter(function (x) { return dentro(x.registrado_en); });
+        var suma = function (lista) { return lista.reduce(function (s, x) { return s + x.valor; }, 0); };
+        var total = suma(pagos), restado = suma(anulAnteriores);
+        var salidas = suma(devs);
         var agrupar = function (lista, clave) {
             var out = {};
             lista.forEach(function (x) { var k = clave(x); out[k] = out[k] || { clave: k, n: 0, valor: 0, efectivo: 0 }; out[k].n++; out[k].valor += x.valor; if (x.metodo === 'Efectivo') out[k].efectivo += x.valor; });
             return Object.keys(out).map(function (k) { return out[k]; });
         };
         return {
-            rango: r, pagos: pagos, anulados: anulados, devs: devs, total: total, salidas: salidas,
+            rango: r, pagos: pagos, anulados: anulados, anulAnteriores: anulAnteriores, restado: restado, devs: devs, total: total, salidas: salidas,
+            queda: total - restado - salidas,
             metodos: agrupar(pagos, function (x) { return x.metodo; }).sort(function (a, b) { return b.valor - a.valor; }),
             personas: agrupar(pagos, function (x) { return x.registrado; }).sort(function (a, b) { return b.valor - a.valor; }),
-            dias: agrupar(pagos, function (x) { return x.fecha; }).sort(function (a, b) { return b.clave.localeCompare(a.clave); })
+            dias: agrupar(pagos, function (x) { return x.registrado_en; }).sort(function (a, b) { return b.clave.localeCompare(a.clave); })
         };
     }
     function pintarCaja() {
@@ -418,10 +426,11 @@
         var html = '<div class="pag-caja"><div class="pag-panel"><div class="pag-panel-titulo">' + esc(textoRango(c.rango)) + '</div><div class="pag-datos">' +
             dato('Total recibido', pesos(c.total)) +
             dato('Pagos', c.pagos.length + (c.anulados.length ? ' <small>· ' + c.anulados.length + ' anulado' + (c.anulados.length === 1 ? '' : 's') + '</small>' : '')) +
+            (c.restado ? dato('Anulados de antes', '− ' + pesos(c.restado)) : '') +
             dato('Devoluciones', c.salidas ? '− ' + pesos(c.salidas) : pesos(0)) +
-            dato('Queda en caja', pesos(c.total - c.salidas)) + '</div></div>';
+            dato('Queda en caja', pesos(c.queda)) + '</div></div>';
         if (!c.pagos.length) {
-            html += '<p class="pag-lista-vacia">No se recibió ningún pago en estas fechas.</p></div>';
+            html += '<p class="pag-lista-vacia">No se registró ningún pago en estas fechas.</p></div>';
             cajaEl.innerHTML = html;
             return;
         }
@@ -646,7 +655,7 @@
         if (r.situacion === 'sin_plan') {
             html += aviso('', ICON.info, 'Todavía <strong>no ha elegido su plan de pago</strong> (mensual o por periodo), así que no tiene cuotas y no se le está cobrando. El plan lo elige el estudiante desde su panel.');
         }
-        if (m.estado === 'retirado' || m.estado === 'graduado') {
+        if (m.estado === 'retirado' || m.estado === 'graduado' || m.estado === 'anulado') {
             html += aviso('', ICON.info, 'La matrícula está ' + ESTADO_MAT[m.estado].toLowerCase() + (m.estado_fecha ? ' desde el ' + corta(m.estado_fecha) : '') + '.' + (r.total ? ' Le quedó un saldo por pagar.' : ''));
         }
 
@@ -692,7 +701,7 @@
         var html = '<div class="pag-datos">' + dato('Valor', '<span class="' + (x.anulado ? 'pag-monto is-tachado' : '') + '">' + pesos(x.valor) + '</span>') +
             dato('Fecha', corta(x.fecha)) + dato('Medio', esc(x.metodo)) + dato('Registró', esc(x.registrado)) + '</div>';
         if (x.anulado) {
-            html += aviso('is-rojo', ICON.x, 'Anulado el ' + corta(x.anulado.fecha) + ' por ' + esc(x.anulado.por) + ': ' + esc(x.anulado.motivo) + '. Lo que cubría volvió a quedar pendiente.');
+            html += aviso('is-rojo', ICON.x, 'Anulado el ' + corta(x.anulado.fecha) + ' por ' + esc(x.anulado.por) + ': ' + esc(x.anulado.motivo) + '.' + (m.estado === 'anulado' ? ' Después se anuló también la matrícula.' : ' Lo que cubría volvió a quedar pendiente.'));
         }
         if (x.referencia || x.observacion) {
             html += '<div class="pag-datos" style="grid-template-columns: repeat(2, minmax(0, 1fr))">' +
@@ -981,18 +990,19 @@
         };
         document.getElementById('pag-hoja-cuerpo').innerHTML =
             '<h1 class="pag-hoja-titulo">Resumen de caja</h1>' +
-            '<p>' + esc(textoRango(c.rango)) + '. Pagos recibidos de los estudiantes, sin contar los recibos anulados.</p>' +
+            '<p>' + esc(textoRango(c.rango)) + '. Pagos registrados en estas fechas, sin contar los recibos anulados. Un recibo de antes que se anuló en estas fechas se resta aquí.</p>' +
             (c.pagos.length ? '<h2 class="pag-hoja-sub">Por medio de pago</h2>' + tabla(['Medio', 'Pagos', 'Valor'], c.metodos.map(function (x) {
                 return '<tr><td>' + esc(x.clave) + '</td><td class="num">' + x.n + '</td><td class="num">' + pesos(x.valor) + '</td></tr>';
             }), ['Total recibido', c.pagos.length, pesos(c.total)]) +
             '<h2 class="pag-hoja-sub">Días en que entraron pagos</h2>' + tabla(['Fecha', 'Pagos', 'En efectivo', 'Otros medios', 'Total'], c.dias.map(function (x) {
                 return '<tr><td>' + esc(larga(x.clave)) + '</td><td class="num">' + x.n + '</td><td class="num">' + pesos(x.efectivo) + '</td><td class="num">' + pesos(x.valor - x.efectivo) + '</td><td class="num">' + pesos(x.valor) + '</td></tr>';
-            })) : '<p><strong>No se recibió ningún pago en estas fechas.</strong></p>') +
+            })) : '<p><strong>No se registró ningún pago en estas fechas.</strong></p>') +
             '<table class="pag-hoja-tabla"><tbody>' +
                 '<tr><td>Total recibido</td><td class="num">' + pesos(c.total) + '</td></tr>' +
+                (c.restado ? '<tr><td>Recibos de antes anulados en estas fechas (' + c.anulAnteriores.length + ')</td><td class="num">− ' + pesos(c.restado) + '</td></tr>' : '') +
                 '<tr><td>Devoluciones (' + c.devs.length + ')</td><td class="num">− ' + pesos(c.salidas) + '</td></tr>' +
                 (c.anulados.length ? '<tr><td>Recibos anulados (no suman)</td><td class="num">' + c.anulados.length + '</td></tr>' : '') +
-            '</tbody><tfoot><tr><td>Queda en caja</td><td class="num">' + pesos(c.total - c.salidas) + '</td></tr></tfoot></table>' +
+            '</tbody><tfoot><tr><td>Queda en caja</td><td class="num">' + pesos(c.queda) + '</td></tr></tfoot></table>' +
             '<div class="pag-hoja-firma">Firma de quien entrega<span>' + esc(D.admin || 'Secretaría') + '</span></div>';
         hojaFoco = document.activeElement;
         hojaEl.setAttribute('aria-hidden', 'false');

@@ -26,6 +26,9 @@ class Configuracion extends Model
         'correo'         => '',
     ];
 
+    /** Porcentaje del derecho de matrícula que se devuelve a quien se retira antes de empezar clases (si no se ha guardado otro). */
+    public const DEVOLUCION_DERECHO_PCT = 50;
+
     /** Reglas de acceso: intentos fallidos antes de bloquear una cuenta y días sin entrar para bloquearla. */
     public const SEGURIDAD = ['intentos_maximos' => 5, 'dias_inactividad' => 90];
 
@@ -33,6 +36,17 @@ class Configuracion extends Model
     public static function valor(string $clave): ?string
     {
         return static::where('clave', $clave)->value('valor');
+    }
+
+    /**
+     * Toma (y si no existe, crea) la fila $clave bloqueada hasta el final de la transacción: dos peticiones que la piden a
+     * la vez van de a una. Sirve para generar códigos y consecutivos sin repetirlos.
+     */
+    public static function bloquear(string $clave, string $inicial = '0'): self
+    {
+        static::query()->insertOrIgnore(['clave' => $clave, 'valor' => $inicial, 'created_at' => now(), 'updated_at' => now()]);
+
+        return static::where('clave', $clave)->lockForUpdate()->firstOrFail();
     }
 
     /** Guarda (o crea) un valor y devuelve la fila. */
@@ -47,6 +61,12 @@ class Configuracion extends Model
         $guardados = static::whereIn('clave', array_map(fn ($k) => 'institucion_'.$k, array_keys(self::INSTITUCION)))->pluck('valor', 'clave');
 
         return collect(self::INSTITUCION)->mapWithKeys(fn ($defecto, $k) => [$k => $guardados->get('institucion_'.$k, $defecto) ?? ''])->all();
+    }
+
+    /** Porcentaje (0–100) de lo pagado del derecho que se devuelve al retirarse antes de clases (Admin › Configuración). */
+    public static function devolucionDerechoPct(): int
+    {
+        return (int) (static::valor('devolucion_derecho_pct') ?? self::DEVOLUCION_DERECHO_PCT);
     }
 
     /** @return array{intentos_maximos:int, dias_inactividad:int} */

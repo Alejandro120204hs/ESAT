@@ -46,9 +46,14 @@
             var css = document.createElement("link");
             css.rel = "stylesheet";
             css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
+            // Integridad (SRI): si el CDN sirve otro archivo, el navegador no lo usa (HALLAZGOS B31)
+            css.integrity = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
+            css.crossOrigin = "anonymous";
             document.head.appendChild(css);
             var js = document.createElement("script");
             js.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+            js.integrity = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
+            js.crossOrigin = "anonymous";
             js.onload = function () { ok(window.L); };
             js.onerror = falla;
             document.head.appendChild(js);

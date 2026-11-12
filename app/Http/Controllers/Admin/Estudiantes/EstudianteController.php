@@ -12,8 +12,8 @@ use App\Models\Finanzas\Matricula;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
 use App\Services\Academico\EstudianteService;
+use App\Services\Sistema\SesionesService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 /**
@@ -91,11 +91,11 @@ class EstudianteController extends Controller
         return response()->json(['ok' => true, 'mensaje' => "Se guardaron los cambios de {$estudiante->name}."]);
     }
 
-    /** La clave vuelve a ser el número de documento. */
-    public function restablecerClave(User $estudiante): JsonResponse
+    /** La clave vuelve a ser el número de documento y se cierran sus sesiones abiertas (HALLAZGOS B21). */
+    public function restablecerClave(User $estudiante, SesionesService $sesiones): JsonResponse
     {
         $this->asegurarEstudiante($estudiante);
-        $estudiante->update(['password' => Hash::make($estudiante->numero_documento)]);
+        $sesiones->restablecerClave($estudiante);
 
         Auditoria::registrar('editar', $estudiante, "Restableció la contraseña de {$estudiante->name}.");
 

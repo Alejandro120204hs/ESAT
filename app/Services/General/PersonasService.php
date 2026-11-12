@@ -138,7 +138,7 @@ class PersonasService
             return [
                 'id' => $c->id, 'sede_id' => $c->sede_id, 'programa_id' => $c->programa_id, 'nombre' => $c->nombre, 'codigo' => $c->codigo,
                 'jornada' => $c->jornada, 'inicio' => $c->fecha_inicio?->toDateString(),
-                'fin' => $c->fecha_inicio ? Curso::finPara($c->fecha_inicio, $c->programa)->toDateString() : null,
+                'fin' => $c->fecha_inicio ? $c->fin()->toDateString() : null,
                 'estado' => $this->estadoGrupo($c), 'docente_id' => $doc, 'estudiantes' => $c->estudiantes_activos_count, 'cupo' => $c->programa->cupo_grupo,
             ];
         })->all();
@@ -166,7 +166,7 @@ class PersonasService
     /** en_clases · por_iniciar · finalizado (lo que muestran Docentes y Académico). */
     public function estadoGrupo(Curso $c): string
     {
-        if ($c->estado === 'finalizado' || ($c->fecha_inicio && Curso::finPara($c->fecha_inicio, $c->programa)->lte(now()))) {
+        if ($c->estado === 'finalizado' || ($c->fecha_inicio && $c->fin()->lte(now()))) {
             return 'finalizado';
         }
 

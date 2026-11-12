@@ -214,6 +214,7 @@
 .hor-cal-jor-manana { color: #C05621; }
 .hor-cal-jor-tarde  { color: #1E40AF; }
 .hor-cal-jor-noche  { color: #5B21B6; }
+.hor-cal-jor-fds    { color: var(--navy-2); }
 
 .hor-cal-col {
     position: relative; border-left: 1px solid #EEF1F5;

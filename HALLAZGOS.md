@@ -137,12 +137,14 @@ En la segunda revisión, además:
 
 ### Seguridad de datos
 
-#### A1 ✓ Las claves iniciales nunca se cambian
+#### A1 ✓ Las claves iniciales nunca se cambian — descartado
 - En el volcado, **65 de 66 cuentas** siguen con la clave igual a su número de documento. No existe ningún mecanismo que obligue a cambiarla en el primer ingreso.
 - El límite de login es de 5 intentos por correo+IP (`LoginRequest.php:75`), y un documento de 6 a 11 dígitos suele ser fácil de conseguir. El login además confirma si la clave era correcta (M21).
 - El superadmin no tiene cómo restablecer la clave de un admin, y Docentes tampoco tiene esa acción (`web.php:184-187`, `:217-220`).
 
 **Arreglo:** marcar las cuentas con clave inicial y obligar a cambiarla al primer ingreso.
+
+**Estado: descartado por decisión del usuario (11-11-2026).** El cambio de la clave inicial no es obligatorio: cada persona la cambia desde su perfil si quiere. Lo que sí quedó cubierto después de esta revisión: el bloqueo de cuentas por intentos fallidos e inactividad (Configuración del Admin) y restablecer la clave de secretarías, docentes y acudientes desde el panel del Admin.
 
 #### A2 ✓ `database/esat.sql` no está en `.gitignore`
 - El volcado trae datos personales, 66 hashes de contraseñas, 14 sesiones con su contenido y caché.
@@ -162,7 +164,9 @@ En la segunda revisión, además:
 
 **Arreglo:** comparar contra el número de cuotas que realmente se generaron (no anuladas), o bloquear el cambio de duración si hay matrículas vigentes.
 
-#### A4 ✓ Anular un recibo en una matrícula aplazada o retirada revive deuda (reproducido)
+**Estado: corregido (11-11-2026).** Se bloquea el cambio de duración (meses y división) mientras el programa tenga matrículas activas o aplazadas (`AdminGeneral/Programas/ProgramaRequest`; el formulario la muestra bloqueada). Además el precio queda pactado en la matrícula (`matriculas.precio_programa`), así que un cambio de precio tampoco mezcla cuotas. Pruebas en `tests/Feature/AdminGeneral/AuditoriaPanelTest.php`.
+
+#### A4 ✓ Anular un recibo en una matrícula aplazada o retirada revive deuda (reproducido) — corregido
 - `anularRecaudo` (`PagoService.php:192-205`) pasa los cobros `pagado` a pendiente o vencido sin importar el estado de la matrícula. `AnularPagoRequest.php:31` solo lo bloquea en las graduadas.
 - Las cuotas que vencen después del aplazamiento o retiro, y el derecho, vuelven a ser deuda.
 - En una retirada (estado final) nada las vuelve a anular, así que el paz y salvo queda bloqueado para siempre. Caso probado: tras pagar la deuda real (452.000), `por_pagar` sigue en 504.000.
@@ -170,7 +174,9 @@ En la segunda revisión, además:
 
 **Arreglo:** al anular un recibo en una matrícula aplazada o retirada, devolver a `anulado` (no a pendiente) los cobros que ya estaban anulados por ese cambio de estado.
 
-#### A5 ✓ `adelantado()` olvida cuotas pagadas cuando hay dos cambios de estado (reproducido)
+**Estado: corregido (11-11-2026).** `anularRecaudo` vuelve a aplicar las consecuencias del estado con su fecha: las cuotas de después siguen anuladas y el derecho sin causar queda en espera (aplazado) o anulado (retirado). Solo vuelve a ser deuda lo que ya se debía. Pruebas en `tests/Feature/Admin/DineroAdelantadoTest.php`.
+
+#### A5 ✓ `adelantado()` olvida cuotas pagadas cuando hay dos cambios de estado (reproducido) — corregido
 - `adelantado()` toma la **última** `estado_fecha` (`PagoService.php:228`), y cada cambio de estado la sobrescribe (`MatriculaService.php:90,134`).
 - Ejemplo:
   1. El estudiante pagó noviembre, diciembre y enero.
@@ -181,13 +187,17 @@ En la segunda revisión, además:
 
 **Arreglo:** marcar en el cobro (o en el pivote) qué cambio de estado lo dejó adelantado, en vez de recalcularlo con la fecha más reciente.
 
-#### A6 ✓ Saldo huérfano al anular la matrícula nueva de un cambio de programa (reproducido)
+**Estado: corregido (11-11-2026).** Al aplazar o retirar, `anularCuotasFuturas` anula también las cuotas ya pagadas de los meses siguientes, conservando su abono: el dinero queda marcado en el cobro. `adelantado()` ya no depende de `estado_fecha` (son los cobros anulados con dinero). La BD `esat` no tenía casos que convertir. Pruebas en `tests/Feature/Admin/DineroAdelantadoTest.php`.
+
+#### A6 ✓ Saldo huérfano al anular la matrícula nueva de un cambio de programa (reproducido) — corregido
 - `EstadoRequest.php:85-90` solo revisa los recaudos. El dinero que llegó por traslado (`saldo_favor` y cobros pagados con él) no es un recaudo, así que la anulación pasa.
 - Todas las vistas excluyen las matrículas anuladas (`CarteraService.php:224`), y la devolución da 422 tanto en la matrícula nueva como en la vieja. Ese dinero desaparece del sistema (en la prueba, 504.000).
 
 **Arreglo:** no permitir anular si `saldo_favor > 0` o si tiene cobros con `abonado > 0`.
 
-#### A7 ✓ Editar un horario o la fecha de inicio reescribe el pasado (reproducido)
+**Estado: corregido (11-11-2026).** `EstadoRequest` y `cambiarEstado` (con la matrícula bloqueada) no anulan una matrícula con dinero (`PagoService::dineroEn`: lo que sigue en sus cobros más el saldo a favor); Matrículas avisa que use Retirar. Pruebas en `tests/Feature/Admin/DineroAdelantadoTest.php`.
+
+#### A7 ✓ Editar un horario o la fecha de inicio reescribe el pasado (reproducido) — corregido
 - `HorarioController.php:58` borra y recrea las sesiones.
 - Asistencia (`AsistenciaService.php:55`) y Calificaciones (`CalificacionService.php:31`) recalculan las clases dictadas y las fechas de los módulos con el horario **actual**:
   - los registros en días que se quitaron dejan de contar;
@@ -197,18 +207,24 @@ En la segunda revisión, además:
 
 **Arreglo:** guardar desde qué fecha rige cada horario, o bloquear la edición de días y fechas ya dictados.
 
-#### A8 ✓ Un grupo se puede finalizar en cualquier momento (reproducido)
+**Estado: corregido (11-11-2026).** `curso_sesiones.desde/hasta` (migración `2026_11_11_000003`): si el grupo ya empezó y tiene asistencia o notas, el horario de antes rige hasta hoy y el nuevo desde mañana (`Curso::conservaHorarioAnterior`); si no, cambiarlo es corregirlo y se reemplaza. Asistencia, módulos, panel del docente (también `datos.js`) y reportes calculan cada día con `Curso::sesionEn` sobre `historialSesiones`; el tope de horas suma lo ya dictado (`HorarioService::horasDelGrupo`). Un grupo que ya empezó no cambia su fecha de inicio. Probado también en el navegador. Pruebas en `tests/Feature/Admin/HistorialGruposTest.php`.
+
+#### A8 ✓ Un grupo se puede finalizar en cualquier momento (reproducido) — corregido
 - `GrupoController.php:138` no revisa fechas ni estudiantes activos. **(2ª)** También se puede finalizar por PUT, porque `GrupoRequest.php:29` acepta `finalizado` (ver M22).
 - `EstadoRequest.php:54` se salta la revisión de fecha si el grupo está `finalizado`, así que se puede graduar antes de que termine.
 - El grupo además desaparece de Asistencia (`AsistenciaService.php:89`) mientras sus estudiantes siguen activos.
 
 **Arreglo:** permitir finalizar solo desde `fecha_fin`, o exigir que no queden matrículas activas.
 
-#### A9 ✓ Derecho a medio pagar y retiro antes de clases (reproducido)
+**Estado: corregido (11-11-2026).** `Curso::impedimentoParaFinalizar`: antes de su fin solo se finaliza si no le quedan matrículas vigentes (botón de estado y PUT). Graduar exige que el grupo haya terminado por fecha (`fin()`), aunque esté marcado finalizado. Pruebas en `tests/Feature/Admin/HistorialGruposTest.php`.
+
+#### A9 ✓ Derecho a medio pagar y retiro antes de clases (reproducido) — corregido
 - `anularDerechoSinCausar` solo anula el derecho si `abonado = 0` (`PagoService.php:412`). CLAUDE.md dice que al retirarse antes de que venza "se anula".
 - Con un abono parcial, el derecho queda pendiente, vence al iniciar el grupo y el retirado aparece como deudor. En la prueba: 100.000 abonados y "vencido" desde el 4-nov.
 - Lo abonado no se puede devolver, porque `adelantado()` (`:231-232`) solo cuenta cobros anulados o cuotas pagadas.
 - **Parcial:** el caso "queda pendiente sin fecha para siempre" (aplazado y luego retirado) solo ocurre si hay un abono parcial. Sin abono, el derecho se anula bien.
+
+**Estado: corregido (11-11-2026).** Al retirarse antes de empezar, el derecho sin causar se anula aunque tenga abono, y lo abonado queda como adelantado (devolución o traslado). Decidido después con el usuario: el derecho **pagado completo** también se anula, y de lo pagado (parcial o completo) se devuelve el porcentaje de Admin › Configuración (`devolucion_derecho_pct`, 50 % por defecto); el resto queda en `pagos.retenido` (migración `2026_11_11_000004`) y no se devuelve ni se traslada. El cambio de programa no retiene nada. Pruebas en `tests/Feature/Admin/DineroAdelantadoTest.php`.
 
 #### A10 ✓ No hay forma en la app de elegir el plan de pago
 - `generarCuotas` solo se llama al reintegrar (`MatriculaService.php:115`), y nada en `app/` escribe `plan_pago`: solo se lee.
@@ -218,7 +234,7 @@ En la segunda revisión, además:
 
 ### Proyecto e infraestructura (2ª)
 
-#### A11 ✓ (2ª) Un clon nuevo del proyecto no arranca
+#### A11 ✓ (2ª) Un clon nuevo del proyecto no arranca — corregido
 - `database/seeders/DatabaseSeeder.php:20-21` crea un usuario con la columna `name`, que ya no existe: falla con "table users has no column named name".
 - No hay seeder ni comando para crear el primer superadmin, así que una BD nueva no tiene a nadie que pueda ingresar.
 - El README es el de Laravel.
@@ -230,7 +246,13 @@ En la segunda revisión, además:
 - Un README con los pasos.
 - `.env.example` con `mysql`, `esat`, `es` y ESAT.
 
-#### A12 ✓ (2ª) El rollback de migraciones destruye dinero y falla a medias
+**Estado: corregido (11-11-2026).** `DatabaseSeeder` crea las 4 sedes reales y las dos cuentas iniciales (Superadmin y
+Admin de toda ESAT) desde `SUPERADMIN_*` y `ADMIN_GENERAL_*` del `.env`, con la clave = documento; se puede correr otra
+vez sin duplicar. `.env.example` con MySQL, `esat`, español y ESAT, y README con los pasos. **Probado de punta a punta**
+sobre una MariaDB vacía: las 61 migraciones corren, el seeder crea sedes y cuentas, el Admin entra y las 14 pantallas
+de su panel cargan sin errores. Pruebas en `tests/Feature/InstalacionTest.php`.
+
+#### A12 ✓ (2ª) El rollback de migraciones destruye dinero y falla a medias — corregido
 Se probó en un SQLite temporal, nunca sobre `esat`:
 - **Con la BD vacía** todo funciona: `migrate`, `rollback --step=51` y `fresh` dejan el mismo esquema.
 - **Con datos, el rollback borra dinero:**
@@ -247,6 +269,12 @@ Se probó en un SQLite temporal, nunca sobre `esat`:
 **Arreglo:**
 - Declarar sin rollback las migraciones del 07-10 en adelante: un `down()` que lance una excepción con el motivo.
 - Nunca correr `rollback`, `refresh` ni `fresh` sobre `esat`.
+
+**Estado: corregido (11-11-2026).** `AppServiceProvider::protegerMigraciones`: deshacer una migración del 07-10 en
+adelante se niega con un mensaje mientras haya matrículas, cobros o recibos (con la BD vacía sí se puede). Probado sobre
+la copia `esat_auditoria`: el `migrate:rollback` se detuvo sin tocar nada. En producción (`APP_ENV=production`) tampoco
+se corren `migrate:fresh`, `migrate:refresh`, `migrate:reset` ni `db:wipe` (`DB::prohibitDestructiveCommands`). El README
+explica cómo volver atrás con un respaldo. Pruebas en `tests/Feature/InstalacionTest.php`.
 
 ---
 
@@ -322,13 +350,34 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 
 **Arreglo:** mover la regla de sede a `authorize()`, como ya hace `HorarioRequest`.
 
-### M13 ✓ Concurrencia (leyendo el código; SQLite no permite reproducirla)
+### M13 ✓ Concurrencia (leyendo el código; SQLite no permite reproducirla) — corregido
 - **Doble matrícula vigente:** la revisión de matrícula vigente (`MatriculaRequest.php:57`, `CambioProgramaRequest.php:41`) no se repite dentro de la transacción y no hay restricción en la BD, así que un doble envío crea dos.
 - **(2ª) Doble envío del cambio de programa:** `MatriculaService.php:126-161` no vuelve a leer ni bloquea la matrícula vieja. La segunda petición espera el bloqueo del grupo y crea otra matrícula nueva, con 0 trasladado. Resultado: dos matrículas activas.
 - **Doble anulación:** `anularRecaudo` (`PagoService.php:195`) bloquea los cobros pero no vuelve a leer `anulado_en`; la revisión está fuera de la transacción (`AnularPagoRequest.php:29`). Dos anulaciones simultáneas restan dos veces lo del pivote.
 - **Códigos sin bloqueo:** `Matricula::siguienteCodigo` (`:162-169`) y los códigos y nombres de grupo no usan bloqueo. Dos creaciones simultáneas chocan con el índice único y dan 500.
 - **Sin bloqueo de la matrícula:** `cambiarEstado` y `aplicarDescuento` no la bloquean ni repiten la revisión de la transición.
 - La auditoría se escribe en los controladores después del commit, así que no es atómica con el cambio de dinero.
+
+**Estado: corregido (11-11-2026).**
+- **Una petición = una transacción** (`TransaccionEscritura`, alias `transaccion` en los grupos `/admin`, `/general` y
+  `/docente`): el cambio y su auditoría quedan juntos o no queda ninguno; un 4xx o 5xx deshace todo.
+- **`READ COMMITTED`** en la conexión MySQL/MariaDB (`config/database.php`): lo que se revisa después de un
+  `lockForUpdate` ve lo último confirmado. Sin esto, la transacción por petición hacía que la segunda revisara con una
+  "foto" del inicio de la petición (se vio en la primera carrera: la matrícula duplicada solo la frenó el código único).
+- **Se revisa otra vez con la fila bloqueada**: matricular (estudiante bloqueado + sin otra vigente), cambiar de programa
+  (la matrícula vieja sigue vigente), cambiar de estado (la transición sigue permitida; anular sin pagos; graduar a paz y
+  salvo), descuento (matrícula bloqueada), anular un pago (`PagoService::motivoNoAnulable`, la misma regla de
+  `AnularPagoRequest`, con la matrícula y el recibo bloqueados, en el mismo orden que pagar y devolver).
+- **La BD lo garantiza**: `matriculas.vigente_de` (columna calculada, índice único; migración `2026_11_11_000002`) no
+  admite dos matrículas vigentes del mismo estudiante, ni por un insert directo.
+- **Códigos de a uno**: `Configuracion::bloquear()` para el código de matrícula y los consecutivos RC/DV/CE (también la
+  primera vez del año); el programa se bloquea al sacar la letra y el código de un grupo nuevo.
+- **Respaldo**: un choque de índice único responde 409 "Recarga la página…" en vez de error 500 (`bootstrap/app.php`).
+- **Probado con carreras reales** (dos procesos a la vez contra MariaDB, copia `esat_auditoria`): misma matrícula dos
+  veces, dos matrículas distintas, dos pagos por el total, el mismo recibo anulado dos veces, el mismo cambio de programa
+  y aplazar contra retirar. En todas, una pasa y la otra se rechaza con aviso; ningún dato queda mal. Y por el navegador,
+  un doble clic de "Registrar pago": un recibo, una línea de auditoría, nada sobrepagado. Pruebas en
+  `tests/Feature/Admin/ConcurrenciaTest.php`.
 
 ### M14 ✓ El % de asistencia de las fichas no coincide con el del panel (reproducido)
 - `EstudianteService::porcentajeAsistencia` (`:138`) y `CalificacionService::asistenciaPorEstudiante` (`:244`) cuentan **todos** los registros del grupo. No aplican la ventana de matrícula, aplazamiento o retiro ni el filtro de clases dictadas que usa `AsistenciaService`.
@@ -398,7 +447,7 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 
 **Arreglo:** usar el mayor entre la fecha del reintegro y `grupo.fecha_inicio`.
 
-### M25 (2ª) El "Resumen de caja" no es reproducible (posible)
+### M25 ✓ (2ª) El "Resumen de caja" no es reproducible (posible)
 - `pagos.js:393-395` filtra por `fecha_pago` (que la digita el admin y no tiene límite inferior, B6) y por el estado de anulación **actual**.
 - Efectos:
   - anular hoy un recibo de diciembre cambia el total de diciembre que ya se había impreso;
@@ -406,6 +455,8 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
   - un pago registrado hoy con fecha atrasada se mete en un periodo ya cerrado.
 
 **Arreglo:** mostrar las anulaciones en la fecha de `anulado_en` y/o usar la fecha de registro (`created_at`), y poner un límite a `fecha_pago`.
+
+**Estado: corregido (11-11-2026).** La caja cuenta cada pago el día en que **se registró** (`registrado_en`) y cada anulación el día en que se hizo: un recibo anulado dentro del mismo periodo no suma, y uno de un periodo anterior anulado en este se resta aquí ("Anulados de antes"). Un periodo ya impreso no cambia. En `esat`, 188 de 189 recibos tienen la misma fecha de registro y de pago. Prueba en `CobrosRevisionTest`.
 
 ### M26 ✓ (2ª) `derechoVencido` recorre toda la tabla de cobros en cada petición de un estudiante
 - Desde C5 corre en **cada petición de un estudiante** (`EnsureAccountIsEnabled`). Su consulta (`PagoService.php:452-458`) da `SCAN pagos` con una subconsulta correlacionada (comprobado con `EXPLAIN QUERY PLAN`).
@@ -479,35 +530,46 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
   - **Corrección:** `@section('page-title')` no es código muerto en todos lados. El Superadmin lo usa como título del topbar (`superadmin/layout.blade.php:28`). En el Admin se define en 12 vistas, pero su layout nunca lo lee.
 - **B19 ✓** El bloque `RESERVADO PARA EL PANEL ADMIN` (`sedes-programas.blade.php:124-495`, unas 370 líneas) es código muerto. Programas del Admin se reconstruyó aparte y Asignaciones y Periodos no existen. Arrastra JS muerto (`sedes-programas.js:5-32, 101-154`) y CSS muerto (`sedes-programas.css:123-144`).
 - **B20 ✓ (2ª)** Un campo enviado como arreglo en lugar de texto da 500 (reproducido con `telefono[]` en `/profile`). El `(string)` del `prepareForValidation` (`ProfileUpdateRequest.php:16`) lanza "Array to string conversion". El mismo patrón está en el `prepareForValidation` de todos los Requests del Admin.
-- **B21 (2ª)** Restablecer la clave (`EstudianteController.php:98`, `AcudienteController.php:118`) no cambia el `remember_token`, así que las sesiones y cookies abiertas siguen valiendo con la clave vieja.
-- **B22 (2ª)** `ultimo_acceso` solo se actualiza al entrar por el formulario (`LoginRequest.php:65`). Quien entra con "Recordarme" no lo actualiza, así que "Último ingreso" y "nunca ha ingresado" (`AcudienteService.php:102`) quedan desactualizados. Arreglo: un listener del evento `Login`.
-- **B23 (2ª)** Una cuenta inactiva puede restablecer su clave por `forgot-password`/`reset-password` (`NewPasswordController.php:43-49` no mira `activo`). Después no puede entrar, así que no evade el bloqueo.
+- **B21 ✓ (2ª)** Restablecer la clave (`EstudianteController.php:98`, `AcudienteController.php:118`) no cambia el `remember_token`, así que las sesiones y cookies abiertas siguen valiendo con la clave vieja.
+  - **Corregido:** la secretaría usa `SesionesService::restablecerClave` (cambia `remember_token` y borra sus sesiones), igual que el panel del Admin.
+- **B22 ✓ (2ª)** `ultimo_acceso` solo se actualiza al entrar por el formulario (`LoginRequest.php:65`). Quien entra con "Recordarme" no lo actualiza, así que "Último ingreso" y "nunca ha ingresado" (`AcudienteService.php:102`) quedan desactualizados. Arreglo: un listener del evento `Login`.
+  - **Corregido:** un listener del evento `Login` (`AppServiceProvider::registrarIngresoRecordado`) atiende el ingreso por cookie: revisa la inactividad y guarda `ultimo_acceso`.
+- **B23 ✓ (2ª)** Una cuenta inactiva puede restablecer su clave por `forgot-password`/`reset-password` (`NewPasswordController.php:43-49` no mira `activo`). Después no puede entrar, así que no evade el bloqueo.
+  - **Corregido:** una cuenta desactivada no recibe el enlace (la respuesta es la misma, para no revelar su estado) y un enlace pedido antes no cambia su clave.
 - **B24 ✓ (2ª)** Pagos (Finanzas) muestra menos "pagado" que Matrículas cuando hay abonos en cuotas anuladas (reproducido: 452.000 contra 552.000). `CarteraService.php:227` descarta los cobros anulados, pero `PagoService::resumen` (`:494`) cuenta su `disponible()`. Se ve también en "Por programa".
 - **B25 ✓ (2ª)** El recibo y la auditoría dicen "Abono" aunque el recibo complete el cobro (reproducido). `PagoController.php:76,136` comparan `pivot.monto < monto_total` sin contar lo ya abonado antes.
-- **B26 (2ª)** Los recibos de una matrícula anulada desaparecen de "Pagos recibidos" (`CarteraService.php:224` excluye la matrícula entera), así que el consecutivo RC muestra huecos sin rastro en Finanzas.
-- **B27 (2ª)** Doble envío de una devolución: `DevolucionRequest` revisa `totalAdelantado` fuera del bloqueo. El segundo envío no mueve dinero, pero deja en la auditoría "se usó completo para cubrir lo que debía" (`PagoController.php:88-91`), y eso es falso.
-- **B28 (2ª)** Plan por periodo cuando la duración no es múltiplo del periodo (`PagoService.php:73,106`). Caso: 8 meses por trimestre, las cuotas caen en los meses 0, 2 y 5, y la cuota del sistema suma 15.999 en vez de 16.000. El plan `periodo` no tiene ninguna prueba.
-- **B29 (2ª)** "Cuota N de {total}" se calcula con la duración actual en el recibo, en Cartera y en Matrículas (`PagoController.php:64`, `CarteraService.php:125`, `MatriculaController.php:224`). Después de cambiar la duración dice, por ejemplo, "Cuota 12 de 18". Ligado a A3.
-- **B30 (2ª)** El Superadmin arma las iniciales con `strtoupper(substr(…,0,1))` (`superadmin/partials/topbar.blade.php:18`, `superadmin/profile.blade.php:13`). Con un nombre que empieza por Á, É, Ñ u Ó sale un carácter roto; el Admin ya usa `mb_`.
-- **B31 (2ª)** Los CDN del sitio público (Bootstrap, AOS, Leaflet) no tienen `integrity` (SRI) (`layouts/app.blade.php:15-17,32-34`).
-- **B32 (2ª, posible)** La grilla "Horario general" agrupa las filas por `jornadaDeHora(hora_inicio)` (`horarios.js:627`), y `JORNADAS` (`:14`) no incluye "Fines de semana". Los grupos de fin de semana aparecen en Mañana, Tarde o Noche: es solo visual, pero choca con la regla de no deducir la jornada de las horas.
+- **B26 ✓ (2ª)** Los recibos de una matrícula anulada desaparecen de "Pagos recibidos" (`CarteraService.php:224` excluye la matrícula entera), así que el consecutivo RC muestra huecos sin rastro en Finanzas.
+  - **Corregido:** `CarteraService` también carga las matrículas anuladas; no salen en Por cobrar, pero sus recibos siguen en Pagos recibidos.
+- **B27 ✓ (2ª)** Doble envío de una devolución: `DevolucionRequest` revisa `totalAdelantado` fuera del bloqueo. El segundo envío no mueve dinero, pero deja en la auditoría "se usó completo para cubrir lo que debía" (`PagoController.php:88-91`), y eso es falso.
+  - **Corregido:** `registrarDevolucion` vuelve a revisar lo adelantado con la matrícula bloqueada y rechaza el segundo envío.
+- **B28 ✓ (2ª)** Plan por periodo cuando la duración no es múltiplo del periodo (`PagoService.php:73,106`). Caso: 8 meses por trimestre, las cuotas caen en los meses 0, 2 y 5, y la cuota del sistema suma 15.999 en vez de 16.000. El plan `periodo` no tiene ninguna prueba.
+  - **Corregido:** cada periodo dura lo de su tipo y el último lo que quede (`Programa::mesesDelPeriodo`); cada cuota vence al empezar su periodo y cobra la cuota del sistema de sus meses. Afecta a 7 programas de `esat` (las cuotas ya generadas no se tocaron). Pruebas en `CobrosRevisionTest`.
+- **B29 ✓ (2ª)** "Cuota N de {total}" se calcula con la duración actual en el recibo, en Cartera y en Matrículas (`PagoController.php:64`, `CarteraService.php:125`, `MatriculaController.php:224`). Después de cambiar la duración dice, por ejemplo, "Cuota 12 de 18". Ligado a A3.
+  - **Corregido:** `Matricula::totalCuotas()` = la última cuota que se le generó; lo usan Matrículas, el recibo, Cartera, el resumen y graduar.
+- **B30 ✓ (2ª)** El Superadmin arma las iniciales con `strtoupper(substr(…,0,1))` (`superadmin/partials/topbar.blade.php:18`, `superadmin/profile.blade.php:13`). Con un nombre que empieza por Á, É, Ñ u Ó sale un carácter roto; el Admin ya usa `mb_`.
+  - **Corregido:** `mb_strtoupper(mb_substr(…))`.
+- **B31 ✓ (2ª)** Los CDN del sitio público (Bootstrap, AOS, Leaflet) no tienen `integrity` (SRI) (`layouts/app.blade.php:15-17,32-34`).
+  - **Corregido:** GSAP, ScrollTrigger, Lenis y Leaflet llevan `integrity` + `crossorigin` (las fuentes de Google no admiten SRI).
+- **B32 ✓ (2ª, posible)** La grilla "Horario general" agrupa las filas por `jornadaDeHora(hora_inicio)` (`horarios.js:627`), y `JORNADAS` (`:14`) no incluye "Fines de semana". Los grupos de fin de semana aparecen en Mañana, Tarde o Noche: es solo visual, pero choca con la regla de no deducir la jornada de las horas.
+  - **Corregido:** la fila es la jornada del grupo, con "Fines de semana".
 - **B33 ✓ (2ª)** Inicio del Admin (maqueta): el acceso rápido dice "Inscribir y asignar programa", lo que contradice que Estudiantes ≠ Matrículas. Además, "Nuevo estudiante" y "Registrar pago" llevan a `#` aunque esas pantallas ya existen (`admin/dashboard:132,209,303,310,324`).
 - **B34 ✓ (2ª)** Índices (comprobado con `EXPLAIN QUERY PLAN`):
   - el historial de Matrículas busca en `auditorias` por `entidad_tipo` + `entidad_id` sin índice, y esa tabla crece sin límite;
   - `vencerAtrasados` recorre toda la tabla `pagos` (`whereDate` impide usar índice);
   - `curso_sesiones(dia, hora_inicio)` es un índice que nadie usa.
   - El más importante está en M26.
-- **B35 (2ª)** La BD borra en cascada el historial de dinero:
+- **B35 ✓ (2ª)** La BD borra en cascada el historial de dinero:
   - `users` → `matriculas` → `pagos`, `recaudos`, `devoluciones`, `calificaciones` y los pivotes.
   - Hoy ninguna ruta lo dispara (C3 quitó la única), pero borrar un usuario desde phpMyAdmin, tinker o un futuro "eliminar estudiante" se llevaría todo.
   - Los `SET NULL` de `registrado_por`, `anulado_por`, `auditorias.user_id` y `matriculas.origen_id` borran la autoría.
   - **Arreglo:** RESTRICT en `matriculas.estudiante_id`, `recaudos/devoluciones.matricula_id` y `recaudo_pago.pago_id`.
-- **B36 (2ª)** Puntos para endurecer el escape (no explotables hoy):
+  - **Corregido:** migración `2026_11_11_000005` (RESTRICT en matrículas, cobros, recibos, devoluciones, sus pivotes y calificaciones) y `2026_11_11_000006` (RESTRICT en la autoría: quién registró o anuló recibos, devoluciones y egresos, quién puso notas y asistencia, la auditoría y `matriculas.origen_id`), ya corridas en `esat`. Una cuenta con algo a su nombre no se borra: se desactiva.
+- **B36 ✓ (2ª)** Puntos para endurecer el escape (no explotables hoy):
   - `asistencia.js:32`: `fmtTel` no escapa; es seguro solo porque `contacto()` escapa (`:511`).
   - `calificaciones.js:42`: tiene una copia sin uso de esa versión de `fmtTel`. Si alguien copia cualquiera de las dos, reabre C1.
   - `js_website.js:308`: el tooltip del mapa se arma con `innerHTML`. Será XSS si el footer pasa a leer la tabla `sedes` (P4).
   - `superadmin/auditoria:180` y `superadmin/estudiantes:231` usan `{!! json_encode() !!}`, seguro mientras sean datos fijos: al conectarlas a la BD, usar `@json`.
-
+  - **Corregido:** `fmtTel` de Asistencia devuelve solo dígitos, se quitó la copia sin uso de Calificaciones, el tooltip del mapa del inicio es texto y el Superadmin usa `@json`.
 ---
 
 ## 5. Sitio público
@@ -535,12 +597,12 @@ El formulario envía `name` (`update-profile-information-form.blade.php:22`), pe
 - **R4 ✓** `pdo_sqlite` está desactivado en `C:\php\php.ini` (`;extension=pdo_sqlite`, línea 949; la DLL sí existe). Sin la extensión fallan 147 de las 148 pruebas actuales. Con ella pasan todas (`php -d extension=pdo_sqlite vendor/bin/phpunit`).
 - **R5 ✓ (Medio)** `/public/build` está ignorado. Sin `npm run build`, `@vite` lanza `ViteManifestNotFoundException` (500) en `/dashboard` (donde caen estudiante, docente y acudiente), `/profile` (todos los roles) y las pantallas de restablecer, verificar y confirmar clave. En un CI limpio fallarían además varias pruebas (`ProfileTest`, `CuentaHabilitadaTest`, `PasswordResetTest`).
 - **R6 ✓ (2ª, Medio)** `composer dev` no funciona en Windows: `php artisan pail` necesita `pcntl` (lanza RuntimeException) y `--kill-others` tumba también el servidor y Vite. `queue:listen` sobra porque no hay jobs en cola. Arreglo: quitar `pail` y `queue` del script, o documentar `php artisan serve --port=8765`.
-- **R7 (2ª, Alto al desplegar)** `.env.example` trae:
+- **R7 ✓ (2ª, Alto al desplegar)** `.env.example` trae:
   - `APP_ENV=local` y `APP_DEBUG=true`;
   - `SESSION_ENCRYPT=false` (las sesiones quedan en texto plano en la BD, como en el volcado) y sin `SESSION_SECURE_COOKIE`;
   - `LOG_LEVEL=debug` en un solo archivo sin rotación.
 
-  Arreglo: una lista de verificación para producción.
+  Arreglo: una lista de verificación para producción. **Hecho:** tabla de variables en el README ("Puesta en producción").
 
 ---
 
@@ -609,15 +671,14 @@ En la primera revisión había 140 pruebas con 643 aserciones, y todas pasaban c
 Al corregir cada hallazgo, conviene pasar su reproducción a `tests/` como prueba de regresión.
 
 **Huecos en las pruebas del repo:**
-- El plan `periodo` no se prueba nunca.
+- ~~El plan `periodo` no se prueba nunca.~~ Ya se prueba (`CobrosRevisionTest`).
 - Las escrituras de Matrículas entre sedes no tienen prueba en el repo (la reproducción confirmó que hoy están bien).
 - No se prueba crear, listar ni cambiar el estado de Programas, Docentes y Grupos. El CRUD de Escuelas tampoco tiene pruebas.
 - El Superadmin solo tiene las de C4; Sedes no tiene pruebas.
 - Faltan pruebas de:
-  - cambio de año del consecutivo;
-  - el comando artisan `pagos:vencer` (`vencerAtrasados` sí se prueba, `MatriculasTest.php:668-679`);
-  - concurrencia;
-  - editar horarios o fechas de un grupo que ya tiene asistencia.
+  - ~~cambio de año del consecutivo~~ y ~~el comando `pagos:vencer`~~: `CobrosRevisionTest`;
+  - ~~concurrencia~~: `ConcurrenciaTest`;
+  - ~~editar horarios o fechas de un grupo que ya tiene asistencia~~: `HistorialGruposTest`.
 
 ---
 
@@ -638,6 +699,52 @@ Al corregir cada hallazgo, conviene pasar su reproducción a `tests/` como prueb
 - Las constantes de los modelos coinciden con los enums de la BD, salvo `tipo_documento` (M28) y el tope de notas (B4).
 
 ---
+
+## 10. Auditoría del panel Admin (11-11-2026)
+
+Revisión del panel **Admin** (rol `admin_general`, `/general`) con **varias sedes trabajando a la vez**. Todo lo que
+encontró quedó corregido el mismo día; las pruebas están en `tests/Feature/AdminGeneral/AuditoriaPanelTest.php` y
+`EstructuraTest.php`.
+
+**Cómo se probó:**
+- Copia de la BD (`esat_auditoria`) con 3 sedes más funcionando (Sasaima, Guaduas y La Dorada, esta sin secretaría),
+  armadas con los servicios reales de la app: 34 matrículas más, pagos al día y en mora, aplazados, retirados,
+  asistencia, notas, egresos, comunicados y foro con reportes.
+- Texto malicioso (`<img src=x onerror=...>`) en nombres de sedes, escuelas, programas, módulos, estudiantes, docentes,
+  acudientes, comunicados, foro, egresos, motivos y auditoría. Solo existe en la copia.
+- Navegador real: las 14 pantallas del Admin (534 fichas y detalles abiertos) y las 15 de la secretaría entrando a una
+  sede.
+- 276 combinaciones rol × ruta de `/general`, cifras del Admin contra el Inicio de cada secretaría y 26 chequeos de
+  integridad sobre la BD `esat`.
+
+**Lo que salió bien:**
+- Ningún texto malicioso se ejecutó; se ve como texto en todas las pantallas.
+- Ninguna ruta de `/general` responde a secretaría, docente, estudiante, acudiente ni superadmin (403/404).
+- Activos, ingresos del mes, grupos en clases y mora del Admin = los de cada secretaría, en las 5 sedes.
+- 23 de los 26 chequeos de la BD en cero (los otros 3 son los datos pendientes de abajo).
+
+| ID | Gravedad | Qué pasaba | Arreglo |
+|---|---|---|---|
+| AU1 | Alta | Cambiar el precio de un programa cambiaba lo que paga quien ya estaba matriculado (las cuotas usaban el precio del día en que elegía su plan). | **Precio pactado**: `matriculas.precio_programa` se guarda al matricular y las cuotas usan `Matricula::precioPrograma()`. Migración `2026_11_11_000001`; las 30 matrículas de `esat` se llenaron con el precio de su programa (todas cuadraban con él). |
+| AU2 | Alta | Cambiar la duración con estudiantes en clases dejaba sus cuotas descuadradas (es A3). | La duración (meses y división) **no cambia con matrículas activas o aplazadas**; el formulario la muestra bloqueada. |
+| AU3 | Media | Cambiar la duración reescribía la fecha de fin de los grupos finalizados (y su historial). | Solo se recalculan los no finalizados; todos los cálculos usan `Curso::fin()` (el fin guardado si ya finalizó). |
+| AU4 | Media | Editar un comunicado enviado a varias sedes revivía la copia que una secretaría había archivado. | Las copias archivadas no se tocan al editar. |
+| AU5 | Media | Si la secretaría de la primera sede archivaba su copia, el Admin ya no podía archivar el envío en las demás y lo veía como archivado. | El estado del envío sale de las copias vivas; al archivar, las ya archivadas conservan su motivo; la ficha dice dónde lo archivó la secretaría. |
+| AU6 | Media | Con dos pestañas en sedes distintas, lo hecho en la pestaña vieja se guardaba en la sede elegida después. | El layout de la secretaría manda `X-Sede-Trabajo` en cada `fetch`; si no coincide, 409 con "Recarga la página…". |
+| AU7 | Baja | Escape en Programas de la secretaría daba `closeModal is not defined`. | Se quitó la llamada sobrante. |
+| AU8 | Media | Un programa sin malla dejaba graduar sin ninguna nota. | `EstadoRequest` lo impide y Matrículas lo avisa (`sin_malla`). |
+| AU9 | Media | Editar cualquier dato de un programa volvía a revisar cruces de horario aunque no cambiaran horas ni duración: un cruce viejo bloqueaba cambios que no tenían que ver. | Los horarios solo se revisan si cambian las horas o la duración. |
+
+**Mejora pedida en la misma revisión:** al **crear y al editar** un programa, el paso 4 "Sedes" elige dónde se ofrece:
+todas, algunas o ninguna por ahora. Mismas reglas que el interruptor de la ficha (no se quita de una sede con grupos
+vigentes, un inactivo no se ofrece en sedes nuevas); cada sede que entra o sale queda en la auditoría de esa sede.
+Decidido con el usuario: el precio sigue siendo uno para todas las sedes y un tema del foro es de una sola sede.
+
+**Datos de `esat` pendientes de decisión del usuario:**
+- Programas sin malla: "Ingles B1", "Desarrollo web" (1 matrícula) y "Tecnico en matematicas"; sus horas no cuadran con
+  la malla.
+- "Grupo A" (CUR-ADM-002-A) sigue activo aunque terminó el 02-11-2026.
+- Sede "Prueba1" con 2 secretarías de prueba (María Pérez y Pedro Ramírez, `admin@esat.test`).
 
 ## Orden sugerido
 
