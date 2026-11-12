@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
             'sede.trabajo' => \App\Http\Middleware\EnsureSedeDeTrabajo::class,
+            'transaccion' => \App\Http\Middleware\TransaccionEscritura::class,
         ]);
         // Cuenta desactivada o derecho de matrícula vencido: se corta también la sesión abierta
         $middleware->web(append: [
@@ -21,5 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Dos envíos iguales al mismo tiempo (doble clic o dos personas): la BD rechaza el segundo por un índice único.
+        // En vez de un error 500, se avisa y se pide recargar.
+        $exceptions->render(function (\Illuminate\Database\UniqueConstraintViolationException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Otra persona (u otro clic) acaba de guardar lo mismo. Recarga la página y revisa antes de volver a intentarlo.'], 409);
+            }
+        });
     })->create();

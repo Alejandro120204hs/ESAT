@@ -3,6 +3,7 @@
 namespace App\Services\Academico;
 
 use App\Models\Academico\Curso;
+use App\Models\Academico\Programa;
 use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\User;
@@ -34,12 +35,16 @@ class MatriculaService
     public function matricular(User $estudiante, Curso $grupo, ?array $pagoMatricula): Matricula
     {
         return DB::transaction(function () use ($estudiante, $grupo, $pagoMatricula) {
+            // Dos clics o dos personas a la vez: el segundo espera y ve la matrícula que creó el primero
+            $this->bloquearEstudiante($estudiante->id);
+            $this->asegurarSinVigente($estudiante->id);
             $this->asegurarCupo($grupo);
 
             $matricula = Matricula::create([
                 'codigo'        => Matricula::siguienteCodigo(),
                 'estudiante_id' => $estudiante->id,
                 'programa_id'   => $grupo->programa_id,
+                'precio_programa' => Programa::whereKey($grupo->programa_id)->value('precio_total'),   // el precio de hoy queda pactado
                 'curso_id'      => $grupo->id,
                 'sede_id'       => $grupo->sede_id,
                 'estado'        => 'activo',
@@ -79,6 +84,17 @@ class MatriculaService
     public function cambiarEstado(Matricula $matricula, string $estado, CarbonInterface $fecha, ?string $motivo, ?Curso $grupo = null): void
     {
         DB::transaction(function () use ($matricula, $estado, $fecha, $motivo, $grupo) {
+            // Se revisa otra vez con la matrícula bloqueada: otra persona pudo cambiarla o pagarle entre tanto
+            $matricula = $this->bloquearMatricula($matricula);
+            if (! in_array($estado, Matricula::TRANSICIONES[$matricula->estado] ?? [], true)) {
+                throw ValidationException::withMessages(['estado' => "La matrícula ya quedó {$matricula->estado}: otra persona la acaba de cambiar. Recarga la página."]);
+            }
+            if ($estado === 'anulado' && ($matricula->recaudos()->whereNull('anulado_en')->exists() || $this->pagos->dineroEn($matricula) > 0)) {
+                throw ValidationException::withMessages(['estado' => 'Esta matrícula tiene dinero (pagos o saldo trasladado): ya no se puede anular. Si el estudiante se va, usa Retirar.']);
+            }
+            if ($estado === 'graduado' && ($debe = $this->pagos->resumen($matricula->load('pagos', 'recaudos', 'programa'))['por_pagar']) > 0) {
+                throw ValidationException::withMessages(['estado' => 'Para graduarse debe estar a paz y salvo: todavía debe $ '.number_format($debe, 0, ',', '.').'.']);
+            }
             if ($estado === 'activo') {
                 $grupo ??= $matricula->curso;
                 $this->asegurarCupo($grupo);
@@ -126,6 +142,12 @@ class MatriculaService
     public function cambiarPrograma(Matricula $vieja, Curso $grupo, string $motivo): Matricula
     {
         return DB::transaction(function () use ($vieja, $grupo, $motivo) {
+            $this->bloquearEstudiante($vieja->estudiante_id);
+            $vieja = $this->bloquearMatricula($vieja);
+            if (! in_array($vieja->estado, Matricula::VIGENTES, true)) {
+                throw ValidationException::withMessages(['grupo_id' => "Esta matrícula ya quedó {$vieja->estado}: otra persona la acaba de cambiar. Recarga la página."]);
+            }
+            $this->asegurarSinVigente($vieja->estudiante_id, $vieja->id);
             $this->asegurarCupo($grupo);
             $hoy = today();
 
@@ -143,6 +165,7 @@ class MatriculaService
                 'codigo'        => Matricula::siguienteCodigo(),
                 'estudiante_id' => $vieja->estudiante_id,
                 'programa_id'   => $grupo->programa_id,
+                'precio_programa' => Programa::whereKey($grupo->programa_id)->value('precio_total'),
                 'curso_id'      => $grupo->id,
                 'sede_id'       => $grupo->sede_id,
                 'origen_id'     => $vieja->id,
@@ -162,6 +185,28 @@ class MatriculaService
     }
 
     /* ── Auxiliares ── */
+
+    /** Bloquea al estudiante hasta el final de la transacción: sus matrículas se crean y cambian de a una. */
+    private function bloquearEstudiante(int $id): void
+    {
+        User::whereKey($id)->lockForUpdate()->first();
+    }
+
+    /** La matrícula leída otra vez y bloqueada (la que llegó pudo cambiar mientras tanto). */
+    private function bloquearMatricula(Matricula $m): Matricula
+    {
+        return Matricula::whereKey($m->id)->lockForUpdate()->firstOrFail();
+    }
+
+    /** Una sola matrícula vigente por estudiante (también lo exige la BD: matriculas.vigente_de). */
+    private function asegurarSinVigente(int $estudianteId, ?int $salvo = null): void
+    {
+        $v = Matricula::where('estudiante_id', $estudianteId)->whereIn('estado', Matricula::VIGENTES)
+            ->when($salvo, fn ($q) => $q->whereKeyNot($salvo))->first();
+        if ($v) {
+            throw ValidationException::withMessages(['estudiante_id' => "Ya tiene una matrícula vigente ({$v->codigo}): alguien la acaba de registrar. Recarga la página."]);
+        }
+    }
 
     /** Revisa el cupo con el grupo bloqueado: dos matrículas al tiempo no pueden pasarse del cupo. */
     private function asegurarCupo(Curso $grupo): void

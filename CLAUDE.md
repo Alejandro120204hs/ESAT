@@ -48,8 +48,13 @@ dos partes:
 
 Stack: Laravel 12 + Breeze (Blade), MySQL (`esat`, XAMPP, `root` sin clave),
 `php artisan serve --port=8765` para probar local. Todo en **español**,
-nunca inglés, en toda la UI. (`.env.example` todavía trae sqlite y `APP_LOCALE=en`;
-el `.env` local usa MySQL `esat`.) `database/esat.sql` es un volcado de la BD local con
+nunca inglés, en toda la UI. Instalación nueva: README (`.env.example` con MySQL `esat` y español,
+`composer setup` y `php artisan db:seed`, que crea las 4 sedes reales y las cuentas Superadmin y Admin desde
+`SUPERADMIN_*` / `ADMIN_GENERAL_*`; es lo único que siembra: los datos de prueba siguen yendo directo a la BD).
+**Nunca deshacer migraciones** con datos: `AppServiceProvider::protegerMigraciones` lo niega (A12); se vuelve atrás
+restaurando un respaldo. **Nada de dinero ni historial se borra**: la BD rechaza (RESTRICT) borrar un estudiante con
+matrícula, una matrícula con cobros/recibos, y una cuenta que registró recibos, notas, asistencia o auditoría (B35); las
+cuentas se desactivan. `database/esat.sql` es un volcado de la BD local con
 datos personales, hashes y sesiones: **no subirlo a Git**.
 
 Los problemas abiertos de la revisión completa (21-10-2026) están en `HALLAZGOS.md`,
@@ -166,6 +171,13 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   no por programa.
 - Toda acción de crear/editar/eliminar/activar/desactivar se registra con
   `Auditoria::registrar()`.
+- **Concurrencia (M13)**: cada petición que escribe en `/admin`, `/general` y `/docente` es una transacción
+  (`TransaccionEscritura`; un 4xx/5xx deshace todo, auditoría incluida) y la conexión MySQL usa `READ COMMITTED`. Toda
+  regla que dependa de datos que otra persona puede cambiar a la vez se **vuelve a revisar dentro del servicio con la
+  fila bloqueada** (`lockForUpdate`, orden: estudiante → matrícula → grupo → consecutivo) y se rechaza con
+  `ValidationException`; la Form Request sola no basta. Una matrícula vigente por estudiante también la exige la BD
+  (`matriculas.vigente_de`, columna calculada: no se escribe; al insertar por SQL, nombrar las columnas). Códigos y
+  consecutivos nuevos: `Configuracion::bloquear()`. Un choque de índice único responde 409 (`bootstrap/app.php`).
 - Los datos de prueba se insertan **directo en la BD** (no seeders), sin
   marcarlos como ficticios.
 - Datos propios de un rol van en una tabla de perfil 1 a 1 con `users`
@@ -178,7 +190,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   El programa no tiene fecha de inicio: la tiene cada grupo, y su `fecha_fin`
   no se digita: se guarda calculada con `Curso::finPara()` = inicio + duración del
   programa, al guardar el grupo y al cambiar la duración del programa (se recalculan
-  sus grupos). Asistencia y Calificaciones la vuelven a calcular con `finPara()`. Editar un
+  sus grupos **no finalizados**). Los cálculos usan `Curso::fin()`: el `fecha_fin` guardado si el grupo ya finalizó (su
+  historial no cambia), si no `finPara()`. Editar un
   programa no puede invalidar sus grupos vigentes (cupo, jornadas, horas).
   Docente vía `curso_docente`
   (uno por grupo); horario semanal en `curso_sesiones`. Las reglas de horario
@@ -211,14 +224,21 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   sigue siendo la lista del grupo y se mantiene sincronizada). Una matrícula **vigente** (activa o
   aplazada) por estudiante; el cupo se revisa con el grupo bloqueado. Estados por
   `Matricula::TRANSICIONES` (activo → aplazado/retirado/graduado; aplazado → activo/retirado;
-  retirado y graduado son finales). Aplazar/retirar anula las cuotas futuras; reintegrar las
-  regenera; graduar exige grupo terminado y paz y salvo.
+  retirado y graduado son finales). Aplazar/retirar anula las cuotas futuras (también las ya pagadas, que conservan su
+  abono: ese dinero queda marcado como adelantado); reintegrar las regenera; graduar exige grupo terminado y paz y salvo.
+- **Precio pactado**: al matricular (y al cambiar de programa) se guarda `matriculas.precio_programa`; las cuotas se
+  calculan con `Matricula::precioPrograma()`, no con el precio vigente del catálogo (un cambio de precio solo aplica a
+  matrículas nuevas). Las anteriores a la columna se llenaron con el precio del programa (todas cuadraban con él).
 - **Pagos**: cada fila de `pagos` es un cobro (`matricula` = derecho de matrícula, o cuota
   `mensual`/`periodo` con `numero_cuota` y `fecha_vencimiento` el día `Pago::DIA_VENCIMIENTO`=10).
   Lo que se paga se registra en recaudos (ver abajo). `vencido` lo calcula `Pago::estadoActual()` por
   fecha y lo guarda el comando diario `pagos:vencer`. El resumen de pagos (Matrículas, Estudiantes y
   Acudientes) sale solo de `PagoService::resumen()`. El historial de una matrícula es la auditoría
   con `entidad_tipo = 'Matricula'` (registrar ahí también los pagos).
+  Plan **por periodo**: cada periodo dura lo de su tipo (trimestre 3, semestre 6) y el último lo que quede
+  (`Programa::mesesDelPeriodo`; 10 meses por trimestre = 3+3+3+1); la cuota vence al empezar su periodo y cobra la cuota
+  del sistema de sus meses (B28). "Cuota N de total" usa `Matricula::totalCuotas()` (la última cuota que se le generó),
+  nunca la duración de hoy del programa (B29).
   - **Pagos = recaudos** (`Finanzas/Recaudo`, tabla `recaudos` + pivote `recaudo_pago.monto`): la
     admin escribe un **monto libre** y `PagoService::registrarPago` lo aplica **en orden** (lo más viejo
     primero; el derecho en espera al final): completa cobros y lo que sobra queda **abonado**
@@ -230,24 +250,30 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     programa (`pagos.descuento`; no el derecho ni la cuota del sistema), en las cuotas **sin abonos** y
     en las que se generen después. 0 lo quita.
   - **Anular matrícula** (estado `anulado`, por `TRANSICIONES`, con motivo): solo si no tiene recaudos
-    vigentes; anula sus cobros, sale de la lista del grupo, no cuenta en trayectoria ni en la
+    vigentes ni dinero (`PagoService::dineroEn`: tampoco saldo trasladado de otra matrícula, A6); anula sus cobros, sale de la lista del grupo, no cuenta en trayectoria ni en la
     matrícula que muestran Estudiantes/Acudientes; queda en Finalizadas. El estudiante vuelve a
     "Por matricular".
   - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). Desde ese día,
     si no está pagado, **el estudiante no puede ingresar** (`LoginRequest` + `derechoVencido`); sin
     matrícula o antes de vencer sí entra. Al **aplazar** sin haberlo pagado queda **en espera**
     (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
-    guarda. Al **retirarse** antes de que venza, se anula. La misma regla corta también la
+    guarda. Al **retirarse** antes de que venza, se anula (con abono parcial o pagado completo, A9): de lo
+    pagado se devuelve el % de Admin › Configuración (`devolucion_derecho_pct`, 50 % por defecto; aplica a los retiros desde
+    que se cambia) y el resto queda en `pagos.retenido` (ESAT se lo queda: no se devuelve ni se traslada). El cambio de
+    programa no retiene nada. La misma regla corta también la
     sesión ya abierta (`EnsureAccountIsEnabled`, ver Login).
   - **Graduar** exige grupo terminado, todos los módulos aprobados, plan elegido con todas sus cuotas pagadas y paz y salvo.
+    Un programa **sin malla** no gradúa a nadie (`EstadoRequest`; Matrículas lo avisa con `sin_malla`).
     Los pagos de una matrícula graduada no se anulan.
   - Un cambio de estado no puede tener fecha anterior a la matrícula ni al último cambio de estado.
   - El consecutivo de recibos vive en `configuraciones` (`ultimo_recibo_AAAA`) y nunca retrocede:
     un recibo anulado no se reutiliza.
   - Si cambia la fecha de inicio del grupo (cambio de grupo o edición en Grupos), el derecho de
     matrícula sin pagar vence el nuevo día de inicio (`reprogramarDerecho`).
-  - **Dinero adelantado** (`PagoService::adelantado`): en una matrícula aplazada o retirada, las cuotas
-    pagadas que vencen después del cambio y los abonos que quedaron en cobros anulados. Siempre se
+  - **Dinero adelantado** (`PagoService::adelantado`): los abonos que quedaron en **cobros anulados** (las cuotas de
+    después de un aplazamiento o retiro se anulan con su abono, y el derecho abonado de quien se retira antes de
+    empezar). No depende de `estado_fecha`, así que dos cambios seguidos no lo pierden (A5). Al anular un recibo de una
+    aplazada o retirada solo vuelve a ser deuda lo que ya se debía (A4). Siempre se
     usa **primero para cubrir lo vencido** de la misma matrícula; el resto:
     - **Devolución** (`registrarDevolucion`, tabla `devoluciones`, comprobante `DV-AAAA-NNNNN`).
     - **Cambio de programa** (`MatriculaService::cambiarPrograma`, opción de "Cambiar estado"): la vieja
@@ -256,7 +282,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     - **Reintegro**: lo abonado a cuotas anuladas vuelve como saldo a favor.
     El saldo a favor se aplica solo, en orden, cuando hay cobros (`aplicarSaldoFavor`, también al generar
     cuotas). `pagos.reembolsado` = lo que salió de ese cobro; lo que realmente queda pagado es
-    `Pago::disponible()` (abonado − reembolsado). Un recaudo con dinero ya devuelto/trasladado no se anula.
+    `Pago::disponible()` (abonado − reembolsado − retenido). Un recaudo con dinero ya devuelto/trasladado no se anula.
   - **Documentos imprimibles** (`DocumentoController`, plantilla `admin/matriculas/documento.blade.php` +
     `documento.css/js`): recibo, comprobante de devolución, constancia de matrícula (solo vigente) y paz y
     salvo (nada por pagar en ninguna de sus matrículas y ninguna vigente sin plan).
@@ -281,7 +307,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
 - **Pagos (Finanzas)** (`Admin/Pagos/CarteraController` + `Finanzas/CarteraService`, vista `admin/pagos/index.blade.php`
   + `pagos.css/js`): pestañas Por cobrar (vencido, este mes, por pagar, WhatsApp de recordatorio —al acudiente si es
   menor—), Pagos recibidos (recibos: ver/imprimir/anular), **Resumen de caja por rango de fechas** (no por día: los
-  pagos llegan por mes/periodo; por medio de pago, quién registró, días con pagos; imprimible), Por programa y
+  pagos llegan por mes/periodo; por medio de pago, quién registró, días con pagos; imprimible; cada pago cuenta el día en que
+  **se registró** —`registrado_en`— y cada anulación el día en que se hizo, así un periodo impreso no cambia, M25), Por programa y
   Devoluciones (solo consulta; se registran en Matrículas). KPI de estudiantes sin plan. **Registrar y anular un pago
   usan las rutas de Matrículas** (`matriculas.pagos.store` / `matriculas.pagos.anular`, `PagoRequest` /
   `AnularPagoRequest` + `PagoService`): una sola regla de cobro y el historial queda en la matrícula. Con
@@ -366,7 +393,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (sin matrícula vigente: nunca matriculados, o retirados/graduados que vuelven) y Finalizadas
   (graduadas/retiradas, solo consulta).
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
-  guarda `users.ultimo_acceso`. El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
+  guarda `users.ultimo_acceso` (también el de la cookie "Recordarme": listener de `Login` en `AppServiceProvider`, B22). El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
   `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o al estudiante
   se le vence el derecho, cierra la sesión abierta (y con ella la cookie "Recordarme") y vuelve al login
   con el motivo; a un `fetch` le responde 401. La regla vive en un solo lugar,
@@ -380,7 +407,13 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   / `cuposLibres()`, nunca `estudiantes()->count()`. Un grupo con estudiantes no
   puede cambiar de programa.
 - Horarios (`Admin/Horarios/HorarioController`): `PUT /admin/horarios/{curso}`
-  reemplaza las sesiones del grupo y su docente. "Nuevo horario" solo ofrece
+  guarda las sesiones del grupo y su docente. **Lo ya dictado no cambia (A7)**: si el grupo ya empezó y tiene asistencia
+  o notas, el horario de antes queda con `hasta` = hoy y el nuevo con `desde` = mañana (`curso_sesiones.desde/hasta`);
+  si no, se reemplaza. `Curso::sesiones()` es el vigente (pantallas, tope, cruces); todo lo que calcula fechas de clase usa
+  `historialSesiones` + `Curso::sesionEn($dia)` (Asistencia, Calificaciones, PanelDocente y `docente/datos.js`, Reportes):
+  al agregar un cálculo de fechas, cargar `historialSesiones` y usar `sesionEn`. Un grupo que ya empezó no cambia su
+  fecha de inicio, y antes de su fin solo se finaliza sin matrículas vigentes (`Curso::impedimentoParaFinalizar`, A8);
+  graduar exige que haya terminado por fecha. "Nuevo horario" solo ofrece
   grupos sin sesiones; los finalizados no se listan ni se editan.
 - **Lo definido arriba se respeta abajo** (Programa → Grupo → Horario): la
   jornada del horario es la del grupo (`Curso::RANGOS_JORNADA`: Mañana 6–12,
@@ -401,13 +434,20 @@ agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 `tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
+Dos envíos a la vez, transacción por petición y choques de índice único: `tests/Feature/Admin/ConcurrenciaTest.php`.
+Dinero adelantado al aplazar, retirar o cambiar de programa (A4, A5, A6, A9): `tests/Feature/Admin/DineroAdelantadoTest.php`.
+Caja, recibos de anuladas, doble devolución, plan por periodo, total de cuotas, borrado restringido, consecutivo y
+`pagos:vencer` (M25, B26–B29, B35): `tests/Feature/Admin/CobrosRevisionTest.php`. Restablecer clave, "Recordarme" y
+recuperar la clave de una cuenta desactivada (B21–B23): `tests/Feature/Auth/SesionesYClavesTest.php`.
+Historial de horarios, fecha de inicio y finalizar a tiempo (A7, A8): `tests/Feature/Admin/HistorialGruposTest.php`.
+Instalación nueva y protección de migraciones (A11, A12): `tests/Feature/InstalacionTest.php`.
 Panel Admin general: `tests/Feature/AdminGeneral/`. Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
 guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
 Sitio público (una página por programa, línea y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (147 de las 148 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 307 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Bug recurrente a tener en cuenta
@@ -552,7 +592,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - **Reportes** (`reportes/index`, `rep-`): por mes y sede: matriculados, novedades, recaudo, ingresos y egresos,
     cartera por edades (a hoy). Imprimir y Excel.
   - **Auditoría** (`auditoria/index`, `aud-`): filtros de periodo, sede, persona y acción; detalle; exportar.
-  - **Configuración** (`configuracion/index`, `cfg-`): institución (datos reales), cuota del sistema, reglas de acceso
+  - **Configuración** (`configuracion/index`, `cfg-`): institución (datos reales), cuota del sistema, % de devolución del
+    derecho al retirarse antes de clases, reglas de acceso
     (intentos, días de inactividad) y desbloquear cuentas; cada formulario con Deshacer y confirmación.
 - **"Entrar a la sede" (backend real)**: `POST /general/sedes/{sede}/entrar` (`AdminGeneral/Sedes/EntrarSedeController`,
   `destino` opcional de una lista cerrada) guarda la sede en la sesión (`User::SESION_SEDE`) y lleva a las pantallas
@@ -563,6 +604,9 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   `sedeTrabajo()` (la propia de la secretaría, o la elegida por el Admin), **nunca `sede_id` del usuario directo**.
   `auditorias.sede_id` guarda la sede de cada acción (migración `2026_11_10_000001`); la actividad del Inicio de la
   secretaría incluye lo que hizo el Admin en ella. Pruebas en `tests/Feature/AdminGeneral/EntrarSedeTest.php`.
+  **Pestañas en sedes distintas**: el layout de la secretaría (solo para el Admin) envuelve `fetch` y manda la sede con la
+  que se abrió la pestaña en `X-Sede-Trabajo`; si en otra pestaña ya entró a otra sede, `EnsureSedeDeTrabajo` responde 409
+  ("Recarga la página…") en vez de guardar en la sede equivocada.
 - El Superadmin todavía conserva Sedes, Administradores y sus maquetas: quitarle lo que pasó al Admin queda pendiente.
 - **Datos (backend real, 2026-11-10)**: cada controlador pasa lo de su pantalla con `window.GEN_DATOS = @json($datos)`
   (la forma que leen los JS; ya no hay datos de ejemplo). Servicios en `app/Services/General/`: `EstructuraService` (sedes
@@ -578,12 +622,20 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   `sedeId()`, que el general sobrescribe con la elegida) o agregan lo propio (malla del programa, sedes de un comunicado).
   Todo queda en la auditoría con la sede afectada (`Auditoria::registrar(..., $sedeId)`).
   - Programas: la malla se guarda en orden (conserva ids), las horas del programa = suma de módulos, y con notas puestas la
-    malla no cambia. Escuelas: sigla automática y fija (`siglaLibre`), no se eliminan con programas ni docentes.
+    malla no cambia. **La duración (meses y división) no cambia con matrículas vigentes** (activas o aplazadas) en el
+    programa: sus cuotas y su grado dependen de ella; el formulario la muestra bloqueada (`vigentes`) y lo valida
+    `ProgramaRequest`. **Paso 4 "Sedes"** (al crear y al editar): todas / algunas / ninguna por ahora, con las reglas del
+    interruptor de la ficha (no se quita de una sede con grupos vigentes; un inactivo no se ofrece en sedes nuevas); cada
+    sede que entra o sale va a la auditoría de esa sede (`ProgramaController::ofrecerEn`). Sin `sedes` en la petición, al
+    crear no se ofrece en ninguna y al editar no cambian. Los cruces de horario solo se revisan si cambian las horas o la
+    duración. Escuelas: sigla automática y fija (`siglaLibre`), no se eliminan con programas ni docentes.
   - Estudiantes: el formulario pide lo mismo que la secretaría (nacimiento, residencia con el listado de Colombia —regla
     `App\Rules\CiudadDeColombia`—); un menor puede registrarse con un acudiente nuevo en el mismo formulario.
   - Comunicados a varias sedes: **una fila por sede con el mismo `comunicados.lote`** (migración `2026_11_10_000002`);
     el Admin los ve, edita, archiva y elimina como uno solo. Destinos: todos (= sede), estudiantes, docentes, acudientes
     (no hay destino "secretarías"). Sin adjunto. La secretaría no edita ni elimina los del Admin (sí los archiva en su sede).
+    Una copia archivada por la secretaría se respeta: editar el envío no la revive, archivarlo conserva su motivo, y el
+    estado del envío sale de las copias vivas (`archivado_en_sedes` dice dónde lo archivó la secretaría).
   - Foro: `ForoService` de la secretaría con Form Requests que extienden las suyas; sin adjuntos desde el panel general.
   - Configuración: datos de la institución en `configuraciones` (`institucion_*`, por defecto los reales de
     `Configuracion::INSTITUCION`) y salen en el encabezado de los documentos impresos de la secretaría; cuota del sistema;
@@ -592,6 +644,9 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     `EnsureAccountIsEnabled::motivo` no deja entrar a una bloqueada (el aviso solo sale con la clave correcta); el Admin y el
     superadmin nunca se bloquean; el Admin desbloquea. Restablecer clave (`Sistema/SesionesService`) también cierra sus sesiones.
 - Pruebas: `tests/Feature/AdminGeneral/{PanelGeneral,EntrarSede,Estructura,Personas,ComunicacionConfiguracion}Test.php`.
+  La auditoría del 11-11-2026 (informe en `HALLAZGOS.md` §10; varias sedes a la vez: precio pactado, duración, grupos finalizados, envíos archivados en una
+  sede, pestañas en sedes distintas, sin malla y permisos de todas las rutas `/general` para cada rol) está en
+  `AuditoriaPanelTest.php`.
 
 ## Panel Docente (datos reales)
 

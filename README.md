@@ -1,59 +1,106 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ESAT · Plataforma académica y financiera
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sitio público y plataforma por roles de la **Escuela Nacional de Educación ESAT** (Lic. de Funcionamiento 5850,
+NIT 900820764-1): Admin de toda ESAT, Secretaría de cada sede, Docente, Estudiante y Acudiente.
 
-## About Laravel
+Laravel 12 (Blade) · PHP 8.2+ · MySQL / MariaDB. Toda la interfaz está en español.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requisitos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2 o superior con las extensiones `pdo_mysql`, `mbstring`, `openssl` y `fileinfo`.
+- Composer 2.
+- Node.js 18 o superior y npm (solo para compilar los estilos de las pantallas de ingreso).
+- MySQL 8 o MariaDB 10.4 o superior.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Instalación nueva
 
-## Learning Laravel
+1. Clona el repositorio y crea la base de datos vacía:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+   ```sql
+   CREATE DATABASE esat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. Copia `.env.example` a `.env` y completa:
+   - la conexión (`DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`);
+   - las dos cuentas iniciales: `SUPERADMIN_*` (quien instala y administra el sistema) y `ADMIN_GENERAL_*` (el Admin de
+     toda ESAT). Correo y número de documento son obligatorios.
 
-## Laravel Sponsors
+3. Instala, migra y compila:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+   ```bash
+   composer setup
+   ```
 
-### Premium Partners
+   (Hace `composer install`, `key:generate`, `migrate`, `npm install` y `npm run build`.)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+4. Crea las 4 sedes reales y las dos cuentas:
 
-## Contributing
+   ```bash
+   php artisan db:seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   La **clave inicial** de cada cuenta es su número de documento. Se puede volver a correr sin duplicar nada.
 
-## Code of Conduct
+5. Arranca y entra:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+   ```bash
+   php artisan serve
+   ```
 
-## Security Vulnerabilities
+   Con la cuenta del Admin se crean las secretarías de cada sede, el catálogo de programas, los docentes y los
+   estudiantes. No hay datos de prueba: todo se crea desde los paneles.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Pruebas
 
-## License
+```bash
+php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Usan SQLite en memoria y no tocan la base de datos real. Necesitan la extensión `pdo_sqlite` (si está desactivada:
+`php -d extension=pdo_sqlite vendor/bin/phpunit`).
+
+## Puesta en producción (hosting)
+
+Lista de verificación del `.env` antes de abrirlo al público (el `.env.example` trae valores para trabajar en local):
+
+| Variable | En producción | Por qué |
+|---|---|---|
+| `APP_ENV` | `production` | Con este valor el sistema **no permite** `migrate:fresh`, `migrate:refresh`, `migrate:reset` ni `db:wipe`. |
+| `APP_DEBUG` | `false` | Con `true`, un error muestra código, consultas y variables del servidor a cualquiera. |
+| `APP_URL` | `https://` + el dominio | Enlaces de los correos y de los documentos. |
+| `APP_KEY` | una propia (`php artisan key:generate`) | Nunca la del equipo de desarrollo. |
+| `SESSION_ENCRYPT` | `true` | Las sesiones se guardan en la base de datos; sin cifrar quedan legibles en un respaldo. |
+| `SESSION_SECURE_COOKIE` | `true` | La cookie de sesión solo viaja por HTTPS. |
+| `LOG_STACK` | `daily` | Un archivo de registro por día, en vez de uno que crece sin límite. |
+| `LOG_LEVEL` | `warning` | `debug` llena el registro con detalles internos. |
+| `MAIL_*` | el SMTP real | Sin correo, "¿Olvidaste tu contraseña?" no envía nada. |
+| `DB_PASSWORD` | una clave real | En XAMPP `root` no tiene clave; en el servidor sí debe tener. |
+
+- Sirve el sitio solo por HTTPS.
+- Programa el planificador cada minuto para que los cobros pasen a vencidos (`pagos:vencer`):
+
+  ```
+  * * * * * cd /ruta/del/proyecto && php artisan schedule:run >> /dev/null 2>&1
+  ```
+
+- Para actualizar: `git pull`, `composer install --no-dev`, `php artisan migrate --force` y `npm run build`.
+
+## Respaldos: nunca deshacer migraciones
+
+**No uses `migrate:rollback` para volver atrás.** Con datos, deshacer migraciones borra recibos y cobros o deja la base a
+medias, y el sistema lo impide mientras haya matrículas, cobros o recibos. Para volver atrás, restaura un respaldo:
+
+```bash
+mysqldump -u USUARIO -p esat > respaldo.sql      # sacar un respaldo
+mysql -u USUARIO -p esat < respaldo.sql          # restaurarlo
+```
+
+Al insertar datos por SQL en `matriculas`, nombra las columnas en el `INSERT`: `vigente_de` es una columna calculada.
+
+Los volcados de la base (como `database/esat.sql`) tienen datos personales, claves y sesiones: **no se suben a Git**.
+
+## Documentación interna
+
+- `CLAUDE.md`: reglas de negocio y de cada panel.
+- `HALLAZGOS.md`: revisiones y auditorías, con lo corregido y lo pendiente.
+- `DESIGN.md`: sistema visual del sitio público.

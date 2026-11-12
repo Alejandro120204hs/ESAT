@@ -38,18 +38,38 @@ class HorarioService
     }
 
     /**
-     * Tope: el horario no puede sumar más horas que las del programa.
-     * Devuelve el mensaje de error o null si cumple.
+     * Horas del grupo con todos los horarios que ha tenido, cada uno en el tiempo en que rigió, hasta $hasta (por
+     * defecto, su fin). Espera cargados historialSesiones y programa.
      */
-    public function excedeTope(Programa $programa, iterable $sesiones, CarbonInterface $inicio, CarbonInterface $fin): ?string
+    public function horasDelGrupo(Curso $curso, ?CarbonInterface $hasta = null): float
     {
-        $horas = $this->horasProgramadas($sesiones, $inicio, $fin);
+        $fin = $curso->fin();
+        $hasta = $hasta && $hasta->lt($fin) ? $hasta : $fin;
+        $horas = 0.0;
+        foreach ($curso->historialSesiones as $s) {
+            $desde = $s->desde && $s->desde->gt($curso->fecha_inicio) ? $s->desde : $curso->fecha_inicio;
+            $tope = $s->hasta && $s->hasta->copy()->addDay()->lt($hasta) ? $s->hasta->copy()->addDay() : $hasta;
+            if ($tope->gt($desde)) {
+                $horas += $s->minutos() / 60 * $this->semanas($desde, $tope);
+            }
+        }
+
+        return $horas;
+    }
+
+    /**
+     * Tope: el horario no puede sumar más horas que las del programa. $previas: horas que ya se dictaron con el horario
+     * de antes, cuando el nuevo rige desde $inicio (HALLAZGOS A7). Devuelve el mensaje de error o null si cumple.
+     */
+    public function excedeTope(Programa $programa, iterable $sesiones, CarbonInterface $inicio, CarbonInterface $fin, float $previas = 0): ?string
+    {
+        $horas = $previas + $this->horasProgramadas($sesiones, $inicio, $fin);
         if ($horas <= $programa->horas) {
             return null;
         }
 
         $semanales = $this->minutosSemanales($sesiones) / 60;
-        $maxSemana = $programa->horas / max(0.01, $this->semanas($inicio, $fin));
+        $maxSemana = max(0, $programa->horas - $previas) / max(0.01, $this->semanas($inicio, $fin));
 
         return sprintf(
             'El horario suma %s horas (%s h por semana durante %s semanas) y el programa tiene %s horas. Con estas fechas el máximo es %s h por semana.',

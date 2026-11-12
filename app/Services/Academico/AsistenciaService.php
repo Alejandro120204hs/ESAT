@@ -49,25 +49,25 @@ class AsistenciaService
     }
 
     /**
-     * Clases ya dictadas del grupo ('Y-m-d', de la más vieja a la más reciente).
-     * Espera cargadas sesiones y programa.
+     * Clases ya dictadas del grupo ('Y-m-d', de la más vieja a la más reciente), cada día con el horario que regía
+     * entonces (Curso::sesionEn): un cambio de horario no reescribe lo ya dictado. Espera cargados historialSesiones y programa.
      */
     public function fechasDictadas(Curso $curso, ?CarbonInterface $ahora = null): array
     {
         $ahora ??= now();
         $hoy = $ahora->copy()->startOfDay();
-        $finDia = $this->finPorDia($curso);
-        if (! $finDia) {
+        if ($curso->historialSesiones->isEmpty()) {
             return [];
         }
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
+        $fin = $curso->fin();
 
         $fechas = [];
         for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($fin) && $d->lte($hoy); $d->addDay()) {
-            if (! isset($finDia[$d->dayOfWeekIso])) {
+            $s = $curso->sesionEn($d);
+            if (! $s) {
                 continue;
             }
-            if ($d->equalTo($hoy) && $ahora->lt($hoy->copy()->setTimeFromTimeString($finDia[$d->dayOfWeekIso]))) {
+            if ($d->equalTo($hoy) && $ahora->lt($hoy->copy()->setTimeFromTimeString($s->hora_fin))) {
                 continue;
             }
             $fechas[] = $d->toDateString();
@@ -91,7 +91,7 @@ class AsistenciaService
             ->whereHas('sesiones')
             ->with([
                 'programa.escuela',
-                'sesiones',
+                'sesiones', 'historialSesiones',
                 'docentes.docentePerfil.escuela',
                 'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('estudiante.acudientes'),
             ])
@@ -260,12 +260,12 @@ class AsistenciaService
     private function claseDeHoy(Curso $curso, array $delGrupo, CarbonInterface $ahora): ?string
     {
         $hoy = $ahora->copy()->startOfDay();
-        $finDia = $this->finPorDia($curso);
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
-        if (! isset($finDia[$hoy->dayOfWeekIso]) || $hoy->lt($curso->fecha_inicio->copy()->startOfDay()) || $hoy->gte($fin)) {
+        $sesion = $curso->sesionEn($hoy);
+        $fin = $curso->fin();
+        if (! $sesion || $hoy->lt($curso->fecha_inicio->copy()->startOfDay()) || $hoy->gte($fin)) {
             return null;
         }
-        if ($ahora->lt($hoy->copy()->setTimeFromTimeString($finDia[$hoy->dayOfWeekIso]))) {
+        if ($ahora->lt($hoy->copy()->setTimeFromTimeString($sesion->hora_fin))) {
             return 'pendiente';
         }
 
@@ -302,18 +302,6 @@ class AsistenciaService
     }
 
     /** Día ISO (1 = lunes) => hora en que termina la clase de ese día. */
-    private function finPorDia(Curso $curso): array
-    {
-        $dias = array_flip(CursoSesion::DIAS);
-        $out = [];
-        foreach ($curso->sesiones as $s) {
-            $n = $dias[$s->dia] + 1;
-            $out[$n] = max($out[$n] ?? '00:00:00', $s->hora_fin);
-        }
-
-        return $out;
-    }
-
     private function corta(string $fecha): string
     {
         $f = Carbon::parse($fecha);

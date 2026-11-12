@@ -98,7 +98,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 // ============ PANEL ADMIN ============
 // La secretaría trabaja en su sede; el Admin de ESAT también entra aquí, en la sede que eligió ("Entrar a la sede").
 // Todas las pantallas leen la sede con User::sedeTrabajoId(); 'sede.trabajo' exige que el Admin ya haya elegido una.
-Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo', 'transaccion'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [InicioController::class, 'index'])->name('dashboard');
 
     // El catálogo (programas, precios, escuelas) lo maneja el Admin de ESAT; la sede elige cuáles ofrece
@@ -193,7 +193,7 @@ Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo'])->prefix(
 // ============ PANEL ADMIN (ESAT GENERAL) ============
 // Rol admin_general ("Admin"): toda ESAT, sin sede propia. Ve todo consolidado con filtro de sede, maneja la
 // estructura (sedes, secretarías, catálogo), y para matricular/cobrar entra a una sede (EntrarSedeController).
-Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('general.')->group(function () {
+Route::middleware(['auth', 'role:admin_general', 'transaccion'])->prefix('general')->name('general.')->group(function () {
     Route::post('sedes/{sede}/entrar', [EntrarSedeController::class, 'entrar'])->name('sedes.entrar');
     Route::post('salir-de-sede', [EntrarSedeController::class, 'salir'])->name('sedes.salir');
 
@@ -263,6 +263,7 @@ Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('gene
     Route::get('configuracion', [GeneralConfiguracionController::class, 'index'])->name('configuracion');
     Route::put('configuracion/institucion', [GeneralConfiguracionController::class, 'institucion'])->name('configuracion.institucion');
     Route::put('configuracion/cobros', [GeneralConfiguracionController::class, 'cobros'])->name('configuracion.cobros');
+    Route::put('configuracion/devolucion', [GeneralConfiguracionController::class, 'devolucion'])->name('configuracion.devolucion');
     Route::put('configuracion/seguridad', [GeneralConfiguracionController::class, 'seguridad'])->name('configuracion.seguridad');
     Route::patch('configuracion/bloqueadas/{usuario}', [GeneralConfiguracionController::class, 'desbloquear'])->name('configuracion.desbloquear');
 });
@@ -270,7 +271,7 @@ Route::middleware(['auth', 'role:admin_general'])->prefix('general')->name('gene
 // ============ PANEL DOCENTE ============
 // Los grupos que tiene a cargo (curso_docente). Toma y corrige la asistencia y las notas mientras el
 // grupo no haya terminado (PanelDocenteService); Admin › Asistencia y Calificaciones solo consultan.
-Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
+Route::middleware(['auth', 'role:docente', 'transaccion'])->prefix('docente')->name('docente.')->group(function () {
     Route::get('/', [DocenteInicioController::class, 'index'])->name('dashboard');
     Route::get('grupos', [DocenteGrupoController::class, 'index'])->name('grupos');
     Route::get('asistencia', [DocenteAsistenciaController::class, 'index'])->name('asistencia');

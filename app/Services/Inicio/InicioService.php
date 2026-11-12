@@ -66,7 +66,7 @@ class InicioService
 
         // Grupos dictando clases hoy y los que están por empezar
         $cursos = Curso::where('sede_id', $sedeId)->with('programa')->get();
-        $enCurso = $cursos->filter(fn (Curso $c) => $c->estado === 'activo' && $c->fecha_inicio?->lte($hoy) && Curso::finPara($c->fecha_inicio, $c->programa)->gt($hoy));
+        $enCurso = $cursos->filter(fn (Curso $c) => $c->estado === 'activo' && $c->fecha_inicio?->lte($hoy) && $c->fin()->gt($hoy));
         $porIniciar = $cursos->filter(fn (Curso $c) => $c->estado === 'planificacion' || ($c->estado === 'activo' && $c->fecha_inicio?->gt($hoy)))->count();
 
         // Estudiantes con algún cobro vencido hoy y al cierre del mes anterior

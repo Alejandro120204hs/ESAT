@@ -251,6 +251,8 @@
         $('com-dw-titulo').textContent = c.titulo;
         $('com-dw-sub').innerHTML = tag(e) + ' <span class="com-dw-autor">' + esc(AUTOR[c.autor.tipo] + ' · ' + c.autor.nombre) + '</span>';
         var filas = [['Sedes', p.sedes], ['Para', p.a]];
+        var archivadas = (c.archivado_en_sedes || []).map(function (id) { var s = sedePorId(id); return s ? s.nombre : ''; }).filter(Boolean);
+        if (archivadas.length) filas.push(['Archivado por la secretaría en', archivadas.join(', ')]);
         if (e === 'programado') filas.push(['Sale el', fechaHora(c.publicado_en)]);
         else if (e !== 'borrador') filas.push(['Publicado', fechaHora(c.publicado_en)]);
         filas.push(['Creado', fechaLarga(c.creado)]);

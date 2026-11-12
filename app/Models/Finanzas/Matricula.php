@@ -6,12 +6,14 @@ use App\Models\Academico\Calificacion;
 use App\Models\Academico\Curso;
 use App\Models\Academico\PeriodoAcademico;
 use App\Models\Academico\Programa;
+use App\Models\Institucional\Configuracion;
 use App\Models\Institucional\Sede;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 /**
  * Matrícula de un estudiante en un programa de una sede (panel Admin › Matrículas).
@@ -53,6 +55,7 @@ class Matricula extends Model
         'codigo',
         'estudiante_id',
         'programa_id',
+        'precio_programa',
         'curso_id',
         'sede_id',
         'periodo_actual_id',
@@ -72,6 +75,7 @@ class Matricula extends Model
         return [
             'fecha_inicio' => 'date',
             'estado_fecha' => 'date',
+            'precio_programa' => 'decimal:2',
             'descuento_pct' => 'decimal:2',
             'saldo_favor' => 'decimal:2',
         ];
@@ -85,6 +89,29 @@ class Matricula extends Model
     public function programa(): BelongsTo
     {
         return $this->belongsTo(Programa::class);
+    }
+
+    /** Valor del programa pactado al matricular (las anteriores a guardarlo usan el del catálogo). */
+    public function precioPrograma(): float
+    {
+        return (float) ($this->precio_programa ?? $this->programa->precio_total);
+    }
+
+    /**
+     * Cuántas cuotas tiene su plan: la última que se le generó (anuladas incluidas, porque al reintegrarse las nuevas
+     * reusan los números), no la duración de hoy del programa (HALLAZGOS B29). Sin cuotas todavía, la del programa;
+     * sin plan, null. $todos: todos sus cobros ya cargados (con los anulados), para no volver a consultar.
+     */
+    public function totalCuotas(?Collection $todos = null): ?int
+    {
+        if (! $this->plan_pago) {
+            return null;
+        }
+        // Sin $todos, a la BD: varias pantallas cargan `pagos` sin los anulados, y ahí el máximo saldría corto
+        $ultima = $todos ? $todos->where('tipo', $this->plan_pago)->max('numero_cuota')
+            : $this->pagos()->where('tipo', $this->plan_pago)->max('numero_cuota');
+
+        return (int) ($ultima ?: ($this->plan_pago === 'mensual' ? $this->programa->duracion_meses : $this->programa->duracion_periodos));
     }
 
     public function sede(): BelongsTo
@@ -161,6 +188,7 @@ class Matricula extends Model
     /** Siguiente código libre del año: EST-2026-0001, EST-2026-0002... */
     public static function siguienteCodigo(): string
     {
+        Configuracion::bloquear('codigo_matricula');   // dos matrículas a la vez no sacan el mismo código
         $prefijo = 'EST-'.now()->year.'-';
         $ultimo  = static::where('codigo', 'like', $prefijo.'%')->orderByDesc('codigo')->value('codigo');
         $n = $ultimo ? (int) substr($ultimo, strlen($prefijo)) + 1 : 1;

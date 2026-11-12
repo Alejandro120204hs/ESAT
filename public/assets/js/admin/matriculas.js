@@ -804,6 +804,7 @@
             : tag(COBROS[c.estado]) + (porPagar(c) && c.abonado > 0
                 ? '<span class="mat-cobro-abono">Abonado ' + fmtPesos(c.abonado) + ' · faltan ' + fmtPesos(c.restante) + '</span>' : '') +
               (c.estado === 'anulado' && c.abonado > 0 ? '<span class="mat-cobro-abono">Adelantado ' + fmtPesos(c.abonado) + '</span>' : '') +
+              (c.retenido > 0 ? '<span class="mat-cobro-abono">ESAT retiene ' + fmtPesos(c.retenido) + ' (retiro antes de clases)</span>' : '') +
               (c.estado === 'anulado' && c.reembolsado > 0 ? '<span class="mat-cobro-abono">Salieron ' + fmtPesos(c.reembolsado) + ' (devueltos o trasladados)</span>' : '');
         return '<tr class="' + (c.estado === 'anulado' ? 'is-anulado' : '') + '">' +
             '<td class="mat-cobro-concepto"><strong>' + esc(c.concepto) + '</strong>' + (c.periodo ? '<span>' + esc(c.periodo) + '</span>' : '') + '</td>' +
@@ -890,7 +891,9 @@
             accionSub.textContent = '';
             accionCuerpo.innerHTML = '<div class="mat-callout mat-callout-alerta"><strong>Se anulará el recibo ' + esc(r.recibo) + ' por ' + fmtPesos(r.valor) + '</strong>' +
                 '<p>Pagado el ' + fmtFecha(r.fecha) + ' por ' + esc(r.metodo) + '. Cubría: ' + r.cubre.map(function (x) { return esc(x.concepto.toLowerCase()) + ' (' + fmtPesos(x.monto) + ')'; }).join(', ') +
-                '. Todo eso volverá a figurar como pendiente y el recibo quedará marcado como anulado. Úsalo solo si el pago se registró por error.</p></div>' +
+                '. ' + (m.estado === 'aplazado' || m.estado === 'retirado'
+                    ? 'Lo que ya debía al ' + (m.estado === 'aplazado' ? 'aplazarse' : 'retirarse') + ' volverá a figurar como pendiente; lo de los meses siguientes sigue sin cobrarse.'
+                    : 'Todo eso volverá a figurar como pendiente.') + ' El recibo quedará marcado como anulado. Úsalo solo si el pago se registró por error.</p></div>' +
                 '<div class="mat-field"><label class="mat-lbl" for="acc-motivo">Motivo *</label><textarea class="mat-input mat-textarea" id="acc-motivo" maxlength="255" placeholder="Ej. Se registró en la matrícula equivocada"></textarea></div>';
             btnConfirmar.textContent = 'Anular pago';
             btnConfirmar.className = 'mat-btn mat-btn-danger';
@@ -1031,6 +1034,7 @@
             var g = grupoDe(m.grupo_id), termino = g.estado === 'finalizado' || g.fin <= HOY;
             var faltan = m.modulos_pendientes || [];
             extra.innerHTML = (!termino ? '<div class="mat-callout mat-callout-aviso"><strong>Su grupo termina el ' + fmtFecha(g.fin) + '</strong><p>Solo se puede graduar cuando el grupo finalice.</p></div>' : '') +
+                (m.sin_malla ? '<div class="mat-callout mat-callout-alerta"><strong>El programa no tiene malla</strong><p>Sin módulos no hay notas que aprobar. El Admin debe cargarle la malla en Programas antes de graduar a alguien.</p></div>' : '') +
                 (faltan.length ? '<div class="mat-callout mat-callout-alerta"><strong>' + (faltan.length === 1 ? 'Le falta 1 módulo por aprobar' : 'Le faltan ' + faltan.length + ' módulos por aprobar') + '</strong><p>' +
                     esc(faltan.join(', ')) + '. Las notas las registra el docente; consúltalas en Calificaciones.</p></div>' : '') +
                 (m.por_pagar > 0 ? '<div class="mat-callout mat-callout-alerta"><strong>No está a paz y salvo</strong><p>Todavía debe ' + fmtPesos(m.por_pagar) + '. Registra sus pagos antes de graduarlo.</p></div>'
@@ -1042,6 +1046,8 @@
             extra.innerHTML = conPagos.length
                 ? '<div class="mat-callout mat-callout-alerta"><strong>Tiene pagos registrados</strong><p>Recibos ' + conPagos.map(function (r) { return esc(r.recibo); }).join(', ') +
                     '. Si fueron un error, anúlalos primero en Pagos. Si el estudiante se va, usa Retirar.</p></div>'
+                : m.pagado > 0
+                ? '<div class="mat-callout mat-callout-alerta"><strong>Tiene ' + fmtPesos(m.pagado) + ' que llegaron de otra matrícula</strong><p>Si se anulara, ese dinero se perdería. Si el estudiante se va, usa Retirar: así se puede devolver o trasladar.</p></div>'
                 : '<div class="mat-callout mat-callout-aviso"><strong>Úsalo solo si la matrícula se hizo por error</strong><p>Libera el cupo, se anulan sus cobros y queda en Finalizadas como anulada.</p></div>';
         }
         if (estado === 'activo') {
@@ -1331,7 +1337,8 @@
                 : 'No tiene', true) +
             dato('Valor del programa', fmtPesos(p.precio), true) +
             dato('Plan mensual', p.meses + ' cuotas de ' + fmtPesos(p.cuota_mensual)) +
-            dato('Plan ' + planNombre('periodo', p.tipo_periodo).toLowerCase(), p.periodos + ' cuotas de ' + fmtPesos(p.cuota_periodo)) +
+            dato('Plan ' + planNombre('periodo', p.tipo_periodo).toLowerCase(), p.periodos + ' cuotas de ' + fmtPesos(p.cuota_periodo) +
+                (p.meses_ultimo < p.meses_periodo ? '; la última es de un periodo de ' + p.meses_ultimo + (p.meses_ultimo === 1 ? ' mes' : ' meses') : '')) +
         '</div>';
         document.getElementById('nm-pagar-wrap').hidden = !p.matricula;
         setTxt('nm-pagar-txt', 'Ya pagó el derecho de matrícula (pago único de ' + fmtPesos(p.matricula) + ')');

@@ -38,6 +38,7 @@ class ConfiguracionController extends Controller
             'configuracion' => [
                 'institucion'   => Configuracion::institucion(),
                 'cuota_sistema' => (int) round((float) (Configuracion::valor('cuota_sistema_mensual') ?? 0)),
+                'devolucion_derecho' => Configuracion::devolucionDerechoPct(),
                 'seguridad'     => Configuracion::seguridad(),
                 'bloqueadas'    => $bloqueadas,
                 'motivos'       => BloqueoService::MOTIVOS,
@@ -75,6 +76,24 @@ class ConfiguracionController extends Controller
         Auditoria::registrar('editar', $fila, "Cambió la cuota del sistema de {$plata($antes)} a {$plata((int) $datos['cuota_sistema'])} por mes.");
 
         return response()->json(['mensaje' => 'La cuota del sistema quedó en '.$plata((int) $datos['cuota_sistema']).' por mes.']);
+    }
+
+    /** Porcentaje del derecho de matrícula que se devuelve a quien se retira antes de empezar clases. Aplica a los retiros desde ahora. */
+    public function devolucion(Request $request): JsonResponse
+    {
+        $datos = $request->validate(
+            ['devolucion_derecho' => ['required', 'integer', 'between:0,100']],
+            ['devolucion_derecho.between' => 'Escribe un porcentaje entre 0 y 100.'],
+            ['devolucion_derecho' => 'porcentaje de devolución']
+        );
+        $antes = Configuracion::devolucionDerechoPct();
+        if ($antes === (int) $datos['devolucion_derecho']) {
+            return response()->json(['mensaje' => 'No había cambios que guardar.']);
+        }
+        $fila = Configuracion::guardar('devolucion_derecho_pct', (int) $datos['devolucion_derecho']);
+        Auditoria::registrar('editar', $fila, "Cambió la devolución del derecho de matrícula al retirarse antes de clases de {$antes} % a {$datos['devolucion_derecho']} %.");
+
+        return response()->json(['mensaje' => "Desde ahora se devuelve el {$datos['devolucion_derecho']} % del derecho de matrícula a quien se retira antes de clases."]);
     }
 
     public function seguridad(Request $request): JsonResponse

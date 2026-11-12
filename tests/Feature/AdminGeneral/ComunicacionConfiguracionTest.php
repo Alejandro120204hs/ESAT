@@ -135,4 +135,17 @@ class ComunicacionConfiguracionTest extends TestCase
         $this->assertSame('contacto@esat.edu.co', Configuracion::institucion()['correo']);
         $this->putJson('/general/configuracion/institucion', array_merge(Configuracion::INSTITUCION, ['nit' => '123']))->assertJsonValidationErrors('nit');
     }
+
+    public function test_cambia_el_porcentaje_de_devolucion_del_derecho(): void
+    {
+        $this->assertSame(Configuracion::DEVOLUCION_DERECHO_PCT, Configuracion::devolucionDerechoPct());
+        $this->actingAs($this->general)->putJson('/general/configuracion/devolucion', ['devolucion_derecho' => 70])->assertOk();
+        $this->assertSame(70, Configuracion::devolucionDerechoPct());
+        $this->assertDatabaseHas('auditorias', ['user_id' => $this->general->id, 'accion' => 'editar']);
+
+        $this->putJson('/general/configuracion/devolucion', ['devolucion_derecho' => 101])->assertJsonValidationErrors('devolucion_derecho');
+        $this->putJson('/general/configuracion/devolucion', ['devolucion_derecho' => 'mitad'])->assertJsonValidationErrors('devolucion_derecho');
+        $this->actingAs($this->admin)->putJson('/general/configuracion/devolucion', ['devolucion_derecho' => 0])->assertForbidden();
+        $this->assertSame(70, Configuracion::devolucionDerechoPct());
+    }
 }

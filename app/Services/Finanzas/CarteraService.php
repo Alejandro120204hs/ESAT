@@ -19,8 +19,9 @@ class CarteraService
 {
     public function datosSede(int $sedeId): array
     {
+        // También las anuladas: no deben nada ni salen en Por cobrar, pero sus recibos (anulados) siguen en Pagos
+        // recibidos para que el consecutivo RC no tenga huecos sin explicación (HALLAZGOS B26)
         $matriculas = Matricula::where('sede_id', $sedeId)
-            ->where('estado', '!=', 'anulado')
             ->with([
                 'programa.escuela', 'curso', 'estudiante.acudientes',
                 'pagos' => fn ($q) => $q->where('estado', '!=', 'anulado'),
@@ -89,6 +90,9 @@ class CarteraService
             'recibo'       => $r->recibo,
             'matricula_id' => $m->id,
             'fecha'        => $r->fecha_pago->toDateString(),
+            // La caja cuenta cada pago el día en que se registró (y cada anulación el día en que se hizo): un periodo
+            // ya cerrado no cambia por lo que se haga después (HALLAZGOS M25)
+            'registrado_en' => $r->created_at->toDateString(),
             'valor'        => (int) round((float) $r->valor),
             'metodo'       => $r->metodo_pago,
             'referencia'   => $r->referencia,
@@ -112,6 +116,7 @@ class CarteraService
             'comprobante'  => $d->comprobante,
             'matricula_id' => $m->id,
             'fecha'        => $d->fecha->toDateString(),
+            'registrado_en' => $d->created_at->toDateString(),
             'valor'        => (int) round((float) $d->valor),
             'metodo'       => $d->metodo_pago,
             'referencia'   => $d->referencia,
@@ -122,7 +127,7 @@ class CarteraService
 
     private function totalCuotas(Matricula $m): ?int
     {
-        return $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : ($m->plan_pago ? $m->programa->duracion_periodos : null);
+        return $m->totalCuotas();
     }
 
     /** Mismo texto que Matrículas y el recibo. */

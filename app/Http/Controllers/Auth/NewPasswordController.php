@@ -43,6 +43,10 @@ class NewPasswordController extends Controller
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user) use ($request) {
+                // Un enlace pedido antes de desactivar la cuenta no sirve después (HALLAZGOS B23)
+                if (! $user->activo) {
+                    throw ValidationException::withMessages(['email' => 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.']);
+                }
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),

@@ -15,7 +15,7 @@
         </div>
 
         <button type="button" class="app-user-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Abrir menú de usuario">
-            <span class="app-user-avatar">{{ strtoupper(substr(auth()->user()->nombres ?? auth()->user()->email, 0, 1)) }}</span>
+            <span class="app-user-avatar">{{ mb_strtoupper(mb_substr(auth()->user()->nombres ?? auth()->user()->email, 0, 1)) }}</span>
         </button>
 
         <div class="app-user-dropdown">

@@ -44,6 +44,7 @@ class Pago extends Model
         'monto_total',
         'abonado',
         'reembolsado',
+        'retenido',
         'estado',
         'fecha_pago',
         'referencia_pasarela',
@@ -59,6 +60,7 @@ class Pago extends Model
             'monto_total' => 'decimal:2',
             'abonado' => 'decimal:2',
             'reembolsado' => 'decimal:2',
+            'retenido' => 'decimal:2',
             'fecha_pago' => 'datetime',
             'fecha_vencimiento' => 'date',
         ];
@@ -103,7 +105,7 @@ class Pago extends Model
     /** Lo pagado que todavía está en este cobro (lo abonado menos lo devuelto o trasladado). */
     public function disponible(): float
     {
-        return max(0, round((float) $this->abonado - (float) $this->reembolsado, 2));
+        return max(0, round((float) $this->abonado - (float) $this->reembolsado - (float) $this->retenido, 2));
     }
 
     /** Lo que falta por pagar de este cobro (0 si ya está pagado o anulado). */
@@ -132,11 +134,9 @@ class Pago extends Model
         $prefijo = $tipo.'-'.$anio.'-';
         $clave   = $clave.'_'.$anio;
 
-        $contador = Configuracion::where('clave', $clave)->lockForUpdate()->first();
-        if (! $contador) {
-            $ultimo   = $modelo::where($columna, 'like', $prefijo.'%')->orderByDesc($columna)->value($columna);
-            $contador = Configuracion::create(['clave' => $clave, 'valor' => $ultimo ? (string) (int) substr($ultimo, strlen($prefijo)) : '0']);
-        }
+        $ultimo   = Configuracion::where('clave', $clave)->exists() ? null
+            : $modelo::where($columna, 'like', $prefijo.'%')->orderByDesc($columna)->value($columna);
+        $contador = Configuracion::bloquear($clave, $ultimo ? (string) (int) substr($ultimo, strlen($prefijo)) : '0');
         $n = (int) $contador->valor + 1;
         $contador->update(['valor' => (string) $n]);
 

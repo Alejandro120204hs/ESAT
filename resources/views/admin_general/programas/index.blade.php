@@ -106,14 +106,14 @@
     </div>
 </div>
 
-{{-- ─── Modal: crear / editar programa (3 pasos) ─── --}}
+{{-- ─── Modal: crear / editar programa (4 pasos) ─── --}}
 <div class="prg-modal" id="prg-modal" hidden>
     <div class="prg-modal-overlay" data-cerrar-modal></div>
     <form class="prg-modal-panel prg-modal-lg" id="prg-form" role="dialog" aria-modal="true" aria-labelledby="prg-modal-titulo" novalidate>
         <div class="prg-modal-head">
             <div>
                 <h2 class="prg-modal-title" id="prg-modal-titulo">Nuevo programa</h2>
-                <p class="prg-modal-sub" id="prg-modal-sub">Paso 1 de 3 · Datos del programa</p>
+                <p class="prg-modal-sub" id="prg-modal-sub">Paso 1 de 4 · Datos del programa</p>
             </div>
             <button type="button" class="prg-close" data-cerrar-modal aria-label="Cerrar">{!! $cerrar !!}</button>
         </div>
@@ -146,6 +146,7 @@
                     <div class="prg-field"><label for="prg-f-precio">Precio total del programa</label><div class="prg-prefijo"><span>$</span><input type="text" id="prg-f-precio" inputmode="numeric" maxlength="13"></div><span class="prg-field-error" data-error="precio" hidden></span></div>
                     <div class="prg-field"><label for="prg-f-matricula">Derecho de matrícula</label><div class="prg-prefijo"><span>$</span><input type="text" id="prg-f-matricula" inputmode="numeric" maxlength="11"></div><span class="prg-field-error" data-error="matricula" hidden></span></div>
                 </div>
+                <p class="prg-nota" id="prg-duracion-bloqueada" hidden></p>
                 <div class="prg-resumen" id="prg-resumen-precio"></div>
             </div>
             <div class="prg-paso" data-paso="3" hidden>
@@ -158,6 +159,18 @@
                 </button>
                 <span class="prg-field-error" data-error="malla" hidden></span>
                 <p class="prg-malla-total" id="prg-malla-total"></p>
+            </div>
+            <div class="prg-paso" data-paso="4" hidden>
+                <fieldset class="prg-opciones" id="prg-f-alcance">
+                    <legend>¿En qué sedes se ofrece?</legend>
+                    <label class="prg-opcion"><input type="radio" name="prg-alcance" value="todas"><span>Todas las sedes</span></label>
+                    <label class="prg-opcion"><input type="radio" name="prg-alcance" value="algunas"><span>Algunas sedes</span></label>
+                    <label class="prg-opcion"><input type="radio" name="prg-alcance" value="ninguna"><span>Ninguna por ahora</span></label>
+                </fieldset>
+                <p class="prg-hint prg-alcance-ayuda" id="prg-alcance-ayuda"></p>
+                <div class="prg-checks prg-sedes-lista" id="prg-f-sedes" hidden></div>
+                <span class="prg-field-error" data-error="sedes" hidden></span>
+                <p class="prg-nota" id="prg-sedes-nota" hidden></p>
             </div>
         </div>
         <div class="prg-modal-foot">

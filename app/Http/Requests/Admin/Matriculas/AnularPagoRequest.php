@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin\Matriculas;
 
+use App\Services\Finanzas\PagoService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -26,14 +27,9 @@ class AnularPagoRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $v) {
-            if ($this->route('recaudo')->anulado()) {
-                $v->errors()->add('motivo', 'Ese pago ya está anulado.');
-            } elseif ($this->route('matricula')->estado === 'graduado') {
-                // Se graduó a paz y salvo: anular un pago la dejaría graduada con deuda
-                $v->errors()->add('motivo', 'La matrícula está graduada: sus pagos ya no se pueden anular.');
-            } elseif ($this->route('recaudo')->cobros()->where('reembolsado', '>', 0)->exists()) {
-                // Ese dinero ya salió de aquí (se devolvió, cubrió otra deuda o pasó a otra matrícula)
-                $v->errors()->add('motivo', 'Parte de este pago ya se devolvió o se trasladó a otra matrícula: no se puede anular.');
+            // La misma regla que vuelve a revisar PagoService::anularRecaudo con el pago bloqueado
+            if ($error = app(PagoService::class)->motivoNoAnulable($this->route('recaudo'))) {
+                $v->errors()->add('motivo', $error);
             }
         }];
     }

@@ -333,9 +333,9 @@
         }
     });
 
-    /* ── Formulario de programa (3 pasos) ───────── */
-    var paso = 1, editando = null, malla = [];
-    var TITULOS = { 1: 'Datos del programa', 2: 'Duración y precio', 3: 'Malla de módulos' };
+    /* ── Formulario de programa (4 pasos) ───────── */
+    var paso = 1, editando = null, malla = [], marcadas = [];
+    var TITULOS = { 1: 'Datos del programa', 2: 'Duración y precio', 3: 'Malla de módulos', 4: 'Sedes' };
     function f(id) { return $('prg-f-' + id); }
     function err(campo, msg) {
         var e = document.querySelector('#prg-form [data-error="' + campo + '"]'); if (!e) return;
@@ -380,6 +380,49 @@
     });
     $('prg-mod-agregar').addEventListener('click', function () { malla.push({ nombre: '', horas: 0 }); pintarMalla(); var ins = $('prg-malla-edit').querySelectorAll('.prg-mod-nombre'); ins[ins.length - 1].focus(); });
 
+    /* Paso 4: en qué sedes se ofrece. Las mismas reglas del interruptor de la ficha (el servidor también las revisa):
+       no se quita de una sede con grupos vigentes y un programa inactivo no se ofrece en sedes nuevas. */
+    function ofrece(p, s) { return !!p && (s.programas || []).indexOf(p.id) >= 0; }
+    function alcance() { var r = document.querySelector('#prg-f-alcance input:checked'); return r ? r.value : ''; }
+    function conGrupos(s) { return editando && ofrece(editando, s) ? vigentes(editando, s.id).length : 0; }
+    var AYUDA = {
+        todas: 'Las ' + D.sedes.length + ' sedes podrán abrir grupos de este programa. Una sede que se cree después lo agrega su secretaría o tú desde la ficha.',
+        algunas: 'Solo las sedes marcadas podrán abrir grupos. Las demás secretarías lo pueden agregar después desde el catálogo.',
+        ninguna: 'Queda en el catálogo: cada secretaría lo agrega a su sede cuando lo vaya a ofrecer.'
+    };
+    function pintarSedesForm() {
+        var inactivo = !!editando && editando.estado === 'inactivo';
+        var fijas = D.sedes.filter(function (s) { return conGrupos(s) > 0; }).length;
+        var todasYa = D.sedes.every(function (s) { return ofrece(editando, s); });
+        document.querySelector('#prg-f-alcance input[value="ninguna"]').disabled = fijas > 0;
+        document.querySelector('#prg-f-alcance input[value="todas"]').disabled = inactivo && !todasYa;
+        var a = alcance();
+        $('prg-f-sedes').hidden = a !== 'algunas';
+        $('prg-alcance-ayuda').textContent = AYUDA[a] || 'Elige si el programa se ofrece en todas las sedes, solo en algunas o en ninguna por ahora.';
+        $('prg-f-sedes').innerHTML = D.sedes.map(function (s) {
+            var gv = conGrupos(s), nueva = !ofrece(editando, s);
+            var on = gv > 0 || marcadas.indexOf(s.id) >= 0, bloq = gv > 0 || (inactivo && nueva);
+            return '<label class="prg-check"><input type="checkbox" value="' + s.id + '"' + (on ? ' checked' : '') + (bloq ? ' disabled' : '') + '>' + esc(s.nombre) +
+                (gv ? ' <small>· ' + gv + (gv === 1 ? ' grupo vigente' : ' grupos vigentes') + '</small>' : '') + '</label>';
+        }).join('');
+        var notas = [];
+        if (fijas) notas.push('Las sedes con grupos vigentes siguen ofreciéndolo hasta que sus grupos terminen.');
+        if (inactivo) notas.push('El programa está inactivo: no se ofrece en sedes nuevas hasta que lo actives.');
+        $('prg-sedes-nota').hidden = !notas.length; $('prg-sedes-nota').textContent = notas.join(' ');
+    }
+    $('prg-f-alcance').addEventListener('change', function () { err('sedes', ''); pintarSedesForm(); });
+    $('prg-f-sedes').addEventListener('change', function (e) {
+        var id = +e.target.value, i = marcadas.indexOf(id);
+        if (e.target.checked && i < 0) marcadas.push(id); else if (!e.target.checked && i >= 0) marcadas.splice(i, 1);
+        err('sedes', '');
+    });
+    function sedesElegidas() {
+        var a = alcance();
+        if (a === 'todas') return D.sedes.map(function (s) { return s.id; });
+        if (a === 'ninguna') return [];
+        return [].slice.call(document.querySelectorAll('#prg-f-sedes input:checked')).map(function (i) { return +i.value; });
+    }
+
     function validar(p) {
         var v = function (id) { return f(id).value.trim(); };
         if (p === 1) {
@@ -403,18 +446,22 @@
             var mal = malla.findIndex(function (m) { return m.nombre.trim().length < 3 || !(m.horas >= 8); });
             err('malla', !malla.length ? 'Agrega al menos un módulo.' : mal >= 0 ? 'Revisa el módulo ' + (mal + 1) + ': necesita nombre y al menos 8 horas.' : '');
         }
+        if (p === 4) {
+            err('sedes', !alcance() ? 'Elige en qué sedes se ofrece.' : alcance() === 'algunas' && !sedesElegidas().length ? 'Marca al menos una sede, o elige «Ninguna por ahora».' : '');
+        }
         var malo = document.querySelector('#prg-form .prg-paso[data-paso="' + p + '"] .prg-field-error:not([hidden])');
-        if (malo) { var c = malo.parentNode.querySelector('input, select'); if (c) c.focus(); }
+        if (malo) { var c = p === 4 ? document.querySelector('#prg-f-alcance input:not(:disabled)') : malo.parentNode.querySelector('input, select'); if (c) c.focus(); }
         return !malo;
     }
     function irPaso(p) {
         paso = p;
         document.querySelectorAll('#prg-form .prg-paso').forEach(function (el) { el.hidden = +el.dataset.paso !== p; });
-        $('prg-modal-sub').textContent = 'Paso ' + p + ' de 3 · ' + TITULOS[p];
+        $('prg-modal-sub').textContent = 'Paso ' + p + ' de 4 · ' + TITULOS[p];
         $('prg-atras').hidden = p === 1;
-        $('prg-siguiente').textContent = p < 3 ? 'Siguiente' : editando ? 'Guardar cambios' : 'Crear programa';
+        $('prg-siguiente').textContent = p < 4 ? 'Siguiente' : editando ? 'Guardar cambios' : 'Crear programa';
         if (p === 2) resumenPrecio();
         if (p === 3) pintarMalla();
+        if (p === 4) pintarSedesForm();
     }
     function abrirForm(id) {
         editando = id ? programa(id) : null;
@@ -431,6 +478,17 @@
         /* Con notas puestas la malla ya no se cambia (el servidor también lo revisa) */
         $('prg-malla-bloqueada').hidden = !(editando && editando.con_notas);
         $('prg-mod-agregar').hidden = !!(editando && editando.con_notas);
+        /* Con matrículas vigentes la duración no se cambia: sus cuotas y su grado dependen de ella (el servidor también lo revisa) */
+        var vig = editando ? editando.vigentes : 0;
+        f('meses').disabled = f('periodo').disabled = vig > 0;
+        $('prg-duracion-bloqueada').hidden = !vig;
+        $('prg-duracion-bloqueada').textContent = vig ? 'Hay ' + num(vig) + (vig === 1 ? ' estudiante con matrícula vigente' : ' estudiantes con matrícula vigente') +
+            ' en este programa: la duración queda como está hasta que terminen, porque sus cuotas y su grado dependen de ella. El precio nuevo solo aplica a las matrículas que se hagan desde ahora.' : '';
+        /* Paso 4: al editar parte de donde se ofrece hoy; al crear hay que elegir */
+        var ofrecidas = editando ? D.sedes.filter(function (s) { return ofrece(editando, s); }) : [];
+        marcadas = ofrecidas.map(function (s) { return s.id; });
+        var inicial = !editando ? '' : !ofrecidas.length ? 'ninguna' : ofrecidas.length === D.sedes.length && D.sedes.length > 1 ? 'todas' : 'algunas';
+        document.querySelectorAll('#prg-f-alcance input').forEach(function (i) { i.checked = i.value === inicial; });
         abrirModal('prg-modal', f('nombre'));
         irPaso(1);
     }
@@ -442,12 +500,12 @@
     $('prg-form').addEventListener('submit', function (e) {
         e.preventDefault();
         if (!validar(paso)) return;
-        if (paso < 3) { irPaso(paso + 1); return; }
+        if (paso < 4) { irPaso(paso + 1); return; }
         var reg = { nombre: f('nombre').value.trim(), codigo: f('codigo').value.trim().toUpperCase(), escuela_id: +f('escuela').value, nivel: f('nivel').value,
             modalidad: f('modalidad').value, estado: editando && editando.estado === 'inactivo' ? 'inactivo' : f('estado').value, resolucion: f('resolucion').value.trim(),
             jornadas: JORNADAS.filter(function (j) { return jornadasMarcadas().indexOf(j) >= 0; }), cupo_grupo: +f('cupo').value,
             duracion_meses: +f('meses').value, tipo_periodo: f('periodo').value, precio_total: dinero('precio'), matricula: dinero('matricula'),
-            modulos: malla.map(function (m) { return { nombre: m.nombre.trim(), horas: +m.horas }; }) };
+            modulos: malla.map(function (m) { return { nombre: m.nombre.trim(), horas: +m.horas }; }), sedes: sedesElegidas() };
         var btn = $('prg-siguiente'); btn.disabled = true;
         enviar(editando ? 'PUT' : 'POST', editando ? '/general/programas/' + editando.id : '/general/programas', reg)
             .then(function (r) { recargarConAviso(r.mensaje); })
@@ -456,11 +514,12 @@
                 /* Lleva al paso del primer campo con error */
                 var CAMPO = { nombre: ['nombre', 1], codigo: ['codigo', 1], escuela_id: ['escuela', 1], resolucion: ['resolucion', 1], jornadas: ['jornadas', 1],
                     cupo_grupo: ['cupo', 1], nivel: ['nombre', 1], modalidad: ['nombre', 1], estado: ['nombre', 1], duracion_meses: ['meses', 2], tipo_periodo: ['meses', 2],
-                    precio_total: ['precio', 2], matricula: ['matricula', 2], horas: ['malla', 3], modulos: ['malla', 3] };
+                    precio_total: ['precio', 2], matricula: ['matricula', 2], horas: ['malla', 3], modulos: ['malla', 3], sedes: ['sedes', 4] };
+                var base = function (c) { return c.indexOf('modulos.') === 0 ? 'modulos' : c.indexOf('sedes.') === 0 ? 'sedes' : c; };
                 var claves = Object.keys(fallo.errores || {});
-                var k = claves.find(function (c) { return CAMPO[c.indexOf('modulos.') === 0 ? 'modulos' : c]; });
+                var k = claves.find(function (c) { return CAMPO[base(c)]; });
                 if (!k) { toast(fallo.message); return; }
-                var c = CAMPO[k.indexOf('modulos.') === 0 ? 'modulos' : k];
+                var c = CAMPO[base(k)];
                 irPaso(c[1]); err(c[0], fallo.errores[k][0]);
             });
     });

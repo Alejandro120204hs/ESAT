@@ -171,6 +171,41 @@ class EstructuraTest extends TestCase
         $this->assertSame($otra->id, Auditoria::latest('id')->first()->sede_id);
     }
 
+    public function test_al_crear_elige_en_que_sedes_se_ofrece(): void
+    {
+        $otra = $this->otraSede();
+        $this->otraSede('Tercera sede', 'Guaduas');
+        $this->actingAs($this->general)->postJson('/general/programas', $this->datosPrograma(['sedes' => [$this->sede->id, $otra->id]]))->assertCreated();
+        $p = Programa::where('codigo', 'ESA-ADM-050')->first();
+        $this->assertEqualsCanonicalizing([$this->sede->id, $otra->id], $p->sedes()->pluck('sedes.id')->all());
+        // Cada sede ve en su actividad que se le asignó
+        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Asignó el programa%')->count());
+
+        // Sin sedes queda solo en el catálogo
+        $this->postJson('/general/programas', $this->datosPrograma(['nombre' => 'Técnico Laboral en Bodegaje', 'codigo' => 'ESA-ADM-051', 'sedes' => []]))->assertCreated();
+        $this->assertSame(0, Programa::where('codigo', 'ESA-ADM-051')->first()->sedes()->count());
+    }
+
+    public function test_al_editar_cambia_sus_sedes_sin_quitar_una_con_grupos_vigentes(): void
+    {
+        $otra = $this->otraSede();
+        $p = $this->programa(['Mañana'], 800, 10);
+        $p->modulos()->create(['nombre' => 'Fundamentos', 'horas' => 800, 'orden' => 1]);
+        $p->sedes()->attach($otra->id);
+        $this->grupo($p, 'Mañana');   // grupo vigente en $this->sede
+        $datos = fn (array $sedes) => $this->datosPrograma(['nombre' => $p->nombre.' editado', 'codigo' => $p->codigo, 'duracion_meses' => 10, 'tipo_periodo' => 'semestre',
+            'modulos' => [['nombre' => 'Fundamentos', 'horas' => 800]], 'sedes' => $sedes]);
+
+        $this->actingAs($this->general)->putJson("/general/programas/{$p->id}", $datos([$otra->id]))->assertJsonValidationErrors('sedes');
+        $this->putJson("/general/programas/{$p->id}", $datos([$this->sede->id]))->assertOk();
+        $this->assertSame([$this->sede->id], $p->sedes()->pluck('sedes.id')->all());
+        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Quitó el programa%')->count());
+
+        // Inactivo: no se ofrece en sedes nuevas (sí puede quedarse donde estaba)
+        $p->update(['estado' => 'inactivo']);
+        $this->putJson("/general/programas/{$p->id}", $datos([$this->sede->id, $otra->id]) + ['estado' => 'inactivo'])->assertJsonValidationErrors('sedes');
+    }
+
     public function test_la_secretaria_solo_elige_que_ofrece_su_sede(): void
     {
         $p = $this->programa();

@@ -238,11 +238,30 @@
 }
 .prg-field select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217,123,46,0.15); }
 .prg-field select.is-invalid { border-color: var(--red); }
+/* Duración bloqueada con matrículas vigentes (o malla con notas): se lee, no se edita */
+.prg-field input:disabled, .prg-field select:disabled { background: var(--bg); color: var(--muted); cursor: not-allowed; }
 .prg-hint { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
 .prg-jornadas { border: none; padding: 0; margin: 0; }
 .prg-checks { display: flex; flex-wrap: wrap; gap: 8px; }
 .prg-check { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 9px; border: 1.5px solid var(--line); font-size: 0.85rem; font-weight: 600; color: var(--navy-3); cursor: pointer; }
 .prg-check input { accent-color: var(--orange); width: 15px; height: 15px; }
+/* Paso 4: en qué sedes se ofrece (las mismas opciones de Comunicados) */
+.prg-opciones { display: flex; flex-wrap: wrap; gap: 8px; border: none; padding: 0; margin: 0; }
+.prg-opciones legend { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); margin-bottom: 8px; padding: 0; }
+.prg-opcion { position: relative; }
+.prg-opcion input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
+.prg-opcion span {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: 999px; border: 1.5px solid var(--line);
+    background: var(--white); font-size: 0.84rem; font-weight: 600; color: var(--navy-3); transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.prg-opcion input:checked + span { background: var(--navy-3); border-color: var(--navy-3); color: var(--white); }
+.prg-opcion input:focus-visible + span { outline: 2px solid var(--orange); outline-offset: 2px; }
+.prg-opcion input:disabled + span { opacity: 0.5; cursor: not-allowed; }
+.prg-alcance-ayuda { margin-top: 10px; }
+.prg-sedes-lista { margin-top: 12px; }
+.prg-sedes-lista[hidden] { display: none; }
+.prg-check:has(input:disabled) { cursor: not-allowed; background: var(--bg); }
+.prg-check small { font-weight: 500; color: var(--muted); }
 .prg-prefijo { position: relative; }
 .prg-prefijo span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; pointer-events: none; }
 .prg-prefijo input { padding-left: 28px; }

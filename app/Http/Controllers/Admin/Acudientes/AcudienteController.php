@@ -11,8 +11,8 @@ use App\Models\Sistema\Auditoria;
 use App\Models\User;
 use App\Services\Academico\AcudienteService;
 use App\Services\Academico\EstudianteService;
+use App\Services\Sistema\SesionesService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 /**
@@ -111,11 +111,11 @@ class AcudienteController extends Controller
         return response()->json(['ok' => true, 'mensaje' => "{$acudiente->name} ya no es acudiente de {$estudiante->name}."]);
     }
 
-    /** La clave vuelve a ser el número de documento. */
-    public function restablecerClave(User $acudiente): JsonResponse
+    /** La clave vuelve a ser el número de documento y se cierran sus sesiones abiertas (HALLAZGOS B21). */
+    public function restablecerClave(User $acudiente, SesionesService $sesiones): JsonResponse
     {
         $this->asegurarAcudiente($acudiente);
-        $acudiente->update(['password' => Hash::make($acudiente->numero_documento)]);
+        $sesiones->restablecerClave($acudiente);
 
         Auditoria::registrar('editar', $acudiente, "Restableció la contraseña de {$acudiente->name}.");
 

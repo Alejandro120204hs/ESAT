@@ -40,11 +40,13 @@ class ComunicacionService
         return Comunicado::with(['autor', 'curso.programa', 'lectores:id'])->orderByDesc('id')->get()
             ->groupBy(fn (Comunicado $c) => $c->lote ?: 'c'.$c->id)
             ->map(function (Collection $filas) use ($alcance, $total) {
-                $c = $filas->sortBy('id')->first();
+                // Si una secretaría archivó su copia, el envío sigue vivo en las demás: manda la primera sin archivar
+                $vivas = $filas->reject(fn (Comunicado $f) => $f->estadoActual() === 'archivado');
+                $c = ($vivas->isNotEmpty() ? $vivas : $filas)->sortBy('id')->first();
                 $sedes = $filas->pluck('sede_id')->unique()->sort()->values()->all();
                 $destino = array_search($c->destino, self::DESTINOS, true) ?: $c->destino;
                 $estado = $c->estadoActual();
-                $destinatarios = $filas->sum(fn (Comunicado $f) => $this->destinatarios($f, $alcance[$f->sede_id] ?? null));
+                $destinatarios = ($vivas->isNotEmpty() ? $vivas : $filas)->sum(fn (Comunicado $f) => $this->destinatarios($f, $alcance[$f->sede_id] ?? null));
 
                 return [
                     'id'             => $c->id,
@@ -60,6 +62,8 @@ class ComunicacionService
                     'destinatarios'  => in_array($estado, ['publicado', 'archivado'], true) ? $destinatarios : 0,
                     'leidos'         => $filas->sum(fn (Comunicado $f) => $f->lectores->count()),
                     'motivo_archivo' => $c->motivo_archivo,
+                    // Sedes donde la secretaría lo archivó mientras sigue publicado en las demás
+                    'archivado_en_sedes' => $vivas->isNotEmpty() ? $filas->diff($vivas)->pluck('sede_id')->values()->all() : [],
                 ];
             })->values()->all();
     }
@@ -100,7 +104,9 @@ class ComunicacionService
                 }
                 $filas = $filas->whereIn('sede_id', $sedes);
             }
-            $filas->each(fn (Comunicado $f) => $this->comunicados->guardar($f->sede_id, $f, $datos, $accion, null, false));
+            // Una copia archivada en su sede (por la secretaría) no vuelve a publicarse
+            $filas->reject(fn (Comunicado $f) => $f->estadoActual() === 'archivado')
+                ->each(fn (Comunicado $f) => $this->comunicados->guardar($f->sede_id, $f, $datos, $accion, null, false));
 
             // La fila original pudo irse si se quitó su sede: el envío sigue en las demás
             return Comunicado::where('lote', $lote)->orderBy('id')->firstOrFail();
@@ -109,7 +115,9 @@ class ComunicacionService
 
     public function archivar(Comunicado $c, string $motivo): void
     {
-        DB::transaction(fn () => $this->lote($c)->each(fn (Comunicado $f) => $this->comunicados->archivar($f, $motivo)));
+        // Las copias que una secretaría ya archivó conservan su motivo
+        DB::transaction(fn () => $this->lote($c)->reject(fn (Comunicado $f) => $f->estadoActual() === 'archivado')
+            ->each(fn (Comunicado $f) => $this->comunicados->archivar($f, $motivo)));
     }
 
     public function eliminar(Comunicado $c): void

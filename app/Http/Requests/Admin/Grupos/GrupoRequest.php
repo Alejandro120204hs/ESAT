@@ -61,6 +61,17 @@ class GrupoRequest extends FormRequest
 
             [$inicio, $fin] = $this->fechas($programa);
 
+            // Un grupo que ya empezó no mueve su inicio: cambiaría sus clases, su asistencia y sus cobros (HALLAZGOS A7)
+            if ($curso && $curso->fecha_inicio->lte(today()) && ! $inicio->equalTo($curso->fecha_inicio->copy()->startOfDay())) {
+                $v->errors()->add('fecha_inicio', "El grupo ya empezó el {$curso->fecha_inicio->format('d/m/Y')}: la fecha de inicio no se cambia.");
+                return;
+            }
+            // Finalizar a tiempo (HALLAZGOS A8): la misma regla del botón de estado
+            if ($curso && $this->input('estado') === 'finalizado' && $curso->estado !== 'finalizado' && $error = $curso->impedimentoParaFinalizar()) {
+                $v->errors()->add('estado', $error);
+                return;
+            }
+
             // Un grupo activo necesita docente
             if ($this->input('estado') === 'activo' && ! $this->filled('docente_id')) {
                 $v->errors()->add('docente_id', 'Asigna un docente para dejar el grupo activo.');
