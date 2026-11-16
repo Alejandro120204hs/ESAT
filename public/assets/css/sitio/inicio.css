@@ -170,7 +170,8 @@
 
 /* ---------- Escuelas ---------- */
 .ini-escuelas { padding: var(--section-y) 0; }
-.ini-escuelas-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(20px, 2vw, 32px); }
+/* dense: una escuela de una columna sube a llenar el hueco que deja una ancha (las de más de 6 programas). */
+.ini-escuelas-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: dense; gap: clamp(20px, 2vw, 32px); }
 .escuela {
     display: flex; flex-direction: column;
     background: var(--bg-soft); border-radius: var(--radius-lg); overflow: hidden;
@@ -203,9 +204,10 @@
 .escuela-programas svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--navy-2); opacity: 0.4; transition: opacity 0.2s, transform 0.4s var(--ease-out); }
 .escuela-programas a:hover { color: var(--navy); text-decoration: underline; }
 .escuela-programas a:hover svg { opacity: 1; transform: translateX(3px); }
+/* Ocupa las dos columnas que quedan al final de la grilla (8 escuelas, 3 anchas = 10 casillas). */
 .escuelas-asesor {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; justify-content: space-between; gap: 20px 32px; flex-wrap: wrap;
+    grid-column: span 2;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 20px 32px;
     padding: clamp(28px, 3.4vw, 48px) clamp(28px, 4vw, 56px);
     border-radius: var(--radius-lg); background: var(--navy); color: var(--white);
 }
@@ -436,7 +438,6 @@
    ========================================================= */
 @media (max-width: 1240px) {
     .ini-escuelas-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .escuelas-asesor { grid-column: auto; flex-direction: column; align-items: flex-start; justify-content: center; }
     .escuelas-asesor .btn { white-space: normal; }
     .ini-convenios-grid { grid-template-columns: 1fr 1fr; }
     .convenio-alcaldias { grid-column: 1 / -1; }

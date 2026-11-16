@@ -77,22 +77,37 @@
         <span class="cabecera-progreso" id="cabeceraProgreso" aria-hidden="true"></span>
 
         <div class="megamenu" id="megamenu">
+            {{-- Dos paneles: a la izquierda las escuelas (pestañas), a la derecha los programas
+                 de la elegida con su foto. Así el alto no crece con el catálogo (8 escuelas, 41 programas). --}}
             <div class="megamenu-panel">
-                <div class="megamenu-grid">
-                    @foreach ($sitio['escuelas'] as $escuela)
-                        <div class="megamenu-escuela {{ count($escuela['programas']) > 6 ? 'es-ancha' : '' }}">
-                            <div class="megamenu-cabeza">
+                <div class="megamenu-cuerpo">
+                    <div class="megamenu-escuelas" role="tablist" aria-label="Escuelas" aria-orientation="vertical">
+                        @foreach ($sitio['escuelas'] as $escuela)
+                            @php $n = count($escuela['programas']); @endphp
+                            <button type="button" class="megamenu-tab" role="tab" id="mega-tab-{{ $escuela['slug'] }}"
+                                    aria-controls="mega-escuela-{{ $escuela['slug'] }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}">
                                 <span class="megamenu-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ $escuela['icono'] }}"/></svg></span>
-                                <div>
-                                    <h3><a href="{{ route('escuelas.' . $escuela['slug']) }}">{{ $escuela['nombre'] }}</a></h3>
-                                    <span>{{ count($escuela['programas']) }} {{ count($escuela['programas']) === 1 ? 'programa' : 'programas' }}</span>
+                                <span class="megamenu-tab-texto">{{ $escuela['corto'] }}<small>{{ $n }} {{ $n === 1 ? 'programa' : 'programas' }}</small></span>
+                            </button>
+                        @endforeach
+                    </div>
+
+                    @foreach ($sitio['escuelas'] as $escuela)
+                        <div class="megamenu-escuela" role="tabpanel" id="mega-escuela-{{ $escuela['slug'] }}" aria-labelledby="mega-tab-{{ $escuela['slug'] }}" @unless ($loop->first) hidden @endunless>
+                            <div class="megamenu-programas">
+                                <div class="megamenu-cabeza">
+                                    <h3>{{ $escuela['nombre'] }}</h3>
+                                    <a href="{{ route('escuelas.' . $escuela['slug']) }}" class="megamenu-ver">Ver la escuela <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-arrow"/></svg></a>
                                 </div>
+                                <ul>
+                                    @foreach ($escuela['programas'] as [$nombre, $slug])
+                                        <li><a href="{{ route('programas.' . $slug) }}">{{ $nombre }}</a></li>
+                                    @endforeach
+                                </ul>
                             </div>
-                            <ul>
-                                @foreach ($escuela['programas'] as [$nombre, $slug])
-                                    <li><a href="{{ route('programas.' . $slug) }}">{{ $nombre }}</a></li>
-                                @endforeach
-                            </ul>
+                            <div class="megamenu-foto">
+                                <img src="{{ asset('assets/img/' . $escuela['foto'] . '-960.webp') }}" alt="" loading="lazy" decoding="async">
+                            </div>
                         </div>
                     @endforeach
                 </div>

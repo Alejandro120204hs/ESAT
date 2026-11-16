@@ -61,6 +61,10 @@ foreach (array_keys(config('contenido.continuada')) as $slug) {
 foreach (config('sitio.escuelas') as $escuela) {
     Route::get('/escuelas/' . $escuela['slug'], [PaginaController::class, 'escuela'])->defaults('slug', $escuela['slug'])->name('escuelas.' . $escuela['slug']);
 }
+// Programas y escuelas que cambiaron de nombre o salieron: su dirección vieja lleva a la de ahora
+foreach (config('sitio.redirecciones') as $antes => $ahora) {
+    Route::permanentRedirect('/' . $antes, '/' . $ahora);
+}
 
 // ============ ACADEMICO (Breeze) ============
 Route::get('/dashboard', function () {
