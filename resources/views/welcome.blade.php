@@ -41,7 +41,7 @@
 
             <div class="ini-hero-texto">
                 <h1 data-revelar>Tu futuro empieza con la <span class="resalte">formación correcta</span></h1>
-                <p class="ini-hero-sub" data-revelar data-retraso="0.12">Formación técnica certificada, práctica desde el primer día y con proyección real. Siete escuelas, {{ $sedesPropias }} sedes propias y {{ $sedesFranquicia }} de franquicia, un mismo propósito: que crezcas en lo que te apasiona.</p>
+                <p class="ini-hero-sub" data-revelar data-retraso="0.12">Formación técnica certificada, práctica desde el primer día y con proyección real. {{ ucfirst($letras(count($escuelas))) }} escuelas, {{ $sedesPropias }} sedes propias y {{ $sedesFranquicia }} de franquicia, un mismo propósito: que crezcas en lo que te apasiona.</p>
                 <div class="ini-hero-acciones" data-revelar data-retraso="0.22">
                     <a href="#escuelas" class="btn btn-accent btn-lg">
                         Ver programas técnicos
@@ -139,7 +139,7 @@
                     <div class="ini-area-cuerpo">
                         <span class="ini-area-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-tool"/></svg></span>
                         <h3>Programas Técnicos</h3>
-                        <p>Siete escuelas, más de veinte programas técnicos laborales con salida directa al sector salud, gastronómico, administrativo, deportivo, científico, educativo y estético.</p>
+                        <p>{{ ucfirst($letras(count($escuelas))) }} escuelas de programas técnicos laborales con salida directa a la salud humana y animal, la ingeniería, la gastronomía y el turismo, los negocios, la seguridad, el arte y los idiomas.</p>
                         <a href="#escuelas" class="ini-area-enlace">Explorar programas <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-arrow"/></svg></a>
                     </div>
                 </article>
@@ -238,13 +238,14 @@
             <div class="ini-carreras-ventana" id="carrerasVentana" tabindex="0" role="region" aria-label="Nuevas carreras técnicas">
                 <ul class="ini-carreras-pista" id="carrerasPista">
                     @foreach ([
-                        ['Inteligencia Artificial (IA)', 'Desarrolla soluciones inteligentes para el mundo del mañana.', 'ico-ai', 'ia'],
-                        ['Marketing y Redes Sociales', 'Conecta marcas, crea contenido y genera impacto digital.', 'ico-megaphone', 'marketing'],
-                        ['Podología y Estética de Pies', 'Cuida la salud y belleza desde la base.', 'ico-belleza', 'pdologia'],
-                        ['Enfermería Veterinaria', 'Brinda atención y bienestar a nuestros mejores amigos.', 'ico-vet', 'veterinaria'],
-                        ['Operación y Mantenimiento de Maquinaria Pesada', 'Maneja tecnología de alto impacto y construye el futuro.', 'ico-tool', 'maquinaria'],
-                        ['Servicio Social y Comunitario', 'Sé agente de cambio y transforma tu comunidad.', 'ico-heart', 'servicio-social'],
-                    ] as [$titulo, $texto, $icono, $foto])
+                        ['tecnico-en-robotica', 'Construye y programa las máquinas del futuro.', 'ico-ai', 'ia'],
+                        ['marketing-y-redes-sociales', 'Conecta marcas, crea contenido y genera impacto digital.', 'ico-megaphone', 'marketing'],
+                        ['podologia-y-estetica-de-pies', 'Cuida la salud y la belleza desde la base.', 'ico-belleza', 'pdologia'],
+                        ['asistente-de-medicina-veterinaria', 'Brinda atención y bienestar a nuestros mejores amigos.', 'ico-vet', 'veterinaria'],
+                        ['operacion-y-mantenimiento-de-maquinaria-pesada', 'Maneja tecnología de alto impacto y construye el futuro.', 'ico-tool', 'maquinaria'],
+                        ['servicio-social-y-comunitario', 'Sé agente de cambio y transforma tu comunidad.', 'ico-heart', 'servicio-social'],
+                    ] as [$slug, $texto, $icono, $foto])
+                        @php $titulo = config("contenido.programas.$slug.nombre"); @endphp
                         <li class="carrera">
                             <div class="carrera-foto">
                                 <img src="{{ $img($foto) }}" srcset="{{ $srcset($foto) }}" sizes="(max-width: 600px) 82vw, 380px" alt="" loading="lazy" decoding="async">
@@ -253,8 +254,8 @@
                                 <span class="carrera-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ $icono }}"/></svg></span>
                                 <h3>{{ $titulo }}</h3>
                                 <p>{{ $texto }}</p>
-                                <a href="{{ $wa($titulo) }}" target="_blank" rel="noopener" class="carrera-enlace">
-                                    Más información
+                                <a href="{{ route('programas.' . $slug) }}" class="carrera-enlace">
+                                    Ver el programa
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-arrow"/></svg>
                                 </a>
                             </div>
@@ -421,7 +422,7 @@
                     <span class="ini-novedades-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-mail"/></svg></span>
                     <div>
                         <h2>Novedades académicas</h2>
-                        <p>Recibe convocatorias, fechas de apertura y noticias de las siete escuelas directamente en tu correo.</p>
+                        <p>Recibe convocatorias, fechas de apertura y noticias de las {{ $letras(count($escuelas)) }} escuelas directamente en tu correo.</p>
                     </div>
                 </div>
                 <div class="ini-novedades-accion">

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>@yield('title', 'ESAT · Escuela Nacional de Educación — Formación Técnica Certificada')</title>
-    <meta name="description" content="@yield('meta_description', 'ESAT forma técnicos laborales certificados en salud, cocina y turismo, áreas administrativas, deporte, ciencias, idiomas y belleza. Sedes en Bogotá, Sasaima, Guaduas y La Dorada.')">
+    <meta name="description" content="@yield('meta_description', 'ESAT forma técnicos laborales certificados en salud animal y agropecuaria, ingeniería y tecnología, salud y bienestar, artes y cultura, gastronomía y turismo, áreas administrativas y financieras, seguridad y justicia, e idiomas. Sedes en Bogotá, Sasaima, Guaduas y La Dorada.')">
     <meta name="theme-color" content="#10284A">
 
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">

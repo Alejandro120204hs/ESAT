@@ -22,7 +22,8 @@ dos partes:
   no en la vista.
 - **Rutas**: `routes/web.php` genera una ruta por programa (`/{slug}`, nombre `programas.{slug}`),
   por línea (`continuada.{slug}`) y por escuela (`/escuelas/{slug}`, `escuelas.{slug}`), todas a
-  `Sitio/PaginaController`. Plantillas: `paginas/{programa,continuada,escuela}.blade.php` y
+  `Sitio/PaginaController`. El catálogo es el del afiche "Carreras técnicas" (16-11-2026: 8 escuelas, 41 programas);
+  las direcciones de programas y escuelas que cambiaron o salieron redirigen (301) con `sitio.redirecciones`. Plantillas: `paginas/{programa,continuada,escuela}.blade.php` y
   `paginas/partes/{hero,barra,migas,respaldo}`. El inicio es `welcome.blade.php`.
 - **Fotos**: `public/assets/img` tiene el original y su `.webp` + `-960.webp` (procedencia en
   `.impeccable/procedencia-imagenes.md`). En las vistas, `$foto('archivo.png')` devuelve
@@ -43,7 +44,7 @@ dos partes:
 - **Diseño**: el sistema visual está en `DESIGN.md`; el contrato de dirección, como comentario al
   inicio del `<body>` en `layouts/app.blade.php`.
 - **Pendiente de ESAT**: cifras de estudiantes y egresados, foto y WhatsApp de cada sede, URL de
-  redes, fotos de 8 programas de Ciencias y decidir el formulario de Novedades (hoy solo muestra
+  redes, fotos de 15 programas (los que salen solo con el ícono de su escuela) y decidir el formulario de Novedades (hoy solo muestra
   la confirmación, no guarda el correo).
 
 Stack: Laravel 12 + Breeze (Blade), MySQL (`esat`, XAMPP, `root` sin clave),

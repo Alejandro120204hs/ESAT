@@ -123,6 +123,8 @@
     }
     function abrirMega() {
         cerrarDesplegables();
+        var primera = mega.querySelector(".megamenu-tab");
+        if (primera) primera.click();
         mega.classList.add("is-open");
         megaBoton.setAttribute("aria-expanded", "true");
     }
@@ -132,6 +134,34 @@
             if (mega.classList.contains("is-open")) cerrarMega(); else abrirMega();
         });
         mega.addEventListener("click", function (e) { if (e.target.closest("a")) cerrarMega(); });
+
+        /* Escuelas como pestañas: clic, flechas o el cursor que se detiene sobre una. El retraso
+           evita que, al llevar el cursor en diagonal hacia un programa, cambie la escuela por el camino. */
+        var tabs = Array.prototype.slice.call(mega.querySelectorAll(".megamenu-tab"));
+        var esperaTab = null;
+        function elegirTab(tab, enfocar) {
+            tabs.forEach(function (t) {
+                var activa = t === tab;
+                t.setAttribute("aria-selected", activa ? "true" : "false");
+                t.tabIndex = activa ? 0 : -1;
+                document.getElementById(t.getAttribute("aria-controls")).hidden = !activa;
+            });
+            if (enfocar) tab.focus();
+        }
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener("click", function () { elegirTab(tab); });
+            tab.addEventListener("mouseenter", function () {
+                clearTimeout(esperaTab);
+                esperaTab = setTimeout(function () { elegirTab(tab); }, 110);
+            });
+            tab.addEventListener("mouseleave", function () { clearTimeout(esperaTab); });
+            tab.addEventListener("keydown", function (e) {
+                var destino = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+                if (destino === undefined) return;
+                e.preventDefault();
+                elegirTab(tabs[(destino + tabs.length) % tabs.length], true);
+            });
+        });
         document.addEventListener("click", function (e) {
             if (!mega.contains(e.target) && !megaBoton.contains(e.target)) cerrarMega();
         });

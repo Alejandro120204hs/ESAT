@@ -249,7 +249,7 @@ Los marcos de foto grandes (portadas, práctica) se salen del contenedor (las po
 
 La cabecera es fija: barra de servicio de 38 px (licencia, WhatsApp, certificado, ingreso) + barra principal de 78 px (70 px a ≤1100 px). Al bajar, la barra de servicio se recoge; la principal no cambia de alto.
 
-**Puntos de quiebre** (de escritorio hacia abajo): 1240 px (navegación más apretada, megamenú a 3 columnas), 1100 px (la navegación pasa a menú lateral; aparecen los botones de ícono de WhatsApp y menú; se oculta el WhatsApp flotante), 1000 px (los encabezados divididos se apilan), 900 px (las cuadrículas de dos columnas se apilan; mapa y encabezados dejan de ser fijos), 760 px (se oculta la barra de servicio), 600 px (portadas en columna, botones del hero a ancho completo), 420 px.
+**Puntos de quiebre** (de escritorio hacia abajo): 1240 px (navegación más apretada, el megamenú oculta la foto de la escuela), 1100 px (la navegación pasa a menú lateral; aparecen los botones de ícono de WhatsApp y menú; se oculta el WhatsApp flotante), 1000 px (los encabezados divididos se apilan), 900 px (las cuadrículas de dos columnas se apilan; mapa y encabezados dejan de ser fijos), 760 px (se oculta la barra de servicio), 600 px (portadas en columna, botones del hero a ancho completo), 420 px.
 
 ### Named Rules
 **La Regla de la Portada en Celular.** A ≤600 px, en el inicio y en las subpáginas, la foto va arriba, en el flujo y entera (16:10 en el inicio, 16:9 en subpáginas), sin velo ni parallax; el titular y los CTA van debajo, sobre azul. En subpáginas solo queda el CTA de inscripción (el secundario se oculta); si aun así queda debajo del borde, la barra fija de inscripción aparece desde que carga la página.
@@ -314,7 +314,7 @@ Píldoras firmes y táctiles que suben 2 px al pasar el cursor.
 ### Navigation
 - **Cabecera:** barra blanca sólida, sin `backdrop-filter`, con borde `line`; logo en color a 52 px que se reduce a 0.86 al compactarse. Enlaces Archivo 600 en azul, píldoras de 42 px de alto; hover con fondo `bg-soft` y un subrayado naranja de 2 px que crece desde la izquierda (también marca la página actual).
 - **Línea de progreso:** 2 px naranja al pie de la cabecera que se llena con el scroll.
-- **Megamenú (Programas Técnicos):** panel blanco de 24 px de radio con sombra alta que se abre con un recorte de arriba hacia abajo; 4 columnas de escuelas con tesela de ícono azul; pie en `bg-soft`. Se abre solo con clic.
+- **Megamenú (Programas Técnicos):** panel blanco de 24 px de radio con sombra alta que se abre con un recorte de arriba hacia abajo; pie en `bg-soft`. Se abre solo con clic. Dentro, dos paneles para que el alto no crezca con el catálogo (8 escuelas, 41 programas: ~510 px, cabe en 1280×720): a la izquierda las escuelas como pestañas (nombre corto + número de programas, tesela de ícono que se vuelve `navy` en la elegida, filas de 48 px); a la derecha los programas de la elegida en dos columnas, "Ver la escuela" y su foto (se oculta bajo 1240 px). Cambia de escuela con clic, flechas arriba/abajo o el cursor que se detiene 110 ms (no en el paso diagonal hacia un programa); al abrir vuelve a la primera.
 - **Desplegable (Educación Continuada):** una columna, hover en `orange-tint` con texto `orange-ink` y flecha que aparece.
 - **Móvil (≤1100 px):** hoja lateral blanca desde la derecha (máx. 440 px), acordeones con chevrón, pie en `bg-soft` con los botones de acción a ancho completo.
 - **Migas de pan:** 0.9rem en `muted`; la página actual en `navy` 700.
