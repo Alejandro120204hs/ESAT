@@ -13,6 +13,10 @@
 //   salidas:           [título, texto, ícono, acento (orange|green|navy), foto].
 //   practica:          [foto, título, texto] del panel de práctica.
 //   cursos_encabezado: [título, texto] de la lista de cursos (null si no hay).
+//   galeria:           opcional, fotos reales del programa que envió ESAT:
+//                      [archivo, descripción (texto alternativo), encuadre CSS
+//                      (object-position, p. ej. 'center 40%')]. Ver
+//                      .impeccable/procedencia-imagenes.md.
 
 return [
 
@@ -94,7 +98,7 @@ return [
             'nombre'          => 'Asistente de Veterinaria y Zootecnia',
             'lema'            => 'Cuidado y bienestar animal en cada detalle.',
             'intro'           => 'Formamos profesionales en apoyo clínico, manejo animal y cuidados básicos, fortaleciendo la empleabilidad y la preparación para distintos entornos de atención animal.',
-            'foto'            => 'asistente-veterinaria.png',
+            'foto'            => 'veterinaria-zootecnia-estudiantes.jpg',
             'foto_clase'      => null,
             'icono'           => 'ico-vet',
             'tema_wa'         => 'Asistente de Veterinaria y Zootecnia',
@@ -146,6 +150,10 @@ return [
                 'aprender-veterinaria.png',
                 'Formación con supervisión profesional',
                 'Practica el apoyo clínico y el manejo animal guiado por un equipo profesional.',
+            ],
+            'galeria'         => [
+                ['veterinaria-zootecnia-grupo.jpg', 'Estudiantes de Asistente de Veterinaria y Zootecnia con su uniforme en una salida', 'center 40%'],
+                ['veterinaria-zootecnia-salida.jpg', 'Estudiantes de Veterinaria y Zootecnia y de Agente de Tránsito reunidos en una salida', 'center 60%'],
             ],
             'cierre_titulo'   => '¿Listo para formarte en Asistente de Veterinaria y Zootecnia?',
             'cierre_texto'    => 'Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.',
@@ -285,7 +293,7 @@ return [
             'nombre'          => 'Electromecánica',
             'lema'            => 'Mantenimiento que mueve la industria.',
             'intro'           => 'Formamos profesionales en el mantenimiento y operación de sistemas eléctricos y mecánicos, fortaleciendo habilidades técnicas para el funcionamiento eficiente de equipos industriales.',
-            'foto'            => 'electromecanica.png',
+            'foto'            => 'electromecanica-tablero-feria.jpg',
             'foto_clase'      => null,
             'icono'           => 'ico-tool',
             'tema_wa'         => 'Electromecánica',
@@ -342,6 +350,9 @@ return [
                 'Formación con supervisión profesional',
                 'Practica el mantenimiento y la operación de sistemas electromecánicos guiado por un equipo profesional.',
             ],
+            'galeria'         => [
+                ['electromecanica-stand-tablero.jpg', 'Estudiantes con overol de ESAT presentan un tablero de control en una feria', 'center 48%'],
+            ],
             'cierre_titulo'   => '¿Listo para formarte en Electromecánica?',
             'cierre_texto'    => 'Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.',
         ],
@@ -350,7 +361,7 @@ return [
             'nombre'          => 'Electricista',
             'lema'            => 'Energía segura en cada instalación.',
             'intro'           => 'Formamos profesionales en instalación, mantenimiento y reparación de sistemas eléctricos, con énfasis en la aplicación práctica y la seguridad en distintos entornos.',
-            'foto'            => 'electricista.png',
+            'foto'            => 'electricista-tablero.jpg',
             'foto_clase'      => null,
             'icono'           => 'ico-tool',
             'tema_wa'         => 'Electricista',
@@ -410,6 +421,9 @@ return [
                 'aprender-electricista.png',
                 'Formación con supervisión profesional',
                 'Practica instalaciones y mantenimiento eléctrico guiado por un equipo profesional.',
+            ],
+            'galeria'         => [
+                ['electricista-montaje-tablero.jpg', 'Estudiantes e instructores arman el cableado de un tablero eléctrico', 'center 45%'],
             ],
             'cierre_titulo'   => '¿Listo para formarte en Electricista?',
             'cierre_texto'    => 'Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.',
@@ -600,7 +614,7 @@ return [
                 ],
             ],
             'practica'        => [
-                null,
+                'robotica-brazo.jpg',
                 'Formación con supervisión profesional',
                 'Practica el montaje y la programación de robots en laboratorio, guiado por un equipo profesional.',
             ],
@@ -921,7 +935,7 @@ return [
                     'Brinda apoyo educativo y cuidado en jardines infantiles.',
                     'ico-building',
                     'orange',
-                    'preescolar-1.webp',
+                    'preescolar-rincon-lectura.jpg',
                 ],
                 [
                     'Colegios',
@@ -2371,9 +2385,16 @@ return [
                 ],
             ],
             'practica'        => [
-                'transito-aprender.webp',
+                'transito-practica-via.jpg',
                 'Formación con supervisión profesional',
                 'Practica la regulación y el control del tráfico guiado por un equipo profesional.',
+            ],
+            'galeria'         => [
+                ['transito-estudiantes-grupo.jpg', 'Estudiantes de Agente de Tránsito con chaleco reflectivo y gorra', 'center 55%'],
+                ['transito-salida-grupo.jpg', 'Estudiantes de Agente de Tránsito y de Veterinaria y Zootecnia reunidos en una salida', 'center 60%'],
+                ['transito-agentes-via.jpg', 'Estudiantes de Agente de Tránsito junto a agentes en una calle', 'center 45%'],
+                ['transito-campana-vial.jpg', 'Campaña de seguridad vial «Si bebes, no conduzcas» con agentes de tránsito y la Policía', 'center 50%'],
+                ['transito-agente-via.jpg', 'Práctica en la vía con agentes de tránsito', 'center 55%'],
             ],
             'cierre_titulo'   => '¿Listo para formarte en Agente de Tránsito?',
             'cierre_texto'    => 'Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.',
@@ -2383,7 +2404,7 @@ return [
             'nombre'          => 'Criminalística, Investigación Judicial y Ciencias Forenses',
             'lema'            => 'La verdad, a través de la evidencia.',
             'intro'           => 'Formamos profesionales en análisis de evidencia, procedimientos investigativos y apoyo técnico, fortaleciendo competencias para el esclarecimiento de los hechos.',
-            'foto'            => 'criminalistica.png',
+            'foto'            => 'criminalistica-escena.jpg',
             'foto_clase'      => null,
             'icono'           => 'ico-shield',
             'tema_wa'         => 'Criminalística, Investigación Judicial y Ciencias Forenses',
@@ -2440,9 +2461,12 @@ return [
                 ],
             ],
             'practica'        => [
-                'aprender-criminalistica.png',
+                'criminalistica-practica.jpg',
                 'Formación con supervisión profesional',
                 'Practica el análisis de evidencia y los procedimientos investigativos guiado por un equipo profesional.',
+            ],
+            'galeria'         => [
+                ['criminalistica-escena-equipo.jpg', 'Estudiantes con traje forense revisan una escena acordonada', 'center 60%'],
             ],
             'cierre_titulo'   => '¿Listo para formarte en Criminalística, Investigación Judicial y Ciencias Forenses?',
             'cierre_texto'    => 'Escríbenos y un asesor te cuenta los siguientes pasos para inscribirte.',

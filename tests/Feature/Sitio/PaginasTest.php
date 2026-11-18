@@ -27,6 +27,25 @@ class PaginasTest extends TestCase
         }
     }
 
+    public function test_la_galeria_muestra_las_fotos_reales_del_programa_con_su_descripcion(): void
+    {
+        $conGaleria = array_filter(config('contenido.programas'), fn ($p) => ! empty($p['galeria']));
+        $this->assertNotEmpty($conGaleria);
+
+        foreach ($conGaleria as $slug => $p) {
+            $respuesta = $this->get(route('programas.' . $slug))->assertOk()->assertSee('Nuestros estudiantes');
+            foreach ($p['galeria'] as [$archivo, $descripcion]) {
+                $base = pathinfo($archivo, PATHINFO_FILENAME);
+                $this->assertFileExists(public_path("assets/img/$base.webp"), "Falta la foto $base de $slug");
+                $this->assertFileExists(public_path("assets/img/$base-960.webp"), "Falta la versión de 960 px de $base");
+                $respuesta->assertSee('alt="' . e($descripcion) . '"', false)->assertSee("$base.webp");
+            }
+        }
+
+        // Un programa sin fotos propias no muestra la sección vacía
+        $this->get(route('programas.titiritero'))->assertOk()->assertDontSee('sub-galeria');
+    }
+
     public function test_cada_programa_esta_en_una_escuela_y_su_ruta_es_la_misma(): void
     {
         $enEscuelas = collect(config('sitio.escuelas'))->flatMap(fn ($e) => array_column($e['programas'], 1))->sort()->values()->all();
