@@ -129,7 +129,7 @@
         <div class="section-inner">
             <div class="section-head es-dividida" data-revelar>
                 <h2>Áreas de formación</h2>
-                <p>Tres puertas de entrada, un mismo estándar de calidad.</p>
+                <p>Dos puertas de entrada, un mismo estándar de calidad.</p>
             </div>
 
             <div class="ini-areas-grid">
@@ -152,21 +152,6 @@
                         <h3>Cursos Obligatorios en Salud</h3>
                         <p>Certificaciones exigidas por ley para operar en entornos de salud y seguridad laboral.</p>
                         <a href="{{ $wa('Cursos Obligatorios en Salud') }}" target="_blank" rel="noopener" class="ini-area-enlace">Ver cursos <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-arrow"/></svg></a>
-                    </div>
-                </article>
-
-                <article class="ini-area" data-revelar="mascara" data-retraso="0.2">
-                    <img src="{{ $img('educacion') }}" srcset="{{ $srcset('educacion') }}" sizes="(max-width: 900px) 100vw, 40vw" alt="" loading="lazy" decoding="async">
-                    <div class="ini-area-velo" aria-hidden="true"></div>
-                    <div class="ini-area-cuerpo">
-                        <span class="ini-area-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-cert"/></svg></span>
-                        <h3>Educación Continuada</h3>
-                        <p>Actualización constante para quienes ya trabajan y necesitan mantenerse vigentes en su oficio.</p>
-                        <ul class="ini-area-chips">
-                            @foreach ($sitio['continuada'] as [$nombre, $slug])
-                                <li><a href="{{ route('continuada.' . $slug) }}">{{ $nombre }}</a></li>
-                            @endforeach
-                        </ul>
                     </div>
                 </article>
             </div>
@@ -393,7 +378,6 @@
                     ['Salud', 'ico-salud', 'Curso de Actualización en Atención al Paciente', 'Para personal asistencial que busca renovar su certificación.'],
                     ['Salud', 'ico-salud', 'Curso Obligatorio Salud Ocupacional', 'Requisito legal para operar en entornos laborales regulados.'],
                     ['Administrativo', 'ico-admin', 'Programa Técnico Laboral en el Área Administrativa', 'Formación integral en gestión y procesos de oficina.'],
-                    ['Continuada', 'ico-cert', 'Educación Continuada en Normativa y Procedimientos', 'Actualización para profesionales en ejercicio.'],
                 ] as [$etiqueta, $icono, $titulo, $texto])
                     <li class="convocatoria">
                         <span class="convocatoria-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#{{ $icono }}"/></svg></span>

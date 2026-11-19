@@ -122,7 +122,6 @@
         if (devolverFoco) megaBoton.focus();
     }
     function abrirMega() {
-        cerrarDesplegables();
         var primera = mega.querySelector(".megamenu-tab");
         if (primera) primera.click();
         mega.classList.add("is-open");
@@ -166,35 +165,6 @@
             if (!mega.contains(e.target) && !megaBoton.contains(e.target)) cerrarMega();
         });
     }
-
-    /* ---------- Desplegables simples (Educación Continuada) ---------- */
-    var desplegables = Array.prototype.slice.call(document.querySelectorAll(".has-desplegable"));
-
-    function cerrarDesplegables(devolverFoco) {
-        desplegables.forEach(function (item) {
-            if (!item.classList.contains("is-open")) return;
-            var boton = item.querySelector("button");
-            item.classList.remove("is-open");
-            boton.setAttribute("aria-expanded", "false");
-            if (devolverFoco) boton.focus();
-        });
-    }
-    desplegables.forEach(function (item) {
-        var boton = item.querySelector("button");
-        boton.addEventListener("click", function (e) {
-            e.stopPropagation();
-            var abierto = item.classList.contains("is-open");
-            cerrarDesplegables();
-            cerrarMega();
-            if (!abierto) { item.classList.add("is-open"); boton.setAttribute("aria-expanded", "true"); }
-        });
-        document.addEventListener("click", function (e) {
-            if (!item.contains(e.target) && item.classList.contains("is-open")) {
-                item.classList.remove("is-open");
-                boton.setAttribute("aria-expanded", "false");
-            }
-        });
-    });
 
     /* ---------- Menú móvil (hoja lateral con foco atrapado) ---------- */
     var menuAbrir = document.getElementById("menuMovilAbrir");
@@ -247,7 +217,6 @@
         if (e.key !== "Escape") return;
         if (menuAbierto()) { cerrarMenu(true); return; }
         cerrarMega(true);
-        cerrarDesplegables(true);
     });
 
     /* ---------- Enlaces a secciones de la misma página ---------- */

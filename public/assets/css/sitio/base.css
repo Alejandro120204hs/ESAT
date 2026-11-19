@@ -197,7 +197,7 @@ svg.ico-relleno, .ico-relleno svg { fill: currentColor; stroke: none; }
 .badge-double { background: var(--navy); color: var(--white); }
 .badge-tag { text-transform: uppercase; }
 /* Categorías: neutras (el naranja es de la acción, el verde de WhatsApp). */
-.tag-salud, .tag-administrativo, .tag-continuada { background: var(--bg-soft); color: var(--navy); }
+.tag-salud, .tag-administrativo { background: var(--bg-soft); color: var(--navy); }
 
 /* =========================================================
    CABECERA
@@ -370,28 +370,6 @@ svg.ico-relleno, .ico-relleno svg { fill: currentColor; stroke: none; }
 .megamenu-pie p { font-size: 0.92rem; color: var(--muted); }
 .megamenu-pie p strong { color: var(--navy); }
 
-/* ---------- Desplegable simple (Educación Continuada) ---------- */
-.desplegable {
-    position: absolute; top: calc(100% + 12px); left: 50%;
-    min-width: 260px; padding: 8px;
-    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    opacity: 0; visibility: hidden; transform: translate(-50%, -8px);
-    transition: opacity 0.25s, transform 0.45s var(--ease-out), visibility 0s 0.45s;
-}
-.has-desplegable.is-open .desplegable {
-    opacity: 1; visibility: visible; transform: translate(-50%, 0);
-    transition: opacity 0.2s, transform 0.45s var(--ease-out), visibility 0s;
-}
-.desplegable a {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 10px 12px; border-radius: 10px; font-size: 0.92rem; font-weight: 500; color: var(--text);
-    transition: background-color 0.2s, color 0.2s;
-}
-.desplegable a svg { width: 16px; height: 16px; opacity: 0; transform: translateX(-4px); transition: opacity 0.2s, transform 0.3s var(--ease-out); }
-.desplegable a:hover { background: var(--orange-tint); color: var(--orange-ink); }
-.desplegable a:hover svg { opacity: 1; transform: translateX(0); }
-
 /* ---------- Menú móvil (hoja lateral) ---------- */
 .menu-movil-fondo {
     position: fixed; inset: 0; z-index: 590;
@@ -436,8 +414,6 @@ svg.ico-relleno, .ico-relleno svg { fill: currentColor; stroke: none; }
     display: block; padding: 9px 0 9px 28px; font-size: 0.98rem; color: var(--text); border-radius: 8px;
 }
 .menu-movil-panel a:hover { color: var(--orange-ink); }
-.menu-movil-lista { padding: 8px 0 12px; }
-.menu-movil-lista a { padding-left: 8px; }
 .menu-movil-pie {
     flex-shrink: 0; display: grid; gap: 10px; padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--line); background: var(--bg-soft);

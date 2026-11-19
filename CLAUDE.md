@@ -4,7 +4,7 @@ Escuela Nacional de Educación ESAT (instituto técnico colombiano legalmente
 licenciado — Lic. Funcionamiento 5850, NIT 900820764-1). El proyecto tiene
 dos partes:
 
-1. **Sitio público** (inicio, programas, Educación Continuada y escuelas) — rediseñado
+1. **Sitio público** (inicio, programas y escuelas) — rediseñado
    en noviembre de 2026 (ver "Sitio público" abajo). Todos los datos legales/de
    contacto/sedes ahí son **reales**, nunca inventados.
 2. **Plataforma interna** (paneles por rol) — en construcción activa. Casi todo lo de
@@ -13,17 +13,17 @@ dos partes:
 ## Sitio público
 
 - **Datos, no vistas sueltas.** `config/sitio.php`: escuelas (con su foto y sus programas
-  `[nombre, slug]`), Educación Continuada, sedes (dirección y coordenadas reales), sedes de franquicia
+  `[nombre, slug]`), sedes (dirección y coordenadas reales), sedes de franquicia
   (`franquicias`: solo el municipio, la lista que envió ESAT el 10-11-2026; van en una franja bajo las sedes del inicio
   —cada chip pregunta por WhatsApp— y en una línea del footer, sin mapa hasta tener su dirección), WhatsApp y
   redes (vacías hasta tener las URL reales). `config/contenido.php`: el texto de cada programa
-  (`programas.{slug}`) y de cada línea de Educación Continuada (`continuada.{slug}`). Header,
+  (`programas.{slug}`). Header,
   footer, inicio y subpáginas leen de ahí: un programa o una sede se agrega en esos archivos,
   no en la vista.
 - **Rutas**: `routes/web.php` genera una ruta por programa (`/{slug}`, nombre `programas.{slug}`),
-  por línea (`continuada.{slug}`) y por escuela (`/escuelas/{slug}`, `escuelas.{slug}`), todas a
+  y por escuela (`/escuelas/{slug}`, `escuelas.{slug}`), todas a
   `Sitio/PaginaController`. El catálogo es el del afiche "Carreras técnicas" (16-11-2026: 8 escuelas, 41 programas);
-  las direcciones de programas y escuelas que cambiaron o salieron redirigen (301) con `sitio.redirecciones`. Plantillas: `paginas/{programa,continuada,escuela}.blade.php` y
+  las direcciones de programas y escuelas que cambiaron o salieron redirigen (301) con `sitio.redirecciones`. **Educación Continuada se quitó del sitio** (17-11-2026, lo pidió el usuario): sus 7 direcciones viejas llevan al inicio. Plantillas: `paginas/{programa,escuela}.blade.php` y
   `paginas/partes/{hero,barra,migas,respaldo}`. El inicio es `welcome.blade.php`.
 - **Fotos**: `public/assets/img` tiene el original y su `.webp` + `-960.webp` (procedencia en
   `.impeccable/procedencia-imagenes.md`). En las vistas, `$foto('archivo.png')` devuelve
@@ -448,7 +448,7 @@ Historial de horarios, fecha de inicio y finalizar a tiempo (A7, A8): `tests/Fea
 Instalación nueva y protección de migraciones (A11, A12): `tests/Feature/InstalacionTest.php`.
 Panel Admin general: `tests/Feature/AdminGeneral/`. Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
 guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
-Sitio público (una página por programa, línea y escuela, rutas de siempre, cierre del footer):
+Sitio público (una página por programa y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
