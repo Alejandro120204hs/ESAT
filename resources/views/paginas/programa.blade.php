@@ -97,6 +97,31 @@
         </div>
     </section>
 
+    {{-- ============ GALERÍA ============
+         Fotos reales del programa que envió ESAT (programas.{slug}.galeria). Son contenido,
+         no fondo: cada una lleva su descripción. La cuadrícula cambia de forma según cuántas haya. --}}
+    @if (! empty($programa['galeria']))
+        <section class="sub-galeria" aria-labelledby="galeriaTitulo">
+            <div class="section-inner">
+                <div class="sub-galeria-cabeza" data-revelar>
+                    <h2 id="galeriaTitulo">Nuestros estudiantes</h2>
+                    <p>Fotos reales de las prácticas y salidas del programa.</p>
+                </div>
+                <ul class="sub-galeria-lista" data-revelar="escalonar">
+                    @foreach ($programa['galeria'] as [$archivo, $descripcion, $encuadre])
+                        @php $g = $foto($archivo); @endphp
+                        @if ($g)
+                            <li>
+                                <img src="{{ $g['src'] }}" @if ($g['srcset']) srcset="{{ $g['srcset'] }}" sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 640px" @endif
+                                     alt="{{ $descripcion }}" style="object-position: {{ $encuadre }}" loading="lazy" decoding="async">
+                            </li>
+                        @endif
+                    @endforeach
+                </ul>
+            </div>
+        </section>
+    @endif
+
     @include('paginas.partes.respaldo')
 
     {{-- ============ MÁS PROGRAMAS DE LA ESCUELA ============ --}}

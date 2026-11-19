@@ -124,6 +124,24 @@
 .sub-practica h2 { color: var(--white); font-size: clamp(1.8rem, 1.3rem + 1.8vw, 2.8rem); max-width: 20ch; }
 .sub-practica p { margin-top: 12px; max-width: 52ch; color: rgba(255, 255, 255, 0.86); font-size: var(--t-lead); }
 
+/* ---------- Galería: fotos reales del programa ----------
+   Cuadrícula de 6 columnas que cambia de forma según cuántas fotos haya:
+   1 → una ancha y centrada; 2 y 4 → dos por fila; 3 → una fila; 5 → dos arriba y tres abajo. */
+.sub-galeria { padding: 0 0 var(--section-y); }
+.sub-galeria-cabeza { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 32px; flex-wrap: wrap; margin-bottom: 28px; }
+.sub-galeria-cabeza h2 { font-size: clamp(1.5rem, 1.15rem + 1.3vw, 2.3rem); }
+.sub-galeria-cabeza p { color: var(--muted); max-width: 52ch; }
+.sub-galeria-lista { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s-4); }
+.sub-galeria-lista > li { grid-column: span 2; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius-lg); background: var(--bg-soft); }
+.sub-galeria-lista img { width: 100%; height: 100%; object-fit: cover; }
+.sub-galeria-lista > li:only-child { grid-column: 2 / span 4; aspect-ratio: 16 / 9; }
+.sub-galeria-lista > li:first-child:nth-last-child(2),
+.sub-galeria-lista > li:first-child:nth-last-child(2) ~ li,
+.sub-galeria-lista > li:first-child:nth-last-child(4),
+.sub-galeria-lista > li:first-child:nth-last-child(4) ~ li,
+.sub-galeria-lista > li:first-child:nth-last-child(5),
+.sub-galeria-lista > li:first-child:nth-last-child(5) + li { grid-column: span 3; aspect-ratio: 3 / 2; }
+
 /* ---------- Respaldo institucional ---------- */
 .sub-respaldo { padding: 0 0 var(--section-y); }
 /* Sin lista de cursos, el respaldo va justo después de la portada: necesita aire arriba. */
@@ -211,6 +229,8 @@
     .sub-respaldo-caja { grid-template-columns: 1fr; }
     .sub-fila { grid-template-columns: 1fr; }
     .sub-fila.es-invertida .sub-fila-foto { order: 0; }
+    /* En columna: cada foto a todo el ancho (la columna de la cuadrícula ya no aplica). */
+    .sub-galeria-lista { display: flex; flex-direction: column; }
 }
 @media (max-width: 600px) {
     .sub-hero-marco { flex-direction: column; align-items: stretch; min-height: 0; border-radius: var(--radius-lg); }

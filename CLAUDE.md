@@ -29,7 +29,9 @@ dos partes:
   `.impeccable/procedencia-imagenes.md`). En las vistas, `$foto('archivo.png')` devuelve
   `src`/`srcset` del WebP o null si la foto no existe; sin foto, la página se arma con el ícono de
   la escuela (nunca un aviso de "foto pendiente"). Un programa sin foto propia usa otra foto
-  real del mismo programa (`PaginaController::conPortada`).
+  real del mismo programa (`PaginaController::conPortada`). Un programa puede tener además una `galeria` (fotos reales que envió ESAT,
+  cada una con su descripción y su encuadre) que sale después de la práctica como "Nuestros estudiantes"; sin `galeria`
+  la sección no aparece.
 - **CSS/JS** en `public/assets/{css,js}/sitio/`: `base.css` + `motor.js` en todas las páginas,
   `inicio.*` en el inicio y `subpaginas.*` en programas, líneas y escuelas. Se cargan con
   `$recurso('ruta')` (versión por fecha del archivo). Librerías por CDN con versión exacta:
@@ -44,8 +46,10 @@ dos partes:
 - **Diseño**: el sistema visual está en `DESIGN.md`; el contrato de dirección, como comentario al
   inicio del `<body>` en `layouts/app.blade.php`.
 - **Pendiente de ESAT**: cifras de estudiantes y egresados, foto y WhatsApp de cada sede, URL de
-  redes, fotos de 15 programas (los que salen solo con el ícono de su escuela) y decidir el formulario de Novedades (hoy solo muestra
-  la confirmación, no guarda el correo).
+  redes, fotos de 12 programas (los que salen solo con el ícono de su escuela) y decidir el formulario de Novedades (hoy solo muestra
+  la confirmación, no guarda el correo). Las fotos reales que envió ESAT el 18-11-2026 (WhatsApp) y cuáles se usaron, con
+  sus recortes y por qué no las otras, están en `.impeccable/procedencia-imagenes.md`. Antes de publicar una foto con niños
+  reconocibles, ESAT debe confirmar la autorización de sus padres o acudientes.
 
 Stack: Laravel 12 + Breeze (Blade), MySQL (`esat`, XAMPP, `root` sin clave),
 `php artisan serve --port=8765` para probar local. Todo en **español**,
