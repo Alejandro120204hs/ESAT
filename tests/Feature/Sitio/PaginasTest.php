@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Sitio público: cada programa, línea de Educación Continuada y escuela
+ * Sitio público: cada programa y escuela
  * de config/contenido.php y config/sitio.php tiene su página, con su
  * nombre de ruta de siempre y sin avisos de "foto pendiente".
  */
@@ -36,14 +36,11 @@ class PaginasTest extends TestCase
         $this->assertSame(url('/barberia'), route('programas.barberia'));
     }
 
-    public function test_cada_linea_de_educacion_continuada_tiene_su_pagina(): void
+    public function test_educacion_continuada_ya_no_esta_en_el_sitio(): void
     {
-        foreach (config('contenido.continuada') as $slug => $linea) {
-            $respuesta = $this->get(route('continuada.' . $slug))->assertOk()->assertSee($linea['nombre']);
-            foreach ($linea['cursos'] as $curso) {
-                $respuesta->assertSee($curso);
-            }
-        }
+        $this->get(route('home'))->assertOk()->assertDontSee('Educación Continuada');
+        $this->get(route('programas.barberia'))->assertOk()->assertDontSee('Educación Continuada');
+        $this->get('/salud-ocupacional')->assertStatus(301)->assertRedirect('/');
     }
 
     public function test_cada_escuela_lista_sus_programas(): void

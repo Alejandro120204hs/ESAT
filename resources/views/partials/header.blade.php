@@ -1,4 +1,4 @@
-{{-- Cabecera del sitio público. Escuelas, programas y Educación Continuada
+{{-- Cabecera del sitio público. Escuelas y programas
      salen de config/sitio.php ($sitio), igual que el footer y las páginas. --}}
 @php
     [$waNumero, $waVisible] = $sitio['whatsapp'][0];
@@ -43,20 +43,6 @@
                         </button>
                     </li>
                     <li><a href="{{ route('home') }}#areas-formacion" class="nav-link">Cursos Obligatorios en Salud</a></li>
-                    <li class="has-desplegable">
-                        <button type="button" class="nav-link" aria-expanded="false" aria-controls="desplegable-continuada">
-                            Educación Continuada
-                            <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-chev"/></svg>
-                        </button>
-                        <div class="desplegable" id="desplegable-continuada">
-                            @foreach ($sitio['continuada'] as [$nombre, $slug])
-                                <a href="{{ route('continuada.' . $slug) }}" @if (request()->routeIs('continuada.' . $slug)) aria-current="page" @endif>
-                                    {{ $nombre }}
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-arrow"/></svg>
-                                </a>
-                            @endforeach
-                        </div>
-                    </li>
                     <li><a href="#contacto" class="nav-link">Contacto</a></li>
                 </ul>
             </nav>
@@ -156,19 +142,6 @@
 
         <a href="{{ route('home') }}#areas-formacion" class="menu-movil-enlace">Cursos Obligatorios en Salud</a>
 
-        <div class="menu-movil-acordeon">
-            <button type="button" aria-expanded="false">
-                Educación Continuada
-                <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-chev"/></svg>
-            </button>
-            <div class="menu-movil-panel"><div>
-                <ul class="menu-movil-lista">
-                    @foreach ($sitio['continuada'] as [$nombre, $slug])
-                        <li><a href="{{ route('continuada.' . $slug) }}">{{ $nombre }}</a></li>
-                    @endforeach
-                </ul>
-            </div></div>
-        </div>
 
         <a href="#contacto" class="menu-movil-enlace">Contacto</a>
         <a href="{{ $wa('consultar mi certificado') }}" target="_blank" rel="noopener" class="menu-movil-enlace">Mi certificado</a>

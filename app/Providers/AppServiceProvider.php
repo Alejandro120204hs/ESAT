@@ -47,7 +47,6 @@ class AppServiceProvider extends ServiceProvider
                 $msg = "Hola ESAT, quiero información sobre: {$topic}";
                 return 'https://wa.me/' . $number . '?text=' . rawurlencode($msg);
             });
-            $view->with('educacionContinuada', array_column(config('sitio.continuada'), 0));
             $view->with('sitio', config('sitio'));
             // URL de un archivo de public/ con su fecha como versión, para
             // que el navegador no siga usando el viejo después de cambiarlo.

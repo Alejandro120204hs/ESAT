@@ -6,11 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 
 /**
- * Subpáginas del sitio público: programas técnicos, líneas de Educación
- * Continuada y escuelas. El contenido vive en config/contenido.php y la
+ * Subpáginas del sitio público: programas técnicos y escuelas. El contenido vive en config/contenido.php y la
  * estructura de escuelas/programas en config/sitio.php; cada ruta fija su
  * slug con ->defaults() en routes/web.php, así los nombres de ruta
- * (programas.{slug}, continuada.{slug}, escuelas.{slug}) no cambian.
+ * (programas.{slug}, escuelas.{slug}) no cambian.
  */
 class PaginaController extends Controller
 {
@@ -24,13 +23,6 @@ class PaginaController extends Controller
             ->values()->all();
 
         return view('paginas.programa', compact('slug', 'programa', 'escuela', 'hermanos'));
-    }
-
-    public function continuada(string $slug): View
-    {
-        $linea = config("contenido.continuada.$slug") ?? abort(404);
-
-        return view('paginas.continuada', compact('slug', 'linea'));
     }
 
     public function escuela(string $slug): View

@@ -49,19 +49,16 @@ Route::get('/', function () {
 })->name('home');
 
 // ============ SUBPÁGINAS DEL SITIO PÚBLICO ============
-// Una ruta por programa, línea de Educación Continuada y escuela, con su
-// nombre de siempre (programas.{slug}, continuada.{slug}); el contenido sale
+// Una ruta por programa y por escuela, con su nombre de siempre
+// (programas.{slug}, escuelas.{slug}); el contenido sale
 // de config/contenido.php y config/sitio.php.
 foreach (array_keys(config('contenido.programas')) as $slug) {
     Route::get('/' . $slug, [PaginaController::class, 'programa'])->defaults('slug', $slug)->name('programas.' . $slug);
 }
-foreach (array_keys(config('contenido.continuada')) as $slug) {
-    Route::get('/' . $slug, [PaginaController::class, 'continuada'])->defaults('slug', $slug)->name('continuada.' . $slug);
-}
 foreach (config('sitio.escuelas') as $escuela) {
     Route::get('/escuelas/' . $escuela['slug'], [PaginaController::class, 'escuela'])->defaults('slug', $escuela['slug'])->name('escuelas.' . $escuela['slug']);
 }
-// Programas y escuelas que cambiaron de nombre o salieron: su dirección vieja lleva a la de ahora
+// Programas, escuelas y líneas que cambiaron de nombre o salieron: su dirección vieja lleva a la de ahora
 foreach (config('sitio.redirecciones') as $antes => $ahora) {
     Route::permanentRedirect('/' . $antes, '/' . $ahora);
 }

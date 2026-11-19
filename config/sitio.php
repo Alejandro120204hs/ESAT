@@ -140,17 +140,14 @@ return [
         'escuelas/ciencias'                            => 'escuelas/ingenieria-y-tecnologia',
         'escuelas/educacion-e-idiomas'                 => 'escuelas/idiomas',
         'escuelas/belleza'                             => 'escuelas/salud-y-bienestar',
-    ],
-
-    // Educación Continuada: [nombre, slug de la ruta continuada.{slug}].
-    'continuada' => [
-        ['Salud Ocupacional', 'salud-ocupacional'],
-        ['Áreas Sociales', 'areas-sociales'],
-        ['Pedagogía', 'pedagogia'],
-        ['Administración y Gerencia', 'administracion-y-gerencia'],
-        ['Edificios y Afines', 'edificios-y-afines'],
-        ['Hotelería y Turismo', 'hoteleria-y-turismo'],
-        ['Salud', 'salud'],
+        // Educación Continuada salió del sitio (17-11-2026): sus 7 líneas llevan al inicio
+        'salud-ocupacional'                            => '',
+        'areas-sociales'                               => '',
+        'pedagogia'                                    => '',
+        'administracion-y-gerencia'                    => '',
+        'edificios-y-afines'                           => '',
+        'hoteleria-y-turismo'                          => '',
+        'salud'                                        => '',
     ],
 
     'sedes' => [

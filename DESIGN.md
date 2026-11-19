@@ -154,7 +154,7 @@ components:
 
 # Design System: ESAT · Sitio público
 
-> **Alcance.** Este documento describe solo el **sitio público** de ESAT: `resources/views/layouts/app.blade.php`, `partials/{header,footer,icon-sprite}`, `welcome.blade.php`, `paginas/{programa,continuada,escuela}` y `paginas/partes/*`, con sus estilos en `public/assets/css/sitio/` y su movimiento en `public/assets/js/sitio/`. La **plataforma interna** (paneles de superadmin, admin, docente, login: `resources/views/{admin,superadmin,docente}/**`, `public/assets/{css,js}/{admin,superadmin,docente,login}/**`) es otro mundo visual y **no** se rige por estos tokens ni reglas. Su sistema visual está en **`DESIGN-PANELES.md`** (vale para todos los paneles, también los que faltan).
+> **Alcance.** Este documento describe solo el **sitio público** de ESAT: `resources/views/layouts/app.blade.php`, `partials/{header,footer,icon-sprite}`, `welcome.blade.php`, `paginas/{programa,escuela}` y `paginas/partes/*`, con sus estilos en `public/assets/css/sitio/` y su movimiento en `public/assets/js/sitio/`. La **plataforma interna** (paneles de superadmin, admin, docente, login: `resources/views/{admin,superadmin,docente}/**`, `public/assets/{css,js}/{admin,superadmin,docente,login}/**`) es otro mundo visual y **no** se rige por estos tokens ni reglas. Su sistema visual está en **`DESIGN-PANELES.md`** (vale para todos los paneles, también los que faltan).
 
 ## Overview
 
@@ -192,10 +192,10 @@ Una paleta de marca de tres tintas (azul marino, naranja, verde) sobre blanco, c
 - **Naranja Claro** (`orange-claro`): la palabra resaltada sobre azul (h1 de la portada, cierre del pie, encabezados claros de sección).
 - **Naranja Hundido** (`orange-2`): tono de la marca; ya no es fondo de botón.
 - **Naranja Tinta** (`orange-ink`): el naranja cuando es texto sobre blanco (palabra resaltada en secciones claras, hover de enlaces del megamenú); da 5:1 de contraste donde `orange` no alcanza.
-- **Naranja Velo** (`orange-tint`): fondo de hover en el desplegable de Educación Continuada y halo del nodo encendido de la espina.
+- **Naranja Velo** (`orange-tint`): halo del nodo encendido de la espina.
 
 ### Tertiary
-- **Verde WhatsApp** (`green`) / **Verde Hundido** (`green-2`, hover): exclusivamente botones y enlaces que abren WhatsApp: botón de la cabecera, botón flotante, botones "Escribir por WhatsApp", enlace por curso en Educación Continuada y el hover del botón secundario del hero, que es el de WhatsApp.
+- **Verde WhatsApp** (`green`) / **Verde Hundido** (`green-2`, hover): exclusivamente botones y enlaces que abren WhatsApp: botón de la cabecera, botón flotante, botones "Escribir por WhatsApp" y el hover del botón secundario del hero, que es el de WhatsApp.
 
 ### Neutral
 - **Blanco** (`white`): fondo base, tarjetas, panel del megamenú, menú móvil.
@@ -292,7 +292,7 @@ Píldoras firmes y táctiles que suben 2 px al pasar el cursor.
 - **Hover / Focus:** sube 2 px; la flecha final se corre 3 px a la derecha; al presionar, escala 0.98. Foco: anillo naranja de 2.5 px separado 3 px.
 
 ### Chips
-- **Style:** píldoras de 6×12 px, `bg-soft` con texto `navy` (claves del programa) o contorno `line-strong` de 46 px de alto (otras líneas de Educación Continuada); sobre fotos (áreas), 40 px de alto mínimo, blanco al 12 % con borde blanco al 24 %.
+- **Style:** píldoras de 6×12 px, `bg-soft` con texto `navy` (claves del programa).
 - **State:** el hover rellena: azul con texto blanco sobre fondo claro, blanco con texto azul sobre fotos.
 
 ### Cards / Containers
@@ -315,7 +315,6 @@ Píldoras firmes y táctiles que suben 2 px al pasar el cursor.
 - **Cabecera:** barra blanca sólida, sin `backdrop-filter`, con borde `line`; logo en color a 52 px que se reduce a 0.86 al compactarse. Enlaces Archivo 600 en azul, píldoras de 42 px de alto; hover con fondo `bg-soft` y un subrayado naranja de 2 px que crece desde la izquierda (también marca la página actual).
 - **Línea de progreso:** 2 px naranja al pie de la cabecera que se llena con el scroll.
 - **Megamenú (Programas Técnicos):** panel blanco de 24 px de radio con sombra alta que se abre con un recorte de arriba hacia abajo; pie en `bg-soft`. Se abre solo con clic. Dentro, dos paneles para que el alto no crezca con el catálogo (8 escuelas, 41 programas: ~510 px, cabe en 1280×720): a la izquierda las escuelas como pestañas (nombre corto + número de programas, tesela de ícono que se vuelve `navy` en la elegida, filas de 48 px); a la derecha los programas de la elegida en dos columnas, "Ver la escuela" y su foto (se oculta bajo 1240 px). Cambia de escuela con clic, flechas arriba/abajo o el cursor que se detiene 110 ms (no en el paso diagonal hacia un programa); al abrir vuelve a la primera.
-- **Desplegable (Educación Continuada):** una columna, hover en `orange-tint` con texto `orange-ink` y flecha que aparece.
 - **Móvil (≤1100 px):** hoja lateral blanca desde la derecha (máx. 440 px), acordeones con chevrón, pie en `bg-soft` con los botones de acción a ancho completo.
 - **Migas de pan:** 0.9rem en `muted`; la página actual en `navy` 700.
 

@@ -132,7 +132,7 @@
     display: flex; align-items: flex-end; min-height: 320px;
     border-radius: var(--radius-lg); background: var(--navy-3); color: var(--white);
 }
-.ini-area-principal { grid-row: span 2; min-height: 660px; }
+.ini-area-principal { min-height: 560px; }
 .ini-area > img {
     position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover;
     transition: transform 1.2s var(--ease-out);
@@ -159,14 +159,6 @@
 }
 .ini-area-enlace svg { width: 18px; height: 18px; transition: transform 0.4s var(--ease-out); }
 .ini-area-enlace:hover svg { transform: translateX(4px); }
-.ini-area-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
-.ini-area-chips a {
-    display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px;
-    font-size: 0.9rem; font-weight: 600; color: var(--white);
-    background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.24);
-    transition: background-color 0.2s, border-color 0.2s;
-}
-.ini-area-chips a:hover { background: var(--white); border-color: var(--white); color: var(--navy); }
 
 /* ---------- Escuelas ---------- */
 .ini-escuelas { padding: var(--section-y) 0; }
@@ -449,7 +441,7 @@
     .ini-porque-foto { position: relative; top: 0; max-width: 560px; }
     .ini-porque-foto-marco { aspect-ratio: 4 / 3; }
     .ini-areas-grid { grid-template-columns: 1fr; }
-    .ini-area-principal { grid-row: auto; min-height: 480px; }
+    .ini-area-principal { min-height: 480px; }
     .ini-area-velo { background: linear-gradient(0deg, rgba(8, 21, 39, 0.96) 0%, rgba(8, 21, 39, 0.88) 55%, rgba(8, 21, 39, 0.6) 85%, rgba(8, 21, 39, 0.4) 100%); }
     .ini-escuelas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .escuelas-asesor { grid-column: 1 / -1; }
