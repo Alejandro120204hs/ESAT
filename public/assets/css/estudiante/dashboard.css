@@ -1,0 +1,336 @@
+/* ESAT — Estudiante: Inicio y mi horario. Copiado del Inicio del Docente (DESIGN-PANELES.md). Color con la semántica
+   del panel: naranja = acción o pendiente, rojo = riesgo, verde = bien, gris/azul de la marca = neutro. */
+
+/* ── Layout general ────────────────────────────────── */
+.ini-wrap {
+    display: flex; flex-direction: column; gap: 22px;
+    /* Tono de las clases (bloques del horario, hora de la clase de hoy) */
+    --jc: var(--navy-2); --jbg: #EEF2F7; --jbd: #D5DEEA; --jink: var(--navy-3);
+}
+
+.ini-header { display: flex; flex-direction: column; gap: 2px; }
+.ini-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); margin: 0; overflow-wrap: anywhere; }
+.ini-sub   { font-size: 0.95rem; color: var(--muted); font-weight: 500; margin: 3px 0 0; line-height: 1.5; max-width: 72ch; min-height: 1.5em; }
+.ini-sub b { color: var(--navy-3); font-weight: 700; }
+
+/* ── Botones ────────────────────────────────────────── */
+.ini-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 16px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.84rem;
+    cursor: pointer; transition: background 0.18s, border-color 0.18s, color 0.18s;
+    white-space: nowrap; text-decoration: none;
+}
+.ini-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ini-btn-primary { background: var(--orange); color: var(--white); }
+.ini-btn-primary:hover { background: var(--orange-2); }
+.ini-btn-ghost { background: transparent; color: var(--navy-3); border-color: var(--line); }
+.ini-btn-ghost:hover { background: var(--bg); }
+.ini-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ── Columnas ───────────────────────────────────────── */
+.ini-cols[hidden], .ini-horario[hidden] { display: none; }
+.ini-cols { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.ini-col  { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* ── Tarjetas ───────────────────────────────────────── */
+.ini-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); min-width: 0; }
+.ini-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 18px 20px 14px;
+}
+.ini-card-head > div { min-width: 0; flex: 1 1 240px; }
+.ini-card-title { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.ini-card-sub { font-size: 0.8rem; color: var(--muted); margin: 3px 0 0; line-height: 1.45; }
+.ini-card-sub:empty { display: none; }
+
+/* ── Clases de hoy ──────────────────────────────────── */
+.ini-clases { list-style: none; margin: 0; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ini-clases:empty { display: none; }
+.ini-clase {
+    display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+    padding: 12px 14px 12px 12px; border: 1.5px solid var(--line); border-radius: 12px;
+    transition: border-color 0.2s;
+}
+.ini-clase.sin-accion { grid-template-columns: 96px minmax(0, 1fr); }
+.ini-clase.is-en_curso { border-color: rgba(217, 123, 46, 0.42); background: #FFFBF7; }
+.ini-clase-hora {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 12px 6px; border-radius: 10px; background: var(--jbg); color: var(--jc);
+}
+.ini-clase-ini { font-family: "Archivo", system-ui; font-size: 1.3rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.ini-clase-fin { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ini-clase-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ini-clase-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ini-clase-prog { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 2px 0 0; line-height: 1.3; }
+.ini-clase-meta { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin: 0; }
+.ini-clase-meta b { color: var(--navy-3); font-weight: 600; }
+.ini-clase-cuenta { font-size: 0.76rem; font-weight: 700; color: #9A4A12; margin: 0; }
+.ini-clase-cuenta:empty { display: none; }
+
+/* Chip "En curso" */
+.ini-chip-curso { background: #FDEBDB; color: #9A4A12; }
+.ini-chip-curso::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    animation: ini-latido 1.8s ease-in-out infinite;
+}
+@keyframes ini-latido {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+}
+
+/* Próxima clase (debajo de las de hoy o en el vacío) */
+.ini-proxima {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin: 0 20px 20px; padding: 12px 14px; border-radius: 12px; background: var(--bg);
+}
+.ini-proxima[hidden] { display: none; }
+.ini-proxima-txt { min-width: 0; flex: 1 1 220px; }
+.ini-proxima-cuando { font-family: "Archivo", system-ui; font-size: 0.92rem; font-weight: 800; color: var(--navy-3); }
+.ini-proxima-cuando span { font-family: "Public Sans", system-ui, sans-serif; font-weight: 600; color: var(--muted); }
+.ini-proxima-que { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+
+/* ── Pendientes ─────────────────────────────────────── */
+.ini-pend-bloque { padding: 12px 20px 14px; border-top: 1px solid var(--line); }
+.ini-pend-titulo {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 6px;
+    font-family: "Archivo", system-ui; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.ini-pend-titulo-num {
+    padding: 1px 8px; border-radius: 999px; background: rgba(10,27,51,0.07); color: var(--navy-3);
+    font-size: 0.72rem; font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.ini-pend-lista { list-style: none; margin: 0; padding: 0; }
+.ini-pend-item {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 -10px; padding: 8px 10px; border-radius: 10px;
+    color: inherit; text-decoration: none; transition: background 0.15s;
+}
+.ini-pend-item:hover { background: #FBF7F2; }
+.ini-pend-item:focus-visible { outline: 2px solid var(--orange); outline-offset: 0; }
+.ini-pend-item:hover .ini-pend-ir, .ini-pend-item:focus-visible .ini-pend-ir { color: var(--orange); transform: translateX(2px); }
+
+/* Ficha de la izquierda: fecha, cuántas faltan o la nota */
+.ini-ficha {
+    width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-variant-numeric: tabular-nums;
+}
+.ini-ficha small { font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.ini-ficha b { font-family: "Archivo", system-ui; font-size: 1.02rem; font-weight: 900; line-height: 1; }
+.ini-ficha-pend   { background: #FDF1E6; color: #9A4A12; }   /* por hacer o por elegir */
+.ini-ficha-riesgo { background: #FEE2E2; color: #991B1B; }   /* vencido o por habilitar */
+.ini-ficha-leer   { background: #EEF2F7; color: var(--navy-2); } /* comunicado sin leer: neutro */
+.ini-ficha svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.ini-pend-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ini-pend-nombre { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); line-height: 1.3; }
+.ini-pend-sub { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+.ini-pend-ir {
+    width: 18px; height: 18px; flex-shrink: 0; color: #A0AABA;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: color 0.15s, transform 0.15s var(--ease-out);
+}
+
+.ini-mas {
+    margin-top: 4px; padding: 6px 0; border: none; background: none; cursor: pointer;
+    font-family: "Archivo", system-ui; font-size: 0.8rem; font-weight: 700; color: var(--orange-2);
+}
+.ini-mas:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ini-mas:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+/* ── Tu avance ──────────────────────────────────────── */
+.ini-avance-body { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+.ini-avance-fila { display: flex; align-items: center; gap: 12px; }
+.ini-barra { flex: 1 1 auto; height: 8px; border-radius: 999px; background: #E6EBF2; overflow: hidden; }
+.ini-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--orange); }
+.ini-avance-pct { font-family: "Archivo", system-ui; font-size: 0.9rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ini-modulo { margin: 0; font-size: 0.86rem; color: var(--text); line-height: 1.5; }
+.ini-modulo b { color: var(--navy-3); font-weight: 700; }
+.ini-modulo span { color: var(--muted); }
+.ini-datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--line); border-radius: var(--radius-md); }
+.ini-dato { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ini-dato + .ini-dato { border-left: 1px solid var(--line); }
+.ini-dato-lbl { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.ini-dato-val { font-family: "Archivo", system-ui; font-size: 1.25rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ini-dato-val small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.ini-dato-sub { font-size: 0.74rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
+/* Tonos de nota (≥ 4 / 3–3,9 / < 3) y de asistencia (≥ 90 / 80–89 / < 80), los de Mis grupos del Docente */
+.ini-tono-ok   { color: #2D7A3A; }
+.ini-tono-warn { color: #B45309; }
+.ini-tono-bad  { color: var(--red); }
+.ini-dato-val.ini-tono-none { color: var(--muted); font-size: 1rem; }
+.ini-avance-pie { display: flex; justify-content: flex-start; }
+
+
+/* ── Vacíos ─────────────────────────────────────────── */
+.ini-linea-ok {
+    display: flex; align-items: center; gap: 8px; margin: 0 20px 18px;
+    font-size: 0.86rem; font-weight: 600; color: #2D6A27;
+}
+.ini-linea-ok[hidden] { display: none; }
+.ini-linea-ok svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ini-empty { text-align: center; padding: 18px 24px 26px; }
+.ini-empty[hidden] { display: none; }
+.ini-empty-icono {
+    width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #E6F4E4; color: #2D6A27;
+}
+.ini-empty-icono svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ini-empty-calma { background: #EAF0F8; color: var(--navy-2); }
+.ini-empty-titulo { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 0; }
+.ini-empty-txt { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin: 4px auto 0; max-width: 44ch; }
+.ini-empty-txt b { color: var(--navy-3); }
+.ini-empty .ini-btn { margin-top: 14px; }
+
+/* ── Mi horario ─────────────────────────────────────── */
+/* El mismo horario semanal de Admin › Horarios (horarios.css: .hor-cal y .hor-bloque): colores por escuela,
+   jornadas en la columna de horas, líneas de hora y media hora, separador entre jornadas y duración en
+   cada bloque. Lo propio del docente: la fecha de cada día (es el horario de esta semana).
+   La grilla depende del ancho de la tarjeta (con o sin menú lateral), no de la pantalla. */
+.ini-horario {
+    container-type: inline-size;
+    /* Escuela sin color propio */
+    --hc: #475569; --hbg: #F1F5F9; --hbd: #E2E8F0; --hink: #334155;
+}
+/* Un solo grupo: el tono neutro de la marca (el color por escuela del Docente distingue grupos que aquí no hay) */
+.ini-c-grupo { --hc: var(--navy-2); --hbg: #EEF2F7; --hbd: #D5DEEA; --hink: var(--navy-3); }
+/* Colores por escuela: acento, fondo, borde y texto (los de Admin › Horarios) */
+.ini-c-sal { --hc: #BE123C; --hbg: #FFE4E6; --hbd: #FECDD3; --hink: #7F1D1D; }
+.ini-c-tur { --hc: #B45309; --hbg: #FEF3C7; --hbd: #FDE68A; --hink: #713F12; }
+.ini-c-adm { --hc: #1D4ED8; --hbg: #DBEAFE; --hbd: #BFDBFE; --hink: #1E3A8A; }
+.ini-c-edu { --hc: #047857; --hbg: #D1FAE5; --hbd: #A7F3D0; --hink: #064E3B; }
+.ini-c-dep { --hc: #6D28D9; --hbg: #EDE9FE; --hbd: #DDD6FE; --hink: #4C1D95; }
+.ini-c-cie { --hc: #0369A1; --hbg: #E0F2FE; --hbd: #BAE6FD; --hink: #0C4A6E; }
+.ini-c-bel { --hc: #BE185D; --hbg: #FCE7F3; --hbd: #FBCFE8; --hink: #831843; }
+
+/* Tabla días × horas */
+.ini-sem { display: grid; grid-template-columns: 78px repeat(6, minmax(0, 1fr)); padding: 0 20px 20px; }
+.ini-sem[hidden] { display: none; }
+.ini-sem-esquina { border-bottom: 2px solid #E2E8F0; }
+.ini-sem-head {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 14px 6px 12px; border-bottom: 2px solid #E2E8F0;
+    font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--navy-3);
+}
+.ini-sem-fecha { font-family: "Archivo", system-ui; font-weight: 700; letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ini-sem-head.is-libre, .ini-sem-head.is-libre .ini-sem-fecha { color: #A0AABA; }
+.ini-sem-head.is-hoy, .ini-sem-head.is-hoy .ini-sem-fecha { color: var(--orange-2); }
+.ini-sem-head.is-hoy { border-bottom-color: var(--orange); }
+.ini-hoy-pill {
+    padding: 1px 7px; border-radius: 999px; background: var(--orange); color: var(--white);
+    font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+.ini-sem-horas { position: relative; }
+.ini-sem-hora {
+    position: absolute; left: 0; right: 12px; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: flex-end;
+    font-size: 0.72rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.ini-sem-hora:first-child { transform: translateY(6px); }
+.ini-sem-hora:last-child  { transform: translateY(-100%); }
+.ini-sem-jor { margin-top: 2px; font-style: normal; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.ini-sem-jor-manana { color: #C05621; }
+.ini-sem-jor-tarde  { color: #1E40AF; }
+.ini-sem-jor-noche  { color: #5B21B6; }
+
+.ini-sem-col {
+    position: relative; border-left: 1px solid #EEF1F5;
+    background-image:
+        repeating-linear-gradient(to bottom, #E9EDF2 0 1px, transparent 1px 56px),
+        repeating-linear-gradient(to bottom, transparent 0 28px, #F5F7FA 28px 29px, transparent 29px 56px);
+}
+.ini-sem-col:last-child { border-right: 1px solid #EEF1F5; }
+.ini-sem-col.is-hoy { background-color: #FFFAF4; }
+.ini-sem-sep { position: absolute; left: 0; right: 0; border-top: 1px dashed #B8C2D0; }
+
+.ini-sem-ahora { position: absolute; left: 0; right: 0; z-index: 2; height: 2px; background: var(--orange); pointer-events: none; }
+.ini-sem-ahora[hidden] { display: none; }
+.ini-sem-ahora::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--orange); }
+
+/* Bloque de clase */
+.ini-sem-bloque {
+    position: absolute; z-index: 1;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 9px 11px; border-radius: 10px; overflow: hidden;
+    background: var(--hbg); border: 1px solid var(--hbd); color: var(--hink);
+    text-decoration: none;
+    transition: box-shadow 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+}
+.ini-sem-bloque.is-hoy { border-color: rgba(217,123,46,0.55); box-shadow: 0 0 0 3px rgba(217,123,46,0.12); }
+.ini-sem-bloque-hora {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    font-size: 0.7rem; font-weight: 800; color: var(--hc); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ini-sem-bloque-dur { padding: 1px 6px; border-radius: 999px; background: var(--white); font-size: 0.62rem; color: var(--hc); }
+.ini-sem-bloque-prog {
+    font-size: 0.86rem; font-weight: 800; line-height: 1.25;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.ini-sem-bloque-grupo { margin-top: auto; font-size: 0.72rem; font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ini-sem-bloque.is-corto { padding: 6px 10px; gap: 1px; }
+.ini-sem-bloque.is-corto .ini-sem-bloque-prog { -webkit-line-clamp: 1; font-size: 0.8rem; }
+.ini-sem-bloque.is-corto .ini-sem-bloque-grupo { display: none; }
+
+/* Lista por día (pantallas angostas): los mismos colores por escuela */
+.ini-sem-lista { display: none; flex-direction: column; gap: 16px; padding: 0 16px 18px; }
+.ini-sem-lista[hidden] { display: none; }
+.ini-dia-nombre {
+    display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+    font-family: "Archivo", system-ui; font-size: 0.78rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy-3);
+}
+.ini-dia-nombre span { font-family: "Public Sans", system-ui; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.ini-dia-nombre .ini-hoy-pill { font-family: "Archivo", system-ui; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--white); }
+.ini-dia.is-hoy .ini-dia-nombre { color: var(--orange-2); }
+.ini-dia-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ini-dia-clase {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+    background: var(--hbg); border: 1px solid var(--hbd); color: var(--hink); text-decoration: none;
+}
+.ini-dia-clase:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.ini-dia-hora {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 92px;
+    font-size: 0.76rem; font-weight: 800; color: var(--hc); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ini-dia-info { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ini-dia-info b { font-size: 0.85rem; font-weight: 800; line-height: 1.3; }
+.ini-dia-info small { font-size: 0.74rem; font-weight: 600; opacity: 0.85; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 1279px) {
+    /* Una sola columna, en orden de importancia */
+    .ini-cols { display: flex; flex-direction: column; align-items: stretch; }
+    .ini-col  { display: contents; }
+    .ini-hoy    { order: 1; }
+    .ini-pend   { order: 2; }
+    .ini-avance { order: 3; }
+}
+/* Tarjeta angosta: lista por día en vez de grilla */
+@container (max-width: 899px) {
+    .ini-sem { display: none; }
+    .ini-sem-lista { display: flex; }
+}
+@media (max-width: 640px) {
+    .ini-title { font-size: 1.5rem; }
+    .ini-card-head { padding: 16px 16px 12px; }
+    .ini-clases { padding: 0 16px 16px; }
+    .ini-clase { grid-template-columns: 74px minmax(0, 1fr); gap: 12px; }
+    .ini-clase .ini-btn { grid-column: 1 / -1; }
+    .ini-clase-ini { font-size: 1.12rem; }
+    .ini-proxima { margin: 0 16px 16px; }
+    .ini-pend-bloque { padding: 12px 16px 14px; }
+    .ini-avance-body { padding: 0 16px 16px; }
+    .ini-datos { grid-template-columns: 1fr; }
+    .ini-dato + .ini-dato { border-left: none; border-top: 1px solid var(--line); }
+    .ini-linea-ok { margin: 0 16px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ini-chip-curso::before { animation: none; }
+    .ini-pend-ir { transition: none; }
+    .ini-pend-item:hover .ini-pend-ir, .ini-pend-item:focus-visible .ini-pend-ir { transform: none; }
+}

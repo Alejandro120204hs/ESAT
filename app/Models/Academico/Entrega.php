@@ -12,10 +12,14 @@ class Entrega extends Model
         'actividad_id',
         'estudiante_id',
         'archivo_path',
+        'archivo_nombre',
+        'archivo_tamano',
         'contenido',
         'fecha_entrega',
         'calificacion',
         'comentario_docente',
+        'calificado_en',
+        'calificado_por',
     ];
 
     protected function casts(): array
@@ -23,6 +27,7 @@ class Entrega extends Model
         return [
             'fecha_entrega' => 'datetime',
             'calificacion' => 'decimal:2',
+            'calificado_en' => 'datetime',
         ];
     }
 

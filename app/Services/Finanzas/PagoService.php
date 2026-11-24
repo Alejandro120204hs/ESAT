@@ -9,6 +9,7 @@ use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\Finanzas\Recaudo;
 use App\Models\Institucional\Configuracion;
+use App\Models\Sistema\Auditoria;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -100,6 +101,57 @@ class PagoService
         $this->aplicarSaldoFavor($matricula->fresh());
 
         return max(0, $faltan);
+    }
+
+    /**
+     * Día en que vence la primera cuota de un plan: el 10 del mes en que empiezan las clases del grupo, o del mes
+     * siguiente si empiezan después del 10. Un plan elegido tarde también cuenta desde ahí (decidido con el usuario el
+     * 24-11-2026): paga lo mismo que sus compañeros y las cuotas que ya pasaron quedan vencidas.
+     */
+    public function primeraCuota(Curso $grupo): CarbonInterface
+    {
+        $d = $grupo->fecha_inicio->copy()->startOfMonth();
+        if ($grupo->fecha_inicio->day > Pago::DIA_VENCIMIENTO) {
+            $d->addMonthNoOverflow();
+        }
+
+        return $d->day(Pago::DIA_VENCIMIENTO);
+    }
+
+    /**
+     * Elige el plan de pago de la matrícula (una sola vez: no cambia después) y genera todas sus cuotas desde la primera
+     * del grupo (primeraCuota). Lo eligen el estudiante desde su panel o, si todavía no lo eligió, la secretaría desde
+     * Matrículas. Se vuelve a revisar con la matrícula bloqueada: otra persona pudo elegirlo al mismo tiempo (M13).
+     * Devuelve cuántas cuotas creó.
+     */
+    public function elegirPlan(Matricula $matricula, string $plan, bool $porLaSecretaria = false): int
+    {
+        if (! in_array($plan, ['mensual', 'periodo'], true)) {
+            throw ValidationException::withMessages(['plan' => 'Elige el plan mensual o por periodo.']);
+        }
+
+        return DB::transaction(function () use ($matricula, $plan, $porLaSecretaria) {
+            $m = Matricula::whereKey($matricula->id)->lockForUpdate()->firstOrFail();
+            if ($m->plan_pago) {
+                throw ValidationException::withMessages(['plan' => 'El plan de pago ya se eligió y no se puede cambiar.']);
+            }
+            if ($m->estado !== 'activo') {
+                throw ValidationException::withMessages(['plan' => 'Solo se elige el plan de una matrícula activa.']);
+            }
+            $grupo = $m->curso;
+            if (! $grupo) {
+                throw ValidationException::withMessages(['plan' => 'La matrícula no tiene grupo: no se pueden calcular las cuotas.']);
+            }
+
+            $m->update(['plan_pago' => $plan]);
+            $n = $this->generarCuotas($m->fresh(), $this->primeraCuota($grupo));
+            $m->loadMissing('programa');
+            $nombre = $plan === 'mensual' ? 'mensual' : ($m->programa->tipo_periodo === 'semestre' ? 'semestral' : 'trimestral');
+            Auditoria::registrar('editar', $m, ($porLaSecretaria ? 'Eligió por el estudiante el plan de pago ' : 'Eligió su plan de pago ')
+                .$nombre.': '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').' desde el '.$this->primeraCuota($grupo)->format('d/m/Y').'.', $m->sede_id);
+
+            return $n;
+        });
     }
 
     /**
@@ -508,8 +560,8 @@ class PagoService
     }
 
     /**
-     * Derecho de matrícula vencido sin pagar completo en una matrícula vigente: el estudiante no
-     * puede ingresar a la plataforma hasta pagarlo (antes de que empiecen sus clases sí puede).
+     * Derecho de matrícula vencido sin pagar completo en una matrícula vigente. Ya no bloquea el ingreso del
+     * estudiante (lo pidió el cliente, 24-11-2026): es una deuda más, y sin paz y salvo no se gradúa.
      */
     public function derechoVencido(User $estudiante): ?Pago
     {

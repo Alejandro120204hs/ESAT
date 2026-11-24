@@ -42,6 +42,13 @@ use App\Http\Controllers\Docente\Asistencia\AsistenciaController as DocenteAsist
 use App\Http\Controllers\Docente\Grupos\GrupoController as DocenteGrupoController;
 use App\Http\Controllers\Docente\Inicio\InicioController as DocenteInicioController;
 use App\Http\Controllers\Docente\Notas\NotaController as DocenteNotaController;
+use App\Http\Controllers\Docente\Aula\AulaController as DocenteAulaController;
+use App\Http\Controllers\Estudiante\Aula\AulaController as EstudianteAulaController;
+use App\Http\Controllers\Estudiante\Comunicados\ComunicadoController as EstudianteComunicadoController;
+use App\Http\Controllers\Estudiante\Foro\ForoController as EstudianteForoController;
+use App\Http\Controllers\Estudiante\Inicio\InicioController as EstudianteInicioController;
+use App\Http\Controllers\Estudiante\Pagos\PagoController as EstudiantePagoController;
+use App\Http\Controllers\Estudiante\Programa\ProgramaController as EstudianteProgramaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -134,6 +141,8 @@ Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo', 'transacc
     Route::patch('matriculas/{matricula}/grupo', [MatriculaController::class, 'cambiarGrupo'])->name('matriculas.grupo');
     Route::patch('matriculas/{matricula}/estado', [MatriculaController::class, 'cambiarEstado'])->name('matriculas.estado');
     Route::patch('matriculas/{matricula}/descuento', [MatriculaController::class, 'descuento'])->name('matriculas.descuento');
+    // El plan lo elige el estudiante desde su panel; si todavía no lo eligió, la secretaría (24-11-2026)
+    Route::patch('matriculas/{matricula}/plan', [MatriculaController::class, 'plan'])->name('matriculas.plan');
     Route::post('matriculas/{matricula}/pagos', [PagoController::class, 'store'])->name('matriculas.pagos.store');
     Route::patch('matriculas/{matricula}/recaudos/{recaudo}/anular', [PagoController::class, 'anular'])->name('matriculas.pagos.anular');
     Route::get('matriculas/recibos/{recaudo}', [PagoController::class, 'recibo'])->name('matriculas.recibo');
@@ -279,6 +288,44 @@ Route::middleware(['auth', 'role:docente', 'transaccion'])->prefix('docente')->n
     Route::post('asistencia/{curso}', [DocenteAsistenciaController::class, 'store'])->whereNumber('curso')->name('asistencia.guardar');
     Route::get('notas', [DocenteNotaController::class, 'index'])->name('notas');
     Route::post('notas/{curso}/{modulo}', [DocenteNotaController::class, 'store'])->whereNumber(['curso', 'modulo'])->name('notas.guardar');
+
+    // Aula virtual: evaluaciones y actividades de sus grupos (AulaService); los estudiantes responden y entregan desde su panel
+    Route::get('aula', [DocenteAulaController::class, 'index'])->name('aula');
+    Route::post('aula/{curso}/evaluaciones', [DocenteAulaController::class, 'crearEvaluacion'])->whereNumber('curso')->name('aula.evaluaciones.store');
+    Route::put('aula/evaluaciones/{evaluacion}', [DocenteAulaController::class, 'editarEvaluacion'])->whereNumber('evaluacion')->name('aula.evaluaciones.update');
+    Route::delete('aula/evaluaciones/{evaluacion}', [DocenteAulaController::class, 'eliminarEvaluacion'])->whereNumber('evaluacion')->name('aula.evaluaciones.destroy');
+    Route::post('aula/{curso}/actividades', [DocenteAulaController::class, 'crearActividad'])->whereNumber('curso')->name('aula.actividades.store');
+    Route::put('aula/actividades/{actividad}', [DocenteAulaController::class, 'editarActividad'])->whereNumber('actividad')->name('aula.actividades.update');
+    Route::delete('aula/actividades/{actividad}', [DocenteAulaController::class, 'eliminarActividad'])->whereNumber('actividad')->name('aula.actividades.destroy');
+    Route::patch('aula/entregas/{entrega}', [DocenteAulaController::class, 'calificar'])->whereNumber('entrega')->name('aula.calificar');
+    Route::get('aula/entregas/{entrega}/archivo', [DocenteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
+});
+
+// ============ PANEL ESTUDIANTE ============
+// Lo que ve el estudiante (PanelEstudianteService::datos) y lo poco que escribe: elegir su plan de pago (una vez),
+// responder evaluaciones y entregar actividades del Aula virtual (AulaService), marcar comunicados leídos y participar en
+// el foro de su sede (ForoService). Su perfil es ProfileController (estudiante/perfil).
+Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiante')->name('estudiante.')->group(function () {
+    Route::get('/', [EstudianteInicioController::class, 'index'])->name('dashboard');
+    Route::get('programa', [EstudianteProgramaController::class, 'index'])->name('programa');
+
+    Route::get('aula', [EstudianteAulaController::class, 'index'])->name('aula');
+    Route::post('aula/evaluaciones/{evaluacion}/respuestas', [EstudianteAulaController::class, 'responder'])->whereNumber('evaluacion')->name('aula.responder');
+    Route::post('aula/actividades/{actividad}/entrega', [EstudianteAulaController::class, 'entregar'])->whereNumber('actividad')->name('aula.entregar');
+    Route::get('aula/entregas/{entrega}/archivo', [EstudianteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
+
+    Route::get('pagos', [EstudiantePagoController::class, 'index'])->name('pagos');
+    Route::post('pagos/plan', [EstudiantePagoController::class, 'plan'])->name('pagos.plan');
+
+    Route::get('comunicados', [EstudianteComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados/{comunicado}/leido', [EstudianteComunicadoController::class, 'leido'])->whereNumber('comunicado')->name('comunicados.leido');
+    Route::get('comunicados/{comunicado}/adjunto', [EstudianteComunicadoController::class, 'adjunto'])->whereNumber('comunicado')->name('comunicados.adjunto');
+
+    Route::get('foro', [EstudianteForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [EstudianteForoController::class, 'tema'])->name('foro.tema');
+    Route::post('foro/temas/{tema}/mensajes', [EstudianteForoController::class, 'responder'])->whereNumber('tema')->name('foro.responder');
+    Route::post('foro/mensajes/{mensaje}/reportes', [EstudianteForoController::class, 'reportar'])->whereNumber('mensaje')->name('foro.reportar');
+    Route::get('foro/mensajes/{mensaje}/adjunto', [EstudianteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
 });
 
 Route::middleware('auth')->group(function () {

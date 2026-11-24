@@ -307,3 +307,6 @@ body.app-page {
     .app-user-info { display: none; }
     .app-content { padding: 20px; }
 }
+
+/* Texto solo para lectores de pantalla */
+.sr-solo { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

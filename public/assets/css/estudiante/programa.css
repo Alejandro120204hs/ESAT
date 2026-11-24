@@ -1,0 +1,215 @@
+/* =========================================================
+   ESAT — Panel Estudiante: Mi programa
+   Notas por módulo (la malla de Docente › Mis grupos) y asistencia (el calendario de Docente › Asistencia, con los
+   colores P/T/A/E de la planilla). Color con significado: verde = aprobado o presente, naranja = en curso,
+   rojo = perdido o ausente, ámbar = tarde, azul = excusa, gris = neutro.
+   ========================================================= */
+
+.mpr-wrap { display: flex; flex-direction: column; gap: 22px; }
+
+/* ── Encabezado ─────────────────────────────────── */
+.mpr-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.mpr-header-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 360px; }
+.mpr-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); line-height: 1.15; }
+.mpr-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; line-height: 1.5; max-width: 72ch; }
+
+/* ── Botones ────────────────────────────────────── */
+.mpr-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 16px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; white-space: nowrap; text-decoration: none;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.mpr-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.mpr-btn:active { transform: scale(0.97); }
+.mpr-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.mpr-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.mpr-btn-ghost:hover { border-color: var(--orange); color: var(--orange-2); }
+
+.mpr-icon-btn {
+    width: 34px; height: 34px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--line); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--navy-3); flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+}
+.mpr-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mpr-icon-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+.mpr-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.mpr-icon-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* ── Pestañas + resumen en una línea ────────────── */
+.mpr-toolbar { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; }
+.mpr-vistas { display: inline-flex; background: #E3E9F1; border-radius: 10px; padding: 3px; gap: 2px; flex-shrink: 0; }
+.mpr-vista-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border: none; border-radius: 8px; background: none;
+    font-family: "Archivo", system-ui, sans-serif; font-size: 0.84rem; font-weight: 700; color: var(--muted); cursor: pointer; white-space: nowrap;
+    transition: color 0.15s;
+}
+.mpr-vista-btn:hover { color: var(--navy-3); }
+.mpr-vista-btn.is-active { background: var(--white); color: var(--navy-3); box-shadow: 0 1px 3px rgba(10,27,51,.14); }
+.mpr-vista-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.mpr-resumen { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+.mpr-resumen b { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.mpr-resumen .mpr-tono-ok { color: #2D7A3A; }
+.mpr-resumen .mpr-tono-warn { color: #92400E; }   /* sobre el fondo gris, el ámbar más oscuro (4,5:1) */
+.mpr-resumen .mpr-tono-bad { color: var(--red); }
+.mpr-resumen i { font-style: normal; color: #B8C3D2; margin: 0 8px; }
+
+.mpr-vacio { padding: 40px 20px; text-align: center; background: var(--white); border: 1.5px dashed #CBD5E1; border-radius: var(--radius-lg); }
+.mpr-vacio[hidden], .mpr-toolbar[hidden], .mpr-header .mpr-btn[hidden] { display: none; }
+.mpr-vacio-ttl { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; color: var(--navy-3); }
+.mpr-vacio-sub { font-size: 0.88rem; color: var(--muted); margin-top: 4px; max-width: 56ch; margin-left: auto; margin-right: auto; line-height: 1.5; }
+.mpr-panel { display: flex; flex-direction: column; gap: 16px; }
+.mpr-panel[hidden] { display: none; }
+
+/* ── Malla con notas ────────────────────────────── */
+.mpr-malla { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.mpr-mod {
+    display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; gap: 14px;
+    padding: 14px 16px; border: 1.5px solid var(--line); border-radius: var(--radius-lg); background: var(--white);
+}
+.mpr-mod-num {
+    width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: #F1F5F9; color: var(--navy-3); font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.88rem;
+}
+.mpr-mod.is-bien .mpr-mod-num { background: #E6F4E4; color: #2D6A27; }
+.mpr-mod.is-mal .mpr-mod-num { background: #FEE2E2; color: #991B1B; }
+.mpr-mod.is-actual { border-color: rgba(217,123,46,0.55); background: #FFF8F1; box-shadow: 0 0 0 3px rgba(217,123,46,0.1); }
+.mpr-mod.is-actual .mpr-mod-num { background: var(--orange); color: var(--white); }
+.mpr-mod.is-futuro { background: #FBFCFD; }
+.mpr-mod-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mpr-mod-nombre { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.98rem; color: var(--navy-3); line-height: 1.3; }
+.mpr-mod.is-futuro .mpr-mod-nombre { color: #3B4A5E; }
+.mpr-mod-sub { font-size: 0.8rem; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.mpr-mod-txt { font-size: 0.84rem; color: var(--text); line-height: 1.5; }
+.mpr-mod-txt b { color: var(--navy-3); }
+.mpr-mod-av { display: flex; align-items: center; gap: 10px; margin-top: 2px; font-size: 0.78rem; color: #9A4A12; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mpr-barra { flex: 1; max-width: 220px; height: 6px; border-radius: 999px; background: #E6EBF2; overflow: hidden; }
+.mpr-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--orange); }
+.mpr-mod-aula { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; margin-top: 2px; font-size: 0.8rem; font-weight: 700; color: var(--navy-2); text-decoration: none; }
+.mpr-mod-aula svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mpr-mod-aula:hover { color: var(--orange-2); text-decoration: underline; text-underline-offset: 3px; }
+.mpr-mod-aula:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+
+.mpr-mod-der { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+.mpr-nota { font-family: "Archivo", system-ui, sans-serif; font-size: 1.5rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; color: var(--navy-3); }
+.mpr-nota.mpr-tono-ok { color: #2D7A3A; }
+.mpr-nota.mpr-tono-warn { color: #B45309; }
+.mpr-nota.mpr-tono-bad { color: var(--red); }
+.mpr-chip-curso { background: #FDEBDB; color: #9A4A12; }
+
+.mpr-pie { font-size: 0.8rem; color: var(--muted); line-height: 1.5; max-width: 80ch; }
+
+/* ── Asistencia ─────────────────────────────────── */
+.mpr-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 18px 20px; min-width: 0; }
+.mpr-card-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); }
+.mpr-card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+
+.mpr-asis-top { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.mpr-asis-pct { font-family: "Archivo", system-ui, sans-serif; font-size: 2.4rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.mpr-asis-pct.mpr-tono-ok { color: #2D7A3A; }
+.mpr-asis-pct.mpr-tono-warn { color: #B45309; }
+.mpr-asis-pct.mpr-tono-bad { color: var(--red); }
+.mpr-asis-medio { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.mpr-meter { position: relative; height: 8px; border-radius: 999px; background: #E6EBF2; overflow: hidden; max-width: 420px; }
+.mpr-meter > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: currentColor; }
+.mpr-meter::after { content: ""; position: absolute; top: 0; bottom: 0; left: 80%; width: 2px; background: var(--white); }
+.mpr-asis-txt { font-size: 0.88rem; color: var(--text); line-height: 1.5; }
+.mpr-asis-txt b { color: var(--navy-3); }
+.mpr-asis-nota { font-size: 0.8rem; color: var(--muted); }
+
+.mpr-asis-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+
+/* Calendario del mes (el de Docente › Asistencia) */
+.mpr-cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.mpr-cal-mes { text-align: center; min-width: 0; }
+.mpr-cal-mes b { display: block; font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.98rem; color: var(--navy-3); }
+.mpr-cal-mes small { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 1px; }
+.mpr-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.mpr-cal-dow { font-size: 0.66rem; font-weight: 700; color: var(--muted); text-transform: uppercase; padding-bottom: 3px; }
+.mpr-dia {
+    height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+    font-family: inherit; font-size: 0.84rem; font-weight: 600; color: #A3ACB9; font-variant-numeric: tabular-nums;
+    border: 1.5px solid transparent; background: none; padding: 0; min-width: 0;
+}
+button.mpr-dia { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+button.mpr-dia:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.mpr-dia.is-P { background: #E3F2E1; color: #2D6A27; font-weight: 800; }
+.mpr-dia.is-T { background: #FEF3C7; color: #92400E; font-weight: 800; }
+.mpr-dia.is-A { background: #FEE2E2; color: #991B1B; font-weight: 800; }
+.mpr-dia.is-E { background: #DCE7FB; color: #1E3A8A; font-weight: 800; }
+.mpr-dia.is-sin_registrar { color: #475569; font-weight: 800; background: repeating-linear-gradient(135deg, #E2E8F0 0 2px, #F8FAFC 2px 5px); }
+.mpr-dia.is-futura, .mpr-dia.is-hoy-clase { border: 1.5px dashed #C2CAD6; color: #6B7686; }
+.mpr-dia.is-hoy { box-shadow: inset 0 0 0 2px var(--navy-3); color: var(--navy-3); font-weight: 800; }
+.mpr-dia.is-sel { box-shadow: 0 0 0 2px var(--orange); transform: scale(1.05); }
+.mpr-dia.is-sel.is-hoy { box-shadow: inset 0 0 0 2px var(--navy-3), 0 0 0 2px var(--orange); }
+button.mpr-dia:hover:not(.is-sel) { box-shadow: inset 0 0 0 1.5px #94A3B8; }
+
+.mpr-leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.mpr-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.mpr-ley { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
+.mpr-ley-P { background: #E3F2E1; box-shadow: inset 0 0 0 1px #A9D3A3; }
+.mpr-ley-T { background: #FEF3C7; box-shadow: inset 0 0 0 1px #F3C24B; }
+.mpr-ley-A { background: #FEE2E2; box-shadow: inset 0 0 0 1px #F2A3A3; }
+.mpr-ley-E { background: #DCE7FB; box-shadow: inset 0 0 0 1px #9DB6EA; }
+.mpr-ley-sin { background: repeating-linear-gradient(135deg, #CBD5E1 0 2px, #F8FAFC 2px 4px); }
+.mpr-ley-fut { border: 1.5px dashed #C2CAD6; }
+
+.mpr-detalle { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--bg); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mpr-detalle:empty { display: none; }
+.mpr-detalle-fecha { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.92rem; color: var(--navy-3); }
+.mpr-detalle-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.mpr-detalle-motivo { margin-top: 6px; font-size: 0.82rem; color: #1E3A8A; }
+
+/* Estados de una clase (etiquetas con los colores de la planilla) */
+.mpr-st-P { background: #E6F4E4; color: #2D6A27; }
+.mpr-st-T { background: #FEF3C7; color: #92400E; }
+.mpr-st-A { background: #FEE2E2; color: #991B1B; }
+.mpr-st-E { background: #DCE7FB; color: #1E3A8A; }
+
+/* Faltas, tardes y excusas */
+.mpr-nov-lista { list-style: none; margin-top: 12px; display: flex; flex-direction: column; }
+.mpr-nov { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+.mpr-nov + .mpr-nov { border-top: 1px solid var(--line); }
+.mpr-nov-fecha {
+    width: 46px; height: 46px; border-radius: 10px; flex-shrink: 0; background: #F1F5F9; color: var(--navy-3);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-variant-numeric: tabular-nums;
+}
+.mpr-nov-fecha small { font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.mpr-nov-fecha b { font-family: "Archivo", system-ui, sans-serif; font-size: 1.02rem; font-weight: 900; line-height: 1; }
+.mpr-nov-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mpr-nov-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mpr-nov-dia { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); }
+.mpr-nov-sub { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.mpr-nov[hidden] { display: none; }
+.mpr-mas {
+    margin-top: 6px; padding: 6px 0; border: none; background: none; cursor: pointer;
+    font-family: "Archivo", system-ui, sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--orange-2);
+}
+.mpr-mas[hidden] { display: none; }
+.mpr-mas:hover { text-decoration: underline; text-underline-offset: 3px; }
+.mpr-mas:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+.mpr-nov-vacia { font-size: 0.86rem; color: #2D6A27; font-weight: 600; padding: 10px 0; }
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 1100px) {
+    .mpr-asis-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .mpr-title { font-size: 1.5rem; }
+    .mpr-header .mpr-btn { width: 100%; }
+    .mpr-vistas { display: flex; width: 100%; }
+    .mpr-vista-btn { flex: 1 1 0; justify-content: center; }
+    .mpr-mod { grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding: 14px; }
+    .mpr-mod-num { width: 30px; height: 30px; }
+    .mpr-mod-der { grid-column: 2; flex-direction: row; align-items: center; flex-wrap: wrap; text-align: left; gap: 10px; }
+    .mpr-card { padding: 16px; }
+    .mpr-dia { height: 38px; }
+    .mpr-asis-pct { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mpr-btn, button.mpr-dia { transition: none; }
+    .mpr-btn:active, .mpr-dia.is-sel { transform: none; }
+}

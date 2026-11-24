@@ -143,6 +143,7 @@ class User extends Authenticatable
             RolUsuario::Admin      => route('admin.dashboard'),
             RolUsuario::AdminGeneral => route('general.dashboard'),
             RolUsuario::Docente    => route('docente.dashboard'),
+            RolUsuario::Estudiante => route('estudiante.dashboard'),
             default => route('dashboard'),
         };
     }

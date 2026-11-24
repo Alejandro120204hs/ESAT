@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Matriculas\CambioGrupoRequest;
 use App\Http\Requests\Admin\Matriculas\CambioProgramaRequest;
 use App\Http\Requests\Admin\Matriculas\DescuentoRequest;
+use App\Http\Requests\Admin\Matriculas\PlanRequest;
 use App\Http\Requests\Admin\Matriculas\EstadoRequest;
 use App\Http\Requests\Admin\Matriculas\MatriculaRequest;
 use App\Models\Academico\Curso;
@@ -176,6 +177,19 @@ class MatriculaController extends Controller
     }
 
     /** Beca o convenio: porcentaje sobre el valor del programa (0 lo quita). */
+    /**
+     * Elige el plan de pago por el estudiante que todavía no lo eligió desde su panel (una sola vez; las cuotas cuentan
+     * desde el inicio de clases del grupo). PagoService::elegirPlan lo revisa con la matrícula bloqueada y deja la
+     * auditoría.
+     */
+    public function plan(PlanRequest $request, Matricula $matricula): JsonResponse
+    {
+        $n = $this->pagos->elegirPlan($matricula, $request->input('plan'), true);
+        $nombre = $request->input('plan') === 'mensual' ? 'mensual' : ($matricula->programa->tipo_periodo === 'semestre' ? 'semestral' : 'trimestral');
+
+        return response()->json(['ok' => true, 'mensaje' => 'Elegiste el plan '.$nombre.' de '.$matricula->estudiante->name.': se generaron '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').'.']);
+    }
+
     public function descuento(DescuentoRequest $request, Matricula $matricula): JsonResponse
     {
         $pct    = round((float) $request->input('porcentaje'), 2);

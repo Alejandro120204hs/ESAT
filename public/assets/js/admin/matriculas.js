@@ -694,7 +694,9 @@
         if (tab === 'pagos') {
             if (!m.plan_pago) {
                 html += '<div class="mat-callout mat-callout-aviso"><strong>' + esc(primerNombre(m)) + ' todavía no elige su plan de pago</strong>' +
-                    '<p>Lo elige desde su panel: mensual o ' + planNombre('periodo', m.tipo_periodo).toLowerCase() + '. Mientras tanto solo tiene el derecho de matrícula (pago único); cuando elija, aquí aparecerán sus cuotas con su fecha de vencimiento.</p></div>';
+                    '<p>Lo elige desde su panel: mensual o ' + planNombre('periodo', m.tipo_periodo).toLowerCase() + '. Mientras tanto solo tiene el derecho de matrícula (pago único); cuando elija, aquí aparecerán sus cuotas con su fecha de vencimiento.</p>' +
+                    (m.estado === 'activo' && m.grupo_id ? '<button type="button" class="mat-link-btn mat-link-neutro" data-elegir-plan>Elegir el plan por ' + esc(primerNombre(m)) + '</button>' : '') +
+                    '</div>';
             }
             html += '<div class="mat-finanzas">' +
                 '<div class="mat-fin is-ok"><span>Pagado</span><strong>' + fmtPesos(m.pagado) + '</strong></div>' +
@@ -920,6 +922,22 @@
             btnConfirmar.textContent = ad.resto > 0 ? 'Registrar devolución' : 'Aplicar a lo que debe';
         }
 
+        if (tipo === 'plan') {
+            var progP = programaDe(m.programa_id) || {};
+            var opcPlan = [
+                ['mensual', 'Mensual', progP.meses + ' cuotas, una cada mes, de ' + fmtPesos(progP.cuota_mensual)],
+                ['periodo', planNombre('periodo', m.tipo_periodo), progP.periodos + ' cuotas, una al empezar cada ' + (m.tipo_periodo === 'semestre' ? 'semestre' : 'trimestre') + ', de ' + fmtPesos(progP.cuota_periodo) +
+                    (progP.meses_ultimo && progP.meses_ultimo !== progP.meses_periodo ? ' (la última cubre ' + progP.meses_ultimo + (progP.meses_ultimo === 1 ? ' mes)' : ' meses)') : '')]
+            ];
+            accionTtl.textContent = 'Elegir el plan de pago';
+            accionSub.textContent = 'Lo normal es que ' + primerNombre(m) + ' lo elija desde su panel. Elígelo aquí solo si ya lo acordaron: después no se puede cambiar. Las cuotas cuentan desde el inicio de clases del grupo, así que las que ya pasaron quedan vencidas.';
+            accionCuerpo.innerHTML = '<div class="mat-opciones" role="radiogroup" aria-label="Plan de pago">' + opcPlan.map(function (o) {
+                return '<label class="mat-opc"><input type="radio" name="acc-plan" value="' + o[0] + '"><span class="mat-opc-main">' +
+                    '<span class="mat-opc-top"><strong>' + esc(o[1]) + '</strong></span><span class="mat-opc-desc">' + esc(o[2]) + '. Antes de descuentos y con la cuota del sistema.</span></span></label>';
+            }).join('') + '</div>';
+            btnConfirmar.textContent = 'Elegir el plan';
+        }
+
         if (tipo === 'descuento') {
             var muestra = m.cobros.find(function (x) { return x.tipo !== 'matricula' && porPagar(x) && !x.abonado; });
             accionTtl.textContent = m.descuento_pct > 0 ? 'Cambiar descuento' : 'Aplicar descuento';
@@ -1074,6 +1092,7 @@
         var b = e.target.closest('[data-anular]');
         if (b) mostrarAccion('anular', parseInt(b.dataset.anular));
         if (e.target.closest('[data-descuento]')) mostrarAccion('descuento');
+        if (e.target.closest('[data-elegir-plan]')) mostrarAccion('plan');
         if (e.target.closest('[data-devolver]')) mostrarAccion('devolucion');
         var r = e.target.closest('[data-rematricular]');
         if (r) { cerrarFicha(); abrirModal(parseInt(r.dataset.rematricular)); }
@@ -1133,6 +1152,12 @@
             var motivo = document.getElementById('acc-motivo').value.trim();
             if (motivo.length < 5) return errorAccion('Escribe por qué se anula el pago.', 'acc-motivo');
             peticion = enviar('PATCH', '/admin/matriculas/' + m.id + '/recaudos/' + accionPago + '/anular', { motivo: motivo });
+            tab = 'pagos';
+        }
+        if (accionActual === 'plan') {
+            var planElegido = (accionCuerpo.querySelector('input[name="acc-plan"]:checked') || {}).value;
+            if (!planElegido) return errorAccion('Selecciona el plan de pago.');
+            peticion = enviar('PATCH', '/admin/matriculas/' + m.id + '/plan', { plan: planElegido });
             tab = 'pagos';
         }
         if (accionActual === 'descuento') {

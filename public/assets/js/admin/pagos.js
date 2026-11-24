@@ -647,7 +647,7 @@
         var btnWa = wa ? '<a class="pag-btn pag-btn-wa pag-btn-sm" href="' + wa.url + '" target="_blank" rel="noopener">' + ICON.wa + (wa.a ? 'Escribirle al acudiente' : 'Recordarle') + '</a>' : '';
         if (r.vencido > 0) {
             html += aviso('is-rojo', ICON.alerta, 'Tiene <strong>' + pesos(r.vencido) + ' vencidos</strong> desde hace ' + r.dias_mora + ' días.' +
-                (r.derecho_vencido ? ' No ha pagado el derecho de matrícula y ya empezaron sus clases: <strong>no puede ingresar a la plataforma</strong> hasta pagarlo.' : '') +
+                (r.derecho_vencido ? ' No ha pagado el derecho de matrícula y ya empezaron sus clases.' : '') +
                 (wa && wa.a ? ' Es menor de edad: el recordatorio le llega a ' + esc(wa.a.nombre) + ' (' + esc(wa.a.parentesco.toLowerCase()) + ').' : ''), btnWa);
         } else if (r.mes > 0) {
             html += aviso('', ICON.info, 'Este mes debe pagar <strong>' + pesos(r.mes) + '</strong> (vence el 10).', btnWa);
