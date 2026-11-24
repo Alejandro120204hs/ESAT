@@ -81,23 +81,22 @@ class PaginasTest extends TestCase
         $this->get(route('home'))->assertSee('Tu formación técnica empieza con');
     }
 
-    public function test_el_inicio_y_el_footer_nombran_las_sedes_de_franquicia(): void
+    public function test_el_inicio_y_el_footer_nombran_las_sedes_del_afiche(): void
     {
-        $franquicias = config('sitio.franquicias');
-        $this->assertCount(9, $franquicias);
+        $sedes = config('sitio.sedes');
+        $this->assertSame(['Sasaima', 'Guaduas', 'La Dorada', 'Marquetalia'], array_column($sedes, 'nombre'));
 
-        $inicio = $this->get(route('home'))->assertOk()->assertSee('Sedes de franquicia')
-            ->assertSee('Ocho escuelas, cuatro sedes propias y nueve de franquicia')
-            ->assertSee('Cuatro sedes propias y nueve de franquicia en Cundinamarca y Caldas')
-            ->assertDontSee('Cuatro sedes, una misma formación');
-        foreach ($franquicias as $municipio) {
-            $inicio->assertSee($municipio)
-                ->assertSee(rawurlencode('Hola ESAT, quiero información sobre: la sede de franquicia de ' . $municipio), false);
+        $inicio = $this->get(route('home'))->assertOk()
+            ->assertSee('Ocho escuelas, cuatro sedes, un mismo propósito')
+            ->assertSee('Cuatro sedes en Cundinamarca y Caldas')
+            ->assertDontSee('franquicia');
+        // Cada sede con su teléfono, y "Escribir" va a su propio WhatsApp
+        foreach ($sedes as $sede) {
+            $inicio->assertSee($sede['nombre'])->assertSee($sede['telefono'][1])
+                ->assertSee('https://wa.me/' . $sede['telefono'][0], false);
         }
-        // En las demás páginas, la línea del footer
         $this->get(route('escuelas.' . config('sitio.escuelas.0.slug')))
-            ->assertSee('Sedes de franquicia')
-            ->assertSee("San\u{00A0}Francisco · El\u{00A0}Rosal");
+            ->assertSee('Marquetalia')->assertDontSee('Bogotá')->assertDontSee('franquicia');
     }
 
     public function test_las_direcciones_de_antes_del_catalogo_nuevo_llevan_a_su_pagina_de_ahora(): void

@@ -13,9 +13,9 @@ dos partes:
 ## Sitio público
 
 - **Datos, no vistas sueltas.** `config/sitio.php`: escuelas (con su foto y sus programas
-  `[nombre, slug]`), sedes (dirección y coordenadas reales), sedes de franquicia
-  (`franquicias`: solo el municipio, la lista que envió ESAT el 10-11-2026; van en una franja bajo las sedes del inicio
-  —cada chip pregunta por WhatsApp— y en una línea del footer, sin mapa hasta tener su dirección), WhatsApp y
+  `[nombre, slug]`), sedes (las 4 del afiche del 19-11-2026: Sasaima, Guaduas, La Dorada y Marquetalia, con dirección, coordenadas y
+  teléfono de WhatsApp de cada una; también forman la cinta de Convenios; **sin sedes de franquicia**: se quitaron
+  porque el afiche no las tiene), WhatsApp y
   redes (vacías hasta tener las URL reales). `config/contenido.php`: el texto de cada programa
   (`programas.{slug}`). Header,
   footer, inicio y subpáginas leen de ahí: un programa o una sede se agrega en esos archivos,
@@ -45,7 +45,7 @@ dos partes:
   cambia con `@section('cierre_titulo' | 'cierre_texto' | 'cierre_tema' | 'cierre_boton')`.
 - **Diseño**: el sistema visual está en `DESIGN.md`; el contrato de dirección, como comentario al
   inicio del `<body>` en `layouts/app.blade.php`.
-- **Pendiente de ESAT**: cifras de estudiantes y egresados, foto y WhatsApp de cada sede, URL de
+- **Pendiente de ESAT**: cifras de estudiantes y egresados, foto de cada sede y la dirección de Marquetalia (las 4 sedes y sus teléfonos salen del afiche del 19-11-2026; Bogotá ya no está), URL de
   redes, fotos de 12 programas (los que salen solo con el ícono de su escuela) y decidir el formulario de Novedades (hoy solo muestra
   la confirmación, no guarda el correo). Las fotos reales que envió ESAT el 18-11-2026 (WhatsApp) y cuáles se usaron, con
   sus recortes y por qué no las otras, están en `.impeccable/procedencia-imagenes.md`. Antes de publicar una foto con niños
