@@ -23,7 +23,8 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        // Un docente sí cambia su nombre; el estudiante no (PanelEstudianteTest)
+        $user = User::factory()->create(['role' => 'docente']);
 
         $response = $this
             ->actingAs($user)

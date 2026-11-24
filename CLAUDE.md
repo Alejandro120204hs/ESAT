@@ -79,10 +79,10 @@ Superadmin pasa al Admin** (sedes, secretarías, inicio, estudiantes, auditoría
 queda crear la cuenta del Admin y lo técnico. Panel en construcción (ver "Panel Admin general").
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
-Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin y docente
-tienen panel (ver "Panel Docente"); estudiante y acudiente
-caen por ahora en el `/dashboard` de Breeze ("You're logged in!"). Docente, estudiante y
-acudiente usan el `/profile` de Breeze. **Nadie elimina su propia
+Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin, docente y estudiante
+tienen panel (ver "Panel Docente" y "Panel Estudiante"); el acudiente
+cae por ahora en el `/dashboard` de Breeze ("You're logged in!"). Docente y acudiente usan el `/profile` de Breeze;
+el estudiante, el suyo (`estudiante/perfil`, desde `ProfileController@edit`). **Nadie elimina su propia
 cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
 El teléfono, también el de `/profile`, se guarda solo con dígitos y debe ser un celular
 (`^3\d{9}$`).
@@ -166,8 +166,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
 - **Modelos por dominio** (no por rol, porque varios roles comparten las
   mismas tablas): `app/Models/Academico/` (Escuela, Programa,
   ProgramaModulo, Curso, CursoSesion, DocentePerfil, EstudianteDocumento,
-  Asistencia, Calificacion, PeriodoAcademico y actividades/evaluaciones —estos dos
-  últimos sin uso todavía—), `Finanzas/` (Matricula, Pago, Recaudo, Devolucion),
+  Asistencia, Calificacion, PeriodoAcademico —sin uso todavía— y el Aula virtual: Evaluacion, Pregunta, Opcion,
+  RespuestaEstudiante, Actividad, Entrega), `Finanzas/` (Matricula, Pago, Recaudo, Devolucion),
   `Institucional/` (Sede, Configuracion), `Sistema/` (Auditoria). `User` se queda
   en `app/Models/`.
 - Catálogo **global** de escuelas y programas; la oferta de cada sede va en
@@ -203,8 +203,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores), Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio)
-  y Docente (Inicio, Mis grupos, Asistencia, Notas).
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio),
+  Docente (Inicio, Mis grupos, Asistencia, Notas, Aula virtual) y Estudiante (todas sus pantallas).
   Del panel Admin solo siguen siendo maqueta las pestañas Documentos de Programas y Docentes.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
@@ -215,9 +215,12 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
   motivo) y pagos. **Sin todos los documentos requeridos entregados no se matricula**
   (`EstudianteDocumento::pendientesDe`, en frontend y en `MatriculaRequest`). En la ficha del estudiante la matrícula es solo consulta.
-  `matriculas.plan_pago` queda null: lo **elige el estudiante desde su panel**. Mientras ese panel no
-  exista, nada en la app elige el plan ni genera las primeras cuotas (`generarCuotas` solo se llama al
-  reintegrar), así que una matrícula nueva no puede graduarse; los datos con plan se insertaron en la BD.
+  `matriculas.plan_pago` queda null al matricular: lo **elige el estudiante desde su panel** (Mis pagos, una sola vez) o,
+  si todavía no lo eligió, **la Secretaría desde Matrículas** ("Elegir el plan por X" en la ficha,
+  `PATCH admin/matriculas/{matricula}/plan`, `Admin/Matriculas/PlanRequest`; decidido con el usuario el 24-11-2026). Los
+  dos usan `PagoService::elegirPlan` (matrícula bloqueada; solo activa, con grupo y sin plan; elegido, no cambia), que
+  genera las cuotas **desde el inicio de clases** (`primeraCuota`: el día 10 del mes en que empieza el grupo, o del
+  siguiente si empieza después del 10; las que ya pasaron quedan vencidas) y lo registra en la auditoría de la matrícula.
 - **Acudientes** (`Admin/Acudientes/AcudienteController` + `AcudienteService`): cuenta rol
   acudiente (**correo obligatorio** = usuario, clave = documento, ocupación en `users.profesion`),
   residencia con el combobox de Colombia, estudiantes a cargo en `acudiente_estudiante`.
@@ -258,15 +261,15 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     vigentes ni dinero (`PagoService::dineroEn`: tampoco saldo trasladado de otra matrícula, A6); anula sus cobros, sale de la lista del grupo, no cuenta en trayectoria ni en la
     matrícula que muestran Estudiantes/Acudientes; queda en Finalizadas. El estudiante vuelve a
     "Por matricular".
-  - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). Desde ese día,
-    si no está pagado, **el estudiante no puede ingresar** (`LoginRequest` + `derechoVencido`); sin
-    matrícula o antes de vencer sí entra. Al **aplazar** sin haberlo pagado queda **en espera**
+  - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). **No bloquea el ingreso**
+    (decidido el 24-11-2026, lo pidió el cliente; antes no lo dejaba entrar): sin pagarlo entra igual, la deuda se
+    acumula como cualquier cobro vencido y no se gradúa sin paz y salvo (`derechoVencido` ya no se usa para el acceso).
+    Al **aplazar** sin haberlo pagado queda **en espera**
     (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
     guarda. Al **retirarse** antes de que venza, se anula (con abono parcial o pagado completo, A9): de lo
     pagado se devuelve el % de Admin › Configuración (`devolucion_derecho_pct`, 50 % por defecto; aplica a los retiros desde
     que se cambia) y el resto queda en `pagos.retenido` (ESAT se lo queda: no se devuelve ni se traslada). El cambio de
-    programa no retiene nada. La misma regla corta también la
-    sesión ya abierta (`EnsureAccountIsEnabled`, ver Login).
+    programa no retiene nada.
   - **Graduar** exige grupo terminado, todos los módulos aprobados, plan elegido con todas sus cuotas pagadas y paz y salvo.
     Un programa **sin malla** no gradúa a nadie (`EstadoRequest`; Matrículas lo avisa con `sin_malla`).
     Los pagos de una matrícula graduada no se anulan.
@@ -342,8 +345,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   destinatarios ni vuelve a borrador; los de docentes y los archivados no se editan. Adjunto PDF/JPG/PNG ≤ 5 MB en el disco
   privado (`storage/app/private/comunicados/{sede}`), se descarga por `admin.comunicados.adjunto` solo desde la misma sede;
   se borra al quitarlo o al eliminar el borrador. El PUT llega como POST con `_method` (FormData). Solo se eliminan
-  borradores. Lectura: `comunicado_lecturas.leido_en` (falta la ruta para marcarlo, cuando existan los paneles de
-  Estudiante/Acudiente/Docente) y WhatsApp a quien no lo ha leído (al acudiente si es menor). En la BD (sede 7): 18
+  borradores. Lectura: `comunicado_lecturas.leido_en` (el panel Estudiante lo marca al abrir; faltan los paneles de
+  Acudiente y Docente) y WhatsApp a quien no lo ha leído (al acudiente si es menor). En la BD (sede 7): 18
   comunicados y 240 lecturas simuladas (el usuario lo eligió); quien leyó tiene `ultimo_acceso` posterior y los estudiantes
   con derecho vencido no leen. Pruebas en `tests/Feature/Admin/ComunicadosTest.php`.
 - **Foro (Comunicación)** (`Admin/Foro/ForoController`, `Comunicacion/ForoService`, modelos `Comunicacion/{ForoTema,
@@ -357,7 +360,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   motivo (`OcultarMensajeRequest`), restaura y descarta reportes; todo en la auditoría. En `foro.js` cada persona va con una
   clave `e|d|a|x` + id (`ForoService::personas`). En la BD (sede 7): 16 temas, 43 mensajes, 6 reportes y 4 adjuntos reales;
   cada persona es de la sede, activa, el estudiante con matrícula vigente y sin derecho vencido, y su `ultimo_acceso` es
-  posterior a lo que escribió. Falta: que los paneles de Estudiante/Docente/Acudiente lean, publiquen y reporten. Pruebas en
+  posterior a lo que escribió. El panel Estudiante ya lee, publica y reporta; faltan Docente y Acudiente. Pruebas en
   `tests/Feature/Admin/ForoTest.php`.
 - **Reportes** (`Admin/Reportes/ReporteController` + `Reportes/ReporteService`, vista `admin/reportes/index.blade.php` +
   `reportes.css/js`; solo consulta, sin tablas propias). Son los **documentos formales que la sede entrega** y no repiten
@@ -399,8 +402,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (graduadas/retiradas, solo consulta).
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
   guarda `users.ultimo_acceso` (también el de la cookie "Recordarme": listener de `Login` en `AppServiceProvider`, B22). El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
-  `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o al estudiante
-  se le vence el derecho, cierra la sesión abierta (y con ella la cookie "Recordarme") y vuelve al login
+  `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o se bloquea,
+  cierra la sesión abierta (y con ella la cookie "Recordarme") y vuelve al login
   con el motivo; a un `fetch` le responde 401. La regla vive en un solo lugar,
   `EnsureAccountIsEnabled::motivo()`, y `LoginRequest` usa la misma: si se agrega otra razón para
   bloquear el acceso, va ahí. `User::$attributes` pone `activo = true` también en memoria; en
@@ -448,11 +451,14 @@ Historial de horarios, fecha de inicio y finalizar a tiempo (A7, A8): `tests/Fea
 Instalación nueva y protección de migraciones (A11, A12): `tests/Feature/InstalacionTest.php`.
 Panel Admin general: `tests/Feature/AdminGeneral/`. Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
 guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
+Panel Estudiante: acceso por rol, redirección y su perfil en `tests/Feature/Estudiante/PanelEstudianteTest.php`; lo
+que ve y lo que guarda (plan de pago —también el que elige la Secretaría—, comunicados leídos, foro, evaluaciones,
+entregas y lo que crea y califica el docente en su Aula virtual) en `tests/Feature/Estudiante/BackendEstudianteTest.php`.
 Sitio público (una página por programa y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (casi todas las 307 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 343 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Bug recurrente a tener en cuenta
@@ -655,7 +661,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 
 ## Panel Docente (datos reales)
 
-- Rutas `/docente` (`role:docente`) a un controlador por pantalla en `Docente/{Inicio,Grupos,Asistencia,Notas}/`, y
+- Rutas `/docente` (`role:docente`) a un controlador por pantalla en `Docente/{Inicio,Grupos,Asistencia,Notas,Aula}/`, y
   `User::panelUrl()` → `docente.dashboard`. Layout propio: `docente/layout.blade.php` +
   `partials/{sidebar,topbar}`, `docente/layout.css` (el del Admin sin los menús flotantes;
   la animación de entrada se llama `.app-anim`) y `layout.js`.
@@ -669,6 +675,13 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - **Notas** (`notas/index`, `not-`): por módulo, de 1.0 a 5.0 con un decimal (acepta coma),
     habilitación solo si la nota es menor a 3.0 y el módulo ya terminó, y "Planilla completa"
     (estudiantes × módulos).
+  - **Aula virtual** (`aula/index`, `dau-`, `Docente/Aula/AulaController` + `Academico/AulaService`, 24-11-2026): por
+    grupo (chips, `?grupo=ID`) crea evaluaciones de selección múltiple (1–30 preguntas, 2–6 opciones, una sola correcta,
+    cierre futuro) y actividades con fecha límite, cada una de un módulo de la malla; ve quién respondió (con sus aciertos)
+    y quién entregó, descarga el archivo y califica la entrega de 1,0 a 5,0 con un decimal (acepta coma) con comentario.
+    Una evaluación se edita o elimina mientras nadie la responda; una actividad se elimina sin entregas; un grupo
+    finalizado es solo consulta (`Requests/Docente/Aula/AulaRequest`: grupo suyo y sin finalizar). Ninguna calcula la nota
+    del módulo. Es lo que el estudiante ve en su Aula virtual.
 - Reglas acordadas con el usuario: el docente registra y **corrige** asistencia y notas
   mientras el grupo no esté finalizado; un grupo finalizado es solo consulta; no se registran
   clases futuras ni notas de módulos por iniciar.
@@ -681,7 +694,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   retiró o graduó), asistencias y notas (la nota sigue a la matrícula). Cada vista lo pasa con `@include('docente.partials.datos')`
   (`window.DOC_SERVIDOR`) y `public/assets/js/docente/datos.js` arma `DOC_DATOS` (deriva clases, %, estados de nota y
   pendientes, y los recalcula al guardar sin recargar) y `DOC_API`.
-- **Guardar** (lo único que escribe, `fetch` con CSRF): `POST docente/asistencia/{curso}` (`AsistenciaRequest`: grupo
+- **Guardar asistencia y notas** (`fetch` con CSRF): `POST docente/asistencia/{curso}` (`AsistenciaRequest`: grupo
   suyo y sin terminar, día de clase del horario y no futuro —la de hoy sí, aunque no haya terminado—, toda la lista de
   ese día marcada, excusa con motivo) y `POST docente/notas/{curso}/{modulo}` (`NotasRequest`, solo las que cambiaron:
   nota 1.0–5.0 con un decimal, sin nota la borra, habilitación solo con nota < 3.0 y módulo terminado, matrícula
@@ -702,15 +715,71 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   pendiente es naranja. Al agregar algo, que diga algo que no esté ya en la pantalla.
 - Su perfil todavía es el de Breeze (roto, HALLAZGOS M7).
 
+## Panel Estudiante (datos reales, 24-11-2026)
+
+Contenido definido con el usuario el 24-11-2026, con backend real el mismo día. Todo lo que ve sale de la BD con las reglas
+de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, Calificaciones, Pagos, Comunicados y Foro).
+- Rutas `/estudiante` (`role:estudiante`, `transaccion`) a un controlador por pantalla en
+  `Estudiante/{Inicio,Programa,Aula,Pagos,Comunicados,Foro}/` (Form Requests en `Requests/Estudiante/{Panel}/`), y
+  `User::panelUrl()` → `estudiante.dashboard`. Layout, menú y barra copiados del Docente (`estudiante/layout.blade.php` +
+  `partials/{sidebar,topbar}`, `layout.css`/`layout.js`); menú: Principal (Inicio), Mi formación (Mi programa, Aula
+  virtual), Matrícula (Mis pagos) y Comunicación (Comunicados, Foro).
+- **Datos** (`Academico/PanelEstudianteService::datos()`): la matrícula que se muestra es la de
+  `EstudianteService::matriculaVigente` (sin matrícula, cada pantalla dice que no hay nada todavía); módulos con las fechas
+  de `fechasModulos` y el estado de `Calificacion::estado()` (o `no_cursado`, `sin_nota`, `en_curso`, `por_iniciar`); clases
+  desde su matrícula hasta que se aplazó/retiró (P/T/A/E, sin registrar, hoy, futura) y % de `AsistenciaService::porcentaje`;
+  pagos con `PagoService::resumen` (cobros, recibos sin anulados, "A pagar este mes" = vencido + del mes, y cuántas cuotas
+  quedarían vencidas con cada plan); comunicados visibles (su sede o rol, o su grupo; publicados, sin archivar, con matrícula
+  vigente y cuenta activa); foro de su sede sin lo oculto. Cada vista lo pasa con `@include('estudiante.partials.datos')`
+  (`window.EST_SERVIDOR`: datos, institución de Admin › Configuración, sede, logo y rutas) y
+  `public/assets/js/estudiante/datos.js` arma `EST_DATOS` y `EST_API` (`fetch` con CSRF; 401/419 recarga, 422 muestra el
+  primer error). Toda escritura responde `{ok, mensaje, datos}` y `datos.js` reemplaza `EST_DATOS` sin recargar.
+- Pantallas (cada una con su Blade/CSS/JS y su prefijo):
+  - **Inicio** (`dashboard`, `ini-`): saludo con resumen, clase de hoy, tu avance (promedio, módulos aprobados,
+    asistencia), pendientes con enlace (por responder y entregar, por habilitar, pagos, comunicados sin leer) y el horario
+    semanal del Docente con un solo grupo (tono neutro `ini-c-grupo`).
+  - **Mi programa** (`programa/index`, `mpr-`): pestañas Notas (malla con nota, estado y lo que tiene en el Aula) y
+    Asistencia (calendario del mes con P/T/A/E, lista de faltas, tardes y excusas); **boletín imprimible** (informativo:
+    no reemplaza el certificado de la secretaría). `?vista=asistencia`.
+  - **Aula virtual** (`aula/index`, `aul-`, `Academico/AulaService`): Por hacer / Resultados, chips por módulo, cajón para
+    responder una evaluación de selección múltiple o entregar una actividad. Reglas acordadas: **una evaluación se responde
+    una sola vez** hasta su cierre, la nota sale al enviar (`Evaluacion::nota`: 5,0 × aciertos ÷ preguntas, un decimal,
+    mínimo 1,0) y las correctas solo viajan **después del cierre**; una actividad recibe y **cambia su archivo hasta la fecha
+    límite** o hasta que el docente la califique (PDF, Word, JPG o PNG, ≤ 10 MB, disco privado `aula/{sede}/actividad-{id}`;
+    el archivo viejo se borra después de guardar); ninguna calcula la nota del módulo (la sigue poniendo el docente en
+    Notas). Solo responde o entrega quien tiene la matrícula **activa** en el grupo. `?id=evaluacion-ID` o
+    `?id=actividad-ID` (evaluaciones y actividades son tablas distintas y repiten números), `?modulo=ID`.
+  - **Mis pagos** (`pagos/index`, `pag-`): solo consulta (se paga en la sede): elegir el plan una vez (`POST
+    estudiante/pagos/plan`, `PagoService::elegirPlan`, con aviso de las cuotas que ya vencieron y confirmación), estado de
+    cuenta (a pagar este mes, próxima cuota, pagado), cobros y recibos imprimibles con la hoja del recibo de la secretaría.
+    Constancia y paz y salvo: en la secretaría.
+  - **Comunicados** (`comunicados/index`, `com-`): lista + lector; se marca leído al abrir
+    (`comunicado_lecturas`, `insertOrIgnore`: la primera lectura no cambia); adjunto por `estudiante.comunicados.adjunto`.
+    Uno que no le corresponde responde 404. `?id=ID`.
+  - **Foro** (`foro/index`, `for-`): el de su sede con `ForoService` y las Form Requests de la secretaría (las suyas las
+    extienden: solo su sede, no fija temas); categorías, búsqueda, conversación en cajón, responder (no en temas cerrados ni
+    ocultos), abrir tema y reportar con motivo (uno por mensaje, ni los propios ni los ocultos), con un adjunto PDF/JPG/PNG
+    ≤ 5 MB. `?tema=ID`.
+  - **Mi perfil** (`perfil`, `prf-`, el diseño del perfil de la secretaría y del Admin): cambia correo, celular y dirección;
+    nombre y documento los corrige la secretaría (`ProfileUpdateRequest` no los acepta de un estudiante). Su acudiente,
+    solo consulta. Cambio de clave.
+- **Documentos imprimibles** (`documento.css` + `documento.js`, `EST_DOC.imprimir`): la hoja de los documentos de la
+  secretaría (encabezado con NIT y licencia de Admin › Configuración) se arma al final del `<body>` y solo sale al imprimir.
+- **BD** (migración `2026_11_24_000001_completar_aula_virtual`): `evaluaciones.programa_modulo_id` + `descripcion`,
+  `actividades.programa_modulo_id`, `entregas.archivo_nombre/archivo_tamano/calificado_en/calificado_por` (RESTRICT, como
+  toda autoría). Las tablas de septiembre (`preguntas`, `opciones`, `respuestas_estudiante`) se usan como estaban.
+- Pruebas: `tests/Feature/Estudiante/{PanelEstudiante,BackendEstudiante}Test.php`.
+
 ## Pendiente
 
-- Paneles Estudiante y Acudiente: sin construir.
-  - Estudiante: elegir plan de pago (genera las cuotas). El bloqueo por derecho
-    vencido ya corta también las sesiones abiertas (`EnsureAccountIsEnabled`).
+- Panel Acudiente: sin construir.
 - Docente: su perfil.
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
   Agregar Form Requests y auditoría a Sedes y Administradores.
-- Foro: leer, publicar y reportar desde los paneles de Estudiante/Docente/Acudiente.
-- Comunicados: marcar como leído desde los paneles de Estudiante/Acudiente/Docente y que el docente publique a sus grupos.
+- Foro: leer, publicar y reportar desde los paneles Docente y Acudiente (el del Estudiante ya lo hace).
+- Comunicados: marcar como leído desde los paneles Acudiente y Docente (el del Estudiante ya lo hace), y que el docente
+  publique a sus grupos.
+- Aula virtual: si pierde la evaluación o la actividad no hay segundo intento (no se pidió); las notas del Aula no entran
+  a ningún reporte de la Secretaría.
 - Errores y riesgos abiertos, por prioridad: ver `HALLAZGOS.md`.

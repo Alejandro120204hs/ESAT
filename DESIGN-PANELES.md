@@ -1,6 +1,6 @@
 # Diseño de los paneles internos de ESAT
 
-Sistema visual de **todos los paneles por rol** (Docente, Secretaría, Admin y los que faltan: Estudiante y Acudiente).
+Sistema visual de **todos los paneles por rol** (Docente, Secretaría, Admin, Estudiante —24-11-2026— y el que falta: Acudiente).
 `DESIGN.md` es solo del **sitio público** (franjas azules, fotos, cifras grandes): no se usa en los paneles.
 
 Modo: **Operate**. Quien entra a un panel viene a hacer algo (tomar asistencia, cobrar, revisar), no a mirar. Se
@@ -92,6 +92,29 @@ y el que primero se rehízo con estas reglas (9-11-2026). La Secretaría y el Ad
 - **Avisos** en línea: fondo tenue del color de su significado (naranja pendiente, rojo riesgo, neutro informativo).
 - **Toasts** con `role="status"` y errores con `role="alert"`.
 - **Combobox de Colombia**: copiar el de un panel Admin con `alScroll` (CLAUDE.md).
+- Del panel Estudiante (copiar de ahí para el de Acudiente):
+  - **Lista + lector** (Estudiante › Comunicados): lista a la izquierda, lectura a la derecha; a ≤ 900 px, uno a la vez
+    con "Volver". Lo que falta leer lleva un punto naranja; quien lo envía es neutro.
+  - **Documento imprimible en la misma página** (`estudiante/documento.css/js`, `EST_DOC.imprimir`): la hoja de los
+    documentos de la Secretaría (encabezado legal, número a la derecha, datos, tabla, sello "Anulado") se arma al final
+    del `<body>` y al imprimir solo sale ella.
+  - **Elegir una opción con consecuencias** (Estudiante › Mis pagos, el plan): tarjetas con radio, aviso del efecto
+    (rojo si deja algo vencido) y diálogo de confirmación antes de guardar.
+  - **Preguntas de selección múltiple** (Estudiante › Aula virtual): opciones de 44 px, progreso "N de M respondidas"
+    en el pie del cajón, la que falta se marca en rojo; en el resultado, verde la correcta y rojo la equivocada.
+  - **Horario de un solo grupo**: el horario semanal del Docente con el tono neutro de la marca (`ini-c-grupo`), porque
+    el color por escuela distingue grupos que aquí no hay.
+- Del Aula virtual del Docente (`docente/aula.css/js`, prefijo `dau-`, copiada del Aula del estudiante):
+  - **Armar preguntas** en el cajón (`.dau-preg-ed`): cada pregunta con su enunciado y de 2 a 6 opciones; la correcta se
+    marca con un radio (una sola por pregunta), "Agregar opción" / "Agregar pregunta", quitar (la pregunta con un enlace,
+    la opción con un ícono); al guardar, la
+    primera pregunta incompleta se marca en rojo (`.is-falta`) y el error dice cuál.
+  - **Calificar en la lista** (`.dau-calif`): cada entrega muestra su archivo (`.dau-archivo`) y, debajo, nota +
+    comentario + botón en la misma fila; el error va en `.dau-calif-err` (`role="alert"`) de esa entrega. En la tarjeta,
+    el número de entregas por calificar va dentro del botón "Calificar", que es el único naranja.
+  - Lo que ya no se puede cambiar no se muestra deshabilitado: una evaluación respondida pierde Editar/Eliminar, una
+    actividad con entregas pierde Eliminar, y un grupo finalizado cambia los botones de crear por un aviso de solo
+    consulta (`#dau-solo`).
 
 ## 6. Accesibilidad (piso)
 
@@ -99,4 +122,7 @@ y el que primero se rehízo con estas reglas (9-11-2026). La Secretaría y el Ad
   (`.clase[hidden] { display: none; }`), nada de texto debajo de 12 px en lo que se lee.
 - Controles de al menos 24 px (ideal 44 px en celular) y ningún scroll horizontal a 375 px.
 - **Pendiente (auditoría del 11-11-2026)**: el texto blanco sobre el naranja `#D97B2E` da 3,07:1 y el `muted` sobre
-  `--bg` 4,3:1 (AA pide 4,5:1). Cuando se corrija en `layout.css`, los paneles nuevos lo heredan.
+  `--bg` 4,3:1 (AA pide 4,5:1). Cuando se corrija en `layout.css`, los paneles nuevos lo heredan. El panel Estudiante
+  (axe, 24-11-2026) solo tiene estos contrastes heredados, más los del calendario y el horario copiados del Docente
+  (días sin clase `#A3ACB9`, cabecera de día libre `#A0AABA`, pestaña inactiva sobre `#E3E9F1` 3,95:1); se corrigen
+  todos juntos para no separar los paneles.

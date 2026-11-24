@@ -14,6 +14,7 @@ class Actividad extends Model
     protected $fillable = [
         'curso_id',
         'docente_id',
+        'programa_modulo_id',
         'titulo',
         'instrucciones',
         'fecha_limite',
@@ -34,6 +35,18 @@ class Actividad extends Model
     public function docente(): BelongsTo
     {
         return $this->belongsTo(User::class, 'docente_id');
+    }
+
+    /** Módulo de la malla al que pertenece (su nota es aparte de la del módulo). */
+    public function modulo(): BelongsTo
+    {
+        return $this->belongsTo(ProgramaModulo::class, 'programa_modulo_id');
+    }
+
+    /** Ya pasó la fecha límite: no recibe entregas ni cambios de archivo. */
+    public function cerrada(): bool
+    {
+        return $this->fecha_limite->lte(now());
     }
 
     public function entregas(): HasMany

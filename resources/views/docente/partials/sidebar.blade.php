@@ -51,6 +51,12 @@
                         Notas
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('docente.aula') }}" class="app-nav-link {{ $active === 'aula' ? 'is-active' : '' }}" @if ($active === 'aula') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        Aula virtual
+                    </a>
+                </li>
             </ul>
         </div>
 

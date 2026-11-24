@@ -56,7 +56,7 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
 
-        // Cuenta desactivada, o estudiante con el derecho de matrícula vencido sin pagar: no ingresa.
+        // Cuenta desactivada o bloqueada: no ingresa (el derecho de matrícula vencido ya no bloquea, 24-11-2026).
         // La misma regla corta la sesión ya abierta en cada petición (EnsureAccountIsEnabled).
         // Bloqueo (Configuración): el aviso solo sale con la clave correcta, así no revela qué correos existen.
         $usuario = Auth::user();

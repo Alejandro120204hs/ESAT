@@ -320,33 +320,28 @@ class MatriculasTest extends TestCase
         $this->assertAuthenticatedAs($e);
     }
 
-    public function test_con_el_derecho_de_matricula_vencido_sin_pagar_no_ingresa(): void
+    /** Decidido con el usuario el 24-11-2026 (lo pidió el cliente): el derecho vencido es una deuda más, no bloquea. */
+    public function test_con_el_derecho_de_matricula_vencido_sin_pagar_ingresa_igual_y_sigue_debiendolo(): void
     {
         $e = $this->estudiante('1070000001');
         $this->matricular($e, $this->grupoA)->assertOk();
         auth()->guard('web')->logout();
         Carbon::setTestNow('2026-11-04 09:00:00');   // las clases empezaron el 3
 
-        $this->post('/login', ['email' => $e->email, 'password' => 'password'])->assertSessionHasErrors('email');
-        $this->assertGuest();
-
-        // Paga en la sede y ya puede ingresar
-        $m = $e->matriculas()->first();
-        $this->pagar($m, ['valor' => 200000, 'metodo_pago' => 'Efectivo', 'fecha_pago' => '2026-11-04'])->assertOk();
-        auth()->guard('web')->logout();
-        $this->post('/login', ['email' => $e->email, 'password' => 'password']);
+        $this->post('/login', ['email' => $e->email, 'password' => 'password'])->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($e);
+        $this->assertNotNull(app(PagoService::class)->derechoVencido($e), 'La deuda sigue ahí');
     }
 
-    public function test_con_el_derecho_vencido_tambien_pierde_la_sesion_abierta(): void
+    public function test_con_el_derecho_vencido_no_pierde_la_sesion_abierta(): void
     {
         $e = $this->estudiante('1070000001');
         $this->matricular($e, $this->grupoA)->assertOk();
-        $this->actingAs($e)->get('/profile')->assertOk();   // antes de empezar clases está adentro
+        $this->actingAs($e)->get('/profile')->assertOk();
 
         Carbon::setTestNow('2026-11-04 09:00:00');   // las clases empezaron el 3 y no ha pagado
-        $this->actingAs($e)->get('/profile')->assertRedirect(route('login'))->assertSessionHasErrors('email');
-        $this->assertGuest();
+        $this->actingAs($e)->get('/profile')->assertOk();
+        $this->assertAuthenticatedAs($e);
     }
 
     public function test_volver_al_mismo_programa_ocupa_cupo_solo_en_el_grupo_nuevo(): void
