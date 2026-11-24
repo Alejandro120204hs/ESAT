@@ -10,7 +10,7 @@
 @endphp
 
 @section('title', $escuela['nombre'] . ' · ESAT — Formación Técnica Certificada')
-@section('meta_description', $escuela['nombre'] . ' en ESAT: ' . implode(', ', array_column($programas, 'nombre')) . '. Sedes en Bogotá, Sasaima, Guaduas y La Dorada.')
+@section('meta_description', $escuela['nombre'] . ' en ESAT: ' . implode(', ', array_column($programas, 'nombre')) . '. Sedes en Sasaima, Guaduas, La Dorada y Marquetalia.')
 
 @push('styles')
     <link rel="stylesheet" href="{{ $recurso('assets/css/sitio/subpaginas.css') }}">

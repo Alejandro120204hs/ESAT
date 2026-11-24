@@ -150,17 +150,14 @@ return [
         'salud'                                        => '',
     ],
 
+    // Las sedes del afiche "Carreras técnicas" (19-11-2026), con su teléfono de WhatsApp: [número internacional, como se muestra].
+    // Marquetalia todavía sin dirección: sale el municipio y el mapa marca el centro del pueblo.
     'sedes' => [
-        ['nombre' => 'Bogotá', 'direccion' => 'Cra 52 #71-18', 'lat' => 4.6682, 'lng' => -74.0817],
-        ['nombre' => 'Sasaima', 'direccion' => 'Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca', 'lat' => 5.0128, 'lng' => -74.4361],
-        ['nombre' => 'Guaduas', 'direccion' => 'Cra 2 No. 1-83, Calle de la Pola, Cundinamarca', 'lat' => 5.0700, 'lng' => -74.5928],
-        ['nombre' => 'La Dorada', 'direccion' => 'Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas', 'lat' => 5.4544, 'lng' => -74.6379],
+        ['nombre' => 'Sasaima', 'direccion' => 'Urbanización San José, Cra 2 #8-84, Sasaima, Cundinamarca', 'lat' => 5.0128, 'lng' => -74.4361, 'telefono' => ['573123773144', '312 377 3144']],
+        ['nombre' => 'Guaduas', 'direccion' => 'Cra 2 No. 1-83, Calle de la Pola, Cundinamarca', 'lat' => 5.0700, 'lng' => -74.5928, 'telefono' => ['573219572058', '321 957 2058']],
+        ['nombre' => 'La Dorada', 'direccion' => 'Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas', 'lat' => 5.4544, 'lng' => -74.6379, 'telefono' => ['573216291992', '321 629 1992']],
+        ['nombre' => 'Marquetalia', 'direccion' => 'Marquetalia, Caldas', 'lat' => 5.2975, 'lng' => -75.0533, 'telefono' => ['573234883430', '323 488 3430']],
     ],
-
-    // Sedes de franquicia: la lista que envió ESAT el 10-11-2026, en ese orden. Todavía sin dirección ni
-    // contacto propio: el sitio solo nombra el municipio (sin mapa) y ofrece preguntar por WhatsApp.
-    // Cuando llegue la dirección de una, pasa a 'sedes' con sus coordenadas reales.
-    'franquicias' => ['La Dorada', 'La Vega', 'El Vino', 'Supatá', 'San Francisco', 'El Rosal', 'Anolaima', 'Cachipay', 'Albán'],
 
     // Números de WhatsApp: [número internacional, como se muestra].
     'whatsapp' => [
