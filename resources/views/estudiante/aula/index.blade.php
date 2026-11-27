@@ -19,7 +19,7 @@
 
     <header class="aul-header">
         <h2 class="aul-title">Aula virtual</h2>
-        <p class="aul-sub">Las evaluaciones y actividades que te deja tu docente. Cada una tiene su nota; la nota del módulo la sigue poniendo tu docente.</p>
+        <p class="aul-sub">Las evaluaciones, actividades y material de clase que te deja tu docente. Cada una tiene su nota; la nota del módulo la sigue poniendo tu docente.</p>
     </header>
 
     <div class="aul-toolbar app-anim app-anim-d1">
@@ -29,6 +29,9 @@
             </button>
             <button type="button" class="aul-vista-btn" role="tab" id="aul-tab-resultados" aria-selected="false" aria-controls="aul-panel" data-vista="resultados" tabindex="-1">
                 Resultados <span class="aul-vista-num" id="aul-num-resultados"></span>
+            </button>
+            <button type="button" class="aul-vista-btn" role="tab" id="aul-tab-material" aria-selected="false" aria-controls="aul-panel" data-vista="material" tabindex="-1">
+                Material <span class="aul-vista-num" id="aul-num-material"></span>
             </button>
         </div>
         <fieldset class="aul-chips" id="aul-modulos">

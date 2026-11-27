@@ -15,6 +15,7 @@
     font-family: "Archivo", system-ui; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
     transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
 }
+.est-btn[hidden] { display: none; }
 .est-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .est-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .est-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
@@ -386,21 +387,6 @@
 .est-callout-alerta > strong { color: #8F1717; }
 .est-num-inline { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
-/* Acudiente encontrado (búsqueda por cédula) */
-.est-acu-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-md); }
-.est-acu-top { display: flex; align-items: center; gap: 12px; }
-.est-acu-top strong { display: block; font-size: 0.92rem; color: var(--navy-3); }
-.est-acu-top span:not(.est-acu-foto) { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.est-acu-foto {
-    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--navy-2); color: var(--white); font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.82rem;
-}
-.est-acu-otros { margin: 0; font-size: 0.82rem; color: #4B5563; line-height: 1.5; }
-.est-acu-encontrado { border-color: rgba(64, 118, 58,0.35); background: rgba(64, 118, 58,0.05); }
-.est-acu-badge { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; font-size: 0.72rem; font-weight: 700; color: #2D6A27; }
-.est-acu-badge svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.est-acu-nuevo-msg { margin: 0; padding: 10px 12px; border-radius: var(--radius-md); background: var(--bg); font-size: 0.84rem; color: #4B5563; }
 
 /* Grupo / cupo / seguimiento */
 .est-esc-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--esc-suave); color: var(--esc-ink); font-size: 0.73rem; font-weight: 700; white-space: nowrap; }
@@ -483,6 +469,7 @@
 .est-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .est-field[hidden] { display: none; }
 .est-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.est-form-row[hidden], .est-field[hidden] { display: none; }
 .est-lbl { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
 .est-lbl em { font-style: normal; font-weight: 500; color: var(--muted); margin-left: 4px; }
 .est-input {
@@ -497,8 +484,6 @@
 .est-textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
 .est-edad { font-size: 0.8rem; font-weight: 600; color: var(--muted); min-height: 1.2em; }
 .est-edad.is-menor { color: #A9531A; }
-.est-buscar-row { display: flex; gap: 8px; }
-.est-buscar-row .est-input { flex: 1; }
 .est-campo-error { margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--red); }
 .est-campo-ayuda { margin: 0; padding: 14px; border: 1px dashed #CBD5E1; border-radius: 12px; font-size: 0.84rem; color: var(--muted); text-align: center; }
 
@@ -523,18 +508,7 @@
 .est-chip input:checked + span { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
 .est-chip input:focus-visible + span { box-shadow: 0 0 0 3px rgba(217,123,46,.3); }
 
-.est-check { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; font-weight: 600; color: var(--navy-3); cursor: pointer; }
-.est-check[hidden] { display: none; }
-.est-check input { width: 17px; height: 17px; accent-color: var(--orange); }
-
-.est-acu-aviso { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 12px; background: #EEF3FA; }
-.est-acu-aviso strong { font-size: 0.88rem; color: var(--navy-3); }
-.est-acu-aviso span { font-size: 0.83rem; color: #4B5563; }
-.est-acu-aviso.is-menor { background: #FFF4E8; }
-.est-acu-aviso.is-menor strong { color: #9A4A12; }
-#ins-acu-bloque { display: flex; flex-direction: column; gap: 14px; }
-#ins-acu-bloque[hidden], #ins-acu-nuevo[hidden], #acc-acu-nuevo[hidden] { display: none; }
-#ins-acu-nuevo, #acc-acu-nuevo { display: flex; flex-direction: column; gap: 14px; }
+.est-paso-ayuda { margin: 0; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
 
 .est-resumen { padding: 14px; border-radius: 12px; background: #F6F8FB; border: 1px solid #E2E8F0; }
 .est-resumen[hidden] { display: none; }
@@ -574,8 +548,6 @@
 .est-wstep.is-done span { color: #2D7A3A; }
 /* Cada paso mide lo que su texto; las líneas reparten el espacio sobrante por igual (antes quedaban corridas) */
 .est-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
-/* Al editar se oculta el paso de acudiente: el display propio pisaría el [hidden] nativo */
-.est-wstep[hidden], .est-wstep-line[hidden] { display: none; }
 
 .est-modal-body { flex: 1; overflow-y: auto; }
 .est-mstep { display: none; flex-direction: column; gap: 14px; padding: 20px; }

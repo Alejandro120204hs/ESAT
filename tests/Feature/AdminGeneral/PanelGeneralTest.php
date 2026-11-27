@@ -15,7 +15,7 @@ class PanelGeneralTest extends TestCase
     use RefreshDatabase;
 
     private const PANTALLAS = [
-        '/general', '/general/sedes', '/general/secretarias', '/general/programas', '/general/estudiantes', '/general/acudientes', '/general/docentes', '/general/academico',
+        '/general', '/general/sedes', '/general/secretarias', '/general/programas', '/general/estudiantes', '/general/docentes', '/general/academico',
         '/general/finanzas', '/general/comunicados', '/general/foro', '/general/reportes', '/general/auditoria', '/general/configuracion',
     ];
 
@@ -45,7 +45,7 @@ class PanelGeneralTest extends TestCase
 
     public function test_otros_roles_no_entran(): void
     {
-        foreach (['superadmin', 'admin', 'estudiante', 'docente', 'acudiente'] as $rol) {
+        foreach (['superadmin', 'admin', 'estudiante', 'docente'] as $rol) {
             $usuario = User::factory()->create(['role' => $rol]);
             foreach (self::PANTALLAS as $url) {
                 $this->actingAs($usuario)->get($url)->assertForbidden();

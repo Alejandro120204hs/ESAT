@@ -16,7 +16,7 @@
     <div class="fin-header">
         <div>
             <h1 class="fin-title">Finanzas</h1>
-            <p class="fin-sub">La plata de ESAT: lo que entra, lo que se debe y lo que sale, de todas las sedes o de una. Es solo consulta: los pagos y los gastos los registra cada secretaría.</p>
+            <p class="fin-sub">La plata de ESAT: lo que entra, lo que se debe y lo que sale, de todas las sedes o de una. Es solo consulta: los pagos y los gastos los registra cada administrativo.</p>
         </div>
     </div>
 
@@ -113,7 +113,7 @@
         </div>
         <div class="fin-table-wrap">
             <table class="fin-table">
-                <thead><tr><th scope="col">Estudiante</th><th scope="col">Sede</th><th scope="col">Programa</th><th scope="col" class="fin-num">Cuotas vencidas</th>
+                <thead><tr><th scope="col">Estudiante</th><th scope="col">Sede</th><th scope="col">Carrera</th><th scope="col" class="fin-num">Cuotas vencidas</th>
                     <th scope="col">La más antigua</th><th scope="col" class="fin-num">Debe</th><th scope="col"><span class="fin-sr">Recordatorio</span></th></tr></thead>
                 <tbody id="fin-car-body"></tbody>
             </table>

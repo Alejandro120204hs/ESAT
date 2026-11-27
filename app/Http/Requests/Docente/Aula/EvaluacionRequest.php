@@ -10,7 +10,9 @@ use Illuminate\Validation\Validator;
 /**
  * Crear o editar una evaluación de selección múltiple: título, descripción opcional, un módulo de la malla del grupo,
  * fecha y hora de cierre futura, y de 1 a 30 preguntas con 2 a 6 opciones cada una y exactamente una correcta. Las
- * mismas reglas que valida docente/aula.js. Que nadie la haya respondido todavía lo revisa AulaService con la fila bloqueada.
+ * mismas reglas que valida docente/aula.js. Tiempo límite opcional (Evaluacion::DURACIONES minutos). Lo que se puede
+ * cambiar cuando alguien ya la comenzó o la respondió lo revisa AulaService con la fila bloqueada. Al editar se puede
+ * dejar el mismo cierre aunque ya haya pasado (para corregir un texto).
  */
 class EvaluacionRequest extends AulaRequest
 {
@@ -38,6 +40,7 @@ class EvaluacionRequest extends AulaRequest
             ];
         }
         $this->merge([
+            'duracion'    => $this->input('duracion') ?: null,
             'titulo'      => $this->texto('titulo'),
             'descripcion' => $this->texto('descripcion'),
             'cierra'      => $this->fechaHora($this->input('cierra')),
@@ -53,7 +56,8 @@ class EvaluacionRequest extends AulaRequest
             'titulo'                         => ['required', 'string', 'min:5', 'max:150'],
             'descripcion'                    => ['nullable', 'string', 'max:1000'],
             'modulo_id'                      => ['required', 'integer', Rule::in($modulos)],
-            'cierra'                         => ['required', 'date_format:Y-m-d H:i', 'after:now'],
+            'cierra'                         => array_merge(['required', 'date_format:Y-m-d H:i'], $this->mismoCierre() ? [] : ['after:now']),
+            'duracion'                       => ['nullable', 'integer', Rule::in(Evaluacion::DURACIONES)],
             'preguntas'                      => ['required', 'array', 'min:1', 'max:30'],
             'preguntas.*.enunciado'          => ['required', 'string', 'min:3', 'max:500'],
             'preguntas.*.opciones'           => ['required', 'array', 'min:2', 'max:6'],
@@ -91,6 +95,7 @@ class EvaluacionRequest extends AulaRequest
             'cierra.required'                     => 'Elige la fecha y la hora en que cierra.',
             'cierra.date_format'                  => 'Elige la fecha y la hora en que cierra.',
             'cierra.after'                        => 'La evaluación debe cerrar después de ahora.',
+            'duracion.in'                         => 'Elige un tiempo de la lista.',
             'preguntas.required'                  => 'Agrega al menos una pregunta.',
             'preguntas.min'                       => 'Agrega al menos una pregunta.',
             'preguntas.max'                       => 'Una evaluación puede tener hasta 30 preguntas.',
@@ -102,5 +107,13 @@ class EvaluacionRequest extends AulaRequest
             'preguntas.*.opciones.*.texto.required' => 'Escribe el texto de cada opción.',
             'preguntas.*.opciones.*.texto.max'    => 'Una opción puede tener hasta 300 caracteres.',
         ];
+    }
+
+    /** Al editar, el cierre que ya tenía (aunque haya pasado) se puede conservar. */
+    private function mismoCierre(): bool
+    {
+        $actual = $this->route('evaluacion');
+
+        return $actual instanceof Evaluacion && $this->input('cierra') === $actual->fecha_limite->format('Y-m-d H:i');
     }
 }

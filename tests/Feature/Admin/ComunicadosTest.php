@@ -218,6 +218,9 @@ class ComunicadosTest extends TestCase
         $p = app(ComunicadoService::class)->personas($this->sede->id);
         $this->assertSame([$con->id], collect($p['estudiantes'])->pluck('id')->all());
         $this->assertTrue($p['estudiantes'][0]['menor']);
+        // El WhatsApp de un menor va a su contacto de emergencia
+        $this->assertSame($con->contactoEmergencia->celular, $p['estudiantes'][0]['contacto']['celular']);
+        $this->assertArrayNotHasKey('acudientes', $p);
         $this->assertSame($this->grupo->id, $p['estudiantes'][0]['grupo_id']);
         $this->assertSame([$docente->id], collect($p['docentes'])->pluck('id')->all(), 'Los docentes inactivos no reciben');
         $this->assertNotContains($sin->id, collect($p['estudiantes'])->pluck('id'));
@@ -232,9 +235,7 @@ class ComunicadosTest extends TestCase
     {
         $e = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'numero_documento' => $documento, 'fecha_nacimiento' => $nacimiento]);
         $e->documentos()->createMany(array_map(fn ($d) => ['documento' => $d, 'entregado_en' => now()], EstudianteDocumento::REQUERIDOS));
-        $acu = User::factory()->create(['role' => 'acudiente', 'sede_id' => $this->sede->id]);
-        $e->acudientes()->attach($acu->id, ['parentesco' => 'Madre']);
-        $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $this->grupo->id])->assertOk();
+        $this->alIniciar($this->grupo, fn () => $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $this->grupo->id])->assertOk());
 
         return $e;
     }

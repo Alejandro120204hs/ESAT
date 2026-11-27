@@ -46,7 +46,7 @@
             <thead>
                 <tr>
                     <th scope="col">Sede</th>
-                    <th scope="col">Secretaría</th>
+                    <th scope="col">Administrativo</th>
                     <th scope="col" class="gen-num">Estudiantes</th>
                     <th scope="col" class="gen-num">Ingresos del mes</th>
                     <th scope="col" class="gen-num">Cartera vencida</th>
@@ -140,7 +140,7 @@
             </button>
         </div>
         <div class="gen-modal-body">
-            <p class="gen-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría: matricular, registrar pagos, editar grupos y horarios, publicar comunicados.</p>
+            <p class="gen-modal-text">Vas a trabajar en esta sede con las mismas pantallas del administrativo: matricular, registrar pagos, editar grupos y horarios, publicar comunicados.</p>
             <ul class="gen-entrar-lista">
                 <li>Arriba verás una franja con la sede en la que estás y el botón para volver al panel general.</li>
                 <li>Todo lo que hagas queda en la auditoría de la sede con tu nombre.</li>

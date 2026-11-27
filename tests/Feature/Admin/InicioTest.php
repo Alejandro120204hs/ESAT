@@ -44,7 +44,7 @@ class InicioTest extends TestCase
     {
         $e = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'numero_documento' => $documento, 'fecha_nacimiento' => '1998-05-10']);
         $e->documentos()->createMany(array_map(fn ($d) => ['documento' => $d, 'entregado_en' => now()], EstudianteDocumento::REQUERIDOS));
-        $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $this->grupo->id])->assertOk();
+        $this->alIniciar($this->grupo, fn () => $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $this->grupo->id])->assertOk());
         $m = $e->matriculas()->first();
         $m->update(['plan_pago' => 'mensual', 'fecha_inicio' => $fecha]);
         app(PagoService::class)->generarCuotas($m, $this->grupo->fecha_inicio);
@@ -108,6 +108,7 @@ class InicioTest extends TestCase
     public function test_pendientes_con_enlace_y_accesos_rapidos_sin_numeral(): void
     {
         $this->matricular('1070000001');
+        $this->grupo($this->programa, 'Mañana', null, 'planificacion', '2026-10-05');   // ya debía empezar: es un pendiente
 
         $tareas = $this->datos()['tareas'];
         $this->assertNotEmpty($tareas);
@@ -118,6 +119,17 @@ class InicioTest extends TestCase
         $html = $this->actingAs($this->admin)->get('/admin')->assertOk()->getContent();
         $this->assertStringNotContainsString('href="#"', $html);
         $this->assertStringNotContainsString('Inscribir y asignar programa', $html, 'Estudiantes no matricula (HALLAZGOS B33)');
+    }
+
+    /** Un grupo en planificación cuya fecha de inicio ya pasó sale como pendiente; uno que empieza después, no (auditoría 26-11-2026). */
+    public function test_avisa_de_los_grupos_que_ya_debian_empezar(): void
+    {
+        $this->grupo($this->programa, 'Mañana', null, 'planificacion', '2026-10-05');
+        $this->grupo($this->programa, 'Mañana', null, 'planificacion', '2026-11-02');
+
+        $tarea = collect($this->datos()['tareas'])->firstWhere('tag', 'Grupos');
+        $this->assertSame('1 grupo ya debía empezar', $tarea['titulo'] ?? null);
+        $this->assertSame(route('admin.cursos'), $tarea['url']);
     }
 
     public function test_solo_el_admin_entra(): void

@@ -538,7 +538,7 @@
     function csvNota(v) { return v == null ? '' : fmt(v); }
     var EXPORT = {
         grupos: function () {
-            return [['Programa', 'Grupo', 'Escuela', 'Jornada', 'Docente', 'Módulos terminados', 'Total de módulos', 'Módulo en curso', 'Módulos sin nota', 'Promedio', 'Por habilitar', 'Perdieron la habilitación', 'Listos para graduar']]
+            return [['Carrera', 'Grupo', 'Escuela', 'Jornada', 'Docente', 'Módulos terminados', 'Total de módulos', 'Módulo en curso', 'Módulos sin nota', 'Promedio', 'Por habilitar', 'Perdieron la habilitación', 'Listos para graduar']]
                 .concat(tGrupos.filtradas().map(function (r) {
                     var g = grupoPorId[r.dataset.id];
                     return [g.programa, g.grupo, g.escuela, g.jornada, g.docente, g.terminados, g.modulos.length,
@@ -548,7 +548,7 @@
                 }));
         },
         estudiantes: function () {
-            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Programa', 'Grupo', 'Módulos aprobados', 'Total de módulos', 'Promedio', 'Situación', 'Módulos perdidos', 'Celular']]
+            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Carrera', 'Grupo', 'Módulos aprobados', 'Total de módulos', 'Promedio', 'Situación', 'Módulos perdidos', 'Celular']]
                 .concat(tEst.filtradas().map(function (r) {
                     var e = estPorId[r.dataset.id], g = grupoPorId[e.grupo_id];
                     var perdidos = g.modulos.map(function (m, i) {

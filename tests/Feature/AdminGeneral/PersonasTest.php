@@ -5,11 +5,12 @@ namespace Tests\Feature\AdminGeneral;
 use App\Models\Academico\DocentePerfil;
 use App\Models\Finanzas\Matricula;
 use App\Models\User;
+use App\Services\General\PersonasService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Admin\DatosAcademicos;
 use Tests\TestCase;
 
-/** Admin de ESAT › Estudiantes, Acudientes y Docentes: las reglas de la secretaría en la sede que se elija. */
+/** Admin de ESAT › Estudiantes (con su contacto de emergencia) y Docentes: las reglas de la secretaría en la sede que se elija. */
 class PersonasTest extends TestCase
 {
     use DatosAcademicos, RefreshDatabase;
@@ -30,6 +31,7 @@ class PersonasTest extends TestCase
             'fecha_nacimiento' => '2000-03-04', 'genero' => 'femenino', 'departamento_nacimiento' => 'Cundinamarca', 'lugar_nacimiento' => 'Villeta',
             'telefono' => '3101234567', 'email' => 'laura@correo.com', 'direccion' => 'Calle 3 # 2-10', 'departamento_residencia' => 'Cundinamarca',
             'ciudad_residencia' => 'Sasaima',
+            'contacto' => ['nombre' => 'Marta Díaz', 'celular' => '3109876543', 'parentesco' => 'Madre'],
         ], $cambios);
     }
 
@@ -44,27 +46,31 @@ class PersonasTest extends TestCase
         $this->assertGreaterThan(0, $e->documentos()->count());
     }
 
-    public function test_un_menor_necesita_acudiente_y_se_puede_registrar_uno_nuevo_con_el(): void
+    /** Nacido en otro país: las mismas reglas de la secretaría (27-11-2026). */
+    public function test_registra_a_un_extranjero_con_su_pais_de_nacimiento(): void
     {
-        $menor = ['tipo_documento' => 'TI', 'fecha_nacimiento' => now()->subYears(15)->toDateString()];
-        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante($menor))->assertJsonValidationErrors('acudiente');
+        $fuera = ['tipo_documento' => 'CE', 'pais_nacimiento' => 'Ecuador', 'departamento_nacimiento' => '', 'lugar_nacimiento' => 'Quito'];
+        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante(array_merge($fuera, ['tipo_documento' => 'CC'])))
+            ->assertJsonValidationErrors('pais_nacimiento');
+        $this->postJson('/general/estudiantes', $this->estudiante($fuera))->assertCreated();
 
-        $this->postJson('/general/estudiantes', $this->estudiante($menor + [
-            'con_acudiente' => true, 'parentesco' => 'Madre',
-            'acudiente' => ['documento' => '52111222', 'nombres' => 'Marta', 'apellidos' => 'Díaz', 'telefono' => '3109876543', 'email' => 'marta@correo.com'],
-        ]))->assertCreated();
-        $e = User::where('email', 'laura@correo.com')->firstOrFail();
-        $this->assertSame('marta@correo.com', $e->acudientes()->first()->email);
-        $this->assertSame($this->sede->id, $e->acudientes()->first()->sede_id);
+        $e = User::where('numero_documento', $this->estudiante()['numero_documento'])->firstOrFail();
+        $this->assertSame(['Ecuador', 'Quito', null], [$e->pais_nacimiento, $e->lugar_nacimiento, $e->departamento_nacimiento]);
     }
 
-    public function test_el_acudiente_debe_ser_de_la_sede_elegida(): void
+    public function test_registra_y_cambia_el_contacto_de_emergencia(): void
     {
-        $otra = $this->otraSede();
-        $acudiente = User::factory()->create(['role' => 'acudiente', 'sede_id' => $otra->id]);
-        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante([
-            'tipo_documento' => 'TI', 'fecha_nacimiento' => now()->subYears(15)->toDateString(), 'acudiente' => ['id' => $acudiente->id], 'parentesco' => 'Padre',
-        ]))->assertJsonValidationErrors('acudiente.id');
+        $sin = ['contacto' => ['nombre' => '', 'celular' => '', 'parentesco' => '']];
+        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante($sin))
+            ->assertJsonValidationErrors(['contacto.nombre', 'contacto.celular', 'contacto.parentesco']);
+
+        $this->postJson('/general/estudiantes', $this->estudiante())->assertCreated();
+        $e = User::where('email', 'laura@correo.com')->firstOrFail();
+        $this->assertSame('Marta Díaz', $e->contactoEmergencia->nombre);
+
+        $this->putJson("/general/estudiantes/{$e->id}", $this->estudiante(['contacto' => ['nombre' => 'Pedro Gómez', 'celular' => '3001239876', 'parentesco' => 'Padre']]))->assertOk();
+        $this->assertSame(['Pedro Gómez', 'Padre'], [$e->fresh()->contactoEmergencia->nombre, $e->fresh()->contactoEmergencia->parentesco]);
+        $this->assertDatabaseCount('contactos_emergencia', 1);
     }
 
     public function test_con_matricula_vigente_no_cambia_de_sede(): void
@@ -76,33 +82,46 @@ class PersonasTest extends TestCase
         $this->putJson("/general/estudiantes/{$e->id}", $this->estudiante(['sede_id' => $otra->id]))->assertJsonValidationErrors('sede_id');
     }
 
-    /* ── Acudientes ── */
-
-    private function acudiente(array $cambios = []): array
+    public function test_con_deudas_en_su_sede_no_cambia_de_sede(): void
     {
-        return array_merge([
-            'sede_id' => $this->sede->id, 'nombres' => 'Rosa', 'apellidos' => 'Peña', 'tipo_documento' => 'CC', 'numero_documento' => '52333444',
-            'telefono' => '3201112233', 'email' => 'rosa@correo.com', 'direccion' => 'Carrera 2 # 5-10',
-            'departamento_residencia' => 'Cundinamarca', 'ciudad_residencia' => 'Sasaima', 'estudiantes' => [],
-        ], $cambios);
+        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante())->assertCreated();
+        $e = User::where('email', 'laura@correo.com')->firstOrFail();
+        // Se retiró debiendo una cuota vencida: la sede nueva no la vería
+        $m = Matricula::create(['codigo' => 'MAT-1', 'estudiante_id' => $e->id, 'programa_id' => $this->programa()->id, 'sede_id' => $this->sede->id, 'estado' => 'retirado', 'fecha_inicio' => now()->subMonths(3)]);
+        $cuota = $m->pagos()->create(['tipo' => 'mensual', 'numero_cuota' => 1, 'fecha_vencimiento' => now()->subMonth()->toDateString(),
+            'monto_programa' => 150000, 'monto_sistema' => 0, 'monto_total' => 150000, 'estado' => 'vencido']);
+        $otra = $this->otraSede();
+
+        $this->putJson("/general/estudiantes/{$e->id}", $this->estudiante(['sede_id' => $otra->id]))
+            ->assertJsonValidationErrors(['sede_id' => 'Todavía debe $ 150.000']);
+
+        $cuota->update(['estado' => 'pagado', 'abonado' => 150000]);
+        $this->putJson("/general/estudiantes/{$e->id}", $this->estudiante(['sede_id' => $otra->id]))->assertOk();
+        $this->assertSame($otra->id, $e->fresh()->sede_id);
     }
 
-    public function test_el_acudiente_se_registra_con_al_menos_un_estudiante_de_su_sede(): void
+    /**
+     * La cartera del Admin es la de la persona, como en Pagos de la secretaría y en el Inicio: cuenta lo vencido de un aplazado
+     * y lo que quedó debiendo en una matrícula anterior aunque la de hoy esté al día (auditoría 26-11-2026).
+     */
+    public function test_la_cartera_cuenta_lo_vencido_de_todas_sus_matriculas(): void
     {
-        $this->actingAs($this->general)->postJson('/general/acudientes', $this->acudiente())->assertJsonValidationErrors('estudiantes');
+        $this->actingAs($this->general)->postJson('/general/estudiantes', $this->estudiante())->assertCreated();
+        $e = User::where('email', 'laura@correo.com')->firstOrFail();
+        $vieja = Matricula::create(['codigo' => 'MAT-1', 'estudiante_id' => $e->id, 'programa_id' => $this->programa()->id, 'sede_id' => $this->sede->id, 'estado' => 'retirado', 'fecha_inicio' => now()->subMonths(8)]);
+        $vieja->pagos()->create(['tipo' => 'mensual', 'numero_cuota' => 1, 'fecha_vencimiento' => now()->subMonths(6)->toDateString(),
+            'monto_programa' => 150000, 'monto_sistema' => 0, 'monto_total' => 150000, 'estado' => 'pendiente']);
+        Matricula::create(['codigo' => 'MAT-2', 'estudiante_id' => $e->id, 'programa_id' => $this->programa()->id, 'sede_id' => $this->sede->id, 'estado' => 'activo', 'fecha_inicio' => now()->subMonth(), 'plan_pago' => 'mensual']);
 
-        $e = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]);
-        $this->postJson('/general/acudientes', $this->acudiente(['estudiantes' => [['id' => $e->id, 'parentesco' => 'Madre']]]))->assertCreated();
-        $this->assertSame('rosa@correo.com', $e->acudientes()->first()->email);
-    }
+        $this->postJson('/general/estudiantes', $this->estudiante(['numero_documento' => '1070333444', 'email' => 'aplazada@correo.com', 'telefono' => '3111234567']))->assertCreated();
+        $aplazada = User::where('email', 'aplazada@correo.com')->firstOrFail();
+        $m = Matricula::create(['codigo' => 'MAT-3', 'estudiante_id' => $aplazada->id, 'programa_id' => $this->programa()->id, 'sede_id' => $this->sede->id, 'estado' => 'aplazado', 'fecha_inicio' => now()->subMonths(3)]);
+        $m->pagos()->create(['tipo' => 'mensual', 'numero_cuota' => 1, 'fecha_vencimiento' => now()->subMonth()->toDateString(),
+            'monto_programa' => 90000, 'monto_sistema' => 0, 'monto_total' => 90000, 'estado' => 'pendiente', 'abonado' => 20000]);
 
-    public function test_no_desvincula_a_un_menor(): void
-    {
-        $a = User::factory()->create(['role' => 'acudiente', 'sede_id' => $this->sede->id]);
-        $menor = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'fecha_nacimiento' => now()->subYears(14)]);
-        $menor->acudientes()->attach($a->id, ['parentesco' => 'Madre']);
-        $this->actingAs($this->general)->deleteJson("/general/acudientes/{$a->id}/estudiantes/{$menor->id}")->assertStatus(422);
-        $this->assertTrue($menor->acudientes()->exists());
+        $lista = collect(app(PersonasService::class)->estudiantes()[0])->keyBy('id');
+        $this->assertSame(['vencido', 150000, 1], [$lista[$e->id]['pago'], $lista[$e->id]['saldo_vencido'], count($lista[$e->id]['cuotas_vencidas'])]);
+        $this->assertSame(['aplazado', 'vencido', 70000], [$lista[$aplazada->id]['estado'], $lista[$aplazada->id]['pago'], $lista[$aplazada->id]['saldo_vencido']]);
     }
 
     /* ── Docentes ── */
@@ -126,6 +145,13 @@ class PersonasTest extends TestCase
         $this->assertSame('hora_catedra', DocentePerfil::where('user_id', $d->id)->value('vinculacion'));
     }
 
+    /** El formulario ofrece el permiso por protección temporal: el servidor lo acepta, como en Estudiantes (auditoría 26-11-2026). */
+    public function test_registra_un_docente_con_permiso_por_proteccion_temporal(): void
+    {
+        $this->actingAs($this->general)->postJson('/general/docentes', $this->docenteDatos(['tipo_documento' => 'PPT', 'numero_documento' => '5123456']))->assertCreated();
+        $this->assertSame('PPT', User::where('email', 'hernan@esat.edu.co')->value('tipo_documento'));
+    }
+
     public function test_no_desactiva_ni_cambia_de_sede_a_un_docente_con_grupos_vigentes(): void
     {
         $d = $this->docente();
@@ -140,7 +166,7 @@ class PersonasTest extends TestCase
     public function test_las_pantallas_de_personas_cargan_con_datos(): void
     {
         $this->grupo($this->programa(), 'Mañana', $this->docente());
-        foreach (['estudiantes', 'acudientes', 'docentes', 'academico', 'finanzas', 'reportes', 'auditoria', ''] as $p) {
+        foreach (['estudiantes', 'docentes', 'academico', 'finanzas', 'reportes', 'auditoria', ''] as $p) {
             $this->actingAs($this->general)->get('/general/'.$p)->assertOk()->assertSee('window.GEN_DATOS', false);
         }
     }

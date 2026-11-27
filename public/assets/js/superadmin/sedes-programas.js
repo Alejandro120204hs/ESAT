@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var introPorPestana = {
         sedes: 'Aquí podrás crear nuevas sedes, editar su dirección y ciudad, y desactivar las que ya no estén en funcionamiento.',
-        escuelas: 'Aquí podrás crear nuevas escuelas y ver cuántos programas tiene cada una.',
-        programas: 'Aquí podrás crear programas nuevos, definir su precio, duración y tipo de periodo, y editar los que ya existen.',
-        asignaciones: 'Aquí podrás elegir qué programas ofrece cada sede y guardar los cambios.',
-        periodos: 'Aquí podrás crear los semestres o trimestres reales de cada programa, con sus fechas de inicio y fin.'
+        escuelas: 'Aquí podrás crear nuevas escuelas y ver cuántas carreras tiene cada una.',
+        programas: 'Aquí podrás crear carreras nuevas, definir su precio, duración y tipo de periodo, y editar las que ya existen.',
+        asignaciones: 'Aquí podrás elegir qué carreras ofrece cada sede y guardar los cambios.',
+        periodos: 'Aquí podrás crear los semestres o trimestres reales de cada carrera, con sus fechas de inicio y fin.'
     };
 
     tabs.forEach(function (tab) {

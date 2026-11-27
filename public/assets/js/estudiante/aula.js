@@ -1,7 +1,10 @@
 /* ESAT — Estudiante: Aula virtual
    Lee window.EST_DATOS y guarda con window.EST_API (datos.js: AulaService en el servidor). Pestañas Por hacer / Resultados, chips por módulo y un cajón lateral para responder una evaluación
    (una sola vez, con confirmación), ver su resultado (las correctas solo después del cierre) o entregar y cambiar el
-   archivo de una actividad hasta la fecha límite. ?id=ID abre una; ?modulo=ID filtra. */
+   archivo de una actividad hasta la fecha límite. ?id=ID abre una; ?modulo=ID filtra. Pestaña Material (27-11-2026): lo
+   que el docente sube para el grupo (archivo, enlace o los dos), y la guía de cada actividad en su cajón. Evaluación con
+   tiempo límite: las preguntas salen al pulsar Comenzar, el reloj corre con la hora del servidor y al acabarse se envía
+   lo marcado (lo que falte cuenta como malo). */
 (function () {
     'use strict';
 
@@ -18,13 +21,17 @@
         evaluacion: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
         actividad:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>',
         reloj:      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        empezar:    '<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
         info:       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
         alerta:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
         check:      '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
         x:          '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
         subir:      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
-        enviar:     '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+        enviar:     '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+        material:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+        enlace:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
     };
+    function materiales() { return D.materiales || []; }
 
     /* ── Utilidades ───────────────────────────── */
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -46,7 +53,7 @@
     function clave(x) { return x.tipo + '-' + x.id; }
     function buscar(c) { return todos().filter(function (x) { return clave(x) === c; })[0] || null; }
     function estadoDe(x) {
-        if (x.tipo === 'evaluacion') return x.respuesta ? 'calificada' : (x.cerrada ? 'no_respondida' : 'por_hacer');
+        if (x.tipo === 'evaluacion') return x.respuesta ? 'calificada' : (x.cerrada || (x.intento && x.intento.expirada) ? 'no_respondida' : 'por_hacer');
         if (!x.entrega) return x.cerrada ? 'no_entregada' : 'por_hacer';
         return x.entrega.nota != null ? 'calificada' : 'entregada';
     }
@@ -67,14 +74,14 @@
     /* ── Filtros y pestañas ───────────────────── */
     var vista = 'pendientes', modulo = 'todos';
     var mParam = (window.location.search.match(/[?&]modulo=(\d+)/) || [])[1];
-    if (mParam && todos().some(function (x) { return String(x.moduloId) === mParam; })) modulo = mParam;
+    if (mParam && todos().concat(materiales()).some(function (x) { return String(x.moduloId) === mParam; })) modulo = mParam;
 
     function pintarChips() {
         var ids = [];
-        todos().forEach(function (x) { if (ids.indexOf(x.moduloId) === -1) ids.push(x.moduloId); });
-        ids.sort(function (a, b) { return a - b; });
+        todos().concat(materiales()).forEach(function (x) { if (x.moduloId != null && ids.indexOf(x.moduloId) === -1) ids.push(x.moduloId); });
+        ids.sort(function (a, b) { var x = moduloDe(a), y = moduloDe(b); return (x ? x.numero : a) - (y ? y.numero : b); });
         var html = '<legend class="sr-solo">Filtrar por módulo</legend>' + chip('todos', 'Todos los módulos');
-        ids.forEach(function (id) { var m = moduloDe(id); html += chip(String(id), 'Módulo ' + id, m ? m.nombre : ''); });
+        ids.forEach(function (id) { var m = moduloDe(id); html += chip(String(id), 'Módulo ' + (m ? m.numero : id), m ? m.nombre : ''); });
         $('aul-modulos').innerHTML = html;
         function chip(v, txt, titulo) {
             return '<label class="aul-chip"' + (titulo ? ' title="' + esc(titulo) + '"' : '') + '><input type="radio" name="aul-modulo" value="' + v + '"' + (v === modulo ? ' checked' : '') + '><span>' + esc(txt) + '</span></label>';
@@ -106,7 +113,7 @@
 
     /* ── Tarjetas ─────────────────────────────── */
     function tipoTxt(x) {
-        return x.tipo === 'evaluacion' ? 'Evaluación · ' + plural(x.preguntas.length, 'pregunta', 'preguntas') : 'Actividad · entrega de archivo';
+        return x.tipo === 'evaluacion' ? 'Evaluación · ' + plural(x.numPreguntas || x.preguntas.length, 'pregunta', 'preguntas') + (x.duracion ? ' · ' + x.duracion + ' min' : '') : 'Actividad · entrega de archivo';
     }
     function cierreHtml(x, est) {
         var txt, extra = '';
@@ -150,6 +157,10 @@
         var res = lista.filter(function (x) { return estadoDe(x) !== 'por_hacer'; }).sort(function (a, b) { return a.cierra < b.cierra ? 1 : -1; });
         $('aul-num-pendientes').textContent = pend.length || '';
         $('aul-num-resultados').textContent = res.length || '';
+        // El material de todo el grupo (sin módulo) sale con cualquier filtro
+        var mat = materiales().filter(function (x) { return modulo === 'todos' || x.moduloId == null || String(x.moduloId) === modulo; });
+        $('aul-num-material').textContent = materiales().length || '';
+        if (vista === 'material') { pintarMaterial(mat); return; }
         var ver = vista === 'pendientes' ? pend : res;
 
         // Resumen en una línea (solo en Resultados: el número de pendientes ya está en la pestaña)
@@ -172,19 +183,48 @@
         $('aul-empty').hidden = !!ver.length;
         if (!ver.length) {
             $('aul-empty-ttl').textContent = !D.matricula ? 'No tienes una matrícula vigente' : (vista === 'pendientes' ? 'No tienes nada por hacer' : 'Todavía no tienes resultados');
-            $('aul-empty-sub').textContent = !D.matricula ? 'Cuando la secretaría te matricule en un programa, aquí verás las evaluaciones y actividades de tu grupo.' : vista === 'pendientes'
+            $('aul-empty-sub').textContent = !D.matricula ? 'Cuando el administrativo te matricule en una carrera, aquí verás las evaluaciones y actividades de tu grupo.' : vista === 'pendientes'
                 ? 'Cuando tu docente publique una evaluación o una actividad, aparecerá aquí con su fecha de cierre.'
                 : 'Aquí verás tus notas y los comentarios de tu docente cuando respondas o entregues algo.';
         }
     }
 
+    function pintarMaterial(lista) {
+        $('aul-resumen').innerHTML = '';
+        $('aul-grid').innerHTML = lista.map(function (x) {
+            var m = moduloDe(x.moduloId);
+            return '<article class="aul-card aul-mat">' +
+                '<div class="aul-card-head"><span class="aul-card-tipo">' + ICON.material + 'Material de clase</span>' +
+                    '<span class="aul-mat-fecha">' + esc('Publicado el ' + fechaCorta(x.fecha)) + '</span></div>' +
+                '<div><h3 class="aul-card-titulo">' + esc(x.titulo) + '</h3>' +
+                    '<p class="aul-card-mod">' + esc(m ? 'Módulo ' + m.numero + ' · ' + m.nombre : 'Para todo el grupo') + '</p></div>' +
+                (x.descripcion ? '<p class="aul-texto">' + esc(x.descripcion) + '</p>' : '') +
+                '<div class="aul-mat-archivos">' + (x.archivo ? archivoHtml(x.archivo, 'Descargar') : '') + (x.enlace ? enlaceHtml(x.enlace) : '') + '</div>' +
+            '</article>';
+        }).join('');
+        $('aul-grid').hidden = !lista.length;
+        $('aul-empty').hidden = !!lista.length;
+        if (!lista.length) {
+            $('aul-empty-ttl').textContent = materiales().length ? 'No hay material de este módulo' : 'Tu docente todavía no ha subido material';
+            $('aul-empty-sub').textContent = 'Aquí verás las guías, presentaciones, lecturas y enlaces que tu docente publique para el grupo.';
+        }
+    }
+    function enlaceHtml(url) {
+        var corto = String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
+        return '<div class="aul-archivo"><span class="aul-archivo-icono" aria-hidden="true">' + ICON.enlace + '</span>' +
+            '<span class="aul-archivo-info"><a class="aul-archivo-nombre" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+                esc(corto.length > 60 ? corto.slice(0, 57) + '…' : corto) + '</a>' +
+            '<span class="aul-archivo-sub">Enlace · se abre en otra pestaña</span></span></div>';
+    }
+
     $('aul-grid').addEventListener('click', function (e) {
         var b = e.target.closest('[data-abrir]'), card = e.target.closest('.aul-card');
+        if (card && card.classList.contains('aul-mat')) return;
         if (b) { abrir(b.dataset.abrir, b); return; }
         if (card) abrir(card.dataset.id, card);
     });
     $('aul-grid').addEventListener('keydown', function (e) {
-        var card = e.target.closest('.aul-card');
+        var card = e.target.closest('.aul-card:not(.aul-mat)');
         if (card && e.target === card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(card.dataset.id, card); }
     });
 
@@ -262,14 +302,28 @@
     function cajonEvaluacion(x, est) {
         var body = '', foot = $('aul-dw-foot');
         var cierreTxt = fechaCorta(x.cierra) + ' · ' + hora(x.cierra);
+        if (est === 'por_hacer' && x.duracion && !x.intento) {
+            // Con tiempo límite: las preguntas salen al comenzar y desde ahí corre el reloj
+            body = info([['Cierra', cierreTxt], ['Preguntas', String(x.numPreguntas)], ['Tiempo', x.duracion + ' minutos'], ['Intentos', 'Una sola vez']]) +
+                (x.descripcion ? '<p class="aul-texto">' + esc(x.descripcion) + '</p>' : '') +
+                aviso('neutro', 'reloj', 'Tienes <b>' + x.duracion + ' minutos</b> desde que la comiences' + ' (como máximo hasta el cierre). <b>No se puede pausar</b>: si cierras esta ventana el tiempo sigue corriendo. Cuando se acabe se envía lo que hayas marcado y lo que falte cuenta como malo.');
+            $('aul-dw-body').innerHTML = body;
+            foot.hidden = false;
+            foot.innerHTML = '<span class="aul-foot-txt">Las preguntas salen al comenzar.</span>' +
+                '<button type="button" class="aul-btn aul-btn-primary" id="aul-comenzar">' + ICON.empezar + 'Comenzar evaluación</button>';
+            $('aul-comenzar').addEventListener('click', function () { comenzar(x); });
+            return;
+        }
         if (est === 'por_hacer') {
-            var b = borrador[x.id] || (borrador[x.id] = {});
-            body = info([['Cierra', cierreTxt], ['Preguntas', String(x.preguntas.length)], ['Intentos', 'Una sola vez']]) +
-                '<p class="aul-texto">' + esc(x.descripcion) + '</p>' +
-                aviso('neutro', 'info', 'Revisa tus respuestas antes de enviar: <b>solo se puede responder una vez</b>. Tu nota sale al enviar y las respuestas correctas se ven después del cierre.') +
-                '<ol class="aul-preguntas" id="aul-preguntas">' + x.preguntas.map(function (p) {
+            var b = borrador[x.id] || (borrador[x.id] = leerMarcas(x.id));
+            body = info([['Cierra', cierreTxt], ['Preguntas', String(x.preguntas.length)], x.duracion ? ['Tiempo', x.duracion + ' minutos'] : ['Intentos', 'Una sola vez']]) +
+                (x.descripcion ? '<p class="aul-texto">' + esc(x.descripcion) + '</p>' : '') +
+                aviso('neutro', 'info', x.duracion
+                    ? 'Tu tiempo ya está corriendo. Al acabarse se envía lo que hayas marcado. <b>Solo se responde una vez.</b>'
+                    : 'Revisa tus respuestas antes de enviar: <b>solo se puede responder una vez</b>. Tu nota sale al enviar y las respuestas correctas se ven después del cierre.') +
+                '<ol class="aul-preguntas" id="aul-preguntas">' + x.preguntas.map(function (p, i) {
                     return '<li class="aul-preg" data-preg="' + p.id + '"><fieldset>' +
-                        '<legend><span class="aul-preg-num">' + p.id + '</span><span>' + esc(p.enunciado) + '</span></legend>' +
+                        '<legend><span class="aul-preg-num">' + (i + 1) + '</span><span>' + esc(p.enunciado) + '</span></legend>' +
                         '<div class="aul-ops">' + p.opciones.map(function (o) {
                             return '<label class="aul-op"><input type="radio" name="aul-p' + p.id + '" value="' + o.id + '"' + (b[p.id] === o.id ? ' checked' : '') + '><span>' + esc(o.texto) + '</span></label>';
                         }).join('') + '</div>' +
@@ -277,12 +331,15 @@
                 }).join('') + '</ol>';
             $('aul-dw-body').innerHTML = body;
             foot.hidden = false;
-            foot.innerHTML = '<span class="aul-foot-txt" id="aul-progreso" aria-live="polite"></span>' +
+            foot.innerHTML = (x.duracion ? '<span class="aul-reloj" id="aul-reloj" role="timer" aria-live="off"></span>' : '') +
+                '<span class="aul-foot-txt" id="aul-progreso" aria-live="polite"></span>' +
                 '<button type="button" class="aul-btn aul-btn-primary" id="aul-enviar">' + ICON.enviar + 'Enviar respuestas</button>';
             progreso();
+            tic();
             $('aul-preguntas').addEventListener('change', function (e) {
                 if (!e.target.name || e.target.name.indexOf('aul-p') !== 0) return;
                 b[+e.target.name.slice(5)] = +e.target.value;
+                guardarMarcas(x.id, b);
                 e.target.closest('.aul-preg').classList.remove('is-falta');
                 progreso();
             });
@@ -295,15 +352,18 @@
             body = '<div class="aul-resultado"><span class="aul-resultado-nota aul-tono-' + tono(r.nota) + '">' + esc(nota(r.nota)) + '</span>' +
                 '<span class="aul-resultado-txt"><b>Acertaste ' + r.aciertos + ' de ' + x.preguntas.length + '</b>Respondida el ' + esc(fechaCorta(r.fecha)) + ' a las ' + esc(hora(r.fecha)) + '</span></div>';
             body += x.cerrada ? '' : aviso('neutro', 'info', 'Las respuestas correctas se muestran después del cierre, el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>. Mientras tanto ves lo que marcaste.');
+        } else if (x.intento && x.intento.expirada) {
+            body = aviso('riesgo', 'alerta', 'Se acabó tu tiempo sin que se enviaran tus respuestas, así que quedó sin responder.' +
+                (x.cerrada ? ' Abajo están las respuestas correctas para que estudies.' : ' Las respuestas correctas se ven después del cierre, el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>.'));
         } else {
             body = aviso('riesgo', 'alerta', 'No la respondiste. Cerró el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>. Abajo están las respuestas correctas para que estudies.');
         }
         var marcadas = x.respuesta ? x.respuesta.marcadas : {};
-        body += '<ol class="aul-preguntas">' + x.preguntas.map(function (p) {
+        body += '<ol class="aul-preguntas">' + x.preguntas.map(function (p, i) {
             var mia = marcadas[p.id], ok = p.correcta != null ? mia === p.correcta : null;
             var cls = p.correcta != null && mia != null ? (ok ? ' is-ok' : ' is-mal') : '';
             return '<li class="aul-preg' + cls + '"><div class="aul-preg-cuerpo">' +
-                '<p class="aul-preg-leyenda"><span class="aul-preg-num" aria-hidden="true">' + p.id + '</span><span>' + esc(p.enunciado) + '</span></p>' +
+                '<p class="aul-preg-leyenda"><span class="aul-preg-num" aria-hidden="true">' + (i + 1) + '</span><span>' + esc(p.enunciado) + '</span></p>' +
                 '<ul class="aul-ops">' + p.opciones.map(function (o) {
                     var c = 'aul-op is-solo', tag = '', marca = '';
                     if (p.correcta != null && o.id === p.correcta) { c += ' is-correcta'; marca = ICON.check; tag = o.id === mia ? 'Tu respuesta · correcta' : 'Correcta'; }
@@ -324,40 +384,88 @@
     }
     function enviarEvaluacion() {
         var x = actual, b = borrador[x.id] || {};
-        var falta = x.preguntas.filter(function (p) { return !b[p.id]; })[0];
-        if (falta) {
-            var li = $('aul-dw-body').querySelector('[data-preg="' + falta.id + '"]');
+        var faltan = x.preguntas.filter(function (p) { return !b[p.id]; });
+        if (faltan.length && !x.duracion) {
+            var falta = faltan[0], li = $('aul-dw-body').querySelector('[data-preg="' + falta.id + '"]');
             li.classList.add('is-falta');
             li.scrollIntoView({ block: 'center', behavior: 'smooth' });
             var r = li.querySelector('input');
             if (r) r.focus({ preventScroll: true });
-            toast('Te falta responder la pregunta ' + falta.id + '.', true);
+            toast('Te falta responder la pregunta ' + (x.preguntas.indexOf(falta) + 1) + '.', true);
             return;
         }
-        confirmar('¿Enviar tus respuestas?', 'Respondiste las ' + x.preguntas.length + ' preguntas. Después de enviar no se pueden cambiar: la evaluación se responde una sola vez.', 'Sí, enviar', function () {
-            if (enviando) return;
-            enviando = true;
-            $('aul-enviar').disabled = true;
-            API.responderEvaluacion(x.id, b).then(function (res) {
-                enviando = false;
+        var texto = faltan.length
+            ? 'Te ' + (faltan.length === 1 ? 'falta 1 pregunta' : 'faltan ' + faltan.length + ' preguntas') + ': contará' + (faltan.length === 1 ? '' : 'n') + ' como mala' + (faltan.length === 1 ? '' : 's') + '. Después de enviar no se puede cambiar.'
+            : 'Respondiste las ' + x.preguntas.length + ' preguntas. Después de enviar no se pueden cambiar: la evaluación se responde una sola vez.';
+        confirmar('¿Enviar tus respuestas?', texto, 'Sí, enviar', function () { mandar(x); });
+    }
+    /* Lo marcado se guarda en el navegador mientras responde: si recarga la página no lo pierde (y el envío automático lo lleva) */
+    function leerMarcas(id) { try { return JSON.parse(sessionStorage.getItem('aul-marcas-' + id) || '{}') || {}; } catch (e) { return {}; } }
+    function guardarMarcas(id, b) { try { sessionStorage.setItem('aul-marcas-' + id, JSON.stringify(b)); } catch (e) { /* sin almacenamiento */ } }
+    function borrarMarcas(id) { try { sessionStorage.removeItem('aul-marcas-' + id); } catch (e) { /* sin almacenamiento */ } }
+
+    function mandar(x, automatico) {
+        if (enviando) return;
+        enviando = true;
+        if ($('aul-enviar')) $('aul-enviar').disabled = true;
+        API.responderEvaluacion(x.id, borrador[x.id] || leerMarcas(x.id)).then(function (res) {
+            enviando = false;
+            toast(automatico && res.ok ? 'Se acabó el tiempo: se enviaron tus respuestas. ' + res.mensaje : res.mensaje, !res.ok);
+            if (!res.ok) { if ($('aul-enviar')) $('aul-enviar').disabled = false; return; }
+            delete borrador[x.id];
+            borrarMarcas(x.id);
+            render();
+            if (actual && clave(actual) === clave(x)) {
+                actual = buscar(clave(x));
+                pintarCajon();
+                $('aul-dw-body').scrollTop = 0;
+                $('aul-dw-cerrar').focus();
+            }
+        });
+    }
+
+    /* Comenzar una evaluación con tiempo: confirma y pide al servidor que arranque el reloj */
+    function comenzar(x) {
+        confirmar('¿Comenzar la evaluación?', 'Desde ahora tienes ' + x.duracion + ' minutos y no se puede pausar. Cuando se acabe se envía lo que hayas marcado.', 'Comenzar', function () {
+            $('aul-comenzar').disabled = true;
+            API.iniciarEvaluacion(x.id).then(function (res) {
                 toast(res.mensaje, !res.ok);
-                if (!res.ok) { $('aul-enviar').disabled = false; return; }
-                delete borrador[x.id];
+                if (!res.ok) { $('aul-comenzar').disabled = false; return; }
                 actual = buscar(clave(x));
                 pintarCajon();
                 render();
-                $('aul-dw-body').scrollTop = 0;
-                $('aul-dw-cerrar').focus();
             });
         });
     }
+
+    /* Reloj de las evaluaciones con tiempo: cada segundo; al llegar a cero envía lo marcado (aunque el cajón esté cerrado) */
+    function enCurso() {
+        return D.evaluaciones.filter(function (ev) { return ev.intento && !ev.intento.expirada && !ev.respuesta && ev.intento.finEn; });
+    }
+    function tic() {
+        var ahora = Date.now();
+        enCurso().forEach(function (ev) {
+            var seg = Math.max(0, Math.round((ev.intento.finEn - ahora) / 1000));
+            if (actual && clave(actual) === clave(ev) && $('aul-reloj')) {
+                var el = $('aul-reloj');
+                el.textContent = 'Quedan ' + Math.floor(seg / 60) + ':' + (seg % 60 < 10 ? '0' : '') + (seg % 60);
+                el.classList.toggle('is-poco', seg <= 60);
+            }
+            if (seg === 0 && !ev.intento.enviando) {
+                ev.intento.enviando = true;
+                mandar(ev, true);
+            }
+        });
+    }
+    setInterval(tic, 1000);
 
     /* Actividad */
     function cajonActividad(x, est) {
         var foot = $('aul-dw-foot'), body;
         var abierta = !x.cerrada && est !== 'calificada';
         body = info([['Fecha límite', fechaCorta(x.cierra) + ' · ' + hora(x.cierra)], ['Formatos', 'PDF, Word, JPG o PNG'], ['Tamaño', 'Hasta 10 MB']]) +
-            '<div><p class="aul-seccion-titulo">Instrucciones</p><p class="aul-texto">' + esc(x.instrucciones) + '</p></div>';
+            '<div><p class="aul-seccion-titulo">Instrucciones</p><p class="aul-texto">' + esc(x.instrucciones) + '</p></div>' +
+            (x.adjunto ? '<div><p class="aul-seccion-titulo">Archivo de tu docente</p>' + archivoHtml(x.adjunto, 'Guía de la actividad') + '</div>' : '');
 
         if (est === 'calificada') {
             var e = x.entrega;

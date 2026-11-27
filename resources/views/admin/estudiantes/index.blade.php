@@ -1,4 +1,4 @@
-{{-- $estudiantes (uno por persona, con su matrícula solo para consulta), $grupos, $acudientes y $opciones
+{{-- $estudiantes (uno por persona, con su matrícula solo para consulta y su contacto de emergencia), $grupos y $opciones
      vienen de Admin/Estudiantes/EstudianteController. Aquí se registra y edita a la persona; matricularla
      (programa, grupo, estado, pagos) es de Matrículas. La edad nunca se guarda: se calcula de la fecha de nacimiento. --}}
 @extends('admin.layout')
@@ -18,7 +18,7 @@
     <div class="est-header">
         <div>
             <h2 class="est-title">Estudiantes</h2>
-            <p class="est-sub">Aquí podrás registrar estudiantes con su acudiente cuando sean menores de edad, editar sus datos y consultar su ficha completa: documentos, matrícula, pagos y asistencia. Para darles programa y grupo, matricúlalos en Matrículas.</p>
+            <p class="est-sub">Aquí podrás registrar estudiantes con su contacto de emergencia, editar sus datos y consultar su ficha completa: documentos, matrícula, pagos y asistencia. Para darles carrera y grupo, matricúlalos en Matrículas.</p>
         </div>
         <button class="est-btn est-btn-primary" id="est-btn-registrar" type="button">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -61,7 +61,7 @@
             </div>
             <div>
                 <div class="est-kpi-val" id="est-kpi-programas">0</div>
-                <div class="est-kpi-lbl">Programas</div>
+                <div class="est-kpi-lbl">Carreras</div>
             </div>
         </div>
     </div>
@@ -75,7 +75,7 @@
             </div>
             <div class="app-combobox" id="est-cb-programa">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                    <span data-combobox-label>Todos los programas</span>
+                    <span data-combobox-label>Todas las carreras</span>
                     <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="app-combobox-panel" data-combobox-panel hidden>
@@ -137,7 +137,7 @@
                 <tr>
                     <th>Estudiante</th>
                     <th>Escuela</th>
-                    <th>Programa y grupo</th>
+                    <th>Carrera y grupo</th>
                     <th>Estado</th>
                     <th>Alertas</th>
                     <th>Contacto</th>
@@ -151,7 +151,7 @@
     <div class="est-empty" id="est-empty" hidden>
         <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16c.6-1.4 1.7-2 3-2s2.4.6 3 2"/><line x1="14" y1="10" x2="19" y2="10"/><line x1="14" y1="14" x2="18" y2="14"/></svg>
         <span class="est-empty-ttl">No hay estudiantes con estos filtros</span>
-        <span class="est-empty-sub">Prueba con otro nombre o documento, o quita el filtro de estado, programa o alerta.</span>
+        <span class="est-empty-sub">Prueba con otro nombre o documento, o quita el filtro de estado, carrera o alerta.</span>
         <button type="button" class="est-btn est-btn-ghost" id="est-limpiar">Quitar filtros</button>
     </div>
 
@@ -190,7 +190,6 @@
 
         <div class="est-fi-tabs" id="est-fi-tabs" role="tablist">
             <button type="button" class="est-fi-tab is-active" data-tab="datos" role="tab">General</button>
-            <button type="button" class="est-fi-tab" data-tab="acudiente" role="tab">Acudiente</button>
             <button type="button" class="est-fi-tab" data-tab="grupo" role="tab">Matrícula</button>
             <button type="button" class="est-fi-tab" data-tab="seguimiento" role="tab">Pagos y asistencia</button>
         </div>
@@ -200,7 +199,7 @@
             <div class="est-fi-panel" id="est-fi-panel"></div>
         </div>
 
-        {{-- Vista de acción (acudiente / contraseña) dentro de la misma ficha --}}
+        {{-- Vista de acción (contraseña / cuenta) dentro de la misma ficha --}}
         <div class="est-drawer-body" id="est-accion" hidden>
             <button type="button" class="est-back" id="est-accion-volver">
                 <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
@@ -220,6 +219,11 @@
             <button type="button" class="est-btn est-btn-secondary" data-accion="clave">
                 <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Restablecer contraseña
+            </button>
+            {{-- Solo sin matrícula vigente (retirado, graduado o nunca matriculado): estudiantes.js lo muestra u oculta --}}
+            <button type="button" class="est-btn est-btn-secondary" data-accion="cuenta" id="est-btn-cuenta" hidden>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+                <span id="est-btn-cuenta-txt">Desactivar cuenta</span>
             </button>
         </div>
         <div class="est-drawer-foot" id="est-accion-foot" hidden>
@@ -248,9 +252,8 @@
             <div class="est-wstep is-active" data-step="1" title="Paso 1: Datos personales"><div class="est-wstep-dot"></div><span>Datos personales</span></div>
             <div class="est-wstep-line"></div>
             <div class="est-wstep" data-step="2" title="Paso 2: Contacto"><div class="est-wstep-dot"></div><span>Contacto</span></div>
-            {{-- Al editar no hay paso de acudiente (se cambia desde la ficha) --}}
-            <div class="est-wstep-line is-paso-acu"></div>
-            <div class="est-wstep" data-step="3" title="Paso 3: Acudiente"><div class="est-wstep-dot"></div><span>Acudiente</span></div>
+            <div class="est-wstep-line"></div>
+            <div class="est-wstep" data-step="3" title="Paso 3: Contacto de emergencia"><div class="est-wstep-dot"></div><span>Emergencia</span></div>
         </div>
 
         <div class="est-modal-body">
@@ -306,7 +309,38 @@
                         </div>
                     </div>
                 </div>
-                <div class="est-form-row">
+                {{-- Solo con cédula de extranjería o PPT (EstudianteRequest::DOCUMENTOS_EXTRANJERO) --}}
+                <div class="est-field" id="ins-nac-donde" hidden>
+                    <span class="est-lbl">¿Dónde nació? *</span>
+                    <div class="est-chips" role="radiogroup" aria-label="Dónde nació">
+                        <label class="est-chip"><input type="radio" name="ins-nac" value="co"><span>En Colombia</span></label>
+                        <label class="est-chip"><input type="radio" name="ins-nac" value="fuera"><span>En otro país</span></label>
+                    </div>
+                </div>
+                <div class="est-form-row" id="ins-nac-ext" hidden>
+                    <div class="est-field">
+                        <span class="est-lbl">País de nacimiento *</span>
+                        <div class="app-combobox" id="ins-cb-pais-nac">
+                            <button type="button" class="app-combobox-trigger" data-combobox-trigger>
+                                <span data-combobox-label>Selecciona un país</span>
+                                <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="app-combobox-panel" data-combobox-panel hidden>
+                                <div class="app-combobox-search-wrap">
+                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar país" autocomplete="off">
+                                </div>
+                                <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
+                            </div>
+                            <input type="hidden" id="ins-pais-nac" data-combobox-value>
+                        </div>
+                    </div>
+                    <div class="est-field">
+                        <label class="est-lbl" for="ins-ciudad-ext">Ciudad de nacimiento *</label>
+                        <input class="est-input" id="ins-ciudad-ext" type="text" maxlength="100" autocomplete="off" placeholder="Maracaibo">
+                    </div>
+                </div>
+                <div class="est-form-row" id="ins-nac-co">
                     <div class="est-field">
                         <span class="est-lbl">Departamento de nacimiento *</span>
                         <div class="app-combobox" id="ins-cb-depto-nac">
@@ -402,53 +436,22 @@
                 </div>
             </section>
 
-            {{-- Paso 3: Acudiente --}}
+            {{-- Paso 3: Contacto de emergencia (obligatorio para todos; al registrar y al editar) --}}
             <section class="est-mstep" data-step="3">
-                <div class="est-acu-aviso" id="ins-acu-aviso"></div>
-
-                <label class="est-check" id="ins-acu-opcional">
-                    <input type="checkbox" id="ins-acu-agregar">
-                    <span>Registrar un acudiente para este estudiante</span>
-                </label>
-
-                <div id="ins-acu-bloque">
+                <p class="est-paso-ayuda">A quién llamar si le pasa algo al estudiante. Si es menor de edad, también le llegan los avisos de cobros y comunicados por WhatsApp.</p>
+                <div class="est-form-row">
                     <div class="est-field">
-                        <label class="est-lbl" for="ins-acu-buscar">Cédula del acudiente *</label>
-                        <div class="est-buscar-row">
-                            <input class="est-input est-num" id="ins-acu-buscar" type="text" inputmode="numeric" autocomplete="off" placeholder="Busca primero si ya está registrado">
-                            <button type="button" class="est-btn est-btn-navy" id="ins-acu-btn-buscar">Buscar</button>
-                        </div>
+                        <label class="est-lbl" for="ins-con-nombre">Nombre completo *</label>
+                        <input class="est-input" id="ins-con-nombre" type="text" maxlength="120" autocomplete="off" placeholder="Gloria Inés Cárdenas">
                     </div>
-
-                    <div id="ins-acu-resultado"></div>
-
-                    <div id="ins-acu-nuevo" hidden>
-                        <div class="est-form-row">
-                            <div class="est-field">
-                                <label class="est-lbl" for="ins-acu-nombres">Nombres *</label>
-                                <input class="est-input" id="ins-acu-nombres" type="text" autocomplete="off">
-                            </div>
-                            <div class="est-field">
-                                <label class="est-lbl" for="ins-acu-apellidos">Apellidos *</label>
-                                <input class="est-input" id="ins-acu-apellidos" type="text" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="est-form-row">
-                            <div class="est-field">
-                                <label class="est-lbl" for="ins-acu-telefono">Celular *</label>
-                                <input class="est-input est-num" id="ins-acu-telefono" type="tel" inputmode="numeric" autocomplete="off" placeholder="3XX XXX XXXX">
-                            </div>
-                            <div class="est-field">
-                                <label class="est-lbl" for="ins-acu-email">Correo *</label>
-                                <input class="est-input" id="ins-acu-email" type="email" autocomplete="off">
-                            </div>
-                        </div>
+                    <div class="est-field">
+                        <label class="est-lbl" for="ins-con-celular">Celular *</label>
+                        <input class="est-input est-num" id="ins-con-celular" type="tel" inputmode="numeric" autocomplete="off" placeholder="3XX XXX XXXX">
                     </div>
-
-                    <div class="est-field" id="ins-acu-parentesco-wrap" hidden>
-                        <span class="est-lbl">Parentesco con el estudiante *</span>
-                        <div class="est-chips" id="ins-parentesco" role="radiogroup" aria-label="Parentesco"></div>
-                    </div>
+                </div>
+                <div class="est-field">
+                    <span class="est-lbl">Parentesco con el estudiante *</span>
+                    <div class="est-chips" id="ins-parentesco" role="radiogroup" aria-label="Parentesco"></div>
                 </div>
             </section>
 
@@ -470,7 +473,6 @@
 <script>
     var EST_DATA = @json($estudiantes);
     var EST_GRUPOS = @json($grupos);
-    var EST_ACUDIENTES = @json($acudientes);
     var EST_OPCIONES = @json($opciones);
 </script>
 <script src="{{ asset('assets/js/admin/estudiantes.js') }}?v={{ filemtime(public_path('assets/js/admin/estudiantes.js')) }}" defer></script>

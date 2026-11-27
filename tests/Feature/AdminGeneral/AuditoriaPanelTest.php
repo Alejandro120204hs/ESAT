@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\AdminGeneral;
 
+use App\Models\Academico\Curso;
 use App\Models\Comunicacion\Comunicado;
 use App\Models\Finanzas\Pago;
 use App\Models\User;
@@ -79,11 +80,11 @@ class AuditoriaPanelTest extends TestCase
         $programa = $this->programa(['Mañana'], 1600, 10);
         $grupo = $this->grupo($programa, 'Mañana', null, 'activo', '2026-09-07');
         $this->actingAs($this->admin);
-        $antes = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        $antes = $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
 
         // El Admin sube el precio de 3.000.000 a 4.000.000; luego los dos eligen su plan
         $programa->update(['precio_total' => 4000000]);
-        $despues = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        $despues = $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
         foreach ([$antes, $despues] as $m) {
             $m->update(['plan_pago' => 'mensual']);
             app(PagoService::class)->generarCuotas($m->fresh(), $grupo->fecha_inicio);
@@ -109,7 +110,7 @@ class AuditoriaPanelTest extends TestCase
         $programa = $this->programa(['Mañana'], 1600, 10);
         $grupo = $this->grupo($programa, 'Mañana', null, 'activo', '2026-09-07');
         $this->actingAs($this->admin);
-        $m = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        $m = $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
 
         $this->editarPrograma($programa)->assertJsonValidationErrors('duracion_meses');
         $this->editarPrograma($programa, ['duracion_meses' => 10, 'tipo_periodo' => 'trimestre'])->assertJsonValidationErrors('duracion_meses');
@@ -139,11 +140,12 @@ class AuditoriaPanelTest extends TestCase
     public function test_un_programa_sin_malla_no_gradua(): void
     {
         $programa = $this->programa(['Mañana'], 1600, 10);   // sin módulos
-        $grupo = $this->grupo($programa, 'Mañana', null, 'activo', '2025-09-08');
+        $grupo = $this->grupo($programa, 'Mañana', null, 'activo', today()->toDateString());
         $this->actingAs($this->admin);
-        $m = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        // Se matricula cuando el grupo recibía estudiantes; después el grupo queda como uno ya terminado
+        $m = $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
         $m->update(['fecha_inicio' => '2025-09-01', 'estado_fecha' => '2025-09-01']);
-        $grupo->update(['estado' => 'finalizado']);
+        $grupo->update(['estado' => 'finalizado', 'fecha_inicio' => '2025-09-08', 'fecha_fin' => Curso::finPara(Carbon::parse('2025-09-08'), $programa)]);
 
         $this->patchJson("/admin/matriculas/{$m->id}/estado", ['estado' => 'graduado', 'fecha' => today()->toDateString()])
             ->assertJsonValidationErrors(['estado' => 'no tiene malla']);
@@ -168,7 +170,7 @@ class AuditoriaPanelTest extends TestCase
     {
         $rutas = collect(app('router')->getRoutes()->getRoutes())->filter(fn ($r) => str_starts_with($r->uri(), 'general'));
         $this->assertGreaterThan(40, $rutas->count());
-        foreach (['admin', 'docente', 'estudiante', 'acudiente', 'superadmin'] as $rol) {
+        foreach (['admin', 'docente', 'estudiante', 'superadmin'] as $rol) {
             $u = User::factory()->create(['role' => $rol, 'sede_id' => $this->sede->id]);
             foreach ($rutas as $r) {
                 $uri = '/'.preg_replace('/\{[^}]+\}/', '1', $r->uri());

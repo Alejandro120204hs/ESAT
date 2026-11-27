@@ -16,7 +16,7 @@
     <div class="sed-header">
         <div>
             <h1 class="sed-title">Sedes</h1>
-            <p class="sed-sub">Las sedes de ESAT con su secretaría, sus estudiantes y los programas que ofrecen. Crea una sede nueva o corrige sus datos.</p>
+            <p class="sed-sub">Las sedes de ESAT con su administrativo, sus estudiantes y las carreras que ofrecen. Crea una sede nueva o corrige sus datos.</p>
         </div>
         <button type="button" class="sed-btn sed-btn-primary" id="sed-nueva">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -40,9 +40,9 @@
                 <tr>
                     <th scope="col">Sede</th>
                     <th scope="col">Ubicación</th>
-                    <th scope="col">Secretaría</th>
+                    <th scope="col">Administrativo</th>
                     <th scope="col" class="sed-num">Estudiantes</th>
-                    <th scope="col" class="sed-num">Programas</th>
+                    <th scope="col" class="sed-num">Carreras</th>
                     <th scope="col"><span class="sed-sr">Acciones</span></th>
                 </tr>
             </thead>
@@ -69,8 +69,8 @@
         </div>
         <div class="sed-tabs" role="tablist">
             <button type="button" class="sed-tab is-active" role="tab" data-tab="datos" aria-selected="true">Datos</button>
-            <button type="button" class="sed-tab" role="tab" data-tab="secretarias" aria-selected="false">Secretarías</button>
-            <button type="button" class="sed-tab" role="tab" data-tab="programas" aria-selected="false">Programas</button>
+            <button type="button" class="sed-tab" role="tab" data-tab="secretarias" aria-selected="false">Administrativos</button>
+            <button type="button" class="sed-tab" role="tab" data-tab="programas" aria-selected="false">Carreras</button>
         </div>
         <div class="sed-drawer-body">
             <div class="sed-panel" data-panel="datos" role="tabpanel"><div class="sed-info" id="sed-dw-datos"></div></div>
@@ -152,7 +152,7 @@
                     <span class="sed-field-error" id="sed-e-direccion" hidden></span>
                 </div>
             </div>
-            <p class="sed-nota" id="sed-nota-nueva" hidden>Después de crearla, asígnale una secretaría en «Secretarías» y pídele que registre los programas que ofrece la sede.</p>
+            <p class="sed-nota" id="sed-nota-nueva" hidden>Después de crearla, asígnale un administrativo en «Administrativos» y pídele que registre las carreras que ofrece la sede.</p>
         </div>
         <div class="sed-modal-foot">
             <button type="button" class="sed-btn sed-btn-ghost" data-cerrar-modal>Cancelar</button>
@@ -175,7 +175,7 @@
             </button>
         </div>
         <div class="sed-modal-body">
-            <p class="sed-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
+            <p class="sed-modal-text">Vas a trabajar en esta sede con las mismas pantallas del administrativo. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
         </div>
         <div class="sed-modal-foot">
             <button type="button" class="sed-btn sed-btn-ghost" data-cerrar-modal>Cancelar</button>

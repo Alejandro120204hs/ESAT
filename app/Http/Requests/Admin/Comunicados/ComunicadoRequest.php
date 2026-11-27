@@ -62,6 +62,14 @@ class ComunicadoRequest extends FormRequest
             }
             $c = $this->route('comunicado');
             if ($c) {
+                // Un envío del panel general es uno solo en varias sedes: editar aquí la copia de esta sede la dejaría distinta
+                if ($c->lote && $c->esDelAdmin() && $this->routeIs('admin.*')) {
+                    $v->errors()->add('titulo', $this->user()->isAdminGeneral()
+                        ? 'Este comunicado lo enviaste desde el panel general: edítalo allá (Comunicación › Comunicados) para que quede igual en todas sus sedes.'
+                        : 'Este comunicado lo envió el Admin de ESAT: solo él lo edita. Puedes archivarlo en tu sede.');
+
+                    return;
+                }
                 if ($c->autor?->isAdminGeneral() && ! $this->user()->isAdminGeneral()) {
                     $v->errors()->add('titulo', 'Este comunicado lo envió el Admin de ESAT: solo él lo edita. Puedes archivarlo en tu sede.');
 

@@ -300,14 +300,6 @@
 .doc-curso-prog   { font-size: 0.76rem; color: var(--muted); }
 .doc-cursos-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 0.85rem; }
 
-/* Documentos placeholder */
-.doc-docs-placeholder {
-    text-align: center; padding: 56px 24px; color: var(--muted);
-}
-.doc-docs-placeholder svg { width: 40px; height: 40px; fill: none; stroke: var(--muted); stroke-width: 1.5; margin-bottom: 12px; }
-.doc-docs-placeholder p   { font-size: 0.9rem; font-weight: 600; color: var(--navy-3); margin: 0 0 4px; }
-.doc-docs-placeholder span{ font-size: 0.78rem; }
-
 /* Drawer footer */
 .doc-drawer-footer {
     padding: 14px 24px; border-top: 1.5px solid var(--line);

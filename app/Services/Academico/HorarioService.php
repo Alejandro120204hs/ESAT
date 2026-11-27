@@ -72,7 +72,7 @@ class HorarioService
         $maxSemana = max(0, $programa->horas - $previas) / max(0.01, $this->semanas($inicio, $fin));
 
         return sprintf(
-            'El horario suma %s horas (%s h por semana durante %s semanas) y el programa tiene %s horas. Con estas fechas el máximo es %s h por semana.',
+            'El horario suma %s horas (%s h por semana durante %s semanas) y la carrera tiene %s horas. Con estas fechas el máximo es %s h por semana.',
             $this->fmt($horas), $this->fmt($semanales), $this->fmt($this->semanas($inicio, $fin)),
             $this->fmt($programa->horas), $this->fmt(floor($maxSemana * 10) / 10)
         );

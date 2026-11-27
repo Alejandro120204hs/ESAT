@@ -19,7 +19,7 @@ class InicioController extends Controller
         return view('admin_general.dashboard', ['datos' => [
             'hoy'         => now()->toIso8601String(),
             'sedes'       => $estructura->sedes(),
-            'secretarias' => collect($estructura->secretarias())->map(fn ($s) => collect($s)->only(['id', 'sede_id', 'nombres', 'apellidos', 'activo', 'ultimo_acceso']))->all(),
+            'secretarias' => collect($estructura->secretarias())->map(fn ($s) => collect($s)->only(['id', 'sede_id', 'nombres', 'apellidos', 'activo', 'ultimo_acceso', 'creada']))->all(),
             'auditoria'   => array_slice($supervision->auditoria(), 0, 60),
             'comunicados' => collect($comunicacion->comunicados())->where('estado', 'programado')->values()->all(),
         ]]);

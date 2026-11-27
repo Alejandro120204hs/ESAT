@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Reglas de cobro de una matrícula: derecho de matrícula, plan de cuotas (mensual o por
  * periodo, lo elige el estudiante), descuentos, pagos con recibo (abonos) y el resumen
- * que muestran Matrículas, Estudiantes y Acudientes.
+ * que muestran Matrículas y Estudiantes.
  * Valor de cada cuota = precio del programa repartido - descuento + cuota del sistema (configuraciones).
  * Un pago (recaudo) es un monto libre que se aplica en orden: lo más viejo primero.
  */
@@ -83,6 +83,7 @@ class PagoService
             // La última cuota absorbe los pesos que sobran al repartir el precio
             $valor     = $numero === $total ? $precio - $base * ($total - 1) : $base;
             $descuento = $this->descuentoDe($valor, (float) $matricula->descuento_pct);
+            $cobra     = $valor - $descuento + $sistema;
 
             $matricula->pagos()->create([
                 'tipo'              => $plan,
@@ -93,8 +94,10 @@ class PagoService
                 'monto_programa'    => $valor,
                 'descuento'         => $descuento,
                 'monto_sistema'     => $sistema,
-                'monto_total'       => $valor - $descuento + $sistema,
-                'estado'            => $vence->lt(today()) ? 'vencido' : 'pendiente',
+                'monto_total'       => $cobra,
+                // Una cuota en $ 0 (beca completa sin cuota del sistema) no se debe: queda pagada sin dinero
+                'estado'            => $cobra <= 0 ? 'pagado' : ($vence->lt(today()) ? 'vencido' : 'pendiente'),
+                'fecha_pago'        => $cobra <= 0 ? today() : null,
             ]);
         }
         // Lo trasladado (cambio de programa, reintegro) se aplica en cuanto hay cuotas
@@ -186,11 +189,16 @@ class PagoService
             Matricula::whereKey($matricula->id)->lockForUpdate()->first();   // no se cruza con un pago que entra a la vez
             $matricula->update(['descuento_pct' => $pct, 'descuento_motivo' => $pct > 0 ? $motivo : null]);
 
-            $cuotas = $matricula->pagos()->where('tipo', '!=', 'matricula')->whereIn('estado', Pago::POR_PAGAR)
-                ->where('abonado', 0)->get();
+            // Sin abonos: las que se deben, y las que quedaron en $ 0 por una beca completa (pagadas sin dinero)
+            $cuotas = $matricula->pagos()->where('tipo', '!=', 'matricula')->where('abonado', 0)
+                ->where(fn ($q) => $q->whereIn('estado', Pago::POR_PAGAR)->orWhere(fn ($q) => $q->where('estado', 'pagado')->where('monto_total', '<=', 0)))
+                ->get();
             foreach ($cuotas as $c) {
                 $descuento = $this->descuentoDe((float) $c->monto_programa, $pct);
-                $c->update(['descuento' => $descuento, 'monto_total' => (float) $c->monto_programa - $descuento + (float) $c->monto_sistema]);
+                $total     = (float) $c->monto_programa - $descuento + (float) $c->monto_sistema;
+                // En $ 0 no se debe (pagada sin dinero); si vuelve a valer algo, se debe otra vez según su fecha
+                $estado = $total <= 0 ? 'pagado' : ($c->fecha_vencimiento && $c->fecha_vencimiento->lt(today()) ? 'vencido' : 'pendiente');
+                $c->update(['descuento' => $descuento, 'monto_total' => $total, 'estado' => $estado, 'fecha_pago' => $estado === 'pagado' ? today() : null]);
             }
 
             return $cuotas->count();
@@ -552,11 +560,50 @@ class PagoService
                       'anio' => $grupo->fecha_inicio->year, 'estado' => 'pendiente']);
     }
 
-    /** Lo mismo para todas las matrículas activas de un grupo al que le cambiaron la fecha de inicio. */
+    /**
+     * Lo mismo para todas las matrículas activas de un grupo al que le cambiaron la fecha de inicio: el derecho y las
+     * cuotas del plan vencen según el nuevo inicio de clases.
+     */
     public function reprogramarDerechosDelGrupo(Curso $grupo): void
     {
-        $grupo->matriculas()->where('estado', 'activo')->with('curso')->get()
-            ->each(fn (Matricula $m) => $this->reprogramarDerecho($m));
+        $grupo->matriculas()->where('estado', 'activo')->with(['curso.programa', 'programa'])->get()
+            ->each(function (Matricula $m) {
+                $this->reprogramarDerecho($m);
+                $this->reprogramarCuotas($m);
+            });
+    }
+
+    /**
+     * El grupo de la matrícula empieza en otra fecha (pasó a otro grupo, o se corrió el inicio del suyo): las cuotas que
+     * todavía debe vuelven a contar desde la primera cuota del grupo (primeraCuota), como si lo hubiera elegido ahí. Las
+     * pagadas conservan su fecha. Solo si el plan nunca se interrumpió (sin cuotas anuladas): después de un aplazamiento
+     * las cuotas cuentan desde el reintegro y no se mueven con el grupo. Devuelve cuántas cambiaron de fecha.
+     */
+    public function reprogramarCuotas(Matricula $matricula): int
+    {
+        $plan  = $matricula->plan_pago;
+        $grupo = $matricula->curso;
+        if (! $plan || ! $grupo || $matricula->estado !== 'activo'
+            || $matricula->pagos()->where('tipo', $plan)->where('estado', 'anulado')->exists()) {
+            return 0;
+        }
+        $programa = $matricula->programa;
+        $inicio   = Carbon::parse($this->primeraCuota($grupo))->startOfMonth();
+        $cambiadas = 0;
+        foreach ($matricula->pagos()->where('tipo', $plan)->whereIn('estado', Pago::POR_PAGAR)->get() as $c) {
+            $meses = $plan === 'mensual' ? $c->numero_cuota - 1 : $programa->inicioDelPeriodo($c->numero_cuota - 1);
+            $vence = $inicio->copy()->addMonthsNoOverflow($meses)->day(Pago::DIA_VENCIMIENTO);
+            if ($c->fecha_vencimiento && $c->fecha_vencimiento->isSameDay($vence)) {
+                continue;
+            }
+            $c->update([
+                'fecha_vencimiento' => $vence->toDateString(), 'mes' => $vence->month, 'anio' => $vence->year,
+                'estado' => $vence->lt(today()) ? 'vencido' : 'pendiente',
+            ]);
+            $cambiadas++;
+        }
+
+        return $cambiadas;
     }
 
     /**

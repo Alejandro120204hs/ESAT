@@ -28,6 +28,8 @@ class CalificacionesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Sus fechas fijas incluyen festivos (12-oct, 2-nov): las reglas de festivos se prueban en FestivosTest
+        config(['academico.festivos' => false]);
         Carbon::setTestNow('2026-10-21 09:00:00');
         $this->prepararSede();
         // 3 meses, 3 módulos de 100 / 100 / 200 horas

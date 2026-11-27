@@ -8,7 +8,6 @@ use App\Models\Academico\EstudianteDocumento;
 use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\User;
-use App\Services\Academico\AcudienteService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -56,11 +55,11 @@ class MatriculaRequest extends FormRequest
             }
             $vigente = $e->matriculas()->whereIn('estado', Matricula::VIGENTES)->first();
             if ($vigente) {
-                $v->errors()->add('estudiante_id', "{$e->name} ya tiene una matrícula vigente ({$vigente->codigo}). Si cambió de programa, primero retírala.");
+                $v->errors()->add('estudiante_id', "{$e->name} ya tiene una matrícula vigente ({$vigente->codigo}). Si cambió de carrera, primero retírala.");
                 return;
             }
-            if (AcudienteService::esMenor($e) && ! $e->acudientes()->exists()) {
-                $v->errors()->add('estudiante_id', "{$e->name} es menor de edad y no tiene acudiente. Vincúlale uno en Estudiantes antes de matricularlo.");
+            if (! $e->contactoEmergencia()->exists()) {
+                $v->errors()->add('estudiante_id', "{$e->name} no tiene contacto de emergencia. Regístralo en Estudiantes (Editar) antes de matricularlo.");
                 return;
             }
             $faltan = EstudianteDocumento::pendientesDe($e);
@@ -76,11 +75,11 @@ class MatriculaRequest extends FormRequest
             }
             $programa = $g->programa;
             if ($programa->estado !== 'activo' || ! $programa->sedes()->whereKey($sedeId)->exists()) {
-                $v->errors()->add('curso_id', "El programa {$programa->nombre} no está activo en tu sede.");
+                $v->errors()->add('curso_id', "La carrera {$programa->nombre} no está activa en tu sede.");
                 return;
             }
-            if ($g->estado === 'finalizado') {
-                $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya finalizó.");
+            if ($g->cerrado()) {
+                $v->errors()->add('curso_id', $g->motivoCerrado());
             } elseif ($g->cuposLibres() <= 0) {
                 $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya no tiene cupos libres.");
             }

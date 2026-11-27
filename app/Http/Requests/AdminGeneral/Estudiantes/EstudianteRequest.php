@@ -6,15 +6,13 @@ use App\Enums\RolUsuario;
 use App\Http\Requests\Admin\Estudiantes\EstudianteRequest as EstudianteSedeRequest;
 use App\Models\Finanzas\Matricula;
 use App\Models\User;
-use App\Rules\CiudadDeColombia;
-use App\Services\Academico\EstudianteService;
-use Illuminate\Support\Carbon;
+use App\Services\Finanzas\PagoService;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 /**
  * Registrar o editar a un estudiante desde el panel general: las mismas reglas de la secretaría, en la sede que se elija.
- * Al editar también se puede cambiar su acudiente (de la misma sede) o su sede, si no tiene matrícula vigente.
+ * Al editar también se puede cambiar su sede, si no tiene matrícula vigente ni deudas.
  */
 class EstudianteRequest extends EstudianteSedeRequest
 {
@@ -25,27 +23,10 @@ class EstudianteRequest extends EstudianteSedeRequest
         return ! $e || $e->role === RolUsuario::Estudiante;
     }
 
-    protected function prepareForValidation(): void
-    {
-        parent::prepareForValidation();
-        if ($this->route('estudiante')) {
-            $this->merge(['acudiente_id' => $this->filled('acudiente_id') ? (int) $this->input('acudiente_id') : null]);
-        }
-    }
-
     public function rules(): array
     {
-        $reglas = parent::rules() + ['sede_id' => ['required', 'integer', Rule::exists('sedes', 'id')]];
-        $reglas['departamento_nacimiento'][] = new CiudadDeColombia();
-        $reglas['lugar_nacimiento'][] = new CiudadDeColombia((string) $this->input('departamento_nacimiento'));
-        $reglas['departamento_residencia'][] = new CiudadDeColombia();
-        $reglas['ciudad_residencia'][] = new CiudadDeColombia((string) $this->input('departamento_residencia'));
-        if ($this->route('estudiante')) {
-            $reglas['acudiente_id'] = ['nullable', 'integer'];
-            $reglas['parentesco'] = ['nullable', 'required_with:acudiente_id', Rule::in(EstudianteService::PARENTESCOS)];
-        }
-
-        return $reglas;
+        // Departamento y ciudad (listado de Colombia) ya vienen de las reglas de la secretaría
+        return parent::rules() + ['sede_id' => ['required', 'integer', Rule::exists('sedes', 'id')]];
     }
 
     public function after(): array
@@ -62,19 +43,20 @@ class EstudianteRequest extends EstudianteSedeRequest
 
                 return;
             }
-            $id = $this->input('acudiente_id');
-            if (! $id) {
-                if (Carbon::parse($this->input('fecha_nacimiento'))->age < 18) {
-                    $v->errors()->add('acudiente_id', 'Es menor de edad: necesita un acudiente.');
-                }
-
-                return;
-            }
-            $a = User::find($id);
-            if (! $a || $a->role !== RolUsuario::Acudiente || $a->sede_id !== $this->sedeId()) {
-                $v->errors()->add('acudiente_id', 'Ese acudiente no está registrado en la sede elegida.');
+            // Con deudas tampoco: la secretaría de la sede nueva no las vería al matricularlo ni al darle el paz y salvo
+            if ((int) $this->input('sede_id') !== $e->sede_id && ($debe = $this->deudaDe($e)) > 0) {
+                $v->errors()->add('sede_id', 'Todavía debe $ '.number_format($debe, 0, ',', '.').' en su sede: no se cambia de sede hasta que esté a paz y salvo.');
             }
         }]);
+    }
+
+    /** Lo que debe en todas sus matrículas (sin las anuladas). */
+    private function deudaDe(User $e): int
+    {
+        $pagos = app(PagoService::class);
+
+        return (int) Matricula::where('estudiante_id', $e->id)->where('estado', '!=', 'anulado')->with(['pagos', 'recaudos', 'programa'])->get()
+            ->sum(fn (Matricula $m) => $pagos->resumen($m)['por_pagar']);
     }
 
     /** La sede elegida en el formulario. */
@@ -85,6 +67,6 @@ class EstudianteRequest extends EstudianteSedeRequest
 
     public function attributes(): array
     {
-        return parent::attributes() + ['sede_id' => 'sede', 'acudiente_id' => 'acudiente'];
+        return parent::attributes() + ['sede_id' => 'sede'];
     }
 }

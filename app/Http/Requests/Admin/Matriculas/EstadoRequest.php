@@ -58,7 +58,7 @@ class EstadoRequest extends FormRequest
                 }
                 // Sin malla no hay módulos que aprobar: no se gradúa hasta que el Admin se la cargue
                 if ($m->programa->modulos()->doesntExist()) {
-                    $v->errors()->add('estado', 'El programa todavía no tiene malla: el Admin debe cargarle los módulos antes de graduar a alguien.');
+                    $v->errors()->add('estado', 'La carrera todavía no tiene malla: el Admin debe cargarle los módulos antes de graduar a alguien.');
                     return;
                 }
                 // Todos los módulos de la malla aprobados (con nota o en habilitación)
@@ -77,13 +77,13 @@ class EstadoRequest extends FormRequest
                 }
                 // Sin plan no hay cuotas: "no debe nada" no significa que haya pagado el programa
                 if (! $m->plan_pago) {
-                    $v->errors()->add('estado', 'No ha elegido su plan de pago, así que no ha pagado el programa. No se puede graduar.');
+                    $v->errors()->add('estado', 'No ha elegido su plan de pago, así que no ha pagado la carrera. No se puede graduar.');
                     return;
                 }
                 $total   = $m->totalCuotas();
                 $pagadas = $m->pagos->where('tipo', $m->plan_pago)->where('estado', 'pagado')->count();
                 if ($pagadas < $total) {
-                    $v->errors()->add('estado', "Solo ha pagado {$pagadas} de {$total} cuotas del programa. No se puede graduar.");
+                    $v->errors()->add('estado', "Solo ha pagado {$pagadas} de {$total} cuotas de la carrera. No se puede graduar.");
                 }
             }
 
@@ -101,9 +101,9 @@ class EstadoRequest extends FormRequest
             if ($this->input('estado') === 'activo') {
                 $g = $this->grupo() ?? $m->curso;
                 if (! $g || $g->programa_id !== $m->programa_id || $g->sede_id !== $m->sede_id) {
-                    $v->errors()->add('curso_id', 'El grupo debe ser del mismo programa y de tu sede.');
-                } elseif ($g->estado === 'finalizado') {
-                    $v->errors()->add('curso_id', "El {$g->nombre} ya finalizó: elige otro grupo para reintegrarlo.");
+                    $v->errors()->add('curso_id', 'El grupo debe ser de la misma carrera y de tu sede.');
+                } elseif ($g->cerrado()) {
+                    $v->errors()->add('curso_id', $g->motivoCerrado().' Elige otro grupo para reintegrarlo.');
                 } elseif ($g->cuposLibres() <= 0) {
                     $v->errors()->add('curso_id', "El {$g->nombre} no tiene cupos libres: elige otro grupo para reintegrarlo.");
                 }

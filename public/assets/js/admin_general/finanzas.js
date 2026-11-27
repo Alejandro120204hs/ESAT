@@ -267,7 +267,7 @@
         volver = document.activeElement;
         $('fin-rc-titulo').textContent = 'Recibo de caja ' + r.numero;
         var filas = [['Fecha', fechaLarga(r.fecha) + ', ' + new Date(r.fecha).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })], ['Sede', s.nombre + ' · ' + s.direccion],
-            ['Estudiante', nombreEst(e)], ['Documento', e.tipo_documento + ' ' + e.numero_documento], ['Programa', e.programa || '—'], ['Concepto', r.concepto],
+            ['Estudiante', nombreEst(e)], ['Documento', e.tipo_documento + ' ' + e.numero_documento], ['Carrera', e.programa || '—'], ['Concepto', r.concepto],
             ['Medio de pago', r.medio + (r.referencia ? ' · Ref. ' + r.referencia : '')], ['Registró', r.quien.nombre + (r.quien.rol === 'admin' ? ' (Admin)' : '')]];
         $('fin-rc-cuerpo').innerHTML = '<p class="fin-sello"' + (r.anulado ? '' : ' hidden') + '>Recibo anulado: ' + esc(r.motivo || '') + '</p>' +
             filas.map(function (x) { return '<div><span class="fin-info-lbl">' + esc(x[0]) + '</span><span class="fin-info-val">' + esc(x[1]) + '</span></div>'; }).join('') +
@@ -294,7 +294,8 @@
         return r;
     }
     var carPagina = 1, carFiltrados = [];
-    function enMora(lista) { return lista.filter(function (e) { return e.estado === 'activo' && e.pago === 'vencido'; }); }
+    // Todo el que tiene algo vencido, también con la matrícula aplazada o cerrada (la misma cartera de Pagos y del Inicio)
+    function enMora(lista) { return lista.filter(function (e) { return e.saldo_vencido > 0; }); }
     function pintarCartera() {
         var mora = enMora(D.estudiantes.filter(enSede));
         var activos = D.estudiantes.filter(function (e) { return enSede(e) && e.estado === 'activo'; }).length;
@@ -315,6 +316,7 @@
             .sort(function (a, b) { return b.saldo_vencido - a.saldo_vencido; });
         carPagina = 1; pintarMorosos();
     }
+    var SITUACION = { aplazado: 'Aplazado', retirado: 'Retirado', graduado: 'Graduado' };
     function vieja(e) { return e.cuotas_vencidas.reduce(function (m, c) { return c.vence < m ? c.vence : m; }, '9999-12-31'); }
     function pintarMorosos() {
         var desde = (carPagina - 1) * POR_PAGINA;
@@ -322,15 +324,15 @@
         $('fin-car-empty').hidden = carFiltrados.length > 0;
         $('fin-car-body').innerHTML = carFiltrados.slice(desde, desde + POR_PAGINA).map(function (e) {
             var s = sedePorId(e.sede_id), v = vieja(e), d = diasVencida(v);
-            var a = e.acudiente, tel = digitos(a ? a.telefono : e.telefono);
+            var a = e.contacto && e.edad != null && e.edad < 18 ? e.contacto : null, tel = digitos(a ? a.celular : e.telefono);
             var msg = 'Hola' + (a ? ' ' + a.nombre.split(' ')[0] : ' ' + e.nombres.split(' ')[0]) + ', te escribimos de ESAT sede ' + s.nombre + '. ' +
                 (a ? e.nombres.split(' ')[0] + ' tiene' : 'Tienes') + ' ' + plata(e.saldo_vencido) + ' en cuotas vencidas. ¿Nos ayudas a ponerte al día?';
             return '<tr><td><div class="fin-strong">' + esc(nombreEst(e)) + '</div><div class="fin-muted">' + esc(e.tipo_documento + ' ' + e.numero_documento) + '</div></td>' +
-                '<td>' + esc(s.nombre) + '</td><td>' + esc((e.programa || '').replace('Técnico Laboral en ', '')) + '<div class="fin-muted">' + esc(e.grupo || '') + '</div></td>' +
+                '<td>' + esc(s.nombre) + '</td><td>' + esc((e.programa || '').replace('Técnico Laboral en ', '')) + '<div class="fin-muted">' + esc((e.grupo || '') + (SITUACION[e.estado] ? (e.grupo ? ' · ' : '') + SITUACION[e.estado] : '')) + '</div></td>' +
                 '<td class="fin-num">' + e.cuotas_vencidas.length + '</td>' +
                 '<td>' + esc(fechaMini(v)) + '<div class="fin-muted' + (d > 90 ? ' fin-neg' : '') + '">Hace ' + d + ' días</div></td>' +
                 '<td class="fin-num"><span class="fin-strong">' + esc(plata(e.saldo_vencido)) + '</span></td>' +
-                '<td>' + (tel.length === 10 ? '<a class="fin-wa" target="_blank" rel="noopener" href="https://wa.me/57' + tel + '?text=' + encodeURIComponent(msg) + '" title="Recordatorio por WhatsApp' + (a ? ' al acudiente' : '') + '">' + ICON.wa + (a ? 'Acudiente' : 'WhatsApp') + '</a>' : '') + '</td></tr>';
+                '<td>' + (tel.length === 10 ? '<a class="fin-wa" target="_blank" rel="noopener" href="https://wa.me/57' + tel + '?text=' + encodeURIComponent(msg) + '" title="Recordatorio por WhatsApp' + (a ? ' a su contacto de emergencia' : '') + '">' + ICON.wa + (a ? 'Su contacto' : 'WhatsApp') + '</a>' : '') + '</td></tr>';
         }).join('');
         paginar($('fin-car-paginacion'), carFiltrados.length, carPagina, function (p) { carPagina = p; pintarMorosos(); });
     }
@@ -396,8 +398,8 @@
             var t = b.dataset.exportar;
             if (t === 'recaudo') descargarCsv('recibos-' + inicioMes(mes).toISOString().slice(0, 7), [['Recibo', 'Fecha', 'Estudiante', 'Documento', 'Sede', 'Concepto', 'Medio', 'Referencia', 'Registró', 'Valor', 'Estado', 'Motivo de anulación']]
                 .concat(recFiltrados.map(function (r) { var e = estudiante(r.est_id); return [r.numero, fechaMini(r.fecha), nombreEst(e), e.numero_documento, sedePorId(r.sede_id).nombre, r.concepto, r.medio, r.referencia, r.quien.nombre, r.valor, r.anulado ? 'Anulado' : 'Vigente', r.motivo || '']; })));
-            if (t === 'cartera') descargarCsv('cartera-vencida', [['Estudiante', 'Documento', 'Sede', 'Programa', 'Grupo', 'Cuotas vencidas', 'Vencida desde', 'Debe', 'Celular', 'Acudiente', 'Celular del acudiente']]
-                .concat(carFiltrados.map(function (e) { return [nombreEst(e), e.numero_documento, sedePorId(e.sede_id).nombre, e.programa, e.grupo, e.cuotas_vencidas.length, vieja(e), e.saldo_vencido, e.telefono, e.acudiente ? e.acudiente.nombre : '', e.acudiente ? e.acudiente.telefono : '']; })));
+            if (t === 'cartera') descargarCsv('cartera-vencida', [['Estudiante', 'Documento', 'Sede', 'Carrera', 'Grupo', 'Cuotas vencidas', 'Vencida desde', 'Debe', 'Celular', 'Contacto de emergencia', 'Celular del contacto']]
+                .concat(carFiltrados.map(function (e) { return [nombreEst(e), e.numero_documento, sedePorId(e.sede_id).nombre, e.programa, e.grupo, e.cuotas_vencidas.length, vieja(e), e.saldo_vencido, e.telefono, e.contacto ? e.contacto.nombre : '', e.contacto ? e.contacto.celular : '']; })));
             if (t === 'egresos') descargarCsv('egresos-' + inicioMes(mes).toISOString().slice(0, 7), [['Comprobante', 'Fecha', 'Sede', 'Categoría', 'Beneficiario', 'Medio', 'Registró', 'Valor']]
                 .concat(D.egresos.filter(function (g) { return enSede(g) && enMes(g.fecha, mes); }).map(function (g) { return [g.numero, fechaMini(g.fecha), sedePorId(g.sede_id).nombre, g.categoria, g.beneficiario, g.medio, g.quien, g.valor]; })));
         });

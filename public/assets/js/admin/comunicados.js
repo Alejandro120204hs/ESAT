@@ -1,7 +1,7 @@
 /* ESAT — Admin: Comunicados (Comunicación). Datos de ComunicadoService (COM_DATOS); crear, editar, archivar
    y eliminar van a ComunicadoController (ComunicadoRequest / ArchivarComunicadoRequest). El admin publica a toda la sede o a un rol; los de los docentes (a sus grupos) aquí
    solo se ven y se archivan. Un programado cuya hora ya llegó cuenta como publicado. Leído = la persona lo abrió
-   en su panel; a quien no lo ha leído se le puede escribir por WhatsApp (al acudiente si es menor). */
+   en su panel; a quien no lo ha leído se le puede escribir por WhatsApp (a su contacto de emergencia si es menor). */
 (function () {
     'use strict';
 
@@ -14,8 +14,8 @@
     var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     var CAT = { general: 'General', academico: 'Académico', pagos: 'Pagos', evento: 'Evento', urgente: 'Urgente' };
-    var DESTINO = { sede: 'Toda la sede', estudiantes: 'Estudiantes', docentes: 'Docentes', acudientes: 'Acudientes', grupo: 'Un grupo' };
-    var ROL = { e: 'Estudiante', d: 'Docente', a: 'Acudiente' };
+    var DESTINO = { sede: 'Toda la sede', estudiantes: 'Estudiantes', docentes: 'Docentes', grupo: 'Un grupo' };
+    var ROL = { e: 'Estudiante', d: 'Docente' };
     var MAX_MSG = 2000, MAX_ADJ = 5 * 1024 * 1024;
 
     /* ── Utilidades ───────────────────────────── */
@@ -124,10 +124,9 @@
     };
 
     /* ── Personas y reglas ───────────────────────────── */
-    var P = { e: {}, d: {}, a: {} };
+    var P = { e: {}, d: {} };
     D.personas.estudiantes.forEach(function (p) { P.e[p.id] = p; });
     D.personas.docentes.forEach(function (p) { P.d[p.id] = p; });
-    D.personas.acudientes.forEach(function (p) { P.a[p.id] = p; });
     var grupoPorId = {};
     D.grupos.forEach(function (g) { grupoPorId[g.id] = g; });
 
@@ -135,7 +134,6 @@
         var out = [];
         if (destino === 'sede' || destino === 'estudiantes') D.personas.estudiantes.forEach(function (p) { out.push('e' + p.id); });
         if (destino === 'sede' || destino === 'docentes') D.personas.docentes.forEach(function (p) { out.push('d' + p.id); });
-        if (destino === 'sede' || destino === 'acudientes') D.personas.acudientes.forEach(function (p) { out.push('a' + p.id); });
         if (destino === 'grupo') D.personas.estudiantes.forEach(function (p) { if (p.grupo_id === grupoId) out.push('e' + p.id); });
         return out;
     }
@@ -243,7 +241,7 @@
             '<td><div class="com-cell"><div class="com-cell-titulo">' + marcas + '<span>' + esc(c.titulo) + '</span></div><div class="com-cell-msg">' + esc(c.mensaje || 'Sin mensaje todavía') + '</div></div></td>' +
             '<td>' + catTag(c.categoria) + '</td>' +
             '<td><div class="com-para"><div class="com-person-name com-nowrap">' + esc(c.destino === 'grupo' ? 'Su grupo' : DESTINO[c.destino]) + '</div>' + (c.destino === 'grupo' ? '<div class="com-person-sub" title="' + esc(paraTxt(c)) + '">' + esc(paraTxt(c)) + '</div>' : '') + '</div></td>' +
-            '<td><div class="com-person-name com-nowrap">' + esc(c.autor.tipo === 'admin' ? 'Secretaría' : c.autor.nombre) + '</div><div class="com-person-sub">' + (c.autor.tipo === 'admin' ? esc(c.autor.nombre) : 'Docente') + '</div></td>' +
+            '<td><div class="com-person-name com-nowrap">' + esc(c.autor.tipo === 'admin' ? 'Administrativo' : c.autor.nombre) + '</div><div class="com-person-sub">' + (c.autor.tipo === 'admin' ? esc(c.autor.nombre) : 'Docente') + '</div></td>' +
             '<td class="com-nowrap">' + fecha + (vencido(c) ? '<div class="com-person-sub">Ya no se ve desde el ' + corta(c.visible_hasta) + '</div>' : '') + '</td>' +
             '<td>' + lect + '</td>' +
             '<td class="com-actions-cell"><button type="button" class="com-icon-btn" title="Ver comunicado" aria-label="Ver ' + esc(c.titulo) + '">' + ICON.ojo + '</button></td></tr>';
@@ -285,8 +283,8 @@
     });
     filtroCombo('com-cb-categoria', [{ value: '', label: 'Todas las categorías' }].concat(Object.keys(CAT).map(function (k) { return { value: k, label: CAT[k] }; })), function () { aplicar(); });
     filtroCombo('com-cb-destino', [{ value: '', label: 'Todos los destinatarios' }, { value: 'sede', label: 'Toda la sede' }, { value: 'estudiantes', label: 'Estudiantes' },
-        { value: 'docentes', label: 'Docentes' }, { value: 'acudientes', label: 'Acudientes' }, { value: 'grupo', label: 'Grupos (de los docentes)' }], function () { aplicar(); });
-    filtroCombo('com-cb-autor', [{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Secretaría' }, { value: 'docente', label: 'Docentes' }], function () { aplicar(); });
+        { value: 'docentes', label: 'Docentes' }, { value: 'grupo', label: 'Grupos (de los docentes)' }], function () { aplicar(); });
+    filtroCombo('com-cb-autor', [{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Administrativo' }, { value: 'docente', label: 'Docentes' }], function () { aplicar(); });
     document.getElementById('com-search').addEventListener('input', function () { aplicar(); });
 
     var vistaBtns = document.querySelectorAll('.com-vista-btn');
@@ -353,20 +351,20 @@
         return a.url ? '<a class="com-adjunto" href="' + esc(a.url) + '" target="_blank" rel="noopener">' + dentro + '</a>' : '<div class="com-adjunto">' + dentro + '</div>';
     }
     function preview(c) {
-        return '<div class="com-preview"><div class="com-preview-top"><span class="com-preview-de">' + esc(c.autor.tipo === 'admin' ? 'ESAT · ' + (CFG.sede || 'Secretaría') : c.autor.nombre + ' · ' + paraTxt(c)) + '</span>' + catTag(c.categoria) + '</div>' +
+        return '<div class="com-preview"><div class="com-preview-top"><span class="com-preview-de">' + esc(c.autor.tipo === 'admin' ? 'ESAT · ' + (CFG.sede || 'Administrativo') : c.autor.nombre + ' · ' + paraTxt(c)) + '</span>' + catTag(c.categoria) + '</div>' +
             '<h4 class="com-preview-titulo">' + esc(c.titulo) + '</h4>' +
             '<p class="com-preview-msg">' + esc(c.mensaje || 'Todavía no tiene mensaje.') + '</p>' + (c.adjunto ? adjuntoHtml(c.adjunto) : '') + '</div>';
     }
-    /* WhatsApp a quien no lo ha leído: a un estudiante menor se le escribe al acudiente */
+    /* WhatsApp a quien no lo ha leído: a un estudiante menor se le escribe a su contacto de emergencia */
     function whatsapp(k, c) {
         var p = persona(k), rol = k.charAt(0);
-        var a = rol === 'e' && p.menor && p.acudiente ? p.acudiente : null;
+        var a = rol === 'e' && p.menor && p.contacto ? p.contacto : null;
         var tel = digitos(a ? a.celular : p.celular);
         if (tel.length !== 10) return null;
         var quien = primerNombre(a ? a.nombre : p.nombre);
         var txt = 'Hola ' + quien + ', le escribimos de ESAT. ' + (a ? 'Hay un comunicado para ' + primerNombre(p.nombre) : 'Tiene un comunicado') +
             ' en la plataforma: «' + c.titulo + '». Por favor ingrese a la plataforma para leerlo. ¡Gracias!';
-        return { url: 'https://wa.me/57' + tel + '?text=' + encodeURIComponent(txt), acudiente: a };
+        return { url: 'https://wa.me/57' + tel + '?text=' + encodeURIComponent(txt), contacto: a };
     }
     function listaPersonas(c) {
         var todos = claves(c.destino, c.grupo_id);
@@ -387,8 +385,8 @@
             if (pestanaLectura === 'leyeron') der = 'Lo leyó el ' + cuando(c.lecturas[k]);
             else {
                 var w = archivado ? null : whatsapp(k, c);
-                der = w ? '<a class="com-btn com-btn-wa com-btn-sm" href="' + esc(w.url) + '" target="_blank" rel="noopener" title="' + (w.acudiente ? 'Es menor: se le escribe a ' + esc(w.acudiente.nombre) : 'Escribirle por WhatsApp') + '">' +
-                    ICON.wa + (w.acudiente ? 'Al acudiente' : 'WhatsApp') + '</a>' : (archivado ? '' : 'Sin celular');
+                der = w ? '<a class="com-btn com-btn-wa com-btn-sm" href="' + esc(w.url) + '" target="_blank" rel="noopener" title="' + (w.contacto ? 'Es menor: se le escribe a ' + esc(w.contacto.nombre) : 'Escribirle por WhatsApp') + '">' +
+                    ICON.wa + (w.contacto ? 'A su contacto' : 'WhatsApp') + '</a>' : (archivado ? '' : 'Sin celular');
             }
             return '<li><span class="com-persona-av r-' + r + '">' + esc(iniciales(p.nombre)) + '</span>' +
                 '<div class="com-min0"><div class="com-persona-nombre">' + esc(p.nombre) + '</div><div class="com-persona-sub">' + esc(ROL[r] + ' · ' + p.detalle) + '</div></div>' +
@@ -406,7 +404,7 @@
         avatar.innerHTML = ICON.megafono;
         avatar.className = 'com-drawer-avatar c-' + c.categoria;
         document.getElementById('com-dw-titulo').textContent = c.titulo;
-        document.getElementById('com-dw-sub').textContent = 'Para ' + (c.destino === 'grupo' ? paraTxt(c) : DESTINO[c.destino].toLowerCase()) + ' · ' + (esAdmin ? 'Secretaría (' + c.autor.nombre + ')' : 'Docente ' + c.autor.nombre);
+        document.getElementById('com-dw-sub').textContent = 'Para ' + (c.destino === 'grupo' ? paraTxt(c) : DESTINO[c.destino].toLowerCase()) + ' · ' + (esAdmin ? 'Administrativo (' + c.autor.nombre + ')' : 'Docente ' + c.autor.nombre);
         var ESTADO_TAG = { publicado: ['app-status-active', 'Publicado'], programado: ['app-status-warn', 'Programado'], borrador: ['app-status-muted', 'Borrador'], archivado: ['app-status-danger', 'Archivado'] };
         document.getElementById('com-dw-badges').innerHTML = tag(ESTADO_TAG[e][0], ESTADO_TAG[e][1]) + catTag(c.categoria) +
             (c.fijado && e !== 'archivado' ? tag('app-status-warn', 'Fijado arriba') : '') + (vencido(c) ? tag('app-status-muted', 'Ya no se ve') : '');
@@ -424,11 +422,15 @@
         html += '<div><div class="com-seccion-titulo">Así lo ve quien lo recibe</div>' + preview(c) + '</div>';
         if (e === 'publicado' || e === 'archivado') html += listaPersonas(c);
 
+        var editable = esAdmin && !c.solo_general;   // los del Admin de ESAT solo se archivan aquí
+        if (esAdmin && c.solo_general && e !== 'archivado') {
+            html += '<div class="com-nota">' + ICON.info + '<p>Lo envió el Admin de ESAT: se edita o elimina desde el panel general. Aquí puedes archivarlo en tu sede.</p></div>';
+        }
         html += '<div class="com-acciones-fila">' +
-            (esAdmin && e !== 'archivado' ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="editar">' + ICON.editar + 'Editar</button>' : '') +
+            (editable && e !== 'archivado' ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="editar">' + ICON.editar + 'Editar</button>' : '') +
             (esAdmin ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="duplicar">' + ICON.copiar + 'Duplicar</button>' : '') +
             (e === 'publicado' || e === 'programado' ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="archivar">' + ICON.archivar + 'Archivar</button>' : '') +
-            (e === 'borrador' ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="eliminar">' + ICON.borrar + 'Eliminar borrador</button>' : '') + '</div>';
+            (e === 'borrador' && editable ? '<button type="button" class="com-btn com-btn-ghost com-btn-sm" data-accion="eliminar">' + ICON.borrar + 'Eliminar borrador</button>' : '') + '</div>';
         dwBody.innerHTML = html;
         abrirCajon();
     }
@@ -544,10 +546,9 @@
         if (n === 1) {
             var cuenta = function (k) { return claves(k).length; };
             var OPC = [
-                ['sede', 'Toda la sede', 'Estudiantes, docentes y acudientes.'],
+                ['sede', 'Toda la sede', 'Estudiantes y docentes.'],
                 ['estudiantes', 'Estudiantes', 'Los que tienen matrícula vigente en la sede.'],
-                ['docentes', 'Docentes', 'Los docentes activos de la sede.'],
-                ['acudientes', 'Acudientes', 'Padres y acudientes de los estudiantes.']
+                ['docentes', 'Docentes', 'Los docentes activos de la sede.']
             ];
             html = '<p class="com-ayuda">¿A quién le llega? Los docentes les escriben a sus grupos desde su propio panel.</p><div class="com-destinos" id="com-f-destinos" role="radiogroup" aria-label="Destinatarios">' +
                 OPC.map(function (o) {
@@ -781,7 +782,7 @@
             .concat(items.map(function (c) {
                 var l = lectura(c), e = estado(c);
                 return [c.titulo, CAT[c.categoria], { publicado: 'Publicado', programado: 'Programado', borrador: 'Borrador', archivado: 'Archivado' }[e], paraTxt(c),
-                    c.autor.tipo === 'admin' ? 'Secretaría (' + c.autor.nombre + ')' : c.autor.nombre + ' (docente)', c.publicado_en || '', c.visible_hasta || '',
+                    c.autor.tipo === 'admin' ? 'Administrativo (' + c.autor.nombre + ')' : c.autor.nombre + ' (docente)', c.publicado_en || '', c.visible_hasta || '',
                     c.fijado ? 'Sí' : 'No', l.total, e === 'publicado' || e === 'archivado' ? l.leidos : '', e === 'publicado' || e === 'archivado' ? l.pct : '',
                     c.adjunto ? c.adjunto.nombre : '', c.mensaje];
             }));

@@ -240,7 +240,6 @@
 .for-msj.is-oculto .for-msj-texto { color: var(--muted); text-decoration: line-through; }
 .for-msj-av { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font: 800 0.74rem "Archivo", system-ui, sans-serif; color: var(--white); background: var(--navy-2); }
 .for-rol-docente { background: var(--green); }
-.for-rol-acudiente { background: #475569; }
 .for-rol-secretaria { background: var(--navy-3); }
 .for-rol-admin { background: var(--orange); }
 .for-msj-cuerpo { flex: 1; min-width: 0; }

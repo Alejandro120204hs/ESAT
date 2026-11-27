@@ -29,7 +29,7 @@
     <div class="aud-filters">
         <div class="aud-search">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="aud-buscar" placeholder="Buscar en el detalle (nombre, recibo, programa)..." autocomplete="off" aria-label="Buscar evento">
+            <input type="search" id="aud-buscar" placeholder="Buscar en el detalle (nombre, recibo, carrera)..." autocomplete="off" aria-label="Buscar evento">
         </div>
         @foreach ([['aud-cb-periodo', 'Últimos 30 días'], ['aud-cb-sede', 'Todas las sedes'], ['aud-cb-persona', 'Todas las personas'], ['aud-cb-tipo', 'Todas las acciones']] as [$id, $texto])
         <div class="app-combobox" id="{{ $id }}" data-position="absolute">

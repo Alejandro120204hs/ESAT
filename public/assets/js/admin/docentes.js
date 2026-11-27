@@ -187,7 +187,7 @@
         var VINC = { tiempo_completo: 'Tiempo completo', medio_tiempo: 'Medio tiempo', hora_catedra: 'Hora cátedra' };
         var EST  = { activo: 'Activo', en_proceso: 'En proceso', inactivo: 'Inactivo' };
         var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Escuela', 'Título profesional', 'Especialidad', 'Vinculación', 'Estado',
-            'Programas que dicta', 'Celular', 'Correo', 'Departamento', 'Ciudad', 'Dirección', 'Fecha de nacimiento']]
+            'Carreras que dicta', 'Celular', 'Correo', 'Departamento', 'Ciudad', 'Dirección', 'Fecha de nacimiento']]
             .concat(filteredRows.map(function (row) {
                 var d = data.find(function (x) { return String(x.id) === row.dataset.id; }) || {};
                 return [d.nombres, d.apellidos, d.tipo_doc, d.documento, d.escuela, d.titulo, d.especialidad, VINC[d.vinculacion] || d.vinculacion,
@@ -234,9 +234,11 @@
     }
     if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
     if (drawerClose)   drawerClose.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeDrawer(); closeModal(); }
-    });
+    /* Escape: se revisa antes que los combobox (fase de captura); con una lista abierta solo se cierra la lista */
+    window.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || document.querySelector('.app-combobox.is-open')) return;
+        closeDrawer(); closeModal();
+    }, true);
 
     function fillDrawer(d) {
         var sig = escClass(d);
@@ -273,7 +275,7 @@
         if (progList) {
             progList.innerHTML = (d.programas || []).length
                 ? d.programas.map(function (p) { return '<span class="doc-prog-chip">' + esc(p) + '</span>'; }).join('')
-                : '<span class="doc-person-cedula">Todavía no tiene cursos asignados en ningún programa.</span>';
+                : '<span class="doc-person-cedula">Todavía no tiene cursos asignados en ninguna carrera.</span>';
         }
 
         // Tab Cursos
@@ -371,7 +373,7 @@
     var totalSteps   = 3;
     var editandoId   = null;
     var formError    = document.getElementById('doc-form-error');
-    var TIPOS_DOC    = { CC: 'Cédula de ciudadanía', CE: 'Cédula de extranjería', PA: 'Pasaporte' };
+    var TIPOS_DOC    = { CC: 'Cédula de ciudadanía', CE: 'Cédula de extranjería', PA: 'Pasaporte', PPT: 'Permiso por protección temporal' };
     var VINC_LBL     = { tiempo_completo: 'Tiempo completo', medio_tiempo: 'Medio tiempo', hora_catedra: 'Hora cátedra' };
     var ESTADO_LBL   = { activo: 'Activo', en_proceso: 'En proceso', inactivo: 'Inactivo' };
 
@@ -679,7 +681,8 @@
         cbTipoDoc.setOptions([
             { value: 'CC', label: 'Cédula de ciudadanía' },
             { value: 'CE', label: 'Cédula de extranjería' },
-            { value: 'PA', label: 'Pasaporte' }
+            { value: 'PA', label: 'Pasaporte' },
+            { value: 'PPT', label: 'Permiso por protección temporal' }
         ]);
         cbTipoDoc.setValue('CC', 'Cédula de ciudadanía', { silent: true });
     }

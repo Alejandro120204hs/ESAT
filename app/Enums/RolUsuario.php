@@ -9,17 +9,15 @@ enum RolUsuario: string
     case AdminGeneral = 'admin_general';
     case Estudiante = 'estudiante';
     case Docente = 'docente';
-    case Acudiente = 'acudiente';
 
     public function label(): string
     {
         return match ($this) {
             self::Superadmin => 'Superadmin',
-            self::Admin => 'Secretaría',
+            self::Admin => 'Administrativo',
             self::AdminGeneral => 'Admin',
             self::Estudiante => 'Estudiante',
             self::Docente => 'Docente',
-            self::Acudiente => 'Acudiente',
         };
     }
 }

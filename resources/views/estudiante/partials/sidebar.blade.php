@@ -31,7 +31,7 @@
         <div class="app-nav-group">
             <div class="app-nav-group-label">Mi formación</div>
             <ul class="app-nav">
-                <li>{!! $enlace('programa', 'estudiante.programa', 'Mi programa', '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>') !!}</li>
+                <li>{!! $enlace('programa', 'estudiante.programa', 'Mi carrera', '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>') !!}</li>
                 <li>{!! $enlace('aula', 'estudiante.aula', 'Aula virtual', '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>') !!}</li>
             </ul>
         </div>

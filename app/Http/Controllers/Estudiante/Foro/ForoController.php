@@ -48,7 +48,7 @@ class ForoController extends Controller
     {
         ForoReporte::create(['mensaje_id' => $mensaje->id, 'user_id' => $request->user()->id, 'motivo' => $request->input('motivo')]);
 
-        return $this->respuesta('Gracias. La secretaría revisará el mensaje.');
+        return $this->respuesta('Gracias. El administrativo revisará el mensaje.');
     }
 
     public function adjunto(ForoMensaje $mensaje): StreamedResponse

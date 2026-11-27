@@ -179,7 +179,7 @@ class EstructuraTest extends TestCase
         $p = Programa::where('codigo', 'ESA-ADM-050')->first();
         $this->assertEqualsCanonicalizing([$this->sede->id, $otra->id], $p->sedes()->pluck('sedes.id')->all());
         // Cada sede ve en su actividad que se le asignó
-        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Asignó el programa%')->count());
+        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Asignó la carrera%')->count());
 
         // Sin sedes queda solo en el catálogo
         $this->postJson('/general/programas', $this->datosPrograma(['nombre' => 'Técnico Laboral en Bodegaje', 'codigo' => 'ESA-ADM-051', 'sedes' => []]))->assertCreated();
@@ -199,7 +199,7 @@ class EstructuraTest extends TestCase
         $this->actingAs($this->general)->putJson("/general/programas/{$p->id}", $datos([$otra->id]))->assertJsonValidationErrors('sedes');
         $this->putJson("/general/programas/{$p->id}", $datos([$this->sede->id]))->assertOk();
         $this->assertSame([$this->sede->id], $p->sedes()->pluck('sedes.id')->all());
-        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Quitó el programa%')->count());
+        $this->assertSame(1, Auditoria::where('sede_id', $otra->id)->where('descripcion', 'like', 'Quitó la carrera%')->count());
 
         // Inactivo: no se ofrece en sedes nuevas (sí puede quedarse donde estaba)
         $p->update(['estado' => 'inactivo']);

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Estudiantes;
 
 use App\Enums\RolUsuario;
+use App\Rules\CiudadDeColombia;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -10,12 +11,12 @@ use Illuminate\Validation\Validator;
 
 /**
  * Registrar (POST) o editar (PUT) los datos de un estudiante. No lo matricula:
- * programa y grupo son de Matrículas. Al registrar se puede incluir el acudiente
- * (obligatorio si es menor); al editar, el acudiente se cambia con su propia acción.
+ * programa y grupo son de Matrículas. El contacto de emergencia (nombre, celular y parentesco) es obligatorio
+ * para todos y va en el mismo formulario, al registrar y al editar.
  */
 class EstudianteRequest extends FormRequest
 {
-    use ValidaAcudiente;
+    use ValidaContacto;
 
     public const GENEROS = ['femenino' => 'Femenino', 'masculino' => 'Masculino', 'otro' => 'Otro'];
     public const TIPOS_DOCUMENTO = [
@@ -24,6 +25,14 @@ class EstudianteRequest extends FormRequest
         'CE'  => 'Cédula de extranjería',
         'PPT' => 'Permiso por Protección Temporal',
     ];
+    /** Documentos con los que se puede registrar que nació en otro país (decidido con el usuario el 27-11-2026). */
+    public const DOCUMENTOS_EXTRANJERO = ['CE', 'PPT'];
+
+    /** Países (sin Colombia) del mismo listado que usa el formulario: public/assets/data/paises.json. */
+    public static function paises(): array
+    {
+        return once(fn () => json_decode((string) file_get_contents(public_path('assets/data/paises.json')), true) ?: []);
+    }
 
     /** Al editar: solo estudiantes de la sede del admin. */
     public function authorize(): bool
@@ -42,13 +51,10 @@ class EstudianteRequest extends FormRequest
             'telefono'         => preg_replace('/\D/', '', (string) $this->input('telefono')),
             'email'            => mb_strtolower(trim((string) $this->input('email'))),
             'direccion'        => trim((string) $this->input('direccion')),
+            'pais_nacimiento'  => trim((string) $this->input('pais_nacimiento')) ?: null,
+            'lugar_nacimiento' => trim(preg_replace('/\s+/', ' ', (string) $this->input('lugar_nacimiento'))),
         ]);
-        // El acudiente solo va al registrar, y solo si es menor o se pidió registrarlo
-        if ($this->editando() || (! $this->esMenor() && ! $this->boolean('con_acudiente'))) {
-            $this->merge(['acudiente' => null, 'parentesco' => null]);
-        } else {
-            $this->limpiarAcudiente();
-        }
+        $this->limpiarContacto();
     }
 
     public function rules(): array
@@ -70,11 +76,20 @@ class EstudianteRequest extends FormRequest
             'ciudad_residencia'       => ['required', 'string', 'max:100'],
         ];
 
-        if ($this->editando()) {
-            return $reglas;
+        // Nacido en otro país: el país de la lista y la ciudad escrita, sin departamento. En Colombia: el mismo listado del
+        // combobox (antes solo lo revisaba el panel general)
+        $reglas['pais_nacimiento'] = ['nullable', 'string', Rule::in(self::paises())];
+        if ($this->nacioFuera()) {
+            $reglas['departamento_nacimiento'] = ['exclude'];
+            $reglas['lugar_nacimiento'] = ['required', 'string', 'min:2', 'max:100'];
+        } else {
+            $reglas['departamento_nacimiento'][] = new CiudadDeColombia();
+            $reglas['lugar_nacimiento'][] = new CiudadDeColombia((string) $this->input('departamento_nacimiento'));
         }
+        $reglas['departamento_residencia'][] = new CiudadDeColombia();
+        $reglas['ciudad_residencia'][] = new CiudadDeColombia((string) $this->input('departamento_residencia'));
 
-        return array_merge($reglas, $this->reglasAcudiente($this->esMenor() || $this->boolean('con_acudiente') ? 'required' : 'nullable'));
+        return array_merge($reglas, $this->reglasContacto());
     }
 
     public function after(): array
@@ -86,43 +101,46 @@ class EstudianteRequest extends FormRequest
 
             // El documento debe corresponder a la edad
             $edad = Carbon::parse($this->input('fecha_nacimiento'))->age;
-            if ($this->input('tipo_documento') === 'TI' && $edad >= 18) {
+            // Quien se registró menor con TI y ya cumplió 18 se puede seguir editando (p. ej. su celular) mientras trae la
+            // cédula: la regla vale al registrar o al pasarlo a TI
+            $yaTeniaTi = $this->editando() && $this->route('estudiante')->tipo_documento === 'TI';
+            if ($this->input('tipo_documento') === 'TI' && $edad >= 18 && ! $yaTeniaTi) {
                 $v->errors()->add('tipo_documento', "Con {$edad} años el documento es la cédula de ciudadanía, no la tarjeta de identidad.");
             }
             if ($this->input('tipo_documento') === 'CC' && $edad < 18) {
                 $v->errors()->add('tipo_documento', 'Un menor de edad se identifica con tarjeta de identidad.');
             }
 
-            if (! $this->editando()) {
-                $this->validarAcudiente($v, $this->input('numero_documento'));
-            } elseif ($edad < 18 && ! $this->route('estudiante')->acudientes()->exists()) {
-                // Corregir la fecha no puede dejar a un menor sin acudiente
-                $v->errors()->add('fecha_nacimiento', "Con esa fecha tendría {$edad} años y no tiene acudiente. Vincúlale uno desde su ficha (pestaña Acudiente) antes de cambiar la fecha.");
+            if ($this->nacioFuera() && ! in_array($this->input('tipo_documento'), self::DOCUMENTOS_EXTRANJERO, true)) {
+                $v->errors()->add('pais_nacimiento', 'Solo quien se identifica con cédula de extranjería o PPT se registra como nacido en otro país.');
             }
+
+            $this->validarContacto($v, $this->input('telefono'));
         }];
     }
 
     /** Datos personales para crear o actualizar el usuario. */
     public function datosEstudiante(): array
     {
-        return $this->safe()->only([
+        $datos = $this->safe()->only([
             'nombres', 'apellidos', 'fecha_nacimiento', 'departamento_nacimiento', 'lugar_nacimiento', 'genero', 'tipo_documento', 'numero_documento',
             'telefono', 'email', 'direccion', 'departamento_residencia', 'ciudad_residencia',
         ]);
+
+        // Nacido en otro país: sin departamento; en Colombia: sin país
+        return $this->nacioFuera()
+            ? ['departamento_nacimiento' => null, 'pais_nacimiento' => $this->input('pais_nacimiento')] + $datos
+            : $datos + ['pais_nacimiento' => null];
+    }
+
+    private function nacioFuera(): bool
+    {
+        return $this->filled('pais_nacimiento');
     }
 
     private function editando(): bool
     {
         return (bool) $this->route('estudiante');
-    }
-
-    private function esMenor(): bool
-    {
-        try {
-            return $this->filled('fecha_nacimiento') && Carbon::parse($this->input('fecha_nacimiento'))->age < 18;
-        } catch (\Throwable) {
-            return false;
-        }
     }
 
     public function attributes(): array
@@ -131,6 +149,7 @@ class EstudianteRequest extends FormRequest
             'fecha_nacimiento'        => 'fecha de nacimiento',
             'departamento_nacimiento' => 'departamento de nacimiento',
             'lugar_nacimiento'        => 'ciudad de nacimiento',
+            'pais_nacimiento'         => 'país de nacimiento',
             'genero'                  => 'género',
             'tipo_documento'          => 'tipo de documento',
             'numero_documento'        => 'número de documento',
@@ -139,7 +158,7 @@ class EstudianteRequest extends FormRequest
             'direccion'               => 'dirección de residencia',
             'departamento_residencia' => 'departamento de residencia',
             'ciudad_residencia'       => 'ciudad de residencia',
-        ], $this->atributosAcudiente());
+        ], $this->atributosContacto());
     }
 
     public function messages(): array
@@ -151,7 +170,7 @@ class EstudianteRequest extends FormRequest
             'numero_documento.unique'          => 'Ya hay un usuario registrado con ese número de documento.',
             'telefono.regex'                   => 'El celular debe tener 10 dígitos y empezar por 3.',
             'email.unique'                     => 'Ese correo ya está registrado por otro usuario.',
-        ], $this->mensajesAcudiente());
+        ], $this->mensajesContacto());
     }
 
     /** Sede en la que se valida: la de trabajo (secretaría o Admin dentro de una sede). El panel general la sobrescribe. */

@@ -3,8 +3,8 @@
      catálogo ofrece su sede (agregar / dejar de ofrecer, no con grupos vigentes). --}}
 @extends('admin.layout')
 
-@section('title', 'Programas')
-@section('page-title', 'Programas')
+@section('title', 'Escuelas y carreras')
+@section('page-title', 'Escuelas y carreras')
 @section('active', 'programas')
 
 @push('styles')
@@ -29,25 +29,25 @@ $escuelasData = $escuelas->map(fn ($e) => [
     {{-- Encabezado --}}
     <div class="prg-header">
         <div class="prg-header-top">
-            <h2 class="prg-title" id="prg-main-title">Programas académicos</h2>
+            <h2 class="prg-title" id="prg-main-title">Escuelas</h2>
             <div style="display:flex;gap:8px;">
-                <button class="prg-btn prg-btn-primary" id="btn-catalogo">
+                <button class="prg-btn prg-btn-primary" id="btn-catalogo" hidden>
                     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Agregar del catálogo
                 </button>
             </div>
         </div>
-        <p class="prg-sub" id="prg-main-sub">Los programas que ofrece tu sede. El catálogo, la malla y los precios los maneja el Admin de ESAT: aquí eliges cuáles ofrece tu sede.</p>
+        <p class="prg-sub" id="prg-main-sub">Las áreas académicas de ESAT. Cada carrera pertenece a una escuela; las crea y edita el Admin de ESAT.</p>
     </div>
 
     {{-- Tabs --}}
     <div class="prg-tabs">
-        <button class="prg-tab-btn is-active" data-tab="programas">Programas</button>
-        <button class="prg-tab-btn" data-tab="escuelas">Escuelas</button>
+        <button class="prg-tab-btn is-active" data-tab="escuelas">Escuelas</button>
+        <button class="prg-tab-btn" data-tab="programas">Carreras</button>
     </div>
 
     {{-- Tab: Programas --}}
-    <div id="tab-programas" class="prg-page-panel is-active">
+    <div id="tab-programas" class="prg-page-panel">
 
     {{-- KPI chips --}}
     <div class="prg-kpis">
@@ -57,7 +57,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
             </div>
             <div>
                 <div class="prg-kpi-val">{{ $programas->count() }}</div>
-                <div class="prg-kpi-lbl">Programas</div>
+                <div class="prg-kpi-lbl">Carreras</div>
             </div>
         </div>
         <div class="prg-kpi-chip prg-kpi-orange">
@@ -93,7 +93,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
     <div class="prg-filters">
         <div class="prg-search-box">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="prg-search" placeholder="Buscar programa..." autocomplete="off">
+            <input type="search" id="prg-search" placeholder="Buscar carrera..." autocomplete="off">
         </div>
         <div class="app-combobox" id="prg-cb-filter-escuela" data-position="absolute"
              data-options='@json($escFiltro)'>
@@ -116,7 +116,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
             </div>
             <input type="hidden" id="prg-filter-estado" data-combobox-value>
         </div>
-        <span class="prg-count-badge" id="prg-count">{{ $programas->count() }} programas</span>
+        <span class="prg-count-badge" id="prg-count">{{ $programas->count() }} carreras</span>
     </div>
 
     {{-- Tabla --}}
@@ -124,7 +124,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
         <table class="prg-table" id="prg-table">
             <thead>
                 <tr>
-                    <th>Programa</th>
+                    <th>Carrera</th>
                     <th>Escuela</th>
                     <th>Duración</th>
                     <th>Modalidad</th>
@@ -186,7 +186,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
         </table>
         <div class="prg-empty" id="prg-empty" style="display:none">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <p>{{ $programas->isEmpty() ? 'Tu sede todavía no ofrece programas. Elígelos con «Agregar del catálogo».' : 'No hay programas que coincidan con la búsqueda' }}</p>
+            <p>{{ $programas->isEmpty() ? 'Tu sede todavía no ofrece carreras. Elígelas con «Agregar del catálogo».' : 'No hay carreras que coincidan con la búsqueda' }}</p>
         </div>
     </div>
 
@@ -206,7 +206,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
     </div>{{-- /tab-programas --}}
 
     {{-- Tab: Escuelas --}}
-    <div id="tab-escuelas" class="prg-page-panel">
+    <div id="tab-escuelas" class="prg-page-panel is-active">
 
         <div class="esc-grid">
             @foreach($escuelasData as $e)
@@ -216,7 +216,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 </div>
                 <div class="esc-card-body">
                     <div class="esc-card-name">{{ $e['nombre'] }}</div>
-                    <div class="esc-card-meta">{{ $e['programas'] }} {{ $e['programas'] === 1 ? 'programa' : 'programas' }}</div>
+                    <div class="esc-card-meta">{{ $e['programas'] }} {{ $e['programas'] === 1 ? 'carrera' : 'carreras' }}</div>
                 </div>
             </div>
             @endforeach
@@ -251,7 +251,6 @@ $escuelasData = $escuelas->map(fn ($e) => [
             <button class="prg-dtab" data-tab="plan" role="tab">Plan de estudios</button>
             <button class="prg-dtab" data-tab="grupos" role="tab">Grupos</button>
             <button class="prg-dtab" data-tab="estudiantes" role="tab">Estudiantes</button>
-            <button class="prg-dtab" data-tab="documentos" role="tab">Documentos</button>
         </div>
 
         {{-- Cuerpo --}}
@@ -300,7 +299,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 <div class="prg-costos-row prg-costos-2col">
                     <div class="prg-costo-card">
                         <div class="prg-costo-ico"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                        <div class="prg-costo-lbl">Valor del programa</div>
+                        <div class="prg-costo-lbl">Valor de la carrera</div>
                         <div class="prg-costo-val" id="dw-valor-programa"></div>
                     </div>
                     <div class="prg-costo-card">
@@ -312,11 +311,11 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 <div class="prg-planes-section">
                     <div class="prg-planes-title">Valor mensual del sistema</div>
                     <div class="prg-plan-row">
-                        <span class="prg-plan-nombre">Cuota mensual (igual para todos los programas)</span>
+                        <span class="prg-plan-nombre">Cuota mensual (igual para todas las carreras)</span>
                         <span class="prg-plan-detalle" id="dw-valor-mensual"></span>
                     </div>
                     <div class="prg-plan-row">
-                        <span class="prg-plan-nombre">Periodos del programa</span>
+                        <span class="prg-plan-nombre">Periodos de la carrera</span>
                         <span class="prg-plan-detalle" id="dw-periodos"></span>
                     </div>
                     <div class="prg-planes-nota">El estudiante elige si paga mensual o por periodo al matricularse.</div>
@@ -351,46 +350,6 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 </div>
             </div>
 
-            {{-- Tab Documentos --}}
-            <div class="prg-tab-panel" data-panel="documentos">
-                <div class="prg-docs-list">
-                    <div class="prg-doc-item">
-                        <div class="prg-doc-ico">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        </div>
-                        <div class="prg-doc-info">
-                            <div class="prg-doc-name">Resolución de aprobación</div>
-                            <div class="prg-doc-meta" id="dw-doc-res"></div>
-                        </div>
-                        <span class="prg-doc-badge">PDF</span>
-                    </div>
-                    <div class="prg-doc-item">
-                        <div class="prg-doc-ico">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        </div>
-                        <div class="prg-doc-info">
-                            <div class="prg-doc-name">Pensum académico</div>
-                            <div class="prg-doc-meta">Plan de estudios completo</div>
-                        </div>
-                        <span class="prg-doc-badge">PDF</span>
-                    </div>
-                    <div class="prg-doc-item">
-                        <div class="prg-doc-ico">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        </div>
-                        <div class="prg-doc-info">
-                            <div class="prg-doc-name">Formato de matrícula</div>
-                            <div class="prg-doc-meta">Formulario para inscripción de estudiantes</div>
-                        </div>
-                        <span class="prg-doc-badge">PDF</span>
-                    </div>
-                    <button class="prg-doc-add">
-                        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Subir documento
-                    </button>
-                </div>
-            </div>
-
         </div>{{-- /prg-drawer-body --}}
 
         {{-- Footer del drawer --}}
@@ -412,7 +371,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
                 <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <p class="esc-modal-texto">El precio y la malla son los mismos en todas las sedes. Al agregarlo, tu sede ya puede abrir grupos del programa.</p>
+        <p class="esc-modal-texto">El precio y la malla son los mismos en todas las sedes. Al agregarla, tu sede ya puede abrir grupos de la carrera.</p>
         <ul class="prg-cat-lista">
             @forelse($catalogo as $c)
                 <li>
@@ -423,7 +382,7 @@ $escuelasData = $escuelas->map(fn ($e) => [
                     <button type="button" class="prg-btn prg-btn-secondary" data-ofrecer="{{ $c['id'] }}">Ofrecer en mi sede</button>
                 </li>
             @empty
-                <li class="prg-cat-vacio">Tu sede ya ofrece todos los programas activos del catálogo.</li>
+                <li class="prg-cat-vacio">Tu sede ya ofrece todas las carreras activas del catálogo.</li>
             @endforelse
         </ul>
         <div class="esc-modal-foot">

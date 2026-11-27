@@ -180,7 +180,7 @@
         var sinSec = D.sedes.filter(function (s) { return !act.some(function (x) { return x.sede_id === s.id; }); }).length;
         var quietas = act.filter(function (x) { return !x.ultimo_acceso || dias(x.ultimo_acceso) >= 30; }).length;
         var k = [['blue', 'persona', num(D.secretarias.length), 'Cuentas'], ['green', 'persona', num(act.length), act.length === 1 ? 'Activa' : 'Activas'],
-            [sinSec ? 'red' : 'green', 'sedes', num(sinSec), sinSec === 1 ? 'Sede sin secretaría' : 'Sedes sin secretaría'],
+            [sinSec ? 'red' : 'green', 'sedes', num(sinSec), sinSec === 1 ? 'Sede sin administrativo' : 'Sedes sin administrativo'],
             [quietas ? 'orange' : 'green', 'alerta', num(quietas), 'Sin entrar en 30 días']];
         $('sec-kpis').innerHTML = k.map(function (x) {
             return '<div class="sec-kpi sec-kpi-' + x[0] + '"><div class="sec-kpi-icon">' + ICON[x[1]] + '</div><div><div class="sec-kpi-val">' + x[2] + '</div><div class="sec-kpi-lbl">' + x[3] + '</div></div></div>';
@@ -276,7 +276,7 @@
             confirmar('¿Desactivar la cuenta de ' + nombre(x) + '?',
                 'No podrá volver a entrar y se cerrará su sesión si la tiene abierta. Lo que registró sigue en la auditoría.',
                 'Desactivar cuenta',
-                otras ? '' : 'La sede ' + s.nombre + ' se queda sin secretaría activa: tendrás que registrar sus matrículas y pagos entrando a la sede, o crear otra cuenta.',
+                otras ? '' : 'La sede ' + s.nombre + ' se queda sin administrativo activo: tendrás que registrar sus matrículas y pagos entrando a la sede, o crear otra cuenta.',
                 function () {
                     return enviar('PATCH', '/general/secretarias/' + x.id + '/estado').then(function (r) { recargarConAviso(r.mensaje); });
                 });
@@ -293,6 +293,8 @@
     initCombobox(cbFormSede);
     cbFormSede.setOptions(D.sedes.map(function (s) { return { value: String(s.id), label: s.nombre + ' · ' + s.ciudad }; }));
     var paso = 1, editando = null;
+    // Pasaporte: letras y números en mayúscula; los demás documentos, solo dígitos (SecretariaRequest)
+    function limpiarDoc() { var d = f('documento').value; return f('tipo').value === 'PA' ? d.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : d.replace(/\D/g, ''); }
     var CAMPOS = { 1: ['nombres', 'apellidos', 'genero', 'nacimiento'], 2: ['documento', 'telefono', 'correo'], 3: ['sede'] };
     function f(id) { return $('sec-f-' + id); }
     function err(campo, msg) {
@@ -310,8 +312,10 @@
             err('nacimiento', !v('nacimiento') ? 'Escribe la fecha de nacimiento.' : e < 18 ? 'Debe ser mayor de edad.' : e > 90 ? 'Revisa la fecha.' : '');
         }
         if (p === 2) {
-            var doc = v('documento').replace(/\D/g, ''), tel = v('telefono').replace(/\D/g, ''), correo = v('correo').toLowerCase();
-            err('documento', !/^\d{6,12}$/.test(doc) ? 'Escribe el número de documento (solo números, de 6 a 12).' : '');
+            var doc = limpiarDoc(), tel = v('telefono').replace(/\D/g, ''), correo = v('correo').toLowerCase();
+            err('documento', f('tipo').value === 'PA'
+                ? (!/^[A-Z0-9]{5,15}$/.test(doc) ? 'Escribe el pasaporte (letras y números, de 5 a 15).' : '')
+                : (!/^\d{6,12}$/.test(doc) ? 'Escribe el número de documento (solo números, de 6 a 12).' : ''));
             err('telefono', !/^3\d{9}$/.test(tel) ? 'Escribe un celular de 10 dígitos que empiece por 3.' : '');
             err('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo) ? 'Escribe un correo válido.' : '');
         }
@@ -322,7 +326,7 @@
     }
     function resumen() {
         var s = sedePorId(cbFormSede.value()), g = { femenino: 'Femenino', masculino: 'Masculino', otro: 'Otro' };
-        var filas = [['Nombre', f('nombres').value.trim() + ' ' + f('apellidos').value.trim()], ['Documento', f('tipo').value + ' ' + f('documento').value.replace(/\D/g, '')],
+        var filas = [['Nombre', f('nombres').value.trim() + ' ' + f('apellidos').value.trim()], ['Documento', f('tipo').value + ' ' + limpiarDoc()],
             ['Celular', f('telefono').value.replace(/\D/g, '')], ['Correo', f('correo').value.trim().toLowerCase()],
             ['Género', g[f('genero').value] || ''], ['Edad', edad(f('nacimiento').value) + ' años'], ['Sede', s ? s.nombre : 'Sin elegir']];
         $('sec-resumen').innerHTML = filas.map(function (x) { return '<div><span class="sec-info-lbl">' + esc(x[0]) + '</span><span class="sec-info-val">' + esc(x[1]) + '</span></div>'; }).join('');
@@ -354,7 +358,7 @@
         if (sid && sedePorId(sid)) cbFormSede.setValue(String(sid), sedePorId(sid).nombre + ' · ' + sedePorId(sid).ciudad, { silent: true });
         else cbFormSede.setValue('', 'Selecciona una sede', { silent: true });
         ['nombres', 'apellidos', 'genero', 'nacimiento', 'documento', 'telefono', 'correo', 'sede'].forEach(function (c) { err(c, ''); });
-        $('sec-modal-titulo').textContent = editando ? 'Editar a ' + nombre(x) : 'Nueva secretaría';
+        $('sec-modal-titulo').textContent = editando ? 'Editar a ' + nombre(x) : 'Nuevo administrativo';
         $('sec-nota-clave').hidden = !!editando;
         $('sec-restablecer').hidden = !editando;
         abrirModal('sec-modal', f('nombres'));
@@ -369,7 +373,7 @@
         if (paso < 3) { irPaso(paso + 1); return; }
         var reg = {
             nombres: f('nombres').value.trim(), apellidos: f('apellidos').value.trim(), genero: f('genero').value, fecha_nacimiento: f('nacimiento').value,
-            tipo_documento: f('tipo').value, numero_documento: f('documento').value.replace(/\D/g, ''), telefono: f('telefono').value.replace(/\D/g, ''),
+            tipo_documento: f('tipo').value, numero_documento: limpiarDoc(), telefono: f('telefono').value.replace(/\D/g, ''),
             email: f('correo').value.trim().toLowerCase(), sede_id: +cbFormSede.value()
         };
         var btn = $('sec-siguiente'); btn.disabled = true;

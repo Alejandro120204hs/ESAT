@@ -190,7 +190,7 @@
     function fmtTel(t) { var d = String(t || '').replace(/\D/g, ''); return d.length === 10 ? d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6) : esc(t); }
     function pagoDe(e) {
         if (e.estado === 'sin_matricula') return '<span class="est-muted">—</span>';
-        if (!VIGENTES.includes(e.estado)) return '<span class="est-muted">Matrícula cerrada</span>';
+        if (!VIGENTES.includes(e.estado) && e.pago !== 'vencido') return '<span class="est-muted">Matrícula cerrada</span>';
         var p = PAGO[e.pago] || PAGO.al_dia;
         var sub = e.pago === 'vencido' ? plata(e.saldo_vencido) + ' vencidos' : e.pago === 'pendiente' ? plata(e.por_pagar_mes) + ' este mes' : '';
         return tag(p) + (sub ? '<div class="est-muted">' + esc(sub) + '</div>' : '');
@@ -199,7 +199,8 @@
     /* ── KPI (de lo filtrado por sede y programa) ── */
     function pintarKpis(base) {
         var act = base.filter(function (e) { return e.estado === 'activo'; });
-        var mora = act.filter(function (e) { return e.pago === 'vencido'; });
+        // En mora: todo el que tiene algo vencido, también con la matrícula aplazada o cerrada (como Pagos y el Inicio)
+        var mora = base.filter(function (e) { return e.pago === 'vencido'; });
         var k = [
             ['blue', 'estudiantes', num(act.length), 'Estudiantes activos'],
             ['green', 'ok', num(act.filter(function (e) { return e.pago === 'al_dia'; }).length), 'Al día con los pagos'],
@@ -218,13 +219,13 @@
     function opcionesPrograma() {
         var s = cbSede.value() ? sedePorId(cbSede.value()) : null;
         var progs = D.programas.filter(function (p) { return !s || (s.programas || []).indexOf(p.id) >= 0; });
-        cbProg.setOptions([{ value: '', label: 'Todos los programas' }].concat(progs.map(function (p) { return { value: String(p.id), label: p.nombre.replace('Técnico Laboral en ', '') }; })));
+        cbProg.setOptions([{ value: '', label: 'Todas las carreras' }].concat(progs.map(function (p) { return { value: String(p.id), label: p.nombre.replace('Técnico Laboral en ', '') }; })));
     }
     opcionesPrograma();
     cbEstado.setOptions([{ value: 'vigentes', label: 'Matrículas vigentes' }, { value: '', label: 'Todos' }, { value: 'activo', label: 'Activos' }, { value: 'aplazado', label: 'Aplazados' },
         { value: 'retirado', label: 'Retirados' }, { value: 'graduado', label: 'Graduados' }, { value: 'sin_matricula', label: 'Sin matrícula' }]);
     cbPago.setOptions([{ value: '', label: 'Todos los pagos' }, { value: 'al_dia', label: 'Al día' }, { value: 'pendiente', label: 'Deben este mes' }, { value: 'vencido', label: 'En mora' }, { value: 'sin_plan', label: 'Sin plan de pago' }]);
-    cbSede.setValue('', 'Todas las sedes', { silent: true }); cbProg.setValue('', 'Todos los programas', { silent: true });
+    cbSede.setValue('', 'Todas las sedes', { silent: true }); cbProg.setValue('', 'Todas las carreras', { silent: true });
     cbEstado.setValue('vigentes', 'Matrículas vigentes', { silent: true }); cbPago.setValue('', 'Todos los pagos', { silent: true });
 
     var pagina = 1, filtrados = [];
@@ -236,7 +237,7 @@
             if (q && normal(nombre(e) + ' ' + e.numero_documento).indexOf(q) === -1) return false;
             if (est === 'vigentes' && VIGENTES.indexOf(e.estado) < 0) return false;
             if (est && est !== 'vigentes' && e.estado !== est) return false;
-            if (pago && (e.pago !== pago || VIGENTES.indexOf(e.estado) < 0)) return false;
+            if (pago && (e.pago !== pago || (pago !== 'vencido' && VIGENTES.indexOf(e.estado) < 0))) return false;
             return true;
         }).sort(function (a, b) {
             var orden = { vencido: 0, pendiente: 1, sin_plan: 2, al_dia: 3 };
@@ -251,7 +252,7 @@
         $('est-body').innerHTML = filtrados.slice(desde, desde + POR_PAGINA).map(function (e) {
             var s = sedePorId(e.sede_id);
             return '<tr class="est-row" tabindex="0" data-id="' + e.id + '">' +
-                '<td><div class="est-cell"><div class="est-avatar-txt">' + esc(iniciales(e)) + '</div><div><div class="est-strong">' + esc(nombre(e)) + '</div><div class="est-muted">' + esc(e.tipo_documento + ' ' + e.numero_documento) + (e.acudiente ? ' · menor de edad' : '') + '</div></div></div></td>' +
+                '<td><div class="est-cell"><div class="est-avatar-txt">' + esc(iniciales(e)) + '</div><div><div class="est-strong">' + esc(nombre(e)) + '</div><div class="est-muted">' + esc(e.tipo_documento + ' ' + e.numero_documento) + (e.edad != null && e.edad < 18 ? ' · menor de edad' : '') + '</div></div></div></td>' +
                 '<td>' + esc(s ? s.nombre : '—') + '</td>' +
                 '<td><div class="est-prog" title="' + esc(e.programa || '') + '">' + esc(e.programa ? e.programa.replace('Técnico Laboral en ', '') : '—') + '</div>' + (e.grupo ? '<div class="est-muted">' + esc(e.grupo) + '</div>' : '') + '</td>' +
                 '<td>' + tag(ESTADO[e.estado]) + '</td>' +
@@ -261,7 +262,7 @@
         paginar($('est-paginacion'), filtrados.length, pagina, function (p) { pagina = p; pintarTabla(); $('est-buscar').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
     }
     $('est-buscar').addEventListener('input', filtrar);
-    cbSede.querySelector('[data-combobox-value]').addEventListener('change', function () { opcionesPrograma(); cbProg.setValue('', 'Todos los programas', { silent: true }); filtrar(); });
+    cbSede.querySelector('[data-combobox-value]').addEventListener('change', function () { opcionesPrograma(); cbProg.setValue('', 'Todas las carreras', { silent: true }); filtrar(); });
     [cbProg, cbEstado, cbPago].forEach(function (cb) { cb.querySelector('[data-combobox-value]').addEventListener('change', filtrar); });
     $('est-body').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-id]'); if (tr) abrirDrawer(+tr.dataset.id); });
     $('est-body').addEventListener('keydown', function (e) {
@@ -269,12 +270,12 @@
     });
 
     $('est-exportar').addEventListener('click', function () {
-        var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Sede', 'Programa', 'Grupo', 'Estado de la matrícula', 'Fecha de matrícula', 'Pagos',
-            'Saldo vencido', 'Por pagar este mes', 'Celular', 'Correo', 'Acudiente', 'Celular del acudiente']].concat(filtrados.map(function (e) {
+        var filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Sede', 'Carrera', 'Grupo', 'Estado de la matrícula', 'Fecha de matrícula', 'Pagos',
+            'Saldo vencido', 'Por pagar este mes', 'Celular', 'Correo', 'Contacto de emergencia', 'Celular del contacto']].concat(filtrados.map(function (e) {
             var s = sedePorId(e.sede_id);
             return [e.nombres, e.apellidos, e.tipo_documento, e.numero_documento, s ? s.nombre : '', e.programa || '', e.grupo || '', ESTADO[e.estado][0], e.fecha_matricula || '',
-                VIGENTES.indexOf(e.estado) >= 0 ? (PAGO[e.pago] || PAGO.al_dia)[0] : '', e.saldo_vencido || 0, e.por_pagar_mes || 0, e.telefono, e.email,
-                e.acudiente ? e.acudiente.nombre + ' (' + e.acudiente.parentesco + ')' : '', e.acudiente ? e.acudiente.telefono : ''];
+                VIGENTES.indexOf(e.estado) >= 0 || e.pago === 'vencido' ? (PAGO[e.pago] || PAGO.al_dia)[0] : '', e.saldo_vencido || 0, e.por_pagar_mes || 0, e.telefono, e.email,
+                e.contacto ? e.contacto.nombre + ' (' + e.contacto.parentesco + ')' : '', e.contacto ? e.contacto.celular : ''];
         }));
         descargarCsv('estudiantes-esat', filas);
     });
@@ -299,22 +300,22 @@
         $('est-dw-avatar').textContent = iniciales(e);
         $('est-dw-nombre').textContent = nombre(e);
         $('est-dw-doc').textContent = e.tipo_documento + ' ' + e.numero_documento + ' · Sede ' + (s ? s.nombre : '');
-        $('est-dw-badges').innerHTML = tag(ESTADO[e.estado]) + (VIGENTES.indexOf(e.estado) >= 0 && e.estado !== 'sin_matricula' ? ' ' + tag(PAGO[e.pago] || PAGO.al_dia) : '');
+        $('est-dw-badges').innerHTML = tag(ESTADO[e.estado]) + ((VIGENTES.indexOf(e.estado) >= 0 || e.pago === 'vencido') && e.estado !== 'sin_matricula' ? ' ' + tag(PAGO[e.pago] || PAGO.al_dia) : '');
 
         $('est-dw-datos').innerHTML = '<h3 class="est-seccion">Datos personales</h3>' + info([
             ['Fecha de nacimiento', e.fecha_nacimiento ? fechaLarga(e.fecha_nacimiento) + ' (' + e.edad + ' años)' : '—'], ['Género', G[e.genero] || ''],
-            ['Celular', fmtTel(e.telefono), false, true], ['Correo (usuario)', e.email], ['Nació en', [e.lugar_nacimiento, e.departamento_nacimiento].filter(Boolean).join(', ') || '—'],
+            ['Celular', fmtTel(e.telefono), false, true], ['Correo (usuario)', e.email], ['Nació en', [e.lugar_nacimiento, e.pais_nacimiento || e.departamento_nacimiento].filter(Boolean).join(', ') || '—'],
             ['Vive en', [e.direccion, e.ciudad, e.departamento].filter(Boolean).join(', ') || '—', true]]) +
-            '<h3 class="est-seccion">Acudiente</h3>' + (e.acudiente
-                ? info([['Nombre', e.acudiente.nombre], ['Parentesco', e.acudiente.parentesco], ['Celular', fmtTel(e.acudiente.telefono), false, true]])
-                : '<p class="est-muted">Es mayor de edad y no tiene acudiente registrado.</p>');
+            '<h3 class="est-seccion">Contacto de emergencia</h3>' + (e.contacto
+                ? info([['Nombre', e.contacto.nombre], ['Parentesco', e.contacto.parentesco], ['Celular', fmtTel(e.contacto.celular), false, true]])
+                : '<p class="est-muted">No tiene contacto de emergencia: es obligatorio y sin él no se matricula. Regístralo con «Editar».</p>');
 
         if (e.estado === 'sin_matricula') {
-            $('est-dw-matricula').innerHTML = '<div class="est-aviso">' + ICON.info + '<span>Está registrado pero todavía no tiene matrícula. La secretaría lo matricula cuando entregue todos los documentos.</span></div>';
+            $('est-dw-matricula').innerHTML = '<div class="est-aviso">' + ICON.info + '<span>Está registrado pero todavía no tiene matrícula. El administrativo lo matricula cuando entregue todos los documentos.</span></div>';
         } else {
             var cierre = e.estado_fecha ? [[ESTADO[e.estado][0] + ' desde', fechaLarga(e.estado_fecha)], ['Motivo', e.estado_motivo]] : [];
             $('est-dw-matricula').innerHTML = '<h3 class="est-seccion">Matrícula</h3>' + info([
-                ['Programa', e.programa, true], ['Grupo', e.grupo || '—'], ['Fecha de matrícula', e.fecha_matricula ? fechaLarga(e.fecha_matricula) : '—'],
+                ['Carrera', e.programa, true], ['Grupo', e.grupo || '—'], ['Fecha de matrícula', e.fecha_matricula ? fechaLarga(e.fecha_matricula) : '—'],
                 ['Plan de pago', e.plan === 'mensual' ? 'Mensual' : e.plan === 'periodo' ? 'Por periodo' : 'Sin elegir (lo elige el estudiante)']].concat(cierre)) +
                 '<h3 class="est-seccion">Rendimiento</h3>' + info([
                     ['Asistencia', e.asistencia == null ? 'Sin clases registradas' : e.asistencia + ' %<div class="est-barra"><span class="' + (e.asistencia < 80 ? 'is-baja' : '') + '" style="width:' + e.asistencia + '%"></span></div>', false, e.asistencia != null],
@@ -400,43 +401,38 @@
         f(depto).addEventListener('change', function () { opciones(f(ciudad), ciudadesDe(this.value), this.value ? 'Selecciona' : 'Elige el departamento primero'); });
     }
     enlazar('depto-nac', 'ciudad-nac'); enlazar('depto', 'ciudad');
+
+    /* Nacido en otro país: solo con cédula de extranjería o PPT; país de la lista y ciudad escrita, sin departamento */
+    var paisesLista = fetch('/assets/data/paises.json').then(function (r) { return r.json(); })
+        .then(function (d) { opciones(f('pais-nac'), d, 'Selecciona'); })
+        .catch(function () { toast('No se pudo cargar la lista de países. Recarga la página.'); });
+    function nacioFuera() { return (D.opciones.extranjero || []).indexOf(f('tipo').value) >= 0 && f('nac-donde').value === 'fuera'; }
+    function pintarNacimiento() {
+        $('est-w-nac-donde').hidden = (D.opciones.extranjero || []).indexOf(f('tipo').value) < 0;
+        var fuera = nacioFuera();
+        f('depto-nac').closest('.est-field').hidden = fuera; f('ciudad-nac').closest('.est-field').hidden = fuera;
+        $('est-w-pais-nac').hidden = !fuera; $('est-w-ciudad-ext').hidden = !fuera;
+    }
+    f('tipo').addEventListener('change', pintarNacimiento); f('nac-donde').addEventListener('change', pintarNacimiento);
     function ponerLugar(depto, ciudad, d, c) {
         f(depto).value = d || '';
         opciones(f(ciudad), ciudadesDe(d), d ? 'Selecciona' : 'Elige el departamento primero');
         f(ciudad).value = c || '';
     }
 
-    function opcionesAcudiente() {
-        var sid = +f('sede').value, menor = edadDe(f('nacimiento').value) < 18;
-        var l = D.acudientes.filter(function (a) { return a.sede_id === sid; }).sort(function (a, b) { return (a.nombres + a.apellidos).localeCompare(b.nombres + b.apellidos, 'es'); });
-        var actualId = f('acudiente').value;
-        f('acudiente').innerHTML = '<option value="">' + (sid ? (menor ? 'Elige el acudiente' : 'Sin acudiente') : 'Elige primero la sede') + '</option>' +
-            l.map(function (a) { return '<option value="' + a.id + '">' + esc(a.nombres + ' ' + a.apellidos + ' · ' + a.tipo_documento + ' ' + a.numero_documento) + '</option>'; }).join('') +
-            (sid && !editando ? '<option value="nuevo">Registrar un acudiente nuevo</option>' : '');
-        f('acudiente').value = actualId === 'nuevo' && !editando ? 'nuevo' : l.some(function (a) { return String(a.id) === actualId; }) ? actualId : '';
-        $('est-acu-req').textContent = menor ? '(obligatorio: es menor de edad)' : '(opcional)';
-        mostrarNuevo();
-    }
-    function mostrarNuevo() {
-        var nuevo = f('acudiente').value === 'nuevo';
-        $('est-acu-nuevo').hidden = !nuevo;
-        $('est-acu-ayuda').hidden = !!editando || nuevo;
-    }
-    f('acudiente').addEventListener('change', mostrarNuevo);
-    f('sede').addEventListener('change', opcionesAcudiente);
     f('nacimiento').addEventListener('input', function () {
         var e = edadDe(this.value); $('est-edad').textContent = e != null && e >= 0 ? e + ' años' + (e < 18 ? ' · menor de edad' : '') : '';
         if (e != null && e < 18 && f('tipo').value === 'CC') f('tipo').value = 'TI';
         if (e != null && e >= 18 && f('tipo').value === 'TI') f('tipo').value = 'CC';
-        opcionesAcudiente();
+        pintarNacimiento();
     });
     formModal.querySelectorAll('input, select').forEach(function (i) { var k = (i.id || '').replace('est-f-', ''); if (k) { i.addEventListener('input', function () { errF(k, ''); }); i.addEventListener('change', function () { errF(k, ''); }); } });
 
     var CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     function validarPaso(p) {
         var v = function (id) { return f(id).value.trim(); };
-        var campos = p === 1 ? ['sede', 'nombres', 'apellidos', 'tipo', 'documento', 'nacimiento', 'genero', 'depto-nac', 'ciudad-nac']
-            : ['telefono', 'correo', 'direccion', 'depto', 'ciudad', 'acudiente', 'parentesco', 'a-documento', 'a-telefono', 'a-nombres', 'a-apellidos', 'a-correo'];
+        var campos = p === 1 ? ['sede', 'nombres', 'apellidos', 'tipo', 'documento', 'nacimiento', 'genero', 'depto-nac', 'ciudad-nac', 'pais-nac', 'ciudad-ext']
+            : ['telefono', 'correo', 'direccion', 'depto', 'ciudad', 'con-nombre', 'con-celular', 'parentesco'];
         if (p === 1) {
             errF('sede', v('sede') ? '' : 'Elige la sede.');
             if (editando && +v('sede') !== editando.sede_id && VIGENTES.indexOf(editando.estado) >= 0) errF('sede', 'Tiene matrícula vigente en ' + sedePorId(editando.sede_id).nombre + ': no se cambia de sede desde aquí.');
@@ -446,23 +442,21 @@
             errF('nacimiento', !v('nacimiento') ? 'Escribe la fecha de nacimiento.' : e < 13 ? 'Debe tener al menos 13 años.' : e > 80 ? 'Revisa la fecha.' : '');
             errF('tipo', e != null && f('tipo').value === 'TI' && e >= 18 ? 'Es mayor de edad: usa cédula u otro documento.' : e != null && f('tipo').value === 'CC' && e < 18 ? 'Un menor se identifica con tarjeta de identidad.' : '');
             errF('genero', v('genero') ? '' : 'Elige el género.');
-            errF('depto-nac', v('depto-nac') ? '' : 'Elige el departamento.');
-            errF('ciudad-nac', v('ciudad-nac') ? '' : 'Elige la ciudad.');
+            var fuera = nacioFuera();
+            errF('depto-nac', fuera || v('depto-nac') ? '' : 'Elige el departamento.');
+            errF('ciudad-nac', fuera || v('ciudad-nac') ? '' : 'Elige la ciudad.');
+            errF('pais-nac', !fuera || v('pais-nac') ? '' : 'Elige el país.');
+            errF('ciudad-ext', !fuera || v('ciudad-ext').length >= 2 ? '' : 'Escribe la ciudad de nacimiento.');
         } else {
-            var menor = edadDe(v('nacimiento')) < 18, acu = v('acudiente');
+            var celCon = v('con-celular').replace(/\D/g, '');
             errF('telefono', !/^3\d{9}$/.test(v('telefono').replace(/\D/g, '')) ? 'Escribe un celular de 10 dígitos que empiece por 3.' : '');
             errF('correo', !CORREO.test(v('correo').toLowerCase()) ? 'Escribe el correo: es su usuario para entrar.' : '');
             errF('direccion', v('direccion').length < 5 ? 'Escribe la dirección completa.' : '');
             errF('depto', v('depto') ? '' : 'Elige el departamento.');
             errF('ciudad', v('ciudad') ? '' : 'Elige la ciudad o municipio.');
-            errF('acudiente', menor && !acu ? 'Es menor de edad: necesita un acudiente.' : '');
-            errF('parentesco', acu && !v('parentesco') ? 'Elige el parentesco.' : '');
-            var nuevo = acu === 'nuevo';
-            errF('a-documento', nuevo && !/^\d{6,11}$/.test(v('a-documento').replace(/\D/g, '')) ? 'Escribe la cédula (de 6 a 11 dígitos).' : nuevo && v('a-documento').replace(/\D/g, '') === v('documento').replace(/\D/g, '') ? 'No puede ser el mismo estudiante.' : '');
-            errF('a-telefono', nuevo && !/^3\d{9}$/.test(v('a-telefono').replace(/\D/g, '')) ? 'Celular de 10 dígitos que empiece por 3.' : '');
-            errF('a-nombres', nuevo && v('a-nombres').length < 2 ? 'Escribe los nombres.' : '');
-            errF('a-apellidos', nuevo && v('a-apellidos').length < 2 ? 'Escribe los apellidos.' : '');
-            errF('a-correo', nuevo && !CORREO.test(v('a-correo').toLowerCase()) ? 'Escribe el correo del acudiente.' : '');
+            errF('con-nombre', v('con-nombre').length < 3 ? 'Escribe el nombre completo del contacto de emergencia.' : '');
+            errF('con-celular', !/^3\d{9}$/.test(celCon) ? 'Celular de 10 dígitos que empiece por 3.' : celCon === v('telefono').replace(/\D/g, '') ? 'Debe ser distinto al celular del estudiante.' : '');
+            errF('parentesco', v('parentesco') ? '' : 'Elige el parentesco.');
         }
         var malo = campos.find(function (c) { var e = formModal.querySelector('[data-error="' + c + '"]'); return e && !e.hidden; });
         if (malo) f(malo).focus();
@@ -471,23 +465,23 @@
     function irPaso(p) {
         paso = p;
         formModal.querySelectorAll('.est-paso').forEach(function (el) { el.hidden = +el.dataset.paso !== p; });
-        $('est-modal-sub').textContent = 'Paso ' + p + ' de 2 · ' + (p === 1 ? 'Datos personales' : 'Residencia, contacto y acudiente');
+        $('est-modal-sub').textContent = 'Paso ' + p + ' de 2 · ' + (p === 1 ? 'Datos personales' : 'Residencia, contacto y contacto de emergencia');
         $('est-atras').hidden = p === 1;
         $('est-siguiente').textContent = p === 1 ? 'Siguiente' : editando ? 'Guardar cambios' : 'Registrar estudiante';
-        if (p === 2) opcionesAcudiente();
     }
     function abrirForm(e) {
         editando = e || null;
         var x = e || { sede_id: '', nombres: '', apellidos: '', tipo_documento: 'CC', numero_documento: '', fecha_nacimiento: '', genero: '', telefono: '', email: '',
-            direccion: '', departamento: '', ciudad: '', departamento_nacimiento: '', lugar_nacimiento: '', acudiente_id: '', parentesco: '' };
+            direccion: '', departamento: '', ciudad: '', departamento_nacimiento: '', lugar_nacimiento: '', pais_nacimiento: '', contacto: null };
         f('sede').value = x.sede_id || ''; f('nombres').value = x.nombres; f('apellidos').value = x.apellidos; f('tipo').value = x.tipo_documento || 'CC';
         f('documento').value = x.numero_documento; f('nacimiento').value = x.fecha_nacimiento || ''; f('nacimiento').max = new Date().toISOString().slice(0, 10);
         f('genero').value = x.genero || ''; f('telefono').value = x.telefono; f('correo').value = x.email; f('direccion').value = x.direccion || '';
-        ['a-documento', 'a-telefono', 'a-nombres', 'a-apellidos', 'a-correo'].forEach(function (c) { f(c).value = ''; });
-        colombiaLista.then(function () { ponerLugar('depto-nac', 'ciudad-nac', x.departamento_nacimiento, x.lugar_nacimiento); ponerLugar('depto', 'ciudad', x.departamento, x.ciudad); });
-        f('acudiente').value = ''; opcionesAcudiente(); f('acudiente').value = x.acudiente_id || ''; f('parentesco').value = x.parentesco || ''; mostrarNuevo();
+        f('con-nombre').value = x.contacto ? x.contacto.nombre : ''; f('con-celular').value = x.contacto ? x.contacto.celular : ''; f('parentesco').value = x.contacto ? x.contacto.parentesco : '';
+        f('nac-donde').value = x.pais_nacimiento ? 'fuera' : 'co'; f('ciudad-ext').value = x.pais_nacimiento ? x.lugar_nacimiento : '';
+        paisesLista.then(function () { f('pais-nac').value = x.pais_nacimiento || ''; });
+        colombiaLista.then(function () { ponerLugar('depto-nac', 'ciudad-nac', x.pais_nacimiento ? '' : x.departamento_nacimiento, x.pais_nacimiento ? '' : x.lugar_nacimiento); ponerLugar('depto', 'ciudad', x.departamento, x.ciudad); });
+        pintarNacimiento();
         $('est-edad').textContent = ''; if (x.fecha_nacimiento) f('nacimiento').dispatchEvent(new Event('input'));
-        f('acudiente').value = x.acudiente_id || ''; mostrarNuevo();
         formModal.querySelectorAll('.est-field-error').forEach(function (el) { el.hidden = true; });
         formModal.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
         $('est-modal-titulo').textContent = editando ? 'Editar a ' + nombre(editando) : 'Nuevo estudiante';
@@ -503,27 +497,19 @@
 
     /* Error del servidor → su campo (y su paso) */
     var CAMPO = { sede_id: ['sede', 1], nombres: ['nombres', 1], apellidos: ['apellidos', 1], tipo_documento: ['tipo', 1], numero_documento: ['documento', 1],
-        fecha_nacimiento: ['nacimiento', 1], genero: ['genero', 1], departamento_nacimiento: ['depto-nac', 1], lugar_nacimiento: ['ciudad-nac', 1],
+        fecha_nacimiento: ['nacimiento', 1], genero: ['genero', 1], departamento_nacimiento: ['depto-nac', 1], lugar_nacimiento: ['ciudad-nac', 1], pais_nacimiento: ['pais-nac', 1],
         telefono: ['telefono', 2], email: ['correo', 2], direccion: ['direccion', 2], departamento_residencia: ['depto', 2], ciudad_residencia: ['ciudad', 2],
-        acudiente: ['acudiente', 2], acudiente_id: ['acudiente', 2], 'acudiente.id': ['acudiente', 2], parentesco: ['parentesco', 2],
-        'acudiente.documento': ['a-documento', 2], 'acudiente.telefono': ['a-telefono', 2], 'acudiente.nombres': ['a-nombres', 2],
-        'acudiente.apellidos': ['a-apellidos', 2], 'acudiente.email': ['a-correo', 2] };
+        contacto: ['con-nombre', 2], 'contacto.nombre': ['con-nombre', 2], 'contacto.celular': ['con-celular', 2], 'contacto.parentesco': ['parentesco', 2] };
     $('est-form').addEventListener('submit', function (ev) {
         ev.preventDefault();
         if (!validarPaso(paso)) return;
         if (paso === 1) { irPaso(2); return; }
-        var v = function (id) { return f(id).value.trim(); }, acu = v('acudiente');
+        var v = function (id) { return f(id).value.trim(); };
         var cuerpo = { sede_id: +v('sede'), nombres: v('nombres'), apellidos: v('apellidos'), tipo_documento: v('tipo'), numero_documento: v('documento'),
-            fecha_nacimiento: v('nacimiento'), genero: v('genero'), departamento_nacimiento: v('depto-nac'), lugar_nacimiento: v('ciudad-nac'),
+            fecha_nacimiento: v('nacimiento'), genero: v('genero'),
+            departamento_nacimiento: nacioFuera() ? '' : v('depto-nac'), lugar_nacimiento: nacioFuera() ? v('ciudad-ext') : v('ciudad-nac'), pais_nacimiento: nacioFuera() ? v('pais-nac') : '',
             telefono: v('telefono'), email: v('correo'), direccion: v('direccion'), departamento_residencia: v('depto'), ciudad_residencia: v('ciudad'),
-            parentesco: acu ? v('parentesco') : null };
-        if (editando) cuerpo.acudiente_id = acu ? +acu : null;
-        else if (acu) {
-            cuerpo.con_acudiente = true;
-            cuerpo.acudiente = acu === 'nuevo'
-                ? { documento: v('a-documento'), telefono: v('a-telefono'), nombres: v('a-nombres'), apellidos: v('a-apellidos'), email: v('a-correo') }
-                : { id: +acu };
-        }
+            contacto: { nombre: v('con-nombre'), celular: v('con-celular'), parentesco: v('parentesco') } };
         var btn = $('est-siguiente'); btn.disabled = true;
         enviar(editando ? 'PUT' : 'POST', editando ? '/general/estudiantes/' + editando.id : '/general/estudiantes', cuerpo)
             .then(function (r) { recargarConAviso(r.mensaje); })

@@ -41,7 +41,7 @@ class EnsureAccountIsEnabled
             return 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.';
         }
         // Bloqueada por intentos fallidos o inactividad (Admin › Configuración): no entra hasta que la desbloqueen
-        if ($user->bloqueado_en) {
+        if (app(BloqueoService::class)->bloqueada($user)) {
             return BloqueoService::mensaje($user);
         }
 

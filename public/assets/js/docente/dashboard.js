@@ -86,10 +86,12 @@
     function clasesHoy() {
         var out = [];
         vigentes().forEach(function (g) {
-            (g.clases || []).forEach(function (c) { if (c.fecha === D.hoy) out.push({ g: g, c: c }); });
+            (g.clases || []).forEach(function (c) { if (c.fecha === D.hoy && esClase(c)) out.push({ g: g, c: c }); });
         });
         return out.sort(function (a, b) { return minutos(a.c.ini) - minutos(b.c.ini); });
     }
+    // Un festivo sin asistencia y un día marcado "No hubo clase" no son clase (Curso::claseEn)
+    function esClase(c) { return c.estado !== 'festivo' && c.estado !== 'sin_clase'; }
     // Estado de una clase de hoy según DOC_DATOS y la hora actual (la página puede quedar abierta)
     function estadoClase(c) {
         if (c.estado === 'registrada') return 'registrada';
@@ -109,7 +111,7 @@
         var m = ahoraMin(), mejor = null;
         vigentes().forEach(function (g) {
             (g.clases || []).forEach(function (c) {
-                if (c.fecha < D.hoy || (c.fecha === D.hoy && minutos(c.ini) <= m)) return;
+                if (!esClase(c) || c.fecha < D.hoy || (c.fecha === D.hoy && minutos(c.ini) <= m)) return;
                 if (!mejor || c.fecha < mejor.c.fecha || (c.fecha === mejor.c.fecha && minutos(c.ini) < minutos(mejor.c.ini))) {
                     mejor = { g: g, c: c };
                 }

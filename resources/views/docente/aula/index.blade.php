@@ -2,7 +2,8 @@
      selección múltiple y actividades por grupo y módulo, ve quién respondió o entregó y califica las entregas. Reglas
      (24-11-2026): una evaluación se edita o elimina mientras nadie la responda; una actividad se elimina sin entregas;
      la nota de una entrega es de 1,0 a 5,0 con un decimal; ninguna calcula la nota del módulo (esa se pone en Notas). Un
-     grupo finalizado es solo consulta. Enlace: ?grupo=ID. Tarjetas, chips y cajón de Mis grupos (DESIGN-PANELES.md). --}}
+     grupo finalizado es solo consulta. Enlace: ?grupo=ID. Tarjetas, chips y cajón de Mis grupos (DESIGN-PANELES.md).
+     27-11-2026: archivo de apoyo en la actividad y material de clase del grupo (archivo, enlace o los dos). --}}
 @extends('docente.layout')
 
 @section('title', 'Aula virtual')
@@ -17,7 +18,7 @@
     <header class="dau-header">
         <div class="dau-header-txt">
             <h2 class="dau-title">Aula virtual</h2>
-            <p class="dau-sub">Evaluaciones y actividades para tus grupos. Sus notas son aparte de la nota del módulo, que pones en Notas.</p>
+            <p class="dau-sub">Evaluaciones, actividades y material de clase para tus grupos. Sus notas son aparte de la nota del módulo, que pones en Notas.</p>
         </div>
         <div class="dau-acciones" id="dau-acciones">
             <button type="button" class="dau-btn dau-btn-ghost" id="dau-nueva-act">
@@ -27,6 +28,10 @@
             <button type="button" class="dau-btn dau-btn-ghost" id="dau-nueva-ev">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                 Nueva evaluación
+            </button>
+            <button type="button" class="dau-btn dau-btn-ghost" id="dau-nuevo-mat">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Nuevo material
             </button>
         </div>
     </header>
@@ -47,6 +52,16 @@
             <p class="dau-vacio-ttl" id="dau-vacio-ttl"></p>
             <p class="dau-vacio-sub" id="dau-vacio-sub"></p>
         </div>
+    </section>
+
+    {{-- Material de clase del grupo (archivos y enlaces que el docente publica) --}}
+    <section class="dau-material app-anim app-anim-d3" id="dau-material" aria-labelledby="dau-mat-ttl" hidden>
+        <div class="dau-mat-cab">
+            <h3 class="dau-mat-ttl" id="dau-mat-ttl">Material de clase</h3>
+            <span class="dau-resumen" id="dau-mat-resumen"></span>
+        </div>
+        <div class="dau-grid" id="dau-mat-lista"></div>
+        <p class="dau-mat-vacio" id="dau-mat-vacio" hidden></p>
     </section>
 </div>
 
@@ -92,6 +107,8 @@
             'crearActividad'  => route('docente.aula.actividades.store', ['curso' => '__ID__']),
             'actividad'       => route('docente.aula.actividades.update', ['actividad' => '__ID__']),
             'calificar'       => route('docente.aula.calificar', ['entrega' => '__ID__']),
+            'crearMaterial'   => route('docente.aula.materiales.store', ['curso' => '__ID__']),
+            'material'        => route('docente.aula.materiales.update', ['material' => '__ID__']),
         ]];
     @endphp
     <script>

@@ -99,7 +99,7 @@
             } else if (e === 'no_cursado') {
                 txt = '<p class="mpr-mod-txt">Terminó antes de tu matrícula en este grupo.</p>';
             } else if (e === 'reprobado') {
-                txt = '<p class="mpr-mod-txt">No aprobaste la habilitación. La secretaría te dirá cómo repetir el módulo.</p>';
+                txt = '<p class="mpr-mod-txt">No aprobaste la habilitación. El administrativo te dirá cómo repetir el módulo.</p>';
             }
             var der = m.nota != null
                 ? '<span class="mpr-nota mpr-tono-' + tonoNota(m.nota) + '">' + esc(nota(m.nota)) + '</span>'
@@ -284,7 +284,7 @@
                 '<div class="rc-datos"><div class="rc-full"><span>Asistencia</span><strong>' +
                     e((A.pct == null ? '—' : A.pct + ' %') + ' · asistió a ' + (A.P + A.T) + ' de ' + (A.P + A.T + A.A) + ' clases' + (A.E ? ' · ' + plural(A.E, 'falta con excusa', 'faltas con excusa') : '')) +
                 '</strong></div></div>' +
-                '<p class="rc-nota">Boletín informativo generado desde el panel del estudiante. Se aprueba con 3,0. No reemplaza el certificado de notas que expide la secretaría de la sede.</p>'
+                '<p class="rc-nota">Boletín informativo generado desde el panel del estudiante. Se aprueba con 3,0. No reemplaza el certificado de notas que expide la administración de la sede.</p>'
         });
     });
 

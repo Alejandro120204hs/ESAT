@@ -104,7 +104,7 @@ $iniciales = fn ($n, $a) => mb_strtoupper(mb_substr($n, 0, 1) . mb_substr($a, 0,
         <div class="asi-filters">
             <div class="asi-search-box">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="search" id="asi-g-search" placeholder="Buscar por programa, grupo o docente..." autocomplete="off" aria-label="Buscar grupo">
+                <input type="search" id="asi-g-search" placeholder="Buscar por carrera, grupo o docente..." autocomplete="off" aria-label="Buscar grupo">
             </div>
             <div class="app-combobox" id="asi-g-cb-jornada" data-position="absolute" data-options='@json($jornadas)'>
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
@@ -253,7 +253,7 @@ $iniciales = fn ($n, $a) => mb_strtoupper(mb_substr($n, 0, 1) . mb_substr($a, 0,
                 <thead>
                     <tr>
                         <th>Estudiante</th>
-                        <th>Programa y grupo</th>
+                        <th>Carrera y grupo</th>
                         <th>Asistencia</th>
                         <th>Faltas</th>
                         <th>Tardes</th>

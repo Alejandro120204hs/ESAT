@@ -108,13 +108,77 @@ class HistorialGruposTest extends TestCase
         ])->assertOk();
     }
 
+    /** Uno que sigue en planificación sin asistencia ni notas nunca dictó clases: corre su inicio, pero a hoy o después (26-11-2026). */
+    public function test_un_grupo_en_planificacion_atrasado_corre_su_fecha_de_inicio(): void
+    {
+        $g = $this->grupo($this->programa(['Mañana'], 1600, 12), 'Mañana', null, 'planificacion', '2026-11-02');
+        $datos = fn (string $inicio) => ['programa_id' => $g->programa_id, 'jornada' => 'Mañana', 'fecha_inicio' => $inicio, 'estado' => 'planificacion'];
+
+        $this->actingAs($this->admin)->putJson("/admin/cursos/{$g->id}", $datos('2026-11-03'))->assertJsonValidationErrors(['fecha_inicio' => 'hoy o a una fecha futura']);
+        $this->putJson("/admin/cursos/{$g->id}", $datos(today()->addWeek()->toDateString()))->assertOk();
+        $this->assertSame(today()->addWeek()->toDateString(), $g->fresh()->fecha_inicio->toDateString());
+    }
+
+    /**
+     * Revisión del Administrativo (27-11-2026): un grupo nuevo, o uno que todavía no empieza, no se pone a empezar en el
+     * pasado. Antes se podía mover al 1-jul un grupo del 2-nov con estudiantes ya matriculados: quedaban en un grupo que
+     * "empezó" antes que su matrícula y el derecho seguía venciendo el 2-nov.
+     */
+    public function test_un_grupo_no_se_crea_ni_se_corre_a_una_fecha_pasada(): void
+    {
+        $p = $this->programa(['Mañana'], 1600, 12);
+        $datos = fn (string $inicio, string $estado = 'planificacion') => ['programa_id' => $p->id, 'jornada' => 'Mañana', 'fecha_inicio' => $inicio, 'estado' => $estado];
+
+        $this->actingAs($this->admin)->postJson('/admin/cursos', $datos('2026-01-05'))->assertJsonValidationErrors(['fecha_inicio' => 'anterior a hoy']);
+        $this->postJson('/admin/cursos', $datos(today()->toDateString()))->assertOk();
+
+        $g = $this->grupo($p, 'Mañana', null, 'planificacion', '2026-12-07');
+        $m = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $g, null);
+        $this->putJson("/admin/cursos/{$g->id}", $datos('2026-07-01'))->assertJsonValidationErrors(['fecha_inicio' => 'anterior a hoy']);
+        $this->assertSame('2026-12-07', $g->fresh()->fecha_inicio->toDateString());
+
+        // Correrlo hacia adelante sí, y el derecho de matrícula se va con él
+        $this->putJson("/admin/cursos/{$g->id}", $datos('2027-01-11'))->assertOk();
+        $this->assertSame('2027-01-11', $m->pagos()->where('tipo', 'matricula')->first()->fecha_vencimiento->toDateString());
+    }
+
+    /** Un grupo activo que ya empezó no vuelve a planificación; uno que todavía no empieza, sí (decidido con el usuario el 27-11-2026). */
+    public function test_un_grupo_activo_que_ya_empezo_no_vuelve_a_planificacion(): void
+    {
+        $g = $this->grupoEnClases();
+        $datos = fn (Curso $c) => ['programa_id' => $c->programa_id, 'docente_id' => $this->docente->id, 'jornada' => 'Mañana',
+            'fecha_inicio' => $c->fecha_inicio->toDateString(), 'estado' => 'planificacion'];
+
+        $this->actingAs($this->admin)->putJson("/admin/cursos/{$g->id}", $datos($g))->assertJsonValidationErrors(['estado' => 'no vuelve a planificación']);
+        $this->assertSame('activo', $g->fresh()->estado);
+
+        $futuro = $this->grupoEnClases('2027-01-11', $this->docente());
+        $this->putJson("/admin/cursos/{$futuro->id}", ['docente_id' => $futuro->docente()->id] + $datos($futuro))->assertOk();
+        $this->assertSame('planificacion', $futuro->fresh()->estado);
+    }
+
+    /** Un grupo finalizado es historia (quién lo dictó): no se edita; primero se reabre desde su ficha (27-11-2026). */
+    public function test_un_grupo_finalizado_no_se_edita(): void
+    {
+        $g = $this->grupoEnClases();
+        $g->update(['estado' => 'finalizado']);
+        $otro = $this->docente();
+
+        $this->actingAs($this->admin)->putJson("/admin/cursos/{$g->id}", [
+            'programa_id' => $g->programa_id, 'docente_id' => $otro->id, 'jornada' => 'Mañana', 'fecha_inicio' => '2026-09-07', 'estado' => 'finalizado',
+        ])->assertJsonValidationErrors(['estado' => 'reábrelo']);
+        $this->assertSame($this->docente->id, $g->fresh()->docente()->id);
+
+        $this->get('/admin/cursos')->assertOk()->assertDontSee('data-action="editar" data-id="'.$g->id.'"', false);
+    }
+
     /* ── A8: finalizar a tiempo ── */
 
     public function test_no_se_finaliza_antes_de_tiempo_con_estudiantes(): void
     {
         $g = $this->grupoEnClases();
         $this->actingAs($this->admin);
-        app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $g, null);
+        $this->alIniciar($g, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $g, null));
 
         $this->patchJson("/admin/cursos/{$g->id}/estado")->assertStatus(422);
         $this->putJson("/admin/cursos/{$g->id}", [
@@ -139,7 +203,7 @@ class HistorialGruposTest extends TestCase
     {
         $g = $this->grupoEnClases();
         $this->actingAs($this->admin);
-        $m = app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $g, null);
+        $m = $this->alIniciar($g, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $g, null));
         $g->update(['estado' => 'finalizado']);   // finalizado antes de tiempo (datos viejos)
 
         $this->patchJson("/admin/matriculas/{$m->id}/estado", ['estado' => 'graduado', 'fecha' => today()->toDateString()])

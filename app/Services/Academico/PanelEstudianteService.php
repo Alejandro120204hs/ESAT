@@ -2,6 +2,7 @@
 
 namespace App\Services\Academico;
 
+use App\Http\Requests\Estudiante\Foro\ExigeMatriculaVigente;
 use App\Enums\RolUsuario;
 use App\Models\Academico\Asistencia;
 use App\Models\Academico\Calificacion;
@@ -9,13 +10,12 @@ use App\Models\Academico\Curso;
 use App\Models\Academico\CursoSesion;
 use App\Models\Academico\Programa;
 use App\Models\Comunicacion\Comunicado;
-use App\Models\Comunicacion\ForoMensaje;
-use App\Models\Comunicacion\ForoTema;
 use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\Finanzas\Recaudo;
 use App\Models\Institucional\Configuracion;
 use App\Models\User;
+use App\Services\Comunicacion\ForoService;
 use App\Services\Finanzas\PagoService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -35,15 +35,14 @@ class PanelEstudianteService
 
     private const DIA_ISO = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
 
-    private const ROL = ['admin' => 'Secretaría', 'admin_general' => 'Admin', 'docente' => 'Docente', 'superadmin' => 'Secretaría'];
-
-    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'acudiente' => 'a', 'admin' => 'x', 'admin_general' => 'x', 'superadmin' => 'x'];
+    private const ROL = ['admin' => 'Administrativo', 'admin_general' => 'Admin', 'docente' => 'Docente', 'superadmin' => 'Administrativo'];
 
     public function __construct(
         private CalificacionService $calificaciones,
         private EstudianteService $estudiantes,
         private PagoService $pagos,
         private AulaService $aula,
+        private ForoService $foro,
     ) {}
 
     /**
@@ -55,7 +54,7 @@ class PanelEstudianteService
         $estudiante->load([
             'matriculas.programa.escuela', 'matriculas.programa.modulos', 'matriculas.curso.programa.modulos',
             'matriculas.curso.sesiones', 'matriculas.curso.historialSesiones', 'matriculas.curso.docentes',
-            'matriculas.pagos', 'matriculas.recaudos.cobros', 'matriculas.calificaciones',
+            'matriculas.pagos', 'matriculas.recaudos.cobros', 'matriculas.calificaciones', 'matriculas.grupos',
         ]);
 
         return $this->estudiantes->matriculaVigente($estudiante);
@@ -82,7 +81,7 @@ class PanelEstudianteService
         $a['situacion'] = AsistenciaService::situacion($a['pct']);
 
         $conNota = collect($modulos)->whereNotNull('nota');
-        $aula = $m && $curso && $m->estado !== 'anulado' ? $this->aula->paraEstudiante($estudiante, $curso, $ahora) : ['evaluaciones' => [], 'actividades' => []];
+        $aula = $m && $curso && $m->estado !== 'anulado' ? $this->aula->paraEstudiante($estudiante, $curso, $ahora) : ['evaluaciones' => [], 'actividades' => [], 'materiales' => []];
 
         return [
             'hoy'          => $ahora->toDateString(),
@@ -101,9 +100,12 @@ class PanelEstudianteService
             'asistencia'   => $a,
             'evaluaciones' => $aula['evaluaciones'],
             'actividades'  => $aula['actividades'],
+            'materiales'   => $aula['materiales'],
             'pagos'        => $m ? $this->pagosDe($m, $curso) : null,
             'comunicados'  => $this->comunicados($estudiante, $m),
-            'foro'         => $this->foro($estudiante),
+            'foro'         => $this->foro->panel($estudiante, 'estudiante.foro.adjunto'),
+            // Abrir temas, responder y reportar: solo con matrícula vigente (los Form Requests del foro lo exigen)
+            'participaForo' => ExigeMatriculaVigente::participa($estudiante),
         ];
     }
 
@@ -145,7 +147,9 @@ class PanelEstudianteService
     {
         $notas = $m->calificaciones->keyBy('programa_modulo_id');
         $fechas = $curso ? collect($this->calificaciones->fechasModulos($curso, $ahora))->keyBy('id') : collect();
-        $desde = $m->fecha_inicio->toDateString();
+        // Desde que llegó a su grupo (historial de grupos): lo que terminó allí antes y no tiene nota no lo cursó en él
+        $ventanas = $curso ? $m->ventanasEn($curso) : [];
+        $desde = $ventanas ? $ventanas[0]['desde'] : $m->fecha_inicio->toDateString();
 
         return $m->programa->modulos->values()->map(function ($mod, int $i) use ($notas, $fechas, $desde) {
             $f = $fechas->get($mod->id);
@@ -176,49 +180,58 @@ class PanelEstudianteService
     }
 
     /**
-     * Clases del grupo que le tocan al estudiante: desde su matrícula (o el inicio del grupo) hasta que se aplazó,
-     * retiró o graduó, con su registro. P/T/A/E · sin_registrar (ya dictada y sin registro: no cuenta en el %) ·
-     * hoy (todavía no termina) · futura. Cada día con el horario que regía entonces (Curso::sesionEn).
+     * Clases que le tocan al estudiante en cada grupo por el que ha pasado con esta matrícula (historial de grupos): en
+     * cada uno, solo mientras contaba allí (Matricula::ventanasEn: desde que llegó hasta que salió, se aplazó, retiró o
+     * graduó), con su registro. P/T/A/E · sin_registrar (ya dictada y sin registro: no cuenta en el %) · hoy (todavía no
+     * termina) · futura. Cada día con el horario que regía entonces (Curso::sesionEn).
      */
     private function clases(User $e, Matricula $m, Curso $curso, array $modulos, CarbonInterface $ahora): array
     {
         $hoy = $ahora->copy()->startOfDay();
-        $desde = max($m->fecha_inicio->toDateString(), $curso->fecha_inicio->toDateString());
-        $hasta = $m->estado !== 'activo' ? $m->estado_fecha?->toDateString() : null;
-        $registros = Asistencia::where('curso_id', $curso->id)->where('estudiante_id', $e->id)
-            ->get(['fecha', 'estado', 'motivo'])->keyBy(fn (Asistencia $a) => $a->fecha->toDateString());
+        $ids = $m->periodos()->pluck('curso_id')->push($curso->id)->unique()->values();
+        $cursos = $ids->count() === 1 ? collect([$curso])
+            : Curso::with(['sesiones', 'historialSesiones', 'programa.modulos'])->whereIn('id', $ids)->get();
+        $registros = Asistencia::whereIn('curso_id', $ids)->where('estudiante_id', $e->id)
+            ->get(['curso_id', 'fecha', 'estado', 'motivo'])->keyBy(fn (Asistencia $a) => $a->curso_id.'|'.$a->fecha->toDateString());
 
         $out = [];
-        $fin = $curso->fin();
-        for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($fin); $d->addDay()) {
-            $f = $d->toDateString();
-            if ($f < $desde || ($hasta && $f >= $hasta)) {
+        foreach ($cursos as $c) {
+            $ventanas = $m->ventanasEn($c);
+            if (! $ventanas) {
                 continue;
             }
-            $s = $curso->sesionEn($d);
-            if (! $s) {
-                continue;
+            $mods = $c->id === $curso->id ? $modulos : collect($this->calificaciones->fechasModulos($c, $ahora))->all();
+            $fin = $c->fin();
+            for ($d = $c->fecha_inicio->copy()->startOfDay(); $d->lt($fin); $d->addDay()) {
+                $f = $d->toDateString();
+                if (! Matricula::enVentanas($ventanas, $f)) {
+                    continue;
+                }
+                $s = $c->claseEn($d);
+                if (! $s) {
+                    continue;
+                }
+                // Después de aplazarse o retirarse no hay clases por venir
+                if ($m->estado !== 'activo' && $d->gt($hoy)) {
+                    break;
+                }
+                $dictada = $d->lt($hoy) || ($d->equalTo($hoy) && $ahora->gte($hoy->copy()->setTimeFromTimeString($s->hora_fin)));
+                $r = $registros->get($c->id.'|'.$f);
+                $estado = ! $dictada ? ($d->equalTo($hoy) ? 'hoy' : 'futura')
+                    : ($r ? self::ESTADO_ASISTENCIA[$r->estado] ?? 'sin_registrar' : 'sin_registrar');
+                $out[] = [
+                    'fecha'    => $f,
+                    'dia'      => $s->dia,
+                    'ini'      => $s->inicio(),
+                    'fin'      => $s->fin(),
+                    'moduloId' => collect($mods)->first(fn ($x) => $x['ini'] && $x['ini'] <= $f && $f <= $x['fin'])['id'] ?? null,
+                    'estado'   => $estado,
+                    'motivo'   => $estado === 'E' ? $r->motivo : null,
+                ];
             }
-            // Después de aplazarse o retirarse no hay clases por venir
-            if ($m->estado !== 'activo' && $d->gt($hoy)) {
-                break;
-            }
-            $dictada = $d->lt($hoy) || ($d->equalTo($hoy) && $ahora->gte($hoy->copy()->setTimeFromTimeString($s->hora_fin)));
-            $r = $registros->get($f);
-            $estado = ! $dictada ? ($d->equalTo($hoy) ? 'hoy' : 'futura')
-                : ($r ? self::ESTADO_ASISTENCIA[$r->estado] ?? 'sin_registrar' : 'sin_registrar');
-            $out[] = [
-                'fecha'    => $f,
-                'dia'      => $s->dia,
-                'ini'      => $s->inicio(),
-                'fin'      => $s->fin(),
-                'moduloId' => collect($modulos)->first(fn ($x) => $x['ini'] && $x['ini'] <= $f && $f <= $x['fin'])['id'] ?? null,
-                'estado'   => $estado,
-                'motivo'   => $estado === 'E' ? $r->motivo : null,
-            ];
         }
 
-        return $out;
+        return collect($out)->sortBy('fecha')->values()->all();
     }
 
     /* ── Pagos ─────────────────────────────────────────────────────────── */
@@ -376,7 +389,7 @@ class PanelEstudianteService
                     'id'      => $c->id,
                     'titulo'  => $c->titulo,
                     'cuerpo'  => (string) $c->mensaje,
-                    'de'      => ['nombre' => $a ? (trim($a->nombres.' '.$a->apellidos) ?: 'Secretaría de la sede') : 'Secretaría de la sede', 'rol' => self::ROL[$a?->role->value ?? 'admin'] ?? 'Secretaría'],
+                    'de'      => ['nombre' => $a ? (trim($a->nombres.' '.$a->apellidos) ?: 'Administración de la sede') : 'Administración de la sede', 'rol' => self::ROL[$a?->role->value ?? 'admin'] ?? 'Administrativo'],
                     'para'    => $para,
                     'fecha'   => ($c->publicado_en ?? $c->created_at)->format('Y-m-d H:i'),
                     'fijado'  => (bool) $c->fijado,
@@ -389,48 +402,6 @@ class PanelEstudianteService
                     ] : null,
                 ];
             })->all();
-    }
-
-    /** El foro de su sede sin lo que ocultó la secretaría (un tema cuyo primer mensaje está oculto no se ve). */
-    private function foro(User $estudiante): array
-    {
-        $temas = $estudiante->sede_id ? ForoTema::where('sede_id', $estudiante->sede_id)
-            ->with(['mensajes.autor', 'mensajes.reportes' => fn ($q) => $q->where('user_id', $estudiante->id)])
-            ->orderBy('id')->get() : collect();
-
-        return [
-            'categorias' => array_values(ForoTema::CATEGORIAS),
-            'claves'     => array_flip(ForoTema::CATEGORIAS),
-            'temas'      => $temas->reject(fn (ForoTema $t) => $t->oculto())->map(function (ForoTema $t) use ($estudiante) {
-                $mensajes = $t->mensajes->sortBy('id')->reject(fn (ForoMensaje $m) => $m->oculto())->values()
-                    ->map(fn (ForoMensaje $m) => [
-                        'id'        => $m->id,
-                        'autor'     => [
-                            'nombre' => $m->autor ? (trim($m->autor->nombres.' '.$m->autor->apellidos) ?: 'Secretaría de la sede') : 'Secretaría de la sede',
-                            'rol'    => self::LETRA[$m->autor?->role->value ?? 'admin'] ?? 'x',
-                            'yo'     => $m->autor_id === $estudiante->id,
-                        ],
-                        'fecha'     => $m->created_at->format('Y-m-d H:i'),
-                        'texto'     => $m->texto,
-                        'adjunto'   => $m->adjunto_ruta ? ['nombre' => $m->adjunto_nombre, 'tamano' => (int) $m->adjunto_peso, 'url' => route('estudiante.foro.adjunto', $m)] : null,
-                        'reportado' => $m->reportes->isNotEmpty(),
-                    ]);
-                if ($mensajes->isEmpty()) {
-                    return null;
-                }
-
-                return [
-                    'id'        => $t->id,
-                    'categoria' => ForoTema::CATEGORIAS[$t->categoria] ?? $t->categoria,
-                    'titulo'    => $t->titulo,
-                    'fijado'    => (bool) $t->fijado,
-                    'cerrado'   => $t->cerrado(),
-                    'mensajes'  => $mensajes->all(),
-                    'ultimo'    => $mensajes->last()['fecha'],
-                    'mio'       => $mensajes->first()['autor']['yo'],
-                ];
-            })->filter()->values()->all(),
-        ];
     }
 
     /** Datos legales de ESAT y la sede para los documentos imprimibles (Admin › Configuración). */

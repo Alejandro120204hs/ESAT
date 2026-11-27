@@ -29,7 +29,6 @@ class Comunicado extends Model
         'sede'        => 'Toda la sede',
         'estudiantes' => 'Estudiantes',
         'docentes'    => 'Docentes',
-        'acudientes'  => 'Acudientes',
     ];
 
     public const MAX_MENSAJE = 2000;

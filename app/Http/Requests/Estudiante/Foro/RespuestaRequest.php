@@ -10,8 +10,10 @@ use App\Http\Requests\Admin\Foro\RespuestaRequest as RespuestaSecretariaRequest;
  */
 class RespuestaRequest extends RespuestaSecretariaRequest
 {
+    use ExigeMatriculaVigente;
+
     public function authorize(): bool
     {
-        return $this->route('tema')->sede_id === (int) $this->user()->sede_id;
+        return $this->route('tema')->sede_id === (int) $this->user()->sede_id && $this->exigirMatriculaVigente();
     }
 }

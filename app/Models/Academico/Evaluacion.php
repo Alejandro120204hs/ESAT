@@ -3,9 +3,11 @@
 namespace App\Models\Academico;
 
 use App\Models\User;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Evaluacion extends Model
 {
@@ -18,6 +20,7 @@ class Evaluacion extends Model
         'titulo',
         'descripcion',
         'fecha_limite',
+        'duracion_minutos',
     ];
 
     protected function casts(): array
@@ -58,6 +61,25 @@ class Evaluacion extends Model
     public function preguntas(): HasMany
     {
         return $this->hasMany(Pregunta::class)->orderBy('orden');
+    }
+
+    /** Minutos que puede escoger el docente (null = sin límite). */
+    public const DURACIONES = [10, 15, 20, 30, 45, 60, 90, 120];
+
+    /** Segundos de más que se aceptan al enviar cuando se acabó el tiempo (lo que tarda en llegar el envío automático). */
+    public const GRACIA_SEGUNDOS = 60;
+
+    /** Hasta cuándo puede responder quien la comenzó en $inicio: su tiempo o el cierre, lo que llegue primero. */
+    public function terminaPara(DateTimeInterface $inicio): Carbon
+    {
+        $fin = Carbon::instance($inicio)->addMinutes((int) $this->duracion_minutos);
+
+        return $fin->lt($this->fecha_limite) ? $fin : $this->fecha_limite->copy();
+    }
+
+    public function intentos(): HasMany
+    {
+        return $this->hasMany(EvaluacionIntento::class);
     }
 
     public function respuestasEstudiante(): HasMany

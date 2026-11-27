@@ -21,28 +21,28 @@
     @php
         $eventos = [
             ['quien' => 'María Pérez', 'tipo' => 'crear', 'descripcion' => 'creó la sede Guaduas', 'sede' => 'Guaduas', 'fecha' => '2026-09-29', 'fechaTexto' => '29 sep 2026', 'hora' => '8:15 a.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'editar', 'descripcion' => 'actualizó el programa Barbería', 'sede' => 'Sasaima', 'fecha' => '2026-09-29', 'fechaTexto' => '29 sep 2026', 'hora' => '6:40 a.m.'],
-            ['quien' => 'Diego Hernandez', 'tipo' => 'crear', 'descripcion' => 'registró la cuenta de secretaría de Laura Torres', 'sede' => 'Guaduas', 'fecha' => '2026-09-28', 'fechaTexto' => '28 sep 2026', 'hora' => '4:20 p.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'editar', 'descripcion' => 'actualizó la carrera Barbería', 'sede' => 'Sasaima', 'fecha' => '2026-09-29', 'fechaTexto' => '29 sep 2026', 'hora' => '6:40 a.m.'],
+            ['quien' => 'Diego Hernandez', 'tipo' => 'crear', 'descripcion' => 'registró la cuenta de administrativo de Laura Torres', 'sede' => 'Guaduas', 'fecha' => '2026-09-28', 'fechaTexto' => '28 sep 2026', 'hora' => '4:20 p.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'editar', 'descripcion' => 'modificó la cuota del sistema a $2.000', 'sede' => null, 'fecha' => '2026-09-27', 'fechaTexto' => '27 sep 2026', 'hora' => '11:05 a.m.'],
-            ['quien' => 'María Pérez', 'tipo' => 'eliminar', 'descripcion' => 'eliminó un programa inactivo', 'sede' => 'Bogotá', 'fecha' => '2026-09-26', 'fechaTexto' => '26 sep 2026', 'hora' => '2:50 p.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'crear', 'descripcion' => 'creó el programa Sommelier', 'sede' => 'Sasaima', 'fecha' => '2026-09-25', 'fechaTexto' => '25 sep 2026', 'hora' => '9:30 a.m.'],
-            ['quien' => 'Diego Hernandez', 'tipo' => 'editar', 'descripcion' => 'actualizó qué programas ofrece la sede Sasaima', 'sede' => 'Sasaima', 'fecha' => '2026-09-24', 'fechaTexto' => '24 sep 2026', 'hora' => '3:15 p.m.'],
+            ['quien' => 'María Pérez', 'tipo' => 'eliminar', 'descripcion' => 'eliminó una carrera inactiva', 'sede' => 'Bogotá', 'fecha' => '2026-09-26', 'fechaTexto' => '26 sep 2026', 'hora' => '2:50 p.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'crear', 'descripcion' => 'creó la carrera Sommelier', 'sede' => 'Sasaima', 'fecha' => '2026-09-25', 'fechaTexto' => '25 sep 2026', 'hora' => '9:30 a.m.'],
+            ['quien' => 'Diego Hernandez', 'tipo' => 'editar', 'descripcion' => 'actualizó qué carreras ofrece la sede Sasaima', 'sede' => 'Sasaima', 'fecha' => '2026-09-24', 'fechaTexto' => '24 sep 2026', 'hora' => '3:15 p.m.'],
             ['quien' => 'María Pérez', 'tipo' => 'editar', 'descripcion' => 'actualizó los datos de la sede Bogotá', 'sede' => 'Bogotá', 'fecha' => '2026-09-23', 'fechaTexto' => '23 sep 2026', 'hora' => '10:00 a.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'activar', 'descripcion' => 'activó la cuenta de secretaría de Laura Torres', 'sede' => 'Guaduas', 'fecha' => '2026-09-22', 'fechaTexto' => '22 sep 2026', 'hora' => '1:40 p.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'activar', 'descripcion' => 'activó la cuenta de administrativo de Laura Torres', 'sede' => 'Guaduas', 'fecha' => '2026-09-22', 'fechaTexto' => '22 sep 2026', 'hora' => '1:40 p.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'crear', 'descripcion' => 'creó la sede La Dorada', 'sede' => 'La Dorada', 'fecha' => '2026-09-15', 'fechaTexto' => '15 sep 2026', 'hora' => '9:10 a.m.'],
             ['quien' => 'Laura Torres', 'tipo' => 'crear', 'descripcion' => 'creó un periodo académico de Servicios Geriátricos', 'sede' => 'Bogotá', 'fecha' => '2026-09-14', 'fechaTexto' => '14 sep 2026', 'hora' => '11:25 a.m.'],
             ['quien' => 'Laura Torres', 'tipo' => 'editar', 'descripcion' => 'actualizó un periodo académico de Sommelier', 'sede' => 'Sasaima', 'fecha' => '2026-09-13', 'fechaTexto' => '13 sep 2026', 'hora' => '4:05 p.m.'],
-            ['quien' => 'María Pérez', 'tipo' => 'desactivar', 'descripcion' => 'desactivó una cuenta de secretaría temporal', 'sede' => 'Bogotá', 'fecha' => '2026-09-12', 'fechaTexto' => '12 sep 2026', 'hora' => '8:50 a.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'crear', 'descripcion' => 'creó el programa Electricista', 'sede' => 'Sasaima', 'fecha' => '2026-09-11', 'fechaTexto' => '11 sep 2026', 'hora' => '2:15 p.m.'],
+            ['quien' => 'María Pérez', 'tipo' => 'desactivar', 'descripcion' => 'desactivó una cuenta de administrativo temporal', 'sede' => 'Bogotá', 'fecha' => '2026-09-12', 'fechaTexto' => '12 sep 2026', 'hora' => '8:50 a.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'crear', 'descripcion' => 'creó la carrera Electricista', 'sede' => 'Sasaima', 'fecha' => '2026-09-11', 'fechaTexto' => '11 sep 2026', 'hora' => '2:15 p.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'editar', 'descripcion' => 'actualizó los datos de la sede Guaduas', 'sede' => 'Guaduas', 'fecha' => '2026-09-10', 'fechaTexto' => '10 sep 2026', 'hora' => '9:45 a.m.'],
             ['quien' => 'María Pérez', 'tipo' => 'eliminar', 'descripcion' => 'eliminó un periodo académico duplicado', 'sede' => 'Bogotá', 'fecha' => '2026-09-09', 'fechaTexto' => '9 sep 2026', 'hora' => '3:30 p.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'editar', 'descripcion' => 'actualizó qué programas ofrece la sede Sasaima', 'sede' => 'Sasaima', 'fecha' => '2026-09-08', 'fechaTexto' => '8 sep 2026', 'hora' => '10:20 a.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'editar', 'descripcion' => 'actualizó qué carreras ofrece la sede Sasaima', 'sede' => 'Sasaima', 'fecha' => '2026-09-08', 'fechaTexto' => '8 sep 2026', 'hora' => '10:20 a.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'activar', 'descripcion' => 'activó la sede La Dorada', 'sede' => 'La Dorada', 'fecha' => '2026-09-08', 'fechaTexto' => '8 sep 2026', 'hora' => '8:00 a.m.'],
-            ['quien' => 'Laura Torres', 'tipo' => 'crear', 'descripcion' => 'creó el programa Auxiliar Contable y Administrativo', 'sede' => 'Guaduas', 'fecha' => '2026-09-07', 'fechaTexto' => '7 sep 2026', 'hora' => '5:10 p.m.'],
+            ['quien' => 'Laura Torres', 'tipo' => 'crear', 'descripcion' => 'creó la carrera Auxiliar Contable y Administrativo', 'sede' => 'Guaduas', 'fecha' => '2026-09-07', 'fechaTexto' => '7 sep 2026', 'hora' => '5:10 p.m.'],
             ['quien' => 'María Pérez', 'tipo' => 'editar', 'descripcion' => 'actualizó el teléfono de contacto de la sede Bogotá', 'sede' => 'Bogotá', 'fecha' => '2026-09-06', 'fechaTexto' => '6 sep 2026', 'hora' => '11:00 a.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'crear', 'descripcion' => 'creó la escuela de Ciencias', 'sede' => null, 'fecha' => '2026-09-05', 'fechaTexto' => '5 sep 2026', 'hora' => '9:15 a.m.'],
-            ['quien' => 'Carlos Gómez', 'tipo' => 'eliminar', 'descripcion' => 'eliminó un programa descontinuado', 'sede' => 'Sasaima', 'fecha' => '2026-09-04', 'fechaTexto' => '4 sep 2026', 'hora' => '2:40 p.m.'],
-            ['quien' => 'Laura Torres', 'tipo' => 'editar', 'descripcion' => 'actualizó el precio del programa Barbería', 'sede' => 'Guaduas', 'fecha' => '2026-09-03', 'fechaTexto' => '3 sep 2026', 'hora' => '10:05 a.m.'],
+            ['quien' => 'Carlos Gómez', 'tipo' => 'eliminar', 'descripcion' => 'eliminó una carrera descontinuada', 'sede' => 'Sasaima', 'fecha' => '2026-09-04', 'fechaTexto' => '4 sep 2026', 'hora' => '2:40 p.m.'],
+            ['quien' => 'Laura Torres', 'tipo' => 'editar', 'descripcion' => 'actualizó el precio de la carrera Barbería', 'sede' => 'Guaduas', 'fecha' => '2026-09-03', 'fechaTexto' => '3 sep 2026', 'hora' => '10:05 a.m.'],
             ['quien' => 'Diego Hernandez', 'tipo' => 'crear', 'descripcion' => 'configuró la cuota inicial del sistema', 'sede' => null, 'fecha' => '2026-09-02', 'fechaTexto' => '2 sep 2026', 'hora' => '8:30 a.m.'],
         ];
 
@@ -55,7 +55,7 @@
         $TIPO_CLASE = ['crear' => 'app-tag-crear', 'editar' => 'app-tag-editar', 'eliminar' => 'app-tag-eliminar', 'activar' => 'app-tag-crear', 'desactivar' => 'app-tag-desactivar'];
     @endphp
 
-    <p class="app-page-intro">Aquí puedes revisar qué ha hecho cada secretaría en el sistema: qué creó, editó o eliminó, y cuándo.</p>
+    <p class="app-page-intro">Aquí puedes revisar qué ha hecho cada administrativo en el sistema: qué creó, editó o eliminó, y cuándo.</p>
 
     <div class="app-stat-row">
         <div class="app-stat-tile">
@@ -68,7 +68,7 @@
         </div>
         <div class="app-stat-tile">
             <span class="app-stat-value">{{ count($administradoresList) }}</span>
-            <span class="app-stat-label">Secretarías con actividad</span>
+            <span class="app-stat-label">Administrativos con actividad</span>
         </div>
     </div>
 
@@ -80,7 +80,7 @@
             </div>
             <div class="app-panel-heading-actions">
                 <select class="app-select" data-filter-quien data-table-target="eventos">
-                    <option value="todos">Todas las secretarías</option>
+                    <option value="todos">Todos los administrativos</option>
                     @foreach ($administradoresList as $admin)
                         <option value="{{ $admin }}">{{ $admin }}</option>
                     @endforeach
@@ -107,7 +107,7 @@
                 <thead>
                     <tr>
                         <th>Acción</th>
-                        <th>Secretaría</th>
+                        <th>Administrativo</th>
                         <th>Tipo</th>
                         <th>Sede</th>
                         <th>Fecha</th>
@@ -158,7 +158,7 @@
 
             <dl class="app-modal-detalle-grid">
                 <div>
-                    <dt>Secretaría</dt>
+                    <dt>Administrativo</dt>
                     <dd data-detalle-quien></dd>
                 </div>
                 <div>

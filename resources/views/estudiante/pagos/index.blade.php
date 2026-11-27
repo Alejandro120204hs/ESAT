@@ -17,19 +17,19 @@
 
     <header class="pag-header">
         <h2 class="pag-title">Mis pagos</h2>
-        <p class="pag-sub">Tu plan, tus cuotas y tus recibos. Los pagos se hacen en la secretaría de tu sede: aquí ves lo que debes y lo que has pagado.</p>
+        <p class="pag-sub">Tu plan, tus cuotas y tus recibos. Los pagos se hacen en la administración de tu sede: aquí ves lo que debes y lo que has pagado.</p>
     </header>
 
     <div class="pag-vacio" id="pag-vacio" hidden>
         <p class="pag-vacio-ttl">No tienes una matrícula vigente</p>
-        <p class="pag-vacio-sub">Cuando la secretaría de tu sede te matricule en un programa, aquí verás tus cobros y tus recibos.</p>
+        <p class="pag-vacio-sub">Cuando el administrativo de tu sede te matricule en una carrera, aquí verás tus cobros y tus recibos.</p>
     </div>
 
     {{-- Elegir el plan (solo si todavía no lo eligió) --}}
     <section class="pag-card pag-plan app-anim app-anim-d1" id="pag-plan" aria-labelledby="pag-plan-titulo" hidden>
         <div class="pag-plan-head">
             <h3 class="pag-card-title" id="pag-plan-titulo">Elige tu plan de pago</h3>
-            <p class="pag-card-sub">Cómo pagas el valor de tu programa. Se elige una sola vez: después no se puede cambiar.</p>
+            <p class="pag-card-sub">Cómo pagas el valor de tu carrera. Se elige una sola vez: después no se puede cambiar.</p>
         </div>
         <fieldset class="pag-opciones" id="pag-opciones">
             <legend class="sr-solo">Plan de pago</legend>
@@ -65,7 +65,7 @@
         <ul class="pag-recibos" id="pag-recibos"></ul>
     </section>
 
-    <p class="pag-pie">Pagas en la secretaría de tu sede en efectivo, transferencia, Nequi, Daviplata o tarjeta; si no es en efectivo, lleva o envía el comprobante para que registren tu pago. ¿Necesitas una constancia de matrícula o el paz y salvo? Pídelos en la secretaría.</p>
+    <p class="pag-pie">Pagas en la administración de tu sede en efectivo, transferencia, Nequi, Daviplata o tarjeta; si no es en efectivo, lleva o envía el comprobante para que registren tu pago. ¿Necesitas una constancia de matrícula o el paz y salvo? Pídelos en la administración.</p>
 </div>
 
 {{-- Confirmación del plan --}}

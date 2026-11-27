@@ -16,11 +16,11 @@
 @section('content')
 <div class="mat-wrap">
 
-    {{-- Encabezado (misma estructura que Docentes, Estudiantes y Acudientes) --}}
+    {{-- Encabezado (misma estructura que Docentes y Estudiantes) --}}
     <div class="mat-header">
         <div>
             <h2 class="mat-title">Matrículas</h2>
-            <p class="mat-sub">Aquí podrás matricular a los estudiantes en un programa y un grupo, cambiarlos de grupo, aplazar, retirar o graduar su matrícula y registrar sus pagos.</p>
+            <p class="mat-sub">Aquí podrás matricular a los estudiantes en una carrera y un grupo, cambiarlos de grupo, aplazar, retirar o graduar su matrícula y registrar sus pagos.</p>
         </div>
         <button class="mat-btn mat-btn-primary" id="mat-btn-nueva" type="button">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -90,7 +90,7 @@
             </div>
             <div class="app-combobox" id="mat-cb-programa">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                    <span data-combobox-label>Todos los programas</span>
+                    <span data-combobox-label>Todas las carreras</span>
                     <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="app-combobox-panel" data-combobox-panel hidden>
@@ -157,7 +157,7 @@
             <thead>
                 <tr>
                     <th>Estudiante</th>
-                    <th>Programa y grupo</th>
+                    <th>Carrera y grupo</th>
                     <th>Estado</th>
                     <th>Cuotas</th>
                     <th class="mat-num-col" id="mat-th-saldo">A pagar este mes</th>
@@ -175,7 +175,7 @@
                 <tr>
                     <th>Estudiante</th>
                     <th>Situación</th>
-                    <th>Acudiente</th>
+                    <th>Contacto de emergencia</th>
                     <th>Documentos</th>
                     <th><span class="mat-sr">Acciones</span></th>
                 </tr>
@@ -187,7 +187,7 @@
     <div class="mat-empty" id="mat-empty" hidden>
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         <span class="mat-empty-ttl" id="mat-empty-ttl">No hay matrículas con estos filtros</span>
-        <span class="mat-empty-sub" id="mat-empty-sub">Prueba con otro nombre, documento o código, o quita el filtro de programa, grupo, estado o pago.</span>
+        <span class="mat-empty-sub" id="mat-empty-sub">Prueba con otro nombre, documento o código, o quita el filtro de carrera, grupo, estado o pago.</span>
         <button type="button" class="mat-btn mat-btn-ghost" id="mat-limpiar">Quitar filtros</button>
     </div>
 
@@ -284,7 +284,7 @@
         <div class="mat-wsteps">
             <div class="mat-wstep is-active" data-step="1" title="Paso 1: Estudiante"><div class="mat-wstep-dot"></div><span>Estudiante</span></div>
             <div class="mat-wstep-line"></div>
-            <div class="mat-wstep" data-step="2" title="Paso 2: Programa y grupo"><div class="mat-wstep-dot"></div><span>Programa y grupo</span></div>
+            <div class="mat-wstep" data-step="2" title="Paso 2: Carrera y grupo"><div class="mat-wstep-dot"></div><span>Carrera y grupo</span></div>
             <div class="mat-wstep-line"></div>
             <div class="mat-wstep" data-step="3" title="Paso 3: Confirmación"><div class="mat-wstep-dot"></div><span>Confirmación</span></div>
         </div>
@@ -320,16 +320,16 @@
             {{-- Paso 2: Programa y grupo --}}
             <section class="mat-mstep" data-step="2">
                 <div class="mat-field">
-                    <span class="mat-lbl">Programa *</span>
+                    <span class="mat-lbl">Carrera *</span>
                     <div class="app-combobox" id="nm-cb-programa">
                         <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                            <span data-combobox-label>Selecciona un programa</span>
+                            <span data-combobox-label>Selecciona una carrera</span>
                             <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
                         <div class="app-combobox-panel" data-combobox-panel hidden>
                             <div class="app-combobox-search-wrap">
                                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar programa" autocomplete="off">
+                                <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar carrera" autocomplete="off">
                             </div>
                             <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
                         </div>
@@ -367,7 +367,7 @@
                 </div>
                 <div class="mat-nota">
                     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <p>El plan de cuotas (mensual, o semestral/trimestral según el programa) lo elige el estudiante desde su panel. Cuando lo elija, sus cuotas aparecerán aquí con sus fechas de vencimiento.</p>
+                    <p>El plan de cuotas (mensual, o semestral/trimestral según la carrera) lo elige el estudiante desde su panel. Cuando lo elija, sus cuotas aparecerán aquí con sus fechas de vencimiento.</p>
                 </div>
             </section>
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Academico\Actividad;
 use App\Models\Academico\Asistencia;
+use App\Models\Academico\ContactoEmergencia;
 use App\Models\Academico\Curso;
 use App\Models\Academico\DocentePerfil;
 use App\Models\Academico\Entrega;
@@ -51,6 +52,7 @@ class User extends Authenticatable
         'fecha_nacimiento',
         'lugar_nacimiento',
         'departamento_nacimiento',
+        'pais_nacimiento',
         'genero',
         'direccion',
         'departamento_residencia',
@@ -124,11 +126,6 @@ class User extends Authenticatable
     public function isDocente(): bool
     {
         return $this->role === RolUsuario::Docente;
-    }
-
-    public function isAcudiente(): bool
-    {
-        return $this->role === RolUsuario::Acudiente;
     }
 
     /**
@@ -236,17 +233,9 @@ class User extends Authenticatable
         return $this->hasMany(Asistencia::class, 'estudiante_id');
     }
 
-    /** Estudiantes a cargo de este usuario (como acudiente), con el parentesco de cada relación. */
-    public function estudiantesACargo(): BelongsToMany
+    /** Contacto de emergencia de este usuario (como estudiante): nombre, celular y parentesco. */
+    public function contactoEmergencia(): HasOne
     {
-        return $this->belongsToMany(User::class, 'acudiente_estudiante', 'acudiente_id', 'estudiante_id')
-            ->withPivot('parentesco');
-    }
-
-    /** Acudientes de este usuario (como estudiante), con el parentesco de cada relación. */
-    public function acudientes(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'acudiente_estudiante', 'estudiante_id', 'acudiente_id')
-            ->withPivot('parentesco');
+        return $this->hasOne(ContactoEmergencia::class, 'estudiante_id');
     }
 }

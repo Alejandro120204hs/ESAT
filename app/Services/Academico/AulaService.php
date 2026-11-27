@@ -6,6 +6,8 @@ use App\Models\Academico\Actividad;
 use App\Models\Academico\Curso;
 use App\Models\Academico\Entrega;
 use App\Models\Academico\Evaluacion;
+use App\Models\Academico\EvaluacionIntento;
+use App\Models\Academico\Material;
 use App\Models\Academico\Opcion;
 use App\Models\Academico\Pregunta;
 use App\Models\Academico\RespuestaEstudiante;
@@ -27,7 +29,15 @@ use Illuminate\Validation\ValidationException;
  *   respuestas correctas solo se muestran después del cierre. El docente la edita o elimina mientras nadie la responda.
  * - Una actividad recibe un archivo (PDF, Word, JPG o PNG, máx. 10 MB) y se cambia hasta la fecha límite o hasta que
  *   el docente la califique (1,0 a 5,0 con un decimal y un comentario). Se elimina solo sin entregas.
- * - Sus notas son aparte: no calculan la nota del módulo, que el docente sigue poniendo en Notas.
+ * - Sus notas son aparte: no calculan la nota del módulo, que el docente sigue poniendo en Notas (allí las ve como
+ *   referencia, notasPorModulo).
+ * - 27-11-2026: una actividad puede llevar un archivo de apoyo del docente (la guía) y cada grupo tiene material de clase
+ *   (un archivo, un enlace o los dos, de un módulo o de todo el grupo). Los descarga quien tiene matrícula en el grupo.
+ * - 27-11-2026: una evaluación puede tener tiempo límite (el docente elige los minutos). Las preguntas se ven al
+ *   comenzarla (iniciar) y el tiempo cuenta desde ahí, hasta su cierre como máximo; si se acaba, se envía lo marcado y lo
+ *   que falte cuenta como malo. Quien la comenzó y no envió a tiempo queda sin responder. Con respuestas se pueden
+ *   corregir textos, el cierre y hasta la respuesta correcta (se recalculan las notas), pero no agregar ni quitar
+ *   preguntas u opciones.
  * Todo se vuelve a revisar aquí con la fila bloqueada (dos envíos a la vez, M13).
  */
 class AulaService
@@ -35,6 +45,8 @@ class AulaService
     public const DISCO = 'local';
     public const MAX_ARCHIVO_KB = 10240;
     public const EXTENSIONES = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+    /** Lo que sube el docente (guía de una actividad o material de clase): también presentaciones y hojas de cálculo. */
+    public const EXTENSIONES_DOCENTE = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
 
     public function __construct(private CalificacionService $calificaciones) {}
 
@@ -50,13 +62,19 @@ class AulaService
     public function paraEstudiante(User $estudiante, Curso $curso, CarbonInterface $ahora): array
     {
         $evaluaciones = Evaluacion::where('curso_id', $curso->id)
-            ->with(['preguntas.opciones', 'respuestasEstudiante' => fn ($q) => $q->where('estudiante_id', $estudiante->id)])
+            ->with(['preguntas.opciones', 'respuestasEstudiante' => fn ($q) => $q->where('estudiante_id', $estudiante->id),
+                    'intentos' => fn ($q) => $q->where('estudiante_id', $estudiante->id)])
             ->orderBy('fecha_limite')->get()
             ->map(function (Evaluacion $ev) use ($ahora) {
                 $cerrada = $ev->fecha_limite->lte($ahora);
                 $resp = $ev->respuestasEstudiante;
                 $total = $ev->preguntas->count();
                 $aciertos = $resp->where('es_correcta', true)->count();
+                $intento = $ev->intentos->first();
+                $termina = $intento && $ev->duracion_minutos ? $ev->terminaPara($intento->iniciada_en) : null;
+                $expirada = $termina && $resp->isEmpty() && $ahora->gt($termina->copy()->addSeconds(Evaluacion::GRACIA_SEGUNDOS));
+                // Con tiempo límite las preguntas se ven al comenzarla (o ya respondida, o después del cierre)
+                $verPreguntas = ! $ev->duracion_minutos || $resp->isNotEmpty() || $cerrada || ($intento && ! $expirada);
 
                 return [
                     'id'          => $ev->id,
@@ -67,7 +85,15 @@ class AulaService
                     'abre'        => $ev->created_at->toDateString(),
                     'cierra'      => $ev->fecha_limite->format('Y-m-d H:i'),
                     'cerrada'     => $cerrada,
-                    'preguntas'   => $ev->preguntas->map(fn (Pregunta $p) => [
+                    'duracion'    => $ev->duracion_minutos,
+                    'numPreguntas' => $total,
+                    'intento'     => $intento && $resp->isEmpty() ? [
+                        'inicio'   => $intento->iniciada_en->format('Y-m-d H:i:s'),
+                        'termina'  => $termina?->format('Y-m-d H:i:s'),
+                        'restante' => $termina ? max(0, $ahora->diffInSeconds($termina, false)) : null,
+                        'expirada' => $expirada,
+                    ] : null,
+                    'preguntas'   => ! $verPreguntas ? [] : $ev->preguntas->map(fn (Pregunta $p) => [
                         'id'        => $p->id,
                         'enunciado' => $p->enunciado,
                         'opciones'  => $p->opciones->sortBy('id')->map(fn (Opcion $o) => ['id' => $o->id, 'texto' => $o->texto])->values()->all(),
@@ -98,42 +124,82 @@ class AulaService
                     'abre'          => $a->created_at->toDateString(),
                     'cierra'        => $a->fecha_limite->format('Y-m-d H:i'),
                     'cerrada'       => $a->fecha_limite->lte($ahora),
+                    'adjunto'       => $this->adjuntoDatos($a, route('estudiante.aula.guia', $a)),
                     'entrega'       => $e ? $this->entregaDatos($e, route('estudiante.aula.archivo', $e)) : null,
                 ];
             })->values()->all();
 
-        return ['evaluaciones' => $evaluaciones, 'actividades' => $actividades];
+        $materiales = Material::where('curso_id', $curso->id)->latest()->get()
+            ->map(fn (Material $m) => $this->materialDatos($m, route('estudiante.aula.material', $m)))->values()->all();
+
+        return ['evaluaciones' => $evaluaciones, 'actividades' => $actividades, 'materiales' => $materiales];
+    }
+
+    /** El estudiante tuvo (o tiene) matrícula en el grupo: puede descargar su guía y su material. */
+    public function estudioEn(User $estudiante, int $cursoId): bool
+    {
+        return Matricula::where('estudiante_id', $estudiante->id)->where('curso_id', $cursoId)->where('estado', '!=', 'anulado')->exists();
     }
 
     /**
-     * Guarda las respuestas (una por pregunta, todas) y devuelve [aciertos, preguntas, nota]. Se rechaza si ya la
-     * respondió, si cerró o si ya no tiene matrícula activa en el grupo.
+     * Comienza una evaluación con tiempo límite: desde ahora corre su tiempo (hasta el cierre como máximo). Si ya la había
+     * comenzado devuelve el mismo intento (abrirla otra vez no reinicia el reloj).
+     */
+    public function iniciar(User $estudiante, Evaluacion $evaluacion): EvaluacionIntento
+    {
+        return DB::transaction(function () use ($estudiante, $evaluacion) {
+            $ev = Evaluacion::whereKey($evaluacion->id)->lockForUpdate()->with('curso.programa')->firstOrFail();
+            $this->puedeResponder($estudiante, $ev);
+            if (! $ev->duracion_minutos) {
+                throw ValidationException::withMessages(['evaluacion' => 'Esta evaluación no tiene tiempo límite: respóndela cuando quieras.']);
+            }
+            $intento = EvaluacionIntento::where('evaluacion_id', $ev->id)->where('estudiante_id', $estudiante->id)->first();
+            if ($intento) {
+                return $intento;
+            }
+            $intento = EvaluacionIntento::create(['evaluacion_id' => $ev->id, 'estudiante_id' => $estudiante->id, 'iniciada_en' => now()]);
+            Auditoria::registrar('crear', $ev, sprintf('Comenzó la evaluación «%s» de %s · %s (%d minutos).',
+                $ev->titulo, $ev->curso->programa->nombre, $ev->curso->nombre, $ev->duracion_minutos), $ev->curso->sede_id);
+
+            return $intento;
+        });
+    }
+
+    /**
+     * Guarda las respuestas y devuelve [aciertos, preguntas, nota]. Sin tiempo límite van todas; con tiempo límite debe
+     * haberla comenzado y estar dentro de su tiempo (más la gracia del envío automático), y lo que no respondió cuenta
+     * como malo. Se rechaza si ya la respondió, si cerró o si ya no tiene matrícula activa en el grupo.
      */
     public function responder(User $estudiante, Evaluacion $evaluacion, array $marcadas): array
     {
         return DB::transaction(function () use ($estudiante, $evaluacion, $marcadas) {
             $ev = Evaluacion::whereKey($evaluacion->id)->lockForUpdate()->with(['preguntas.opciones', 'curso.programa'])->firstOrFail();
-            if (! $this->matriculaActivaEn($estudiante, $ev->curso)) {
-                throw ValidationException::withMessages(['respuestas' => 'Solo responde quien tiene la matrícula activa en el grupo.']);
-            }
-            if ($ev->cerrada()) {
-                throw ValidationException::withMessages(['respuestas' => 'La evaluación cerró el '.$ev->fecha_limite->format('d/m/Y \a \l\a\s H:i').': ya no recibe respuestas.']);
-            }
-            if (RespuestaEstudiante::where('evaluacion_id', $ev->id)->where('estudiante_id', $estudiante->id)->exists()) {
-                throw ValidationException::withMessages(['respuestas' => 'Ya respondiste esta evaluación. Solo se responde una vez.']);
+            $conTiempo = (bool) $ev->duracion_minutos;
+            if ($conTiempo) {
+                $intento = EvaluacionIntento::where('evaluacion_id', $ev->id)->where('estudiante_id', $estudiante->id)->first();
+                if (! $intento) {
+                    throw ValidationException::withMessages(['respuestas' => 'Primero comienza la evaluación: tiene tiempo límite.']);
+                }
+                if (now()->gt($ev->terminaPara($intento->iniciada_en)->addSeconds(Evaluacion::GRACIA_SEGUNDOS))) {
+                    throw ValidationException::withMessages(['respuestas' => 'Se acabó tu tiempo para esta evaluación: ya no recibe respuestas.']);
+                }
+                // Dentro de su tiempo el cierre no lo corta (su tiempo ya termina en el cierre como máximo)
+                $this->puedeResponder($estudiante, $ev, false);
+            } else {
+                $this->puedeResponder($estudiante, $ev);
             }
 
             $aciertos = 0;
             foreach ($ev->preguntas as $i => $p) {
                 $opcion = $p->opciones->firstWhere('id', (int) ($marcadas[$p->id] ?? 0));
-                if (! $opcion) {
+                if (! $opcion && ! $conTiempo) {
                     throw ValidationException::withMessages(['respuestas' => 'Te falta responder la pregunta '.($i + 1).'.']);
                 }
                 RespuestaEstudiante::create([
                     'evaluacion_id' => $ev->id, 'estudiante_id' => $estudiante->id, 'pregunta_id' => $p->id,
-                    'opcion_id' => $opcion->id, 'es_correcta' => $opcion->es_correcta,
+                    'opcion_id' => $opcion?->id, 'es_correcta' => (bool) $opcion?->es_correcta,
                 ]);
-                $aciertos += $opcion->es_correcta ? 1 : 0;
+                $aciertos += $opcion?->es_correcta ? 1 : 0;
             }
             $total = $ev->preguntas->count();
             $nota = Evaluacion::nota($aciertos, $total);
@@ -142,6 +208,20 @@ class AulaService
 
             return [$aciertos, $total, $nota];
         });
+    }
+
+    /** Lo que se exige para comenzar o responder: matrícula activa en el grupo, sin cerrar (si $cierre) y sin responder. */
+    private function puedeResponder(User $estudiante, Evaluacion $ev, bool $cierre = true): void
+    {
+        if (! $this->matriculaActivaEn($estudiante, $ev->curso)) {
+            throw ValidationException::withMessages(['respuestas' => 'Solo responde quien tiene la matrícula activa en el grupo.']);
+        }
+        if ($cierre && $ev->cerrada()) {
+            throw ValidationException::withMessages(['respuestas' => 'La evaluación cerró el '.$ev->fecha_limite->format('d/m/Y \a \l\a\s H:i').': ya no recibe respuestas.']);
+        }
+        if (RespuestaEstudiante::where('evaluacion_id', $ev->id)->where('estudiante_id', $estudiante->id)->exists()) {
+            throw ValidationException::withMessages(['respuestas' => 'Ya respondiste esta evaluación. Solo se responde una vez.']);
+        }
     }
 
     /** Entrega o cambia el archivo de una actividad. Devuelve true si cambió uno que ya había entregado. */
@@ -188,10 +268,11 @@ class AulaService
     public function paraDocente(User $docente, Collection $cursos, CarbonInterface $ahora): array
     {
         $ids = $cursos->pluck('id');
-        $evaluaciones = Evaluacion::whereIn('curso_id', $ids)->with(['preguntas.opciones', 'respuestasEstudiante'])->orderBy('fecha_limite')->get()->groupBy('curso_id');
+        $evaluaciones = Evaluacion::whereIn('curso_id', $ids)->with(['preguntas.opciones', 'respuestasEstudiante', 'intentos'])->orderBy('fecha_limite')->get()->groupBy('curso_id');
         $actividades = Actividad::whereIn('curso_id', $ids)->with('entregas')->orderBy('fecha_limite')->get()->groupBy('curso_id');
+        $materiales = Material::whereIn('curso_id', $ids)->latest()->get()->groupBy('curso_id');
 
-        return $cursos->map(function (Curso $c) use ($evaluaciones, $actividades, $ahora) {
+        return $cursos->map(function (Curso $c) use ($evaluaciones, $actividades, $materiales, $ahora) {
             $estudiantes = $c->matriculas->where('estado', 'activo')->sortBy(fn (Matricula $m) => $m->estudiante->apellidos.' '.$m->estudiante->nombres)
                 ->map(fn (Matricula $m) => ['id' => $m->estudiante_id, 'nombre' => trim($m->estudiante->nombres.' '.$m->estudiante->apellidos)])->values();
 
@@ -214,6 +295,14 @@ class AulaService
                     'cierra'      => $ev->fecha_limite->format('Y-m-d H:i'),
                     'cerrada'     => $ev->fecha_limite->lte($ahora),
                     'creada'      => $ev->created_at->format('Y-m-d H:i'),
+                    'duracion'    => $ev->duracion_minutos,
+                    // Quién la comenzó y no ha enviado (con tiempo límite): {estudianteId: {inicio, vencido}}
+                    'comenzadas'  => (object) $ev->intentos->whereNotIn('estudiante_id', $ev->respuestasEstudiante->pluck('estudiante_id')->unique()->all())
+                        ->mapWithKeys(fn (EvaluacionIntento $i) => [$i->estudiante_id => [
+                            'inicio'  => $i->iniciada_en->format('Y-m-d H:i'),
+                            'vencido' => $ahora->gt($ev->terminaPara($i->iniciada_en)->addSeconds(Evaluacion::GRACIA_SEGUNDOS)),
+                        ]])->all(),
+                    'conIntentos' => $ev->intentos->isNotEmpty() || $ev->respuestasEstudiante->isNotEmpty(),
                     'preguntas'   => $ev->preguntas->map(fn (Pregunta $p) => [
                         'id'        => $p->id,
                         'enunciado' => $p->enunciado,
@@ -233,48 +322,93 @@ class AulaService
                     'cierra'        => $a->fecha_limite->format('Y-m-d H:i'),
                     'cerrada'       => $a->fecha_limite->lte($ahora),
                     'creada'        => $a->created_at->format('Y-m-d H:i'),
+                    'adjunto'       => $this->adjuntoDatos($a, route('docente.aula.guia', $a)),
                     'entregas'      => (object) $a->entregas->keyBy('estudiante_id')
                         ->map(fn (Entrega $e) => $this->entregaDatos($e, route('docente.aula.archivo', $e)) + ['id' => $e->id])->all(),
                 ])->values()->all(),
+                'materiales'  => ($materiales->get($c->id) ?? collect())
+                    ->map(fn (Material $m) => $this->materialDatos($m, route('docente.aula.material', $m)))->values()->all(),
             ];
         })->values()->all();
     }
 
     /**
-     * Crea o edita una evaluación: título, descripción, módulo, fecha límite y preguntas [{enunciado, opciones[{texto,
-     * correcta}]}] ya validadas (EvaluacionRequest). Una vez que alguien respondió, no se edita.
+     * Crea o edita una evaluación: título, descripción, módulo, fecha límite, tiempo límite y preguntas [{enunciado,
+     * opciones[{texto, correcta}]}] ya validadas (EvaluacionRequest). Mientras nadie la comience ni la responda, las
+     * preguntas se reemplazan enteras. Después (decidido con el usuario el 27-11-2026) se corrigen en su lugar: textos,
+     * cierre y respuesta correcta (y se recalcula el acierto de quienes ya respondieron), pero sin agregar ni quitar
+     * preguntas u opciones ni cambiar el tiempo límite.
      */
     public function guardarEvaluacion(User $docente, Curso $curso, ?Evaluacion $evaluacion, array $datos): Evaluacion
     {
         return DB::transaction(function () use ($docente, $curso, $evaluacion, $datos) {
+            $usada = false;
             if ($evaluacion) {
-                $evaluacion = Evaluacion::whereKey($evaluacion->id)->lockForUpdate()->firstOrFail();
-                if (RespuestaEstudiante::where('evaluacion_id', $evaluacion->id)->exists()) {
-                    throw ValidationException::withMessages(['titulo' => 'Alguien ya respondió esta evaluación: no se puede cambiar.']);
+                $evaluacion = Evaluacion::whereKey($evaluacion->id)->lockForUpdate()->with('preguntas.opciones')->firstOrFail();
+                $usada = RespuestaEstudiante::where('evaluacion_id', $evaluacion->id)->exists() || EvaluacionIntento::where('evaluacion_id', $evaluacion->id)->exists();
+            }
+            $duracion = $datos['duracion'] ?? null;
+            if ($usada) {
+                $this->mismaEstructura($evaluacion, $datos['preguntas']);
+                if ((int) $evaluacion->duracion_minutos !== (int) $duracion) {
+                    throw ValidationException::withMessages(['duracion' => 'Alguien ya la comenzó o la respondió: el tiempo límite no se cambia.']);
                 }
             }
-            $campos = [
-                'titulo' => $datos['titulo'], 'descripcion' => $datos['descripcion'] ?? null,
-                'programa_modulo_id' => $datos['modulo_id'], 'fecha_limite' => $datos['cierra'],
-            ];
             $ev = $evaluacion ?? new Evaluacion(['curso_id' => $curso->id]);
-            $ev->fill($campos);
+            $ev->fill([
+                'titulo' => $datos['titulo'], 'descripcion' => $datos['descripcion'] ?? null,
+                'programa_modulo_id' => $datos['modulo_id'], 'fecha_limite' => $datos['cierra'], 'duracion_minutos' => $duracion,
+            ]);
             $ev->docente_id = $docente->id;
             $ev->save();
 
-            // Las preguntas se reemplazan enteras (nadie ha respondido todavía)
-            $ev->preguntas()->each(fn (Pregunta $p) => $p->delete());
-            foreach (array_values($datos['preguntas']) as $i => $p) {
-                $pregunta = Pregunta::create(['evaluacion_id' => $ev->id, 'enunciado' => $p['enunciado'], 'orden' => $i + 1]);
-                foreach (array_values($p['opciones']) as $o) {
-                    Opcion::create(['pregunta_id' => $pregunta->id, 'texto' => $o['texto'], 'es_correcta' => (bool) $o['correcta']]);
+            $recalculadas = 0;
+            if ($usada) {
+                // Se corrige en su lugar: las respuestas siguen apuntando a las mismas preguntas y opciones
+                foreach ($evaluacion->preguntas->values() as $i => $pregunta) {
+                    $nueva = array_values($datos['preguntas'])[$i];
+                    $pregunta->update(['enunciado' => $nueva['enunciado']]);
+                    $antes = $pregunta->opciones->firstWhere('es_correcta', true)?->id;
+                    foreach ($pregunta->opciones->sortBy('id')->values() as $k => $opcion) {
+                        $o = array_values($nueva['opciones'])[$k];
+                        $opcion->update(['texto' => $o['texto'], 'es_correcta' => (bool) $o['correcta']]);
+                    }
+                    $ahora = $pregunta->opciones()->where('es_correcta', true)->value('id');
+                    if ($antes !== $ahora) {
+                        // Cambió la correcta: se vuelve a calificar a quienes ya respondieron esta pregunta
+                        $recalculadas += RespuestaEstudiante::where('pregunta_id', $pregunta->id)->count();
+                        RespuestaEstudiante::where('pregunta_id', $pregunta->id)->update(['es_correcta' => false]);
+                        RespuestaEstudiante::where('pregunta_id', $pregunta->id)->where('opcion_id', $ahora)->update(['es_correcta' => true]);
+                    }
+                }
+            } else {
+                // Nadie la ha comenzado: las preguntas se reemplazan enteras
+                $ev->preguntas()->each(fn (Pregunta $p) => $p->delete());
+                foreach (array_values($datos['preguntas']) as $i => $p) {
+                    $pregunta = Pregunta::create(['evaluacion_id' => $ev->id, 'enunciado' => $p['enunciado'], 'orden' => $i + 1]);
+                    foreach (array_values($p['opciones']) as $o) {
+                        Opcion::create(['pregunta_id' => $pregunta->id, 'texto' => $o['texto'], 'es_correcta' => (bool) $o['correcta']]);
+                    }
                 }
             }
-            Auditoria::registrar($evaluacion ? 'editar' : 'crear', $curso, sprintf('%s la evaluación «%s» (%d preguntas) en %s · %s.',
-                $evaluacion ? 'Editó' : 'Publicó', $ev->titulo, count($datos['preguntas']), $curso->programa->nombre, $curso->nombre));
+            Auditoria::registrar($evaluacion ? 'editar' : 'crear', $curso, sprintf('%s la evaluación «%s» (%d preguntas%s) en %s · %s%s.',
+                $evaluacion ? 'Editó' : 'Publicó', $ev->titulo, count($datos['preguntas']), $duracion ? ", {$duracion} minutos" : '',
+                $curso->programa->nombre, $curso->nombre, $recalculadas ? " y cambió una respuesta correcta: se recalcularon {$recalculadas} respuestas" : ''));
+            $ev->recalculadas = $recalculadas;
 
             return $ev;
         });
+    }
+
+    /** Con respuestas o intentos: las mismas preguntas, con las mismas opciones (solo cambian textos y la correcta). */
+    private function mismaEstructura(Evaluacion $ev, array $preguntas): void
+    {
+        $preguntas = array_values($preguntas);
+        $igual = count($preguntas) === $ev->preguntas->count()
+            && $ev->preguntas->values()->every(fn (Pregunta $p, int $i) => count($preguntas[$i]['opciones'] ?? []) === $p->opciones->count());
+        if (! $igual) {
+            throw ValidationException::withMessages(['preguntas' => 'Alguien ya la comenzó o la respondió: puedes corregir los textos, el cierre y la respuesta correcta, pero no agregar ni quitar preguntas u opciones.']);
+        }
     }
 
     public function eliminarEvaluacion(Evaluacion $evaluacion): void
@@ -289,31 +423,128 @@ class AulaService
         });
     }
 
-    /** Crea o edita una actividad (título, instrucciones, módulo y fecha límite ya validados por ActividadRequest). */
-    public function guardarActividad(User $docente, Curso $curso, ?Actividad $actividad, array $datos): Actividad
+    /**
+     * Crea o edita una actividad (título, instrucciones, módulo y fecha límite ya validados por ActividadRequest) con su
+     * archivo de apoyo opcional: uno nuevo reemplaza al anterior y $quitarAdjunto lo quita. El archivo viejo se borra
+     * solo cuando lo nuevo ya quedó guardado.
+     */
+    public function guardarActividad(User $docente, Curso $curso, ?Actividad $actividad, array $datos, ?UploadedFile $adjunto = null, bool $quitarAdjunto = false): Actividad
     {
-        return DB::transaction(function () use ($docente, $curso, $actividad, $datos) {
+        $viejo = null;
+        $a = DB::transaction(function () use ($docente, $curso, $actividad, $datos, $adjunto, $quitarAdjunto, &$viejo) {
             $a = $actividad ? Actividad::whereKey($actividad->id)->lockForUpdate()->firstOrFail() : new Actividad(['curso_id' => $curso->id]);
             $a->fill(['titulo' => $datos['titulo'], 'instrucciones' => $datos['instrucciones'], 'programa_modulo_id' => $datos['modulo_id'], 'fecha_limite' => $datos['cierra']]);
             $a->docente_id = $docente->id;
             $a->save();
-            Auditoria::registrar($actividad ? 'editar' : 'crear', $curso, sprintf('%s la actividad «%s» en %s · %s (se entrega hasta el %s).',
-                $actividad ? 'Editó' : 'Publicó', $a->titulo, $curso->programa->nombre, $curso->nombre, $a->fecha_limite->format('d/m/Y H:i')));
+            if ($adjunto || $quitarAdjunto) {
+                $viejo = $a->adjunto_path;
+                $a->update($adjunto ? $this->guardarArchivo($adjunto, "aula/{$curso->sede_id}/actividad-{$a->id}/guia", 'adjunto') : ['adjunto_path' => null, 'adjunto_nombre' => null, 'adjunto_tamano' => null]);
+            }
+            Auditoria::registrar($actividad ? 'editar' : 'crear', $curso, sprintf('%s la actividad «%s» en %s · %s (se entrega hasta el %s)%s.',
+                $actividad ? 'Editó' : 'Publicó', $a->titulo, $curso->programa->nombre, $curso->nombre, $a->fecha_limite->format('d/m/Y H:i'),
+                $a->adjunto_nombre ? ' con el archivo «'.$a->adjunto_nombre.'»' : ''));
 
             return $a;
         });
+        if ($viejo && $viejo !== $a->adjunto_path) {
+            Storage::disk(self::DISCO)->delete($viejo);
+        }
+
+        return $a;
     }
 
     public function eliminarActividad(Actividad $actividad): void
     {
-        DB::transaction(function () use ($actividad) {
+        $archivo = DB::transaction(function () use ($actividad) {
             $a = Actividad::whereKey($actividad->id)->lockForUpdate()->with('curso.programa')->firstOrFail();
             if (Entrega::where('actividad_id', $a->id)->exists()) {
                 throw ValidationException::withMessages(['actividad' => 'Alguien ya entregó esta actividad: no se puede eliminar.']);
             }
             Auditoria::registrar('eliminar', $a->curso, sprintf('Eliminó la actividad «%s» de %s · %s.', $a->titulo, $a->curso->programa->nombre, $a->curso->nombre));
             $a->delete();
+
+            return $a->adjunto_path;
         });
+        if ($archivo) {
+            Storage::disk(self::DISCO)->delete($archivo);
+        }
+    }
+
+    /**
+     * Publica o edita material de clase: título, descripción y módulo opcionales, y un archivo, un enlace o los dos
+     * (MaterialRequest exige al menos uno). Un archivo nuevo reemplaza al anterior; $quitarArchivo lo quita.
+     */
+    public function guardarMaterial(User $docente, Curso $curso, ?Material $material, array $datos, ?UploadedFile $archivo = null, bool $quitarArchivo = false): Material
+    {
+        $viejo = null;
+        $m = DB::transaction(function () use ($docente, $curso, $material, $datos, $archivo, $quitarArchivo, &$viejo) {
+            $m = $material ? Material::whereKey($material->id)->lockForUpdate()->firstOrFail() : new Material(['curso_id' => $curso->id]);
+            $m->fill([
+                'titulo' => $datos['titulo'], 'descripcion' => $datos['descripcion'] ?? null,
+                'programa_modulo_id' => $datos['modulo_id'] ?? null, 'enlace' => $datos['enlace'] ?? null,
+            ]);
+            // Al menos un archivo o un enlace (se revisa antes de guardar el archivo para no dejarlo huérfano)
+            if (! $archivo && ($quitarArchivo || ! $m->archivo_path) && ! $m->enlace) {
+                throw ValidationException::withMessages(['archivo' => 'Sube un archivo o escribe un enlace: el material necesita al menos uno.']);
+            }
+            $m->docente_id = $docente->id;
+            $m->save();
+            if ($archivo || $quitarArchivo) {
+                $viejo = $m->archivo_path;
+                $m->update($archivo ? $this->guardarArchivo($archivo, "aula/{$curso->sede_id}/material-{$m->id}", 'archivo') : ['archivo_path' => null, 'archivo_nombre' => null, 'archivo_tamano' => null]);
+            }
+            Auditoria::registrar($material ? 'editar' : 'crear', $curso, sprintf('%s el material «%s» en %s · %s.',
+                $material ? 'Editó' : 'Publicó', $m->titulo, $curso->programa->nombre, $curso->nombre));
+
+            return $m;
+        });
+        if ($viejo && $viejo !== $m->archivo_path) {
+            Storage::disk(self::DISCO)->delete($viejo);
+        }
+
+        return $m;
+    }
+
+    public function eliminarMaterial(Material $material): void
+    {
+        $archivo = DB::transaction(function () use ($material) {
+            $m = Material::whereKey($material->id)->lockForUpdate()->with('curso.programa')->firstOrFail();
+            Auditoria::registrar('eliminar', $m->curso, sprintf('Eliminó el material «%s» de %s · %s.', $m->titulo, $m->curso->programa->nombre, $m->curso->nombre));
+            $m->delete();
+
+            return $m->archivo_path;
+        });
+        if ($archivo) {
+            Storage::disk(self::DISCO)->delete($archivo);
+        }
+    }
+
+    /**
+     * Lo que cada estudiante hizo en el Aula de cada módulo (la referencia que el docente ve en Notas):
+     * [curso_id => [estudiante_id => [modulo_id => [{tipo, titulo, nota}]]]]. Solo lo calificado (evaluaciones
+     * respondidas y entregas con nota).
+     */
+    public function notasPorModulo(Collection $cursos): array
+    {
+        $ids = $cursos->pluck('id');
+        $out = [];
+        Evaluacion::whereIn('curso_id', $ids)->whereNotNull('programa_modulo_id')->with(['preguntas:id,evaluacion_id', 'respuestasEstudiante'])->orderBy('fecha_limite')->get()
+            ->each(function (Evaluacion $ev) use (&$out) {
+                $total = $ev->preguntas->count();
+                $ev->respuestasEstudiante->groupBy('estudiante_id')->each(function (Collection $rs, $estId) use ($ev, $total, &$out) {
+                    $out[$ev->curso_id][$estId][$ev->programa_modulo_id][] = [
+                        'tipo' => 'evaluacion', 'titulo' => $ev->titulo, 'nota' => Evaluacion::nota($rs->where('es_correcta', true)->count(), $total),
+                    ];
+                });
+            });
+        Actividad::whereIn('curso_id', $ids)->whereNotNull('programa_modulo_id')->with(['entregas' => fn ($q) => $q->whereNotNull('calificacion')])->orderBy('fecha_limite')->get()
+            ->each(function (Actividad $a) use (&$out) {
+                foreach ($a->entregas as $e) {
+                    $out[$a->curso_id][$e->estudiante_id][$a->programa_modulo_id][] = ['tipo' => 'actividad', 'titulo' => $a->titulo, 'nota' => round((float) $e->calificacion, 1)];
+                }
+            });
+
+        return $out;
     }
 
     /** Califica (o corrige la calificación de) una entrega: nota 1,0 a 5,0 con un decimal y un comentario opcional. */
@@ -330,6 +561,41 @@ class AulaService
 
             return $e;
         });
+    }
+
+    /** Guarda un archivo subido en el disco privado y devuelve sus columnas ({prefijo}_path, _nombre, _tamano). */
+    private function guardarArchivo(UploadedFile $archivo, string $carpeta, string $prefijo): array
+    {
+        return [
+            $prefijo.'_path'   => $archivo->store($carpeta, self::DISCO),
+            $prefijo.'_nombre' => mb_substr($archivo->getClientOriginalName(), 0, 150),
+            $prefijo.'_tamano' => $archivo->getSize(),
+        ];
+    }
+
+    /** El archivo de apoyo de una actividad (null si no tiene). */
+    private function adjuntoDatos(Actividad $a, string $url): ?array
+    {
+        return $a->adjunto_path ? $this->archivoDatos($a->adjunto_nombre ?: basename($a->adjunto_path), (int) $a->adjunto_tamano, $url) : null;
+    }
+
+    /** Lo que ven el docente y el estudiante de un material de clase. */
+    private function materialDatos(Material $m, string $url): array
+    {
+        return [
+            'id'          => $m->id,
+            'titulo'      => $m->titulo,
+            'descripcion' => (string) $m->descripcion,
+            'moduloId'    => $m->programa_modulo_id,
+            'enlace'      => $m->enlace,
+            'archivo'     => $m->archivo_path ? $this->archivoDatos($m->archivo_nombre ?: basename($m->archivo_path), (int) $m->archivo_tamano, $url) : null,
+            'fecha'       => $m->created_at->format('Y-m-d H:i'),
+        ];
+    }
+
+    private function archivoDatos(string $nombre, int $tamano, string $url): array
+    {
+        return ['nombre' => $nombre, 'tamano' => $tamano, 'tipo' => strtolower(pathinfo($nombre, PATHINFO_EXTENSION)), 'url' => $url];
     }
 
     /** Los datos de una entrega que ven el estudiante y el docente. */

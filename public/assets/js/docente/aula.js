@@ -2,8 +2,11 @@
    Lee window.DAU_SERVIDOR (AulaService::paraDocente: sus grupos con malla, estudiantes activos, evaluaciones con sus
    respuestas y actividades con sus entregas) y guarda con fetch (CSRF). Cada respuesta trae los grupos recalculados.
    Reglas (las mismas del servidor): una evaluación se edita o elimina mientras nadie la responda, con 1 a 30 preguntas
-   de 2 a 6 opciones y una sola correcta; una actividad se elimina sin entregas; una entrega se califica de 1,0 a 5,0
-   con un decimal. Un grupo finalizado es solo consulta. ?grupo=ID elige el grupo. */
+   de 2 a 6 opciones y una sola correcta (27-11-2026: con respuestas se corrige —textos, cierre y la correcta— sin agregar ni
+   quitar preguntas u opciones, y puede tener tiempo límite); una actividad se elimina sin entregas; una entrega se califica de 1,0 a 5,0
+   con un decimal. Un grupo finalizado es solo consulta. ?grupo=ID elige el grupo.
+   27-11-2026: una actividad puede llevar un archivo de apoyo (la guía) y cada grupo tiene material de clase (archivo,
+   enlace o los dos, de un módulo o de todo el grupo). Lo que lleva archivo se envía como FormData. */
 (function () {
     'use strict';
 
@@ -23,8 +26,13 @@
         reloj:      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
         x:          '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
         mas:        '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-        check:      '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>'
+        check:      '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+        material:   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+        enlace:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
     };
+    var ACEPTA = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png';
+    var DURACIONES = [10, 15, 20, 30, 45, 60, 90, 120];   // Evaluacion::DURACIONES (minutos)
+    var MAX_MB = 10;
 
     /* ── Utilidades ───────────────────────────── */
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -43,10 +51,15 @@
 
     /* ── Servidor ─────────────────────────────── */
     function enviar(metodo, url, cuerpo) {
+        // Con archivo va como FormData: el PUT viaja como POST con _method (PHP no lee archivos de un PUT)
+        var form = cuerpo instanceof FormData;
+        if (form && metodo !== 'POST') { cuerpo.append('_method', metodo); metodo = 'POST'; }
+        var headers = { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' };
+        if (!form) headers['Content-Type'] = 'application/json';
         return fetch(url, {
             method: metodo,
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
-            body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+            headers: headers,
+            body: cuerpo ? (form ? cuerpo : JSON.stringify(cuerpo)) : undefined,
             credentials: 'same-origin'
         }).then(function (r) {
             if (r.status === 401 || r.status === 419) { window.location.reload(); return { ok: false, mensaje: 'Tu sesión terminó. Vuelve a ingresar.' }; }
@@ -104,9 +117,11 @@
             var resp = x.respuestas || {}, nResp = cuantas(resp);
             var prom = promedio(Object.keys(resp).map(function (k) { return resp[k].nota; }));
             cifras = '<span><b>' + nResp + '</b> de ' + total + ' respondieron</span>' + (prom != null ? '<span>Promedio <b class="dau-tono-' + tono(prom) + '">' + esc(nota(prom)) + '</b></span>' : '') +
-                '<span>' + esc(plural(x.preguntas.length, 'pregunta', 'preguntas')) + '</span>';
+                '<span>' + esc(plural(x.preguntas.length, 'pregunta', 'preguntas')) + '</span>' + (x.duracion ? '<span>' + esc(x.duracion + ' min') + '</span>' : '');
+            // Se corrige aunque ya la hayan respondido (sin agregar ni quitar preguntas); se elimina solo si nadie la ha comenzado
             botones = '<button type="button" class="dau-btn dau-btn-ghost dau-btn-sm" data-ver="' + x.id + '" data-tipo="evaluacion">Ver resultados</button>' +
-                (editable && !nResp ? '<button type="button" class="dau-link" data-editar="' + x.id + '" data-tipo="evaluacion">Editar</button><button type="button" class="dau-link is-peligro" data-eliminar="' + x.id + '" data-tipo="evaluacion">Eliminar</button>' : '');
+                (editable ? '<button type="button" class="dau-link" data-editar="' + x.id + '" data-tipo="evaluacion">' + (x.conIntentos ? 'Corregir' : 'Editar') + '</button>' : '') +
+                (editable && !x.conIntentos ? '<button type="button" class="dau-link is-peligro" data-eliminar="' + x.id + '" data-tipo="evaluacion">Eliminar</button>' : '');
         } else {
             var nEnt = cuantas(x.entregas), pend = porCalificar(x);
             cifras = '<span><b>' + nEnt + '</b> de ' + total + ' entregaron</span>' + (pend ? '<span><b>' + pend + '</b> sin calificar</span>' : '');
@@ -155,7 +170,51 @@
             $('dau-vacio-ttl').textContent = g.soloConsulta ? 'Este grupo no tuvo evaluaciones ni actividades' : 'Todavía no hay nada en el Aula de este grupo';
             $('dau-vacio-sub').textContent = g.soloConsulta ? '' : 'Publica una evaluación de selección múltiple o una actividad para que tus estudiantes la vean en su panel.';
         }
+        pintarMaterial(g);
     }
+
+    /* ── Material de clase ────────────────────── */
+    function archivoHtml(a, txt) {
+        return '<a class="dau-archivo" href="' + esc(a.url) + '" target="_blank" rel="noopener">' +
+            '<span class="dau-archivo-icono" aria-hidden="true">' + esc(a.tipo || 'arch') + '</span>' +
+            '<span class="dau-archivo-info"><span class="dau-archivo-nombre">' + esc(a.nombre) + '</span>' +
+            '<span class="dau-archivo-sub">' + esc((txt ? txt + ' · ' : '') + tamano(a.tamano)) + '</span></span></a>';
+    }
+    function enlaceHtml(url) {
+        var corto = String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
+        return '<a class="dau-archivo" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+            '<span class="dau-archivo-icono" aria-hidden="true">' + ICON.enlace + '</span>' +
+            '<span class="dau-archivo-info"><span class="dau-archivo-nombre">' + esc(corto.length > 60 ? corto.slice(0, 57) + '…' : corto) + '</span>' +
+            '<span class="dau-archivo-sub">Enlace · se abre en otra pestaña</span></span></a>';
+    }
+    function pintarMaterial(g) {
+        var lista = (g && g.materiales) || [];
+        $('dau-material').hidden = !g;
+        $('dau-mat-resumen').textContent = lista.length ? plural(lista.length, 'publicación', 'publicaciones') : '';
+        $('dau-mat-lista').innerHTML = lista.map(function (m) {
+            var mod = moduloDe(g, m.moduloId);
+            return '<article class="dau-card dau-card-fija dau-mat">' +
+                '<div class="dau-card-head"><span class="dau-card-tipo">' + ICON.material + 'Material</span>' +
+                    '<span class="dau-mat-fecha">' + esc('Publicado el ' + fechaCorta(m.fecha)) + '</span></div>' +
+                '<div><h3 class="dau-card-titulo">' + esc(m.titulo) + '</h3><p class="dau-card-mod">' + esc(mod ? mod.nombre : 'Todo el grupo') + '</p></div>' +
+                (m.descripcion ? '<p class="dau-texto">' + esc(m.descripcion) + '</p>' : '') +
+                '<div class="dau-mat-archivos">' + (m.archivo ? archivoHtml(m.archivo) : '') + (m.enlace ? enlaceHtml(m.enlace) : '') + '</div>' +
+                (g.soloConsulta ? '' : '<div class="dau-card-pie"><button type="button" class="dau-link" data-editar-mat="' + m.id + '">Editar</button>' +
+                    '<button type="button" class="dau-link is-peligro" data-eliminar-mat="' + m.id + '">Eliminar</button></div>') +
+            '</article>';
+        }).join('');
+        $('dau-mat-vacio').hidden = lista.length > 0;
+        $('dau-mat-vacio').textContent = g && g.soloConsulta ? 'Este grupo no tuvo material de clase.'
+            : 'Sube guías, presentaciones, lecturas o enlaces a videos para que tus estudiantes los consulten cuando quieran.';
+    }
+    $('dau-mat-lista').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-editar-mat],[data-eliminar-mat]');
+        if (!b) return;
+        var id = +(b.dataset.editarMat || b.dataset.eliminarMat);
+        var m = (grupo().materiales || []).filter(function (x) { return x.id === id; })[0];
+        if (!m) return;
+        if (b.dataset.editarMat) formMaterial(m, b); else confirmarEliminar(m, 'material');
+    });
 
     $('dau-grid').addEventListener('click', function (e) {
         var b = e.target.closest('[data-ver],[data-editar],[data-eliminar]');
@@ -171,6 +230,7 @@
     });
     $('dau-nueva-ev').addEventListener('click', function () { formEvaluacion(null, this); });
     $('dau-nueva-act').addEventListener('click', function () { formActividad(null, this); });
+    $('dau-nuevo-mat').addEventListener('click', function () { formMaterial(null, this); });
 
     /* ── Cajón ────────────────────────────────── */
     var drawer = $('dau-drawer'), panel = drawer.querySelector('.dau-drawer-panel'), ultimoFoco = null, abierto = null;
@@ -222,14 +282,19 @@
     function verResultados(ev, origen) {
         var g = grupo(), resp = ev.respuestas || {};
         abierto = { tipo: 'resultados', id: ev.id };
-        var cuerpo = info([['Cierra', fechaCorta(ev.cierra) + ' · ' + hora(ev.cierra)], ['Preguntas', String(ev.preguntas.length)], ['Respondieron', cuantas(resp) + ' de ' + g.estudiantes.length]]) +
+        var comenzadas = ev.comenzadas || {};
+        var cuerpo = info([['Cierra', fechaCorta(ev.cierra) + ' · ' + hora(ev.cierra)], ['Preguntas', String(ev.preguntas.length)],
+                ['Tiempo', ev.duracion ? ev.duracion + ' minutos' : 'Sin límite'], ['Respondieron', cuantas(resp) + ' de ' + g.estudiantes.length]]) +
             (ev.descripcion ? '<p class="dau-texto">' + esc(ev.descripcion) + '</p>' : '') +
             '<div><p class="dau-seccion-titulo">Estudiantes</p><ul class="dau-est-lista">' + (g.estudiantes.length ? g.estudiantes.map(function (e) {
-                var r = resp[e.id];
+                var r = resp[e.id], c = comenzadas[e.id];
                 return '<li class="dau-est"><div class="dau-est-top"><div><p class="dau-est-nombre">' + esc(e.nombre) + '</p>' +
-                    '<p class="dau-est-sub">' + esc(r ? 'Respondió el ' + fechaCorta(r.fecha) + ' · acertó ' + r.aciertos + ' de ' + ev.preguntas.length : (ev.cerrada ? 'No respondió' : 'Todavía no responde')) + '</p></div>' +
+                    '<p class="dau-est-sub">' + esc(r ? 'Respondió el ' + fechaCorta(r.fecha) + ' · acertó ' + r.aciertos + ' de ' + ev.preguntas.length
+                        : (c ? 'La comenzó el ' + fechaCorta(c.inicio) + ' a las ' + hora(c.inicio) + (c.vencido ? ' y se le acabó el tiempo sin enviar' : ': la está respondiendo')
+                        : (ev.cerrada ? 'No respondió' : 'Todavía no responde'))) + '</p></div>' +
                     '<div class="dau-est-der">' + (r ? '<span class="dau-est-nota dau-tono-' + tono(r.nota) + '">' + esc(nota(r.nota)) + '</span>'
-                        : '<span class="app-status-tag ' + (ev.cerrada ? 'app-status-danger' : 'app-status-muted') + '">' + (ev.cerrada ? 'Sin responder' : 'Pendiente') + '</span>') + '</div></div></li>';
+                        : (c && !c.vencido ? '<span class="app-status-tag app-status-warn">Respondiendo</span>'
+                        : '<span class="app-status-tag ' + (ev.cerrada || (c && c.vencido) ? 'app-status-danger' : 'app-status-muted') + '">' + (ev.cerrada || (c && c.vencido) ? 'Sin responder' : 'Pendiente') + '</span>')) + '</div></div></li>';
             }).join('') : '<li class="dau-est"><p class="dau-est-sub">El grupo no tiene estudiantes activos.</p></li>') + '</ul></div>' +
             '<div><p class="dau-seccion-titulo">Preguntas y respuesta correcta</p><ol class="dau-preguntas">' + ev.preguntas.map(function (p, i) {
                 return '<li class="dau-preg"><div><p class="dau-preg-leyenda"><span class="dau-preg-num" aria-hidden="true">' + (i + 1) + '</span><span>' + esc(p.enunciado) + '</span></p>' +
@@ -246,7 +311,8 @@
         var g = grupo(), ent = a.entregas || {};
         abierto = { tipo: 'entregas', id: a.id };
         var cuerpo = info([['Fecha límite', fechaCorta(a.cierra) + ' · ' + hora(a.cierra)], ['Entregaron', cuantas(ent) + ' de ' + g.estudiantes.length], ['Sin calificar', String(porCalificar(a))]]) +
-            '<div><p class="dau-seccion-titulo">Instrucciones</p><p class="dau-texto">' + esc(a.instrucciones) + '</p></div>' +
+            '<div><p class="dau-seccion-titulo">Instrucciones</p><p class="dau-texto">' + esc(a.instrucciones) + '</p>' +
+                (a.adjunto ? '<div class="dau-guia">' + archivoHtml(a.adjunto, 'Archivo de apoyo') + '</div>' : '') + '</div>' +
             '<div><p class="dau-seccion-titulo">Entregas</p><ul class="dau-est-lista">' + (g.estudiantes.length ? g.estudiantes.map(function (e) {
                 var x = ent[e.id];
                 if (!x) {
@@ -311,6 +377,7 @@
                 '<div class="dau-campo"><label for="dau-f-cierra">Se entrega hasta</label><input class="dau-input" id="dau-f-cierra" type="datetime-local" value="' + esc(a ? aLocal(a.cierra) : enUnaSemana()) + '"></div></div>' +
             '<div class="dau-campo"><label for="dau-f-instr">Instrucciones</label><textarea class="dau-input" id="dau-f-instr" maxlength="3000" rows="6" placeholder="Qué deben hacer y qué archivo entregar">' + esc(a ? a.instrucciones : '') + '</textarea>' +
                 '<span class="dau-ayuda">Tus estudiantes suben un archivo PDF, Word, JPG o PNG de hasta 10 MB y pueden cambiarlo hasta la fecha límite o hasta que lo califiques.</span></div>' +
+            campoArchivo('adjunto', 'Archivo de apoyo', '(opcional: la guía, el caso o la rúbrica)', a && a.adjunto) +
             '<p class="dau-error" id="dau-f-error" role="alert"></p>';
         var pie = '<button type="button" class="dau-btn dau-btn-ghost" data-cerrar-form>Cancelar</button><button type="button" class="dau-btn dau-btn-primary" id="dau-f-guardar">' + (a ? 'Guardar cambios' : 'Publicar actividad') + '</button>';
         abrirCajon(a ? 'Editar actividad' : 'Nueva actividad', programaCorto(g.programa) + ' · ' + g.nombre, cuerpo, pie, origen);
@@ -319,13 +386,83 @@
             if (datos.titulo.length < 5) return errorForm('El título debe tener al menos 5 letras.', 'dau-f-titulo');
             if (!datos.cierra) return errorForm('Elige la fecha y la hora límite de entrega.', 'dau-f-cierra');
             if (datos.instrucciones.length < 10) return errorForm('Escribe las instrucciones: qué deben hacer y entregar.', 'dau-f-instr');
-            guardar(a ? 'PUT' : 'POST', a ? ruta('actividad', a.id) : ruta('crearActividad', g.id), datos, this);
+            var fd = conArchivo(datos, 'adjunto');
+            if (!fd) return;
+            guardar(a ? 'PUT' : 'POST', a ? ruta('actividad', a.id) : ruta('crearActividad', g.id), fd, this);
         });
     }
 
-    var borrador = null;
+    /* Campo de archivo del docente (guía de una actividad o material): muestra el que tiene y deja quitarlo */
+    function campoArchivo(nombre, etiqueta, ayuda, actual) {
+        return '<div class="dau-campo"><label for="dau-f-' + nombre + '">' + esc(etiqueta) + (ayuda ? ' <span class="dau-ayuda">' + esc(ayuda) + '</span>' : '') + '</label>' +
+            (actual ? '<div class="dau-actual" id="dau-f-' + nombre + '-actual">' + archivoHtml(actual, 'Archivo actual') +
+                '<label class="dau-quitar-arch"><input type="checkbox" id="dau-f-quitar-' + nombre + '"> Quitar este archivo</label></div>' : '') +
+            // Botón propio (el del navegador sale en el idioma del equipo): el input queda oculto y el nombre elegido al lado
+            '<div class="dau-subir-fila"><input class="dau-file-oculto" id="dau-f-' + nombre + '" type="file" accept="' + ACEPTA + '">' +
+                '<label for="dau-f-' + nombre + '" class="dau-btn dau-btn-ghost dau-btn-sm" tabindex="0" role="button" data-elegir>' + ICON.mas + (actual ? 'Elegir otro archivo' : 'Elegir archivo') + '</label>' +
+                '<span class="dau-elegido" id="dau-f-' + nombre + '-elegido">Ningún archivo elegido</span></div>' +
+            '<span class="dau-ayuda">PDF, Word, PowerPoint, Excel, JPG o PNG de hasta ' + MAX_MB + ' MB.' + (actual ? ' Si eliges otro, reemplaza al actual.' : '') + '</span></div>';
+    }
+    document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (!t.classList || !t.classList.contains('dau-file-oculto')) return;
+        var f = t.files && t.files[0], el = $(t.id + '-elegido');
+        if (el) el.textContent = f ? f.name + ' · ' + tamano(f.size) : 'Ningún archivo elegido';
+    });
+    document.addEventListener('keydown', function (e) {
+        var b = e.target.closest && e.target.closest('[data-elegir]');
+        if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $(b.getAttribute('for')).click(); }
+    });
+
+    /* Los datos como FormData con el archivo elegido (o la orden de quitarlo); null si el archivo no sirve */
+    function conArchivo(datos, nombre) {
+        var fd = new FormData();
+        Object.keys(datos).forEach(function (k) { if (datos[k] != null) fd.append(k, datos[k]); });
+        var input = $('dau-f-' + nombre), f = input && input.files[0];
+        if (f) {
+            var ext = (f.name.split('.').pop() || '').toLowerCase();
+            if (ACEPTA.split(',').indexOf('.' + ext) === -1) { errorForm('El archivo debe ser PDF, Word, PowerPoint, Excel, JPG o PNG.', 'dau-f-' + nombre); return null; }
+            if (f.size > MAX_MB * 1048576) { errorForm('El archivo pesa ' + tamano(f.size) + ': el máximo es ' + MAX_MB + ' MB.', 'dau-f-' + nombre); return null; }
+            fd.append(nombre, f);
+        } else if ($('dau-f-quitar-' + nombre) && $('dau-f-quitar-' + nombre).checked) {
+            fd.append('quitar_' + nombre, '1');
+        }
+        return fd;
+    }
+
+    /* Material de clase: título, módulo (o todo el grupo), descripción, y un archivo, un enlace o los dos */
+    function formMaterial(m, origen) {
+        var g = grupo();
+        abierto = { tipo: 'form-material', id: m ? m.id : null };
+        var opciones = '<option value="">Todo el grupo</option>' + (g.modulos || []).map(function (x, i) {
+            return '<option value="' + x.id + '"' + (m && m.moduloId === x.id ? ' selected' : '') + '>' + esc((i + 1) + '. ' + x.nombre + (x.estado === 'en_curso' ? ' (en curso)' : '')) + '</option>';
+        }).join('');
+        var cuerpo = '<div class="dau-campo"><label for="dau-f-titulo">Título</label><input class="dau-input" id="dau-f-titulo" maxlength="150" value="' + esc(m ? m.titulo : '') + '" placeholder="Ej.: Presentación de la clase 3"></div>' +
+            '<div class="dau-campo"><label for="dau-f-modulo">Módulo</label><select class="dau-input" id="dau-f-modulo">' + opciones + '</select></div>' +
+            '<div class="dau-campo"><label for="dau-f-desc">Descripción <span class="dau-ayuda">(opcional)</span></label><textarea class="dau-input" id="dau-f-desc" maxlength="1000" rows="3" placeholder="Para qué sirve o qué deben leer">' + esc(m ? m.descripcion : '') + '</textarea></div>' +
+            campoArchivo('archivo', 'Archivo', '', m && m.archivo) +
+            '<div class="dau-campo"><label for="dau-f-enlace">Enlace <span class="dau-ayuda">(opcional: un video, una página o una carpeta)</span></label>' +
+                '<input class="dau-input" id="dau-f-enlace" type="url" maxlength="500" inputmode="url" value="' + esc(m && m.enlace ? m.enlace : '') + '" placeholder="https://"></div>' +
+            '<p class="dau-ayuda">Sube un archivo, escribe un enlace o las dos cosas.</p>' +
+            '<p class="dau-error" id="dau-f-error" role="alert"></p>';
+        var pie = '<button type="button" class="dau-btn dau-btn-ghost" data-cerrar-form>Cancelar</button><button type="button" class="dau-btn dau-btn-primary" id="dau-f-guardar">' + (m ? 'Guardar cambios' : 'Publicar material') + '</button>';
+        abrirCajon(m ? 'Editar material' : 'Nuevo material', programaCorto(g.programa) + ' · ' + g.nombre, cuerpo, pie, origen);
+        $('dau-f-guardar').addEventListener('click', function () {
+            var datos = { titulo: $('dau-f-titulo').value.trim(), modulo_id: $('dau-f-modulo').value, descripcion: $('dau-f-desc').value.trim(), enlace: $('dau-f-enlace').value.trim() };
+            if (datos.titulo.length < 3) return errorForm('El título debe tener al menos 3 letras.', 'dau-f-titulo');
+            if (datos.enlace && !/^https?:\/\/\S+\.\S+/i.test(datos.enlace)) return errorForm('El enlace debe ser una dirección completa, que empiece por https://', 'dau-f-enlace');
+            var tieneArchivo = $('dau-f-archivo').files.length || (m && m.archivo && !($('dau-f-quitar-archivo') && $('dau-f-quitar-archivo').checked));
+            if (!tieneArchivo && !datos.enlace) return errorForm('Sube un archivo o escribe un enlace: el material necesita al menos uno.', 'dau-f-archivo');
+            var fd = conArchivo(datos, 'archivo');
+            if (!fd) return;
+            guardar(m ? 'PUT' : 'POST', m ? ruta('material', m.id) : ruta('crearMaterial', g.id), fd, this);
+        });
+    }
+
+    var borrador = null, bloqueada = false;
     function formEvaluacion(ev, origen) {
         var g = grupo();
+        bloqueada = !!(ev && ev.conIntentos);
         abierto = { tipo: 'form-evaluacion', id: ev ? ev.id : null };
         borrador = ev ? ev.preguntas.map(function (p) {
             return { enunciado: p.enunciado, opciones: p.opciones.map(function (o) { return { texto: o.texto, correcta: !!o.correcta }; }) };
@@ -333,15 +470,22 @@
         var cuerpo = '<div class="dau-campo"><label for="dau-f-titulo">Título</label><input class="dau-input" id="dau-f-titulo" maxlength="150" value="' + esc(ev ? ev.titulo : '') + '" placeholder="Ej.: Quiz de señales de tránsito"></div>' +
             '<div class="dau-fila"><div class="dau-campo"><label for="dau-f-modulo">Módulo</label><select class="dau-input" id="dau-f-modulo">' + opcionesModulo(g, ev && ev.moduloId) + '</select></div>' +
                 '<div class="dau-campo"><label for="dau-f-cierra">Cierra</label><input class="dau-input" id="dau-f-cierra" type="datetime-local" value="' + esc(ev ? aLocal(ev.cierra) : enUnaSemana()) + '"></div></div>' +
+            '<div class="dau-campo"><label for="dau-f-duracion">Tiempo para responder</label><select class="dau-input" id="dau-f-duracion"' + (bloqueada ? ' disabled' : '') + '>' +
+                '<option value="">Sin límite (hasta el cierre)</option>' + DURACIONES.map(function (m) {
+                    return '<option value="' + m + '"' + (ev && ev.duracion === m ? ' selected' : '') + '>' + (m < 60 ? m + ' minutos' : (m === 60 ? '1 hora' : (m / 60).toString().replace('.', ',') + ' horas')) + '</option>';
+                }).join('') + '</select>' +
+                '<span class="dau-ayuda">' + (bloqueada ? 'Alguien ya la comenzó: el tiempo no se cambia.' : 'Con tiempo, cada estudiante ve las preguntas al comenzarla y se envía sola cuando se acaba.') + '</span></div>' +
             '<div class="dau-campo"><label for="dau-f-desc">Descripción <span class="dau-ayuda">(opcional)</span></label><textarea class="dau-input" id="dau-f-desc" maxlength="1000" rows="2" placeholder="Qué evalúa y cómo se responde">' + esc(ev ? ev.descripcion : '') + '</textarea></div>' +
-            '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Cada estudiante la responde una sola vez; la nota sale sola (5,0 × aciertos ÷ preguntas) y ve las respuestas correctas después del cierre. Mientras nadie la responda puedes editarla.</p></div>' +
+            (bloqueada
+                ? '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Ya la comenzaron o la respondieron: puedes <b>corregir los textos, el cierre y la respuesta correcta</b>. Si cambias la correcta se recalculan las notas de quienes ya respondieron. No se pueden agregar ni quitar preguntas u opciones.</p></div>'
+                : '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Cada estudiante la responde una sola vez; la nota sale sola (5,0 × aciertos ÷ preguntas) y ve las respuestas correctas después del cierre. Después podrás corregir los textos y la respuesta correcta.</p></div>') +
             '<div><p class="dau-seccion-titulo">Preguntas</p><ol class="dau-pregs" id="dau-pregs"></ol></div>' +
-            '<button type="button" class="dau-btn dau-btn-ghost dau-btn-sm" id="dau-f-mas">' + ICON.mas + 'Agregar pregunta</button>' +
+            (bloqueada ? '' : '<button type="button" class="dau-btn dau-btn-ghost dau-btn-sm" id="dau-f-mas">' + ICON.mas + 'Agregar pregunta</button>') +
             '<p class="dau-error" id="dau-f-error" role="alert"></p>';
         var pie = '<button type="button" class="dau-btn dau-btn-ghost" data-cerrar-form>Cancelar</button><button type="button" class="dau-btn dau-btn-primary" id="dau-f-guardar">' + (ev ? 'Guardar cambios' : 'Publicar evaluación') + '</button>';
-        abrirCajon(ev ? 'Editar evaluación' : 'Nueva evaluación', programaCorto(g.programa) + ' · ' + g.nombre, cuerpo, pie, origen);
+        abrirCajon(ev ? (bloqueada ? 'Corregir evaluación' : 'Editar evaluación') : 'Nueva evaluación', programaCorto(g.programa) + ' · ' + g.nombre, cuerpo, pie, origen);
         pintarPreguntas();
-        $('dau-f-mas').addEventListener('click', function () {
+        if ($('dau-f-mas')) $('dau-f-mas').addEventListener('click', function () {
             if (borrador.length >= 30) return errorForm('Una evaluación puede tener hasta 30 preguntas.');
             borrador.push(preguntaVacia());
             pintarPreguntas();
@@ -349,7 +493,8 @@
             if (ult) ult.focus();
         });
         $('dau-f-guardar').addEventListener('click', function () {
-            var datos = { titulo: $('dau-f-titulo').value.trim(), modulo_id: +$('dau-f-modulo').value, cierra: $('dau-f-cierra').value, descripcion: $('dau-f-desc').value.trim(), preguntas: borrador };
+            var datos = { titulo: $('dau-f-titulo').value.trim(), modulo_id: +$('dau-f-modulo').value, cierra: $('dau-f-cierra').value, descripcion: $('dau-f-desc').value.trim(),
+                duracion: $('dau-f-duracion').value ? +$('dau-f-duracion').value : null, preguntas: borrador };
             $('dau-pregs').querySelectorAll('.is-falta').forEach(function (el) { el.classList.remove('is-falta'); });
             if (datos.titulo.length < 5) return errorForm('El título debe tener al menos 5 letras.', 'dau-f-titulo');
             if (!datos.cierra) return errorForm('Elige la fecha y la hora en que cierra.', 'dau-f-cierra');
@@ -368,15 +513,15 @@
         $('dau-pregs').innerHTML = borrador.map(function (p, i) {
             return '<li class="dau-preg-ed" data-i="' + i + '">' +
                 '<div class="dau-preg-cab"><b>Pregunta ' + (i + 1) + '</b>' +
-                    (borrador.length > 1 ? '<button type="button" class="dau-link is-peligro" data-quitar-preg="' + i + '">Quitar</button>' : '') + '</div>' +
+                    (borrador.length > 1 && !bloqueada ? '<button type="button" class="dau-link is-peligro" data-quitar-preg="' + i + '">Quitar</button>' : '') + '</div>' +
                 '<label class="sr-solo" for="dau-p-' + i + '">Enunciado de la pregunta ' + (i + 1) + '</label>' +
                 '<textarea class="dau-input" id="dau-p-' + i + '" data-enunciado="' + i + '" maxlength="500" rows="2" placeholder="Escribe la pregunta">' + esc(p.enunciado) + '</textarea>' +
                 '<fieldset><legend class="sr-solo">Opciones de la pregunta ' + (i + 1) + ': marca la correcta</legend><ul class="dau-ops-ed">' + p.opciones.map(function (o, j) {
                     return '<li class="dau-op-ed"><input type="radio" name="dau-c-' + i + '" data-correcta="' + i + '-' + j + '"' + (o.correcta ? ' checked' : '') + ' aria-label="Opción ' + (j + 1) + ' es la correcta">' +
                         '<input class="dau-input" data-opcion="' + i + '-' + j + '" maxlength="300" value="' + esc(o.texto) + '" placeholder="Opción ' + (j + 1) + '" aria-label="Texto de la opción ' + (j + 1) + '">' +
-                        '<button type="button" class="dau-quitar" data-quitar-op="' + i + '-' + j + '" aria-label="Quitar la opción ' + (j + 1) + '"' + (p.opciones.length <= 2 ? ' disabled' : '') + '>' + ICON.x + '</button></li>';
+                        (bloqueada ? '' : '<button type="button" class="dau-quitar" data-quitar-op="' + i + '-' + j + '" aria-label="Quitar la opción ' + (j + 1) + '"' + (p.opciones.length <= 2 ? ' disabled' : '') + '>' + ICON.x + '</button>') + '</li>';
                 }).join('') + '</ul></fieldset>' +
-                (p.opciones.length < 6 ? '<button type="button" class="dau-link" data-mas-op="' + i + '">+ Agregar opción</button>' : '') +
+                (p.opciones.length < 6 && !bloqueada ? '<button type="button" class="dau-link" data-mas-op="' + i + '">+ Agregar opción</button>' : '') +
                 '<span class="dau-ayuda">Marca con el círculo la respuesta correcta.</span>' +
             '</li>';
         }).join('');
@@ -419,7 +564,8 @@
     }
     document.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('is-invalido')) e.target.classList.remove('is-invalido'); });
 
-    var CAMPOS = { titulo: 'dau-f-titulo', modulo_id: 'dau-f-modulo', cierra: 'dau-f-cierra', instrucciones: 'dau-f-instr', descripcion: 'dau-f-desc' };
+    var CAMPOS = { titulo: 'dau-f-titulo', modulo_id: 'dau-f-modulo', cierra: 'dau-f-cierra', instrucciones: 'dau-f-instr', descripcion: 'dau-f-desc', duracion: 'dau-f-duracion',
+        adjunto: 'dau-f-adjunto', archivo: 'dau-f-archivo', enlace: 'dau-f-enlace' };
     function guardar(metodo, url, datos, btn) {
         btn.disabled = true;
         $('dau-f-error').textContent = '';
@@ -438,8 +584,9 @@
     function confirmarEliminar(x, tipo) {
         aEliminar = { x: x, tipo: tipo };
         focoDlg = document.activeElement;
-        $('dau-dlg-titulo').textContent = tipo === 'evaluacion' ? '¿Eliminar la evaluación?' : '¿Eliminar la actividad?';
-        $('dau-dlg-txt').textContent = '«' + x.titulo + '» desaparece del Aula virtual de tus estudiantes. Nadie la ha ' + (tipo === 'evaluacion' ? 'respondido' : 'entregado') + ' todavía.';
+        $('dau-dlg-titulo').textContent = tipo === 'evaluacion' ? '¿Eliminar la evaluación?' : (tipo === 'material' ? '¿Eliminar el material?' : '¿Eliminar la actividad?');
+        $('dau-dlg-txt').textContent = tipo === 'material' ? '«' + x.titulo + '» desaparece del Aula virtual de tus estudiantes, con su archivo.'
+            : '«' + x.titulo + '» desaparece del Aula virtual de tus estudiantes. Nadie la ha ' + (tipo === 'evaluacion' ? 'respondido' : 'entregado') + ' todavía.';
         $('dau-dlg-si').textContent = 'Sí, eliminar';
         $('dau-dialogo').hidden = false;
         $('dau-dlg-si').focus();
@@ -453,7 +600,7 @@
         var x = aEliminar, btn = this;
         if (!x) return;
         btn.disabled = true;
-        enviar('DELETE', ruta(x.tipo === 'evaluacion' ? 'evaluacion' : 'actividad', x.x.id)).then(function (r) {
+        enviar('DELETE', ruta(x.tipo, x.x.id)).then(function (r) {
             btn.disabled = false;
             $('dau-dialogo').hidden = true;
             focoDlg = null;

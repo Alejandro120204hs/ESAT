@@ -42,7 +42,7 @@
             sin_datos: '<span class="app-status-tag app-status-muted">Sin registros</span>'
         }[s] || '';
     }
-    var SALIDA = { aplazado: 'Aplazado', retirado: 'Retirado', graduado: 'Graduado' };
+    var SALIDA = { aplazado: 'Aplazado', retirado: 'Retirado', trasladado: 'Cambió de grupo', graduado: 'Graduado' };
     function salidaTxt(e) { return (SALIDA[e.estado] || 'Fuera del grupo') + (e.estado_desde ? ' desde el ' + e.estado_desde : ''); }
     function celda(l, titulo) {
         var cls = l === '-' ? 'sin' : (l === '.' ? 'na' : l);
@@ -466,7 +466,7 @@
 
         if (e.racha >= 2 && !aplazado) {
             html += '<div class="asi-aviso is-rojo"><div class="asi-aviso-txt">' + ICON.alerta + '<p>Lleva <strong>' + e.racha + ' clases seguidas sin venir</strong>; la última fue el ' + esc(e.ultima_falla_txt) + '.</p></div>' +
-                '<a class="asi-btn asi-btn-wa asi-btn-sm" href="' + waLink(e.acudiente ? e.acudiente.telefono : e.telefono) + '" target="_blank" rel="noopener">' + ICON.wa + (e.acudiente ? 'Escribir al acudiente' : 'Escribirle') + '</a></div>';
+                '<a class="asi-btn asi-btn-wa asi-btn-sm" href="' + waLink(e.contacto && e.menor ? e.contacto.celular : e.telefono) + '" target="_blank" rel="noopener">' + ICON.wa + (e.contacto && e.menor ? 'Escribir a su contacto' : 'Escribirle') + '</a></div>';
         }
 
         if (registradas) {
@@ -498,7 +498,7 @@
 
         html += '<div><div class="asi-seccion-titulo">Contacto</div><div class="asi-contactos">' +
             contacto(e.nombres + ' ' + e.apellidos, 'Estudiante · ' + fmtTel(e.telefono), e.telefono) +
-            (e.acudiente ? contacto(e.acudiente.nombre, 'Acudiente (' + e.acudiente.parentesco.toLowerCase() + ') · ' + fmtTel(e.acudiente.telefono), e.acudiente.telefono) : '') +
+            (e.contacto ? contacto(e.contacto.nombre, 'Contacto de emergencia (' + e.contacto.parentesco.toLowerCase() + ') · ' + fmtTel(e.contacto.celular), e.contacto.celular) : '') +
             '</div></div>';
 
         html += '<div><button type="button" class="asi-btn asi-btn-ghost asi-btn-sm" id="asi-ver-grupo">' + ICON.tabla + 'Ver planilla del grupo</button></div>';
@@ -595,14 +595,14 @@
     var SITUACION = { bien: 'Asiste bien', vigilar: 'Por vigilar', fallas: 'Bajo el 80 %', sin_datos: 'Sin registros' };
     var EXPORT = {
         grupos: function () {
-            return [['Programa', 'Grupo', 'Escuela', 'Jornada', 'Horario', 'Docente', 'Clases dictadas', 'Clases registradas', 'Fechas sin registrar', 'Asistencia %', 'Estudiantes', 'Bajo el 80 %']]
+            return [['Carrera', 'Grupo', 'Escuela', 'Jornada', 'Horario', 'Docente', 'Clases dictadas', 'Clases registradas', 'Fechas sin registrar', 'Asistencia %', 'Estudiantes', 'Bajo el 80 %']]
                 .concat(tGrupos.filtradas().map(function (r) {
                     var g = grupoPorId[r.dataset.id];
                     return [g.programa, g.grupo, g.escuela, g.jornada, g.horario.replace('  ', ' '), g.docente, g.clases, g.tomadas, g.sin_tomar.map(corta).join(', '), g.pct, g.activos, g.bajo80];
                 }));
         },
         estudiantes: function () {
-            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Programa', 'Grupo', 'Asistencia %', 'Situación', 'Asistió', 'Tardes', 'Faltas', 'Excusas', 'Faltas seguidas', 'Última falta', 'Celular']]
+            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Carrera', 'Grupo', 'Asistencia %', 'Situación', 'Asistió', 'Tardes', 'Faltas', 'Excusas', 'Faltas seguidas', 'Última falta', 'Celular']]
                 .concat(tEst.filtradas().map(function (r) {
                     var e = estPorId[r.dataset.id], g = grupoPorId[e.grupo_id];
                     return [e.nombres, e.apellidos, e.tipo_doc, e.documento, g.programa, g.grupo, e.pct, SITUACION[e.situacion], e.P, e.T, e.A, e.E, e.racha, e.ultima_falla_txt || '', e.telefono];

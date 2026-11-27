@@ -2,7 +2,7 @@
      Secretaría y del Admin, guarda con ProfileController@update (ProfileUpdateRequest) y la clave con
      PasswordController@update. Su nombre y su documento los registra la secretaría (salen en sus documentos): aquí solo
      se muestran, y ProfileUpdateRequest no le deja cambiarlos; el estudiante cambia su correo (con el que ingresa), su
-     celular y su dirección. Su acudiente es solo consulta. --}}
+     celular y su dirección. Su contacto de emergencia es solo consulta (lo actualiza la secretaría). --}}
 @extends('estudiante.layout')
 
 @section('title', 'Mi perfil')
@@ -16,7 +16,7 @@
 @php
     $ini = mb_strtoupper(mb_substr($user->nombres ?? '', 0, 1) . mb_substr($user->apellidos ?? '', 0, 1)) ?: '?';
     $nombreCompleto = trim(($user->nombres ?? '') . ' ' . ($user->apellidos ?? ''));
-    $acudiente = $user->acudientes()->first();
+    $contacto = $user->contactoEmergencia;
     $celular = fn ($t) => preg_match('/^\d{10}$/', (string) $t) ? substr($t, 0, 3) . ' ' . substr($t, 3, 3) . ' ' . substr($t, 6) : $t;
 @endphp
 
@@ -99,7 +99,7 @@
 
                 <div class="prf-tip">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                    Tu nombre y tu documento salen en tus certificados: si hay que corregirlos, pídelo en la secretaría de tu sede.
+                    Tu nombre y tu documento salen en tus certificados: si hay que corregirlos, pídelo en la administración de tu sede.
                 </div>
 
                 <div class="prf-actions">
@@ -111,27 +111,27 @@
             </form>
         </div>
 
-        {{-- Acudiente (consulta) --}}
+        {{-- Contacto de emergencia (consulta) --}}
         <div class="prf-card">
             <div class="prf-card-head">
                 <div class="prf-card-icon prf-card-icon-blue">
                     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <div>
-                    <div class="prf-card-title">Tu acudiente</div>
-                    <div class="prf-card-sub">Lo registra la secretaría de tu sede.</div>
+                    <div class="prf-card-title">Tu contacto de emergencia</div>
+                    <div class="prf-card-sub">A quién llamamos si te pasa algo. Lo registra el administrativo de tu sede.</div>
                 </div>
             </div>
             <div class="prf-form">
-                @if ($acudiente)
+                @if ($contacto)
                     <dl class="prf-datos">
-                        <div><dt>Nombre</dt><dd>{{ trim($acudiente->nombres . ' ' . $acudiente->apellidos) }}</dd></div>
-                        <div><dt>Parentesco</dt><dd>{{ $acudiente->pivot->parentesco ?: '—' }}</dd></div>
-                        <div><dt>Celular</dt><dd>{{ $acudiente->telefono ? $celular($acudiente->telefono) : '—' }}</dd></div>
-                        <div><dt>Correo</dt><dd>{{ $acudiente->email ?: '—' }}</dd></div>
+                        <div><dt>Nombre</dt><dd>{{ $contacto->nombre }}</dd></div>
+                        <div><dt>Parentesco</dt><dd>{{ $contacto->parentesco }}</dd></div>
+                        <div><dt>Celular</dt><dd>{{ $celular($contacto->celular) }}</dd></div>
                     </dl>
+                    <p class="prf-vacio">Si cambió, avísale al administrativo de tu sede para actualizarlo.</p>
                 @else
-                    <p class="prf-vacio">No tienes un acudiente registrado. Si eres mayor de edad no lo necesitas; si quieres registrar uno, pídelo en la secretaría.</p>
+                    <p class="prf-vacio">Todavía no tienes un contacto de emergencia. Es obligatorio: pásale al administrativo de tu sede el nombre, el celular y el parentesco de la persona a la que debemos llamar.</p>
                 @endif
             </div>
         </div>

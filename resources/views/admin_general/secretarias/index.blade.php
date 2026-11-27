@@ -3,7 +3,7 @@
      (vuelve al número de documento y cierra sus sesiones). Todo queda en la auditoría. secretarias.js escapa todo. --}}
 @extends('admin_general.layout')
 
-@section('title', 'Secretarías')
+@section('title', 'Administrativos')
 @section('active', 'secretarias')
 
 @push('styles')
@@ -15,12 +15,12 @@
 
     <div class="sec-header">
         <div>
-            <h1 class="sec-title">Secretarías</h1>
-            <p class="sec-sub">Las cuentas de secretaría de cada sede: quién maneja matrículas, pagos y grupos. Crea una cuenta, corrige sus datos, desactívala si la persona ya no trabaja en ESAT o restablece su clave.</p>
+            <h1 class="sec-title">Administrativos</h1>
+            <p class="sec-sub">Las cuentas de administrativo de cada sede: quién maneja matrículas, pagos y grupos. Crea una cuenta, corrige sus datos, desactívala si la persona ya no trabaja en ESAT o restablece su clave.</p>
         </div>
         <button type="button" class="sec-btn sec-btn-primary" id="sec-nueva">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nueva secretaría
+            Nuevo administrativo
         </button>
     </div>
 
@@ -29,7 +29,7 @@
     <div class="sec-filters">
         <div class="sec-search">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="sec-buscar" placeholder="Buscar por nombre, documento o correo..." autocomplete="off" aria-label="Buscar secretaría">
+            <input type="search" id="sec-buscar" placeholder="Buscar por nombre, documento o correo..." autocomplete="off" aria-label="Buscar administrativo">
         </div>
         @foreach ([['sec-cb-sede', 'Todas las sedes'], ['sec-cb-estado', 'Todos los estados']] as [$id, $texto])
         <div class="app-combobox" id="{{ $id }}" data-position="absolute">
@@ -48,7 +48,7 @@
         <table class="sec-table">
             <thead>
                 <tr>
-                    <th scope="col">Secretaría</th>
+                    <th scope="col">Administrativo</th>
                     <th scope="col">Sede</th>
                     <th scope="col">Contacto</th>
                     <th scope="col">Último ingreso</th>
@@ -70,7 +70,7 @@
     <form class="sec-modal-panel" id="sec-form" role="dialog" aria-modal="true" aria-labelledby="sec-modal-titulo" novalidate>
         <div class="sec-modal-head">
             <div>
-                <h2 class="sec-modal-title" id="sec-modal-titulo">Nueva secretaría</h2>
+                <h2 class="sec-modal-title" id="sec-modal-titulo">Nuevo administrativo</h2>
                 <p class="sec-modal-sub" id="sec-modal-sub">Paso 1 de 3</p>
             </div>
             <button type="button" class="sec-close" data-cerrar-modal aria-label="Cerrar">
@@ -128,7 +128,7 @@
                     </div>
                     <div class="sec-field">
                         <label for="sec-f-documento">Número de documento</label>
-                        <input type="text" id="sec-f-documento" inputmode="numeric" maxlength="12" placeholder="Solo números" autocomplete="off">
+                        <input type="text" id="sec-f-documento" maxlength="15" placeholder="Solo números (pasaporte: letras y números)" autocomplete="off">
                         <span class="sec-field-error" data-error="documento" hidden></span>
                     </div>
                     <div class="sec-field">
@@ -159,7 +159,7 @@
                     </div>
                 </div>
                 <div class="sec-resumen" id="sec-resumen"></div>
-                <p class="sec-nota" id="sec-nota-clave">La clave inicial es su número de documento. Al entrar por primera vez, el sistema le pedirá cambiarla.</p>
+                <p class="sec-nota" id="sec-nota-clave">La clave inicial es su número de documento. Puede cambiarla desde su perfil cuando quiera.</p>
             </div>
         </div>
         <div class="sec-modal-foot sec-modal-foot-split">

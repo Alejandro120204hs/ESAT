@@ -37,14 +37,14 @@ class ConcurrenciaTest extends TestCase
     {
         $grupo = $this->grupo($this->programa(['Mañana'], 1600, 10), 'Mañana', null, 'activo', '2026-09-07');
 
-        return app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        return $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
     }
 
     public function test_un_segundo_envio_no_crea_otra_matricula_vigente(): void
     {
         $m = $this->matricula();
         $this->expectException(ValidationException::class);
-        app(MatriculaService::class)->matricular($m->estudiante, $m->curso, null);
+        $this->alIniciar($m->curso, fn () => app(MatriculaService::class)->matricular($m->estudiante, $m->curso, null));
     }
 
     public function test_la_bd_no_admite_dos_matriculas_vigentes_del_mismo_estudiante(): void
@@ -59,7 +59,7 @@ class ConcurrenciaTest extends TestCase
     {
         $m = $this->matricula();
         app(MatriculaService::class)->cambiarEstado($m, 'retirado', today(), 'Cambio de ciudad');
-        $nueva = app(MatriculaService::class)->matricular($m->estudiante, $m->curso, null);   // vuelve con otra matrícula
+        $nueva = $this->alIniciar($m->curso, fn () => app(MatriculaService::class)->matricular($m->estudiante, $m->curso, null));   // vuelve con otra matrícula
         $this->assertSame('activo', $nueva->estado);
     }
 
@@ -76,7 +76,8 @@ class ConcurrenciaTest extends TestCase
     public function test_el_mismo_cambio_de_programa_dos_veces_crea_una_sola_matricula(): void
     {
         $m = $this->matricula();
-        $otro = $this->grupo($this->programa(['Mañana'], 1600, 10), 'Mañana', null, 'activo', '2026-09-07');
+        // Una carrera nueva se empieza en un grupo que todavía no empieza
+        $otro = $this->grupo($this->programa(['Mañana'], 1600, 10), 'Mañana', null, 'activo', today()->addWeek()->toDateString());
         $vieja = Matricula::find($m->id);
         app(MatriculaService::class)->cambiarPrograma($m, $otro, 'Prefiere el otro programa');
 

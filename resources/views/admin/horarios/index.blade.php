@@ -81,7 +81,7 @@ $noche  = $cuenta('Noche');
         <div class="hor-filter-bar">
             <div class="hor-search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input class="hor-search" id="hor-search" type="text" placeholder="Buscar grupo, programa…">
+                <input class="hor-search" id="hor-search" type="text" placeholder="Buscar grupo, carrera…">
             </div>
 
             {{-- Filtro escuela --}}
@@ -131,7 +131,7 @@ $noche  = $cuenta('Noche');
                 <thead>
                     <tr>
                         <th>Grupo</th>
-                        <th>Programa</th>
+                        <th>Carrera</th>
                         <th>Días</th>
                         <th>Horario</th>
                         <th>Jornada</th>
@@ -242,7 +242,7 @@ $noche  = $cuenta('Noche');
             {{-- Programa y Escuela (readonly, se llenan al elegir grupo) --}}
             <div class="hor-form-row">
                 <div class="hor-form-group">
-                    <label class="hor-form-lbl">Programa</label>
+                    <label class="hor-form-lbl">Carrera</label>
                     <input class="hor-form-input" id="hor-inp-programa" type="text" placeholder="—" readonly style="background:#F8FAFC; cursor:default;">
                 </div>
                 <div class="hor-form-group">

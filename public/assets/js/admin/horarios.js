@@ -924,7 +924,7 @@
         var g = grupoForm();
         if (g) {
             var horas = horasTotales(g, validas);
-            txt += ' · ' + fmtNum(Math.round(horas)) + ' h de ' + fmtNum(g.horas_programa) + ' h del programa';
+            txt += ' · ' + fmtNum(Math.round(horas)) + ' h de ' + fmtNum(g.horas_programa) + ' h de la carrera';
             if (g.horas_previas) txt += ' · rige desde mañana: lo ya dictado no cambia';
             resumenEl.classList.toggle('is-error', horas > g.horas_programa);
         }
@@ -1065,7 +1065,7 @@
         if (horas > g.horas_programa) {
             var maxSemana = Math.floor(Math.max(0, g.horas_programa - (g.horas_previas || 0)) / Math.max(0.01, semanasDe(g)) * 10) / 10;
             return 'El horario suma ' + fmtNum(horas) + ' horas (' + fmtNum(minutosSemana(ses) / 60) + ' h por semana durante ' +
-                fmtNum(semanasDe(g)) + ' semanas) y el programa tiene ' + fmtNum(g.horas_programa) +
+                fmtNum(semanasDe(g)) + ' semanas) y la carrera tiene ' + fmtNum(g.horas_programa) +
                 ' horas. Con estas fechas el máximo es ' + fmtNum(maxSemana) + ' h por semana.';
         }
 

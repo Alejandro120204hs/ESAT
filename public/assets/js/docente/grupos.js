@@ -281,7 +281,7 @@
                 : 'Los grupos que termines quedarán aquí para consultar su asistencia y sus notas.';
         } else {
             vacioTtl.textContent = 'Ningún grupo coincide con «' + buscador.value.trim() + '»';
-            vacioSub.textContent = 'Busca por el nombre del programa, el código (por ejemplo CUR-ADM-014-A) o el grupo.';
+            vacioSub.textContent = 'Busca por el nombre de la carrera, el código (por ejemplo CUR-ADM-014-A) o el grupo.';
             vacioLimp.hidden = false;
         }
         if (q && cuenta[otra]) {
@@ -354,6 +354,42 @@
         horario:     document.getElementById('grp-dpanel-horario')
     };
     var actual = null, ultimoFoco = null, filtroEst = 'todos';
+
+    /* ── Lista de clase imprimible (documento.js): estudiantes del grupo con casillas para firmar 6 clases ── */
+    var CASILLAS = 6;
+    function imprimirLista(g) {
+        if (!window.DOC_DOC) return;
+        var S = window.DOC_SERVIDOR || {};
+        // Vigente: los que tienen la matrícula activa; finalizado: los que terminaron con el grupo
+        var lista = g.estudiantes.filter(function (e) { return g.soloConsulta ? e.matricula.estado === 'graduado' || e.matricula.estado === 'activo' : e.matricula.estado === 'activo'; })
+            .slice().sort(function (a, b) { return (a.apellidos + ' ' + a.nombres).localeCompare(b.apellidos + ' ' + b.nombres, 'es'); });
+        var horario = (g.horario || []).map(function (h) { return (DIAS_C[h.dia] || h.dia) + ' ' + h.ini + '–' + h.fin; }).join(' · ');
+        var dato = function (k, v, full) { return '<div' + (full ? ' class="rc-full"' : '') + '><span>' + esc(k) + '</span><strong>' + esc(v || '—') + '</strong></div>'; };
+        var casillas = '';
+        for (var i = 0; i < CASILLAS; i++) casillas += '<th class="rc-firma-celda">Fecha<br>___/___</th>';
+        var filas = lista.length ? lista.map(function (e, i) {
+            var vacias = '';
+            for (var j = 0; j < CASILLAS; j++) vacias += '<td class="rc-firma-celda"></td>';
+            return '<tr><td class="rc-centro">' + (i + 1) + '</td><td>' + esc(e.apellidos + ', ' + e.nombres) + '</td><td>' + esc(e.tipoDoc + ' ' + e.documento) + '</td>' + vacias + '</tr>';
+        }).join('') : '<tr><td colspan="' + (3 + CASILLAS) + '">El grupo no tiene estudiantes activos.</td></tr>';
+        DOC_DOC.imprimir({
+            titulo: 'Lista de clase',
+            numero: g.codigo,
+            extra: 'Impresa el ' + fLarga(D.hoy, true),
+            contenido:
+                '<section class="rc-datos">' +
+                    dato('Carrera', g.programa, true) +
+                    dato('Grupo', g.nombre + ' · ' + g.codigo) + dato('Jornada', g.jornada) +
+                    dato('Horario', horario) + dato('Docente', S.docente) +
+                    dato('Módulo en curso', g.moduloActual ? g.moduloActual.nombre : '') + dato('Clases', fLarga(g.inicio, true) + ' a ' + fLarga(g.fin, true)) +
+                '</section>' +
+                '<table class="rc-tabla is-compacta"><thead><tr><th class="rc-centro">#</th><th>Estudiante</th><th>Documento</th>' + casillas + '</tr></thead>' +
+                '<tbody>' + filas + '</tbody></table>' +
+                '<p class="rc-nota">Cada estudiante firma en la casilla de la clase a la que asistió. ' + lista.length + (lista.length === 1 ? ' estudiante' : ' estudiantes') + ' en la lista.</p>' +
+                '<footer class="rc-pie"><div class="rc-firma"><span></span>Firma del docente · ' + esc(S.docente || '') + '</div></footer>'
+        });
+    }
+    document.getElementById('grp-dw-imprimir').addEventListener('click', function () { if (actual) imprimirLista(actual); });
 
     function abrirFicha(id, origen) {
         var g = D.grupos.filter(function (x) { return x.id === id; })[0];
@@ -441,7 +477,10 @@
             '<span class="grp-esc-tag">' + esc(g.escuela) + '</span>';
         dwSolo.hidden = !g.soloConsulta;
         dwSoloTxt.textContent = g.soloConsulta ? 'Terminó el ' + fLarga(g.fin) + '; su asistencia y sus notas ya no se modifican.' : '';
-        dwFoot.hidden = g.soloConsulta;
+        // Un grupo finalizado solo conserva "Imprimir lista"
+        dwFoot.hidden = false;
+        document.getElementById('grp-dw-asistencia').hidden = g.soloConsulta;
+        document.getElementById('grp-dw-notas').hidden = g.soloConsulta;
         if (!g.soloConsulta) {
             document.getElementById('grp-dw-asistencia').href = urlAsistencia(g);
             document.getElementById('grp-dw-notas').href = urlNotas(g);
@@ -455,7 +494,7 @@
     }
 
     /* Estudiantes */
-    var ORDEN_ESTADO = { activo: 0, graduado: 0, aplazado: 1, retirado: 2 };
+    var ORDEN_ESTADO = { activo: 0, graduado: 0, aplazado: 1, trasladado: 2, retirado: 2 };
     var FILTROS = [
         { id: 'todos',     lbl: 'Todos',              fn: function () { return true; } },
         // En un grupo finalizado ya no hay activos: el filtro muestra a los graduados
@@ -470,9 +509,10 @@
             activo:   ['app-status-active', 'Activo'],
             aplazado: ['app-status-warn', 'Aplazado'],
             retirado: ['app-status-muted', 'Retirado'],
+            trasladado: ['app-status-muted', 'Cambió de grupo'],
             graduado: ['grp-st-graduado', 'Graduado']
         }[m.estado] || ['app-status-muted', m.estado];
-        var desde = (m.estado === 'aplazado' || m.estado === 'retirado') && m.estadoFecha
+        var desde = (m.estado === 'aplazado' || m.estado === 'retirado' || m.estado === 'trasladado') && m.estadoFecha
             ? '<span class="grp-est-desde">desde el ' + esc(fCorta(m.estadoFecha)) + '</span>' : '';
         return '<span class="app-status-tag ' + mapa[0] + '">' + esc(mapa[1]) + '</span>' + desde;
     }
@@ -494,14 +534,12 @@
         if (n.reprobados) tags.push('<span class="grp-mini-tag grp-mini-bad">' + plural(n.reprobados, 'módulo perdido', 'módulos perdidos') + '</span>');
         if (n.sinNota && !g.soloConsulta) tags.push('<span class="grp-mini-tag grp-mini-pend">' + plural(n.sinNota, 'nota por poner', 'notas por poner') + '</span>');
 
-        var acudiente = '';
-        if (e.menor) {
-            acudiente = e.acudiente
-                ? '<div class="grp-acu"><span class="grp-est-lbl">Acudiente</span>' +
-                    '<span class="grp-acu-nombre">' + esc(e.acudiente.nombre) + ' <span class="grp-est-sub">(' + esc(e.acudiente.parentesco) + ')</span></span>' +
-                    telefonoHtml(e.acudiente.telefono, e.acudiente.nombre) + '</div>'
-                : '<div class="grp-acu"><span class="grp-est-lbl">Acudiente</span><span class="grp-est-sub">Sin acudiente registrado</span></div>';
-        }
+        // Contacto de emergencia de todos (si algo pasa en clase, el docente es quien llama)
+        var contacto = e.contacto
+            ? '<div class="grp-acu"><span class="grp-est-lbl">Contacto de emergencia</span>' +
+                '<span class="grp-acu-nombre">' + esc(e.contacto.nombre) + ' <span class="grp-est-sub">(' + esc(e.contacto.parentesco) + ')</span></span>' +
+                telefonoHtml(e.contacto.celular, e.contacto.nombre) + '</div>'
+            : '<div class="grp-acu"><span class="grp-est-lbl">Contacto de emergencia</span><span class="grp-est-sub">Sin registrar: pídelo en la administración</span></div>';
 
         return '<li class="grp-est' + (fuera ? ' is-fuera' : '') + '">' +
             '<div class="grp-est-top">' +
@@ -528,7 +566,7 @@
                     (tags.length ? '<span class="grp-est-tags">' + tags.join('') + '</span>' : '') +
                 '</div>' +
                 '<div class="grp-est-dato grp-est-contacto"><span class="grp-est-lbl">Celular</span>' +
-                    telefonoHtml(e.telefono, primerNombre(e.nombres)) + acudiente +
+                    telefonoHtml(e.telefono, primerNombre(e.nombres)) + contacto +
                 '</div>' +
             '</div>' +
         '</li>';
@@ -603,7 +641,7 @@
     };
     function pintarMalla(g) {
         var p = paneles.malla;
-        if (!g.modulos.length) { p.innerHTML = '<p class="grp-lista-vacia">El programa todavía no tiene módulos registrados.</p>'; return; }
+        if (!g.modulos.length) { p.innerHTML = '<p class="grp-lista-vacia">La carrera todavía no tiene módulos registrados.</p>'; return; }
         var faltan = {};
         g.modulosSinNota.forEach(function (x) { faltan[x.modulo.id] = x.faltan; });
         var horasTotal = g.modulos.reduce(function (s, m) { return s + m.horas; }, 0);
@@ -632,7 +670,7 @@
                     '<div class="grp-mod-der"><span class="app-status-tag ' + est[0] + '">' + est[1] + '</span>' + falta + '</div>' +
                 '</li>';
             }).join('') + '</ol>' +
-            '<div class="grp-malla-total"><span>Total del programa</span><span><b>' + horasTotal + ' h</b> · ' + plural(g.modulos.length, 'módulo', 'módulos') + '</span></div>';
+            '<div class="grp-malla-total"><span>Total de la carrera</span><span><b>' + horasTotal + ' h</b> · ' + plural(g.modulos.length, 'módulo', 'módulos') + '</span></div>';
     }
 
     /* Horario */
@@ -660,7 +698,7 @@
                 : '<p class="grp-lista-vacia">El grupo todavía no tiene horario asignado.</p>') +
             '<div class="grp-info-grid">' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Horas por semana</span><span class="grp-info-val">' + esc(fmtHoras(r.minSemana)) + '</span></div>' +
-                '<div class="grp-info-item"><span class="grp-info-lbl">Clases dadas</span><span class="grp-info-val">' + r.dadas + ' de ' + r.total + '<small>' + r.avance + ' % del programa</small></span></div>' +
+                '<div class="grp-info-item"><span class="grp-info-lbl">Clases dadas</span><span class="grp-info-val">' + r.dadas + ' de ' + r.total + '<small>' + r.avance + ' % de la carrera</small></span></div>' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Inicio del grupo</span><span class="grp-info-val">' + esc(fLarga(g.inicio, true)) + '</span></div>' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Fin del grupo</span><span class="grp-info-val">' + esc(fLarga(g.fin, true)) + '</span></div>' +
             '</div>';

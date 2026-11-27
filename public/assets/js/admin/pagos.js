@@ -319,7 +319,7 @@
     var programas = [];
     mats.forEach(function (m) { if (!programas.some(function (p) { return p.id === m.programa_id; })) programas.push({ id: m.programa_id, nombre: m.programa, sigla: m.sigla }); });
     programas.sort(function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
-    var cbPrograma = filtroCombo('pag-c-cb-programa', [{ value: '', label: 'Todos los programas' }].concat(programas.map(function (p) {
+    var cbPrograma = filtroCombo('pag-c-cb-programa', [{ value: '', label: 'Todas las carreras' }].concat(programas.map(function (p) {
         return { value: String(p.id), label: corto(p.nombre) };
     })), function () { tCobrar.aplicar(); });
     filtroCombo('pag-c-cb-situacion', [{ value: '', label: 'Todas las situaciones' }].concat(['vencido', 'mes', 'sin_plan', 'al_dia'].map(function (s) {
@@ -618,10 +618,10 @@
         return '<div class="pag-aviso' + (clase ? ' ' + clase : '') + '"><div class="pag-aviso-txt">' + icono + '<p>' + texto + '</p></div>' + (accion || '') + '</div>';
     }
 
-    /* Recordatorio de pago por WhatsApp: a un menor se le escribe al acudiente */
+    /* Recordatorio de pago por WhatsApp: a un menor se le escribe a su contacto de emergencia */
     function recordatorio(m, r) {
-        var a = m.menor && m.acudiente && m.acudiente.telefono ? m.acudiente : null;
-        var tel = a ? a.telefono : m.telefono;
+        var a = m.menor && m.contacto && m.contacto.celular ? m.contacto : null;
+        var tel = a ? a.celular : m.telefono;
         if (!tel) return null;
         var quien = a ? primerNombre(a.nombre) : primerNombre(m.nombres);
         var deuda = r.vencido > 0 ? 'un saldo vencido de ' + pesos(r.vencido) : 'un pago de ' + pesos(r.mes) + ' de este mes';
@@ -644,7 +644,7 @@
             dato('A pagar este mes', pesos(r.mes)) + dato('Total por pagar', pesos(r.total)) + dato('Ya pagó', pesos(r.pagado)) + '</div>';
 
         var wa = (r.vencido > 0 || r.mes > 0) ? recordatorio(m, r) : null;
-        var btnWa = wa ? '<a class="pag-btn pag-btn-wa pag-btn-sm" href="' + wa.url + '" target="_blank" rel="noopener">' + ICON.wa + (wa.a ? 'Escribirle al acudiente' : 'Recordarle') + '</a>' : '';
+        var btnWa = wa ? '<a class="pag-btn pag-btn-wa pag-btn-sm" href="' + wa.url + '" target="_blank" rel="noopener">' + ICON.wa + (wa.a ? 'Escribirle a su contacto' : 'Recordarle') + '</a>' : '';
         if (r.vencido > 0) {
             html += aviso('is-rojo', ICON.alerta, 'Tiene <strong>' + pesos(r.vencido) + ' vencidos</strong> desde hace ' + r.dias_mora + ' días.' +
                 (r.derecho_vencido ? ' No ha pagado el derecho de matrícula y ya empezaron sus clases.' : '') +
@@ -1003,7 +1003,7 @@
                 '<tr><td>Devoluciones (' + c.devs.length + ')</td><td class="num">− ' + pesos(c.salidas) + '</td></tr>' +
                 (c.anulados.length ? '<tr><td>Recibos anulados (no suman)</td><td class="num">' + c.anulados.length + '</td></tr>' : '') +
             '</tbody><tfoot><tr><td>Queda en caja</td><td class="num">' + pesos(c.queda) + '</td></tr></tfoot></table>' +
-            '<div class="pag-hoja-firma">Firma de quien entrega<span>' + esc(D.admin || 'Secretaría') + '</span></div>';
+            '<div class="pag-hoja-firma">Firma de quien entrega<span>' + esc(D.admin || 'Administrativo') + '</span></div>';
         hojaFoco = document.activeElement;
         hojaEl.setAttribute('aria-hidden', 'false');
         hojaEl.scrollTop = 0;
@@ -1032,16 +1032,16 @@
     }
     var EXPORT = {
         cobrar: function () {
-            return [['Código', 'Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Programa', 'Grupo', 'Plan', 'Situación', 'Vencido', 'Días de mora', 'A pagar este mes', 'Total por pagar', 'Ya pagó', 'Último pago', 'Celular', 'Acudiente', 'Celular acudiente']]
+            return [['Código', 'Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Carrera', 'Grupo', 'Plan', 'Situación', 'Vencido', 'Días de mora', 'A pagar este mes', 'Total por pagar', 'Ya pagó', 'Último pago', 'Celular', 'Contacto de emergencia', 'Celular del contacto']]
                 .concat(tCobrar.items().map(function (x) {
                     var m = x.m, r = x.r;
                     return [m.codigo, m.nombres, m.apellidos, m.tipo_doc, m.documento, m.programa, m.grupo, m.plan ? (m.plan === 'mensual' ? 'Mensual' : 'Por periodo') : 'Sin elegir',
                         SITUACION[r.situacion][1], r.vencido, r.vencido ? r.dias_mora : '', r.mes, r.total, r.pagado, r.ultimo ? r.ultimo.fecha : '', m.telefono,
-                        m.acudiente ? m.acudiente.nombre : '', m.acudiente ? m.acudiente.telefono : ''];
+                        m.contacto ? m.contacto.nombre : '', m.contacto ? m.contacto.celular : ''];
                 }));
         },
         recibidos: function () {
-            return [['Recibo', 'Fecha', 'Estudiante', 'Documento', 'Programa', 'Qué pagó', 'Medio de pago', 'Referencia', 'Valor', 'Registró', 'Estado']]
+            return [['Recibo', 'Fecha', 'Estudiante', 'Documento', 'Carrera', 'Qué pagó', 'Medio de pago', 'Referencia', 'Valor', 'Registró', 'Estado']]
                 .concat(tRecibidos.items().map(function (r) {
                     var m = matPorId[r.matricula_id];
                     return [r.recibo, r.fecha, nombre(m), m.documento, m.programa, cubreTxt(r), r.metodo, r.referencia || '', r.valor, r.registrado, r.anulado ? 'Anulado' : 'Vigente'];

@@ -309,7 +309,7 @@
         var enCurso = mesSel === MES_HOY;
         var html = '<div class="con-resumen"><div class="con-panel"><div class="con-panel-titulo">' + esc(mayus(mesAnio(mesSel))) + (enCurso ? ' · en curso, hasta hoy ' + corta(HOY) : '') + '</div><div class="con-datos">' +
             dato('Ingresos', pesos(b.ingresos), 'is-verde') +
-            dato('Egresos', pesos(b.egresos) + ' <small>· ' + b.n + '</small>') +
+            dato('Egresos', pesos(b.egresos) + (b.n ? ' <small>· ' + b.n + (b.n === 1 ? ' comprobante' : ' comprobantes') + '</small>' : '')) +
             dato('Saldo del mes', pesos(b.saldo), b.saldo < 0 ? 'is-rojo' : '') +
             dato('Frente a ' + nombreMes(a.mes), (dif >= 0 ? '+ ' : '') + pesos(dif), dif < 0 ? 'is-rojo' : 'is-verde') + '</div></div>';
         if (enCurso && !b.porCat.nomina.n) {
@@ -334,7 +334,7 @@
                         '<span class="con-chart-bar is-egreso" style="height:' + alto(m.egresos) + '%" data-val="Egresos ' + pesos(m.egresos) + '"></span>' +
                     '</span>' +
                     '<span class="con-chart-mes">' + MESES[+m.mes.slice(5, 7) - 1] + '</span>' +
-                    '<span class="con-chart-saldo' + (m.saldo < 0 ? ' is-rojo' : '') + '">' + (sinDatos ? '—' : (m.saldo >= 0 ? '+' : '−') + ' ' + millones(m.saldo)) + '</span>' +
+                    '<span class="con-chart-saldo' + (m.saldo < 0 ? ' is-rojo' : '') + '">' + (sinDatos ? '—' : Math.abs(m.saldo) < 500 ? '$ 0' : (m.saldo > 0 ? '+' : '−') + ' ' + millones(m.saldo)) + '</span>' +
                 '</button>';
             }).join('') + '</div></div></div>';
     }
@@ -455,12 +455,12 @@
         var i = ingresoDe(mesSel);
         var html = '<div class="con-resumen"><div class="con-panel"><div class="con-panel-titulo">' + esc(mayus(mesAnio(mesSel))) + (mesSel === MES_HOY ? ' · hasta hoy ' + corta(HOY) : '') + '</div><div class="con-datos">' +
             dato('Total recibido', pesos(i.total), 'is-verde') + dato('Derecho de matrícula', pesos(i.derecho)) +
-            dato('Cuotas del programa', pesos(i.programa)) + dato('Cuota del sistema', pesos(i.sistema)) + '</div></div>';
+            dato('Cuotas de la carrera', pesos(i.programa)) + dato('Cuota del sistema', pesos(i.sistema)) + '</div></div>';
         if (!i.total) {
             ingresosEl.innerHTML = html + '<p class="con-panel-vacio">No se recibió ningún pago en este mes.</p></div>';
             return;
         }
-        var conceptos = [['Cuotas del programa', i.programa, 'Lo que pagan por el programa en cada cuota (ya con descuentos y becas).'],
+        var conceptos = [['Cuotas de la carrera', i.programa, 'Lo que pagan por la carrera en cada cuota (ya con descuentos y becas).'],
             ['Derecho de matrícula', i.derecho, 'Se paga una vez, antes de empezar clases.'],
             ['Cuota del sistema', i.sistema, 'Valor fijo de la plataforma que va en cada cuota.']];
         var metodos = Object.keys(i.metodos).map(function (m) { return { m: m, v: i.metodos[m] }; }).sort(function (a, b) { return b.v - a.v; });
@@ -544,7 +544,7 @@
         }
         if (e.tipo === 'devolucion') {
             html += '<div class="con-datos" style="grid-template-columns: repeat(2, minmax(0, 1fr))">' +
-                datoTxt('Estudiante', e.beneficiario + ' · ' + e.documento) + datoTxt('Programa', e.programa) + '</div>' +
+                datoTxt('Estudiante', e.beneficiario + ' · ' + e.documento) + datoTxt('Carrera', e.programa) + '</div>' +
                 '<div class="con-datos" style="grid-template-columns: minmax(0, 1fr) minmax(0, 2fr)">' + datoTxt('Referencia', e.referencia) + datoTxt('Motivo', e.concepto) + '</div>' +
                 '<p class="con-ayuda">Las devoluciones se registran e imprimen desde Matrículas, en la ficha de la matrícula, porque el valor lo calcula el sistema con lo que el estudiante pagó por adelantado. Aquí se cuentan como egreso del mes.</p>' +
                 '<div class="con-acciones-fila"><a class="con-btn con-btn-ghost con-btn-sm" href="' + esc(CFG.matriculasUrl) + '">' + ICON.ir + 'Ir a Matrículas</a></div>';
@@ -852,7 +852,7 @@
             '<h1 class="con-hoja-titulo">Resumen contable de ' + esc(mesAnio(mesSel)) + '</h1>' +
             '<p>' + (mesSel === MES_HOY ? 'Mes en curso, con lo registrado hasta hoy. ' : '') + 'Ingresos recibidos de los estudiantes y egresos de la sede, sin contar lo anulado.</p>' +
             '<h2 class="con-hoja-sub">Ingresos</h2>' + tabla(['Concepto', 'Valor'], [
-                '<tr><td>Cuotas del programa</td><td class="num">' + pesos(i.programa) + '</td></tr>',
+                '<tr><td>Cuotas de la carrera</td><td class="num">' + pesos(i.programa) + '</td></tr>',
                 '<tr><td>Derecho de matrícula</td><td class="num">' + pesos(i.derecho) + '</td></tr>',
                 '<tr><td>Cuota del sistema</td><td class="num">' + pesos(i.sistema) + '</td></tr>'
             ], ['Total ingresos', pesos(b.ingresos)]) +
@@ -862,7 +862,7 @@
             '<table class="con-hoja-tabla"><tbody><tr><td>Total ingresos</td><td class="num">' + pesos(b.ingresos) + '</td></tr>' +
                 '<tr><td>Total egresos</td><td class="num">− ' + pesos(b.egresos) + '</td></tr></tbody>' +
                 '<tfoot><tr><td>Saldo del mes</td><td class="num">' + pesos(b.saldo) + '</td></tr></tfoot></table>' +
-            '<div class="con-hoja-firmas"><div class="con-hoja-firma">Elaboró<span>' + esc(CFG.admin || 'Secretaría') + '</span></div></div>');
+            '<div class="con-hoja-firmas"><div class="con-hoja-firma">Elaboró<span>' + esc(CFG.admin || 'Administrativo') + '</span></div></div>');
     });
 
     /* Escape: se revisa antes que los combobox (fase de captura) para que, si hay una lista abierta,

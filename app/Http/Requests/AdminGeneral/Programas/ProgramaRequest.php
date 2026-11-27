@@ -3,18 +3,16 @@
 namespace App\Http\Requests\AdminGeneral\Programas;
 
 use App\Http\Requests\Admin\Programas\ProgramaRequest as ProgramaSedeRequest;
-use App\Models\Academico\Curso;
 use App\Models\Academico\Programa;
 use App\Models\Finanzas\Matricula;
 use App\Models\Institucional\Sede;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 /**
  * Programa del catálogo (Admin): las mismas reglas de la secretaría —no puede invalidar sus grupos vigentes
  * (cupo, jornadas, horas, cruces de docente)— más la malla de módulos. Las horas del programa son la suma de
- * los módulos, y la malla no se cambia cuando ya hay notas puestas en algún módulo.
+ * los módulos, y la malla no se cambia cuando sus módulos ya tienen notas o contenido del Aula virtual.
  */
 class ProgramaRequest extends ProgramaSedeRequest
 {
@@ -62,6 +60,11 @@ class ProgramaRequest extends ProgramaSedeRequest
             if (! $programa || $v->errors()->isNotEmpty()) {
                 return;
             }
+            // Sacarlo de "activo" desde el formulario (en aprobación o inactivo) tiene la regla del botón Desactivar: con grupos
+            // vigentes o aplazados dejaría de recibir matrículas en grupos que están en clases
+            if ($programa->estado === 'activo' && $this->input('estado') !== 'activo' && $error = $programa->impedimentoParaRetirar()) {
+                $v->errors()->add('estado', "No puede dejar de estar activo: en las sedes {$error}");
+            }
             // Las cuotas, el fin del grupo y el grado de quien está matriculado salen de la duración
             $cambiaDuracion = $this->integer('duracion_meses') !== (int) $programa->duracion_meses
                 || $this->input('tipo_periodo') !== $programa->tipo_periodo;
@@ -69,13 +72,13 @@ class ProgramaRequest extends ProgramaSedeRequest
                 $v->errors()->add('duracion_meses', "Tiene {$n} ".($n === 1 ? 'estudiante con matrícula vigente' : 'estudiantes con matrícula vigente')
                     .': la duración no se cambia hasta que terminen, porque sus cuotas y su grado dependen de ella.');
             }
-            if (! $this->tieneNotas($programa)) {
+            if (! Programa::mallaEnUso([$programa->id])) {
                 return;
             }
             $antes = $programa->modulos->map(fn ($m) => [$m->nombre, (int) $m->horas])->all();
             $ahora = collect($this->input('modulos'))->map(fn ($m) => [$m['nombre'], (int) $m['horas']])->all();
             if ($antes !== $ahora) {
-                $v->errors()->add('modulos', 'La malla ya no se puede cambiar: hay notas puestas en sus módulos.');
+                $v->errors()->add('modulos', 'La malla ya no se puede cambiar: sus módulos ya tienen notas o evaluaciones y actividades del Aula virtual.');
             }
         }]);
     }
@@ -112,19 +115,16 @@ class ProgramaRequest extends ProgramaSedeRequest
         $nuevas = $this->input('sedes');
         $actuales = $programa ? $programa->sedes()->pluck('sedes.id')->all() : [];
 
-        $quitadas = array_diff($actuales, $nuevas);
-        $conGrupos = $quitadas ? Curso::where('programa_id', $programa->id)->whereIn('sede_id', $quitadas)->where('estado', '!=', 'finalizado')
-            ->selectRaw('sede_id, count(*) as n')->groupBy('sede_id')->pluck('n', 'sede_id') : collect();
-        if ($conGrupos->isNotEmpty()) {
-            $sede = Sede::find($conGrupos->keys()->first());
-            $n = $conGrupos->first();
-            $v->errors()->add('sedes', "No se puede quitar de {$sede->nombre}: tiene {$n} ".($n === 1 ? 'grupo vigente' : 'grupos vigentes').'. Se quita cuando terminen.');
+        foreach (Sede::whereIn('id', array_diff($actuales, $nuevas))->orderBy('nombre')->get() as $sede) {
+            if ($error = $programa->impedimentoParaRetirar($sede->id)) {
+                $v->errors()->add('sedes', "No se puede quitar de {$sede->nombre}: {$error}");
 
-            return;
+                return;
+            }
         }
         $estado = $programa?->estado === 'inactivo' ? 'inactivo' : $this->input('estado');
         if ($estado === 'inactivo' && array_diff($nuevas, $actuales)) {
-            $v->errors()->add('sedes', 'El programa está inactivo: actívalo antes de ofrecerlo en más sedes.');
+            $v->errors()->add('sedes', 'La carrera está inactiva: actívala antes de ofrecerla en más sedes.');
         }
     }
 
@@ -132,10 +132,5 @@ class ProgramaRequest extends ProgramaSedeRequest
     public static function vigentes(Programa $programa): int
     {
         return Matricula::where('programa_id', $programa->id)->whereIn('estado', Matricula::VIGENTES)->count();
-    }
-
-    private function tieneNotas(Programa $programa): bool
-    {
-        return DB::table('calificaciones')->whereIn('programa_modulo_id', $programa->modulos->pluck('id'))->exists();
     }
 }

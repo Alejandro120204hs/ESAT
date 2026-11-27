@@ -24,7 +24,7 @@ use Illuminate\View\View;
  */
 class ForoController extends Controller
 {
-    private const ROLES = ['estudiante' => 'estudiante', 'docente' => 'docente', 'acudiente' => 'acudiente', 'admin' => 'secretaria', 'admin_general' => 'admin', 'superadmin' => 'admin'];
+    private const ROLES = ['estudiante' => 'estudiante', 'docente' => 'docente', 'admin' => 'secretaria', 'admin_general' => 'admin', 'superadmin' => 'admin'];
 
     public function __construct(private ForoService $foro) {}
 

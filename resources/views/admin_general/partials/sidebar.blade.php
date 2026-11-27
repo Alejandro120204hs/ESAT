@@ -9,12 +9,11 @@
         ],
         'Estructura' => [
             ['sedes', 'general.sedes', 'Sedes', '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/>'],
-            ['programas', 'general.programas', 'Programas', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'],
-            ['secretarias', 'general.secretarias', 'Secretarías', '<circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/>'],
+            ['programas', 'general.programas', 'Escuelas y carreras', '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'],
+            ['secretarias', 'general.secretarias', 'Administrativos', '<circle cx="9" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-1a5 5 0 0 0-3.5-4.8"/>'],
         ],
         'Personas' => [
             ['estudiantes', 'general.estudiantes', 'Estudiantes', '<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>'],
-            ['acudientes', 'general.acudientes', 'Acudientes', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'],
             ['docentes', 'general.docentes', 'Docentes', '<circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/><path d="M2 10h2M20 10h2"/>'],
         ],
         'Seguimiento' => [

@@ -1,8 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\Acudientes\AcudienteController;
 use App\Http\Controllers\AdminGeneral\Academico\AcademicoController as GeneralAcademicoController;
-use App\Http\Controllers\AdminGeneral\Acudientes\AcudienteController as GeneralAcudienteController;
 use App\Http\Controllers\AdminGeneral\Auditoria\AuditoriaController as GeneralAuditoriaController;
 use App\Http\Controllers\AdminGeneral\Comunicados\ComunicadoController as GeneralComunicadoController;
 use App\Http\Controllers\AdminGeneral\Configuracion\ConfiguracionController as GeneralConfiguracionController;
@@ -43,6 +41,8 @@ use App\Http\Controllers\Docente\Grupos\GrupoController as DocenteGrupoControlle
 use App\Http\Controllers\Docente\Inicio\InicioController as DocenteInicioController;
 use App\Http\Controllers\Docente\Notas\NotaController as DocenteNotaController;
 use App\Http\Controllers\Docente\Aula\AulaController as DocenteAulaController;
+use App\Http\Controllers\Docente\Comunicados\ComunicadoController as DocenteComunicadoController;
+use App\Http\Controllers\Docente\Foro\ForoController as DocenteForoController;
 use App\Http\Controllers\Estudiante\Aula\AulaController as EstudianteAulaController;
 use App\Http\Controllers\Estudiante\Comunicados\ComunicadoController as EstudianteComunicadoController;
 use App\Http\Controllers\Estudiante\Foro\ForoController as EstudianteForoController;
@@ -89,6 +89,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::post('/administradores', [AdministradorController::class, 'store'])->name('administradores.store');
     Route::put('/administradores/{administrador}', [AdministradorController::class, 'update'])->name('administradores.update');
     Route::patch('/administradores/{administrador}/toggle', [AdministradorController::class, 'toggleActivo'])->name('administradores.toggle');
+    Route::patch('/administradores/{administrador}/clave', [AdministradorController::class, 'restablecerClave'])->name('administradores.clave');
 
     Route::get('/estudiantes', function () {
         return view('superadmin.estudiantes');
@@ -127,12 +128,13 @@ Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo', 'transacc
     Route::get('horarios', [HorarioController::class, 'index'])->name('horarios');
     Route::put('horarios/{curso}', [HorarioController::class, 'update'])->name('horarios.update');
 
-    // Panel "Estudiantes": la persona (datos, acudiente, documentos). Matricular es de Matrículas.
+    // Panel "Estudiantes": la persona (datos, contacto de emergencia, documentos). Matricular es de Matrículas.
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes');
     Route::post('estudiantes', [EstudianteController::class, 'store'])->name('estudiantes.store');
     Route::put('estudiantes/{estudiante}', [EstudianteController::class, 'update'])->name('estudiantes.update');
     Route::patch('estudiantes/{estudiante}/clave', [EstudianteController::class, 'restablecerClave'])->name('estudiantes.clave');
-    Route::put('estudiantes/{estudiante}/acudiente', [EstudianteController::class, 'acudiente'])->name('estudiantes.acudiente');
+    // La cuenta (no la matrícula): un retirado o graduado puede dejar de entrar; con matrícula vigente sigue activa
+    Route::patch('estudiantes/{estudiante}/estado', [EstudianteController::class, 'cambiarEstado'])->name('estudiantes.estado');
     Route::patch('estudiantes/{estudiante}/documentos/{documento}', [EstudianteController::class, 'documento'])->name('estudiantes.documento');
 
     // Panel "Matrículas": programa + grupo, cambio de grupo, estado de la matrícula y pagos
@@ -190,14 +192,6 @@ Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo', 'transacc
     // Panel "Reportes": documentos formales por mes (solo consulta; reportes.js los arma al cierre del mes elegido)
     Route::get('reportes', [ReporteController::class, 'index'])->name('reportes');
 
-    // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
-    Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');
-    Route::post('acudientes', [AcudienteController::class, 'store'])->name('acudientes.store');
-    Route::put('acudientes/{acudiente}', [AcudienteController::class, 'update'])->name('acudientes.update');
-    Route::post('acudientes/{acudiente}/estudiantes', [AcudienteController::class, 'vincular'])->name('acudientes.vincular');
-    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [AcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
-    Route::patch('acudientes/{acudiente}/clave', [AcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
-    Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
 });
 
 // ============ PANEL ADMIN (ESAT GENERAL) ============
@@ -233,14 +227,6 @@ Route::middleware(['auth', 'role:admin_general', 'transaccion'])->prefix('genera
     Route::get('estudiantes', [GeneralEstudianteController::class, 'index'])->name('estudiantes');
     Route::post('estudiantes', [GeneralEstudianteController::class, 'store'])->name('estudiantes.store');
     Route::put('estudiantes/{estudiante}', [GeneralEstudianteController::class, 'update'])->name('estudiantes.update');
-
-    Route::get('acudientes', [GeneralAcudienteController::class, 'index'])->name('acudientes');
-    Route::post('acudientes', [GeneralAcudienteController::class, 'store'])->name('acudientes.store');
-    Route::put('acudientes/{acudiente}', [GeneralAcudienteController::class, 'update'])->name('acudientes.update');
-    Route::post('acudientes/{acudiente}/vincular', [GeneralAcudienteController::class, 'vincular'])->name('acudientes.vincular');
-    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [GeneralAcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
-    Route::patch('acudientes/{acudiente}/estado', [GeneralAcudienteController::class, 'estado'])->name('acudientes.estado');
-    Route::patch('acudientes/{acudiente}/clave', [GeneralAcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
 
     Route::get('docentes', [GeneralDocenteController::class, 'index'])->name('docentes');
     Route::post('docentes', [GeneralDocenteController::class, 'store'])->name('docentes.store');
@@ -280,12 +266,15 @@ Route::middleware(['auth', 'role:admin_general', 'transaccion'])->prefix('genera
 
 // ============ PANEL DOCENTE ============
 // Los grupos que tiene a cargo (curso_docente). Toma y corrige la asistencia y las notas mientras el
-// grupo no haya terminado (PanelDocenteService); Admin › Asistencia y Calificaciones solo consultan.
+// grupo no haya terminado (PanelDocenteService); Admin › Asistencia y Calificaciones solo consultan. Su perfil es
+// ProfileController (docente/perfil).
 Route::middleware(['auth', 'role:docente', 'transaccion'])->prefix('docente')->name('docente.')->group(function () {
     Route::get('/', [DocenteInicioController::class, 'index'])->name('dashboard');
     Route::get('grupos', [DocenteGrupoController::class, 'index'])->name('grupos');
     Route::get('asistencia', [DocenteAsistenciaController::class, 'index'])->name('asistencia');
     Route::post('asistencia/{curso}', [DocenteAsistenciaController::class, 'store'])->whereNumber('curso')->name('asistencia.guardar');
+    Route::post('asistencia/{curso}/sin-clase', [DocenteAsistenciaController::class, 'sinClase'])->whereNumber('curso')->name('asistencia.sin_clase');
+    Route::post('asistencia/{curso}/con-clase', [DocenteAsistenciaController::class, 'conClase'])->whereNumber('curso')->name('asistencia.con_clase');
     Route::get('notas', [DocenteNotaController::class, 'index'])->name('notas');
     Route::post('notas/{curso}/{modulo}', [DocenteNotaController::class, 'store'])->whereNumber(['curso', 'modulo'])->name('notas.guardar');
 
@@ -297,8 +286,30 @@ Route::middleware(['auth', 'role:docente', 'transaccion'])->prefix('docente')->n
     Route::post('aula/{curso}/actividades', [DocenteAulaController::class, 'crearActividad'])->whereNumber('curso')->name('aula.actividades.store');
     Route::put('aula/actividades/{actividad}', [DocenteAulaController::class, 'editarActividad'])->whereNumber('actividad')->name('aula.actividades.update');
     Route::delete('aula/actividades/{actividad}', [DocenteAulaController::class, 'eliminarActividad'])->whereNumber('actividad')->name('aula.actividades.destroy');
+    Route::get('aula/actividades/{actividad}/guia', [DocenteAulaController::class, 'guia'])->whereNumber('actividad')->name('aula.guia');
+    Route::post('aula/{curso}/materiales', [DocenteAulaController::class, 'crearMaterial'])->whereNumber('curso')->name('aula.materiales.store');
+    Route::put('aula/materiales/{material}', [DocenteAulaController::class, 'editarMaterial'])->whereNumber('material')->name('aula.materiales.update');
+    Route::delete('aula/materiales/{material}', [DocenteAulaController::class, 'eliminarMaterial'])->whereNumber('material')->name('aula.materiales.destroy');
+    Route::get('aula/materiales/{material}/archivo', [DocenteAulaController::class, 'material'])->whereNumber('material')->name('aula.material');
     Route::patch('aula/entregas/{entrega}', [DocenteAulaController::class, 'calificar'])->whereNumber('entrega')->name('aula.calificar');
     Route::get('aula/entregas/{entrega}/archivo', [DocenteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
+
+    // Comunicados: los que le llegan (abrir uno lo marca leído) y los que publica a uno o varios de sus grupos
+    // (ComunicadoDocenteService). El PUT llega como POST con _method porque puede traer el adjunto.
+    Route::get('comunicados', [DocenteComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados', [DocenteComunicadoController::class, 'store'])->name('comunicados.store');
+    Route::put('comunicados/{comunicado}', [DocenteComunicadoController::class, 'update'])->whereNumber('comunicado')->name('comunicados.update');
+    Route::patch('comunicados/{comunicado}/archivar', [DocenteComunicadoController::class, 'archivar'])->whereNumber('comunicado')->name('comunicados.archivar');
+    Route::delete('comunicados/{comunicado}', [DocenteComunicadoController::class, 'destroy'])->whereNumber('comunicado')->name('comunicados.destroy');
+    Route::post('comunicados/{comunicado}/leido', [DocenteComunicadoController::class, 'leido'])->whereNumber('comunicado')->name('comunicados.leido');
+    Route::get('comunicados/{comunicado}/adjunto', [DocenteComunicadoController::class, 'adjunto'])->whereNumber('comunicado')->name('comunicados.adjunto');
+
+    // Foro de su sede (ForoService): lee, abre temas, responde y reporta; moderar es de la secretaría
+    Route::get('foro', [DocenteForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [DocenteForoController::class, 'tema'])->name('foro.tema');
+    Route::post('foro/temas/{tema}/mensajes', [DocenteForoController::class, 'responder'])->whereNumber('tema')->name('foro.responder');
+    Route::post('foro/mensajes/{mensaje}/reportes', [DocenteForoController::class, 'reportar'])->whereNumber('mensaje')->name('foro.reportar');
+    Route::get('foro/mensajes/{mensaje}/adjunto', [DocenteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
 });
 
 // ============ PANEL ESTUDIANTE ============
@@ -310,9 +321,12 @@ Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiant
     Route::get('programa', [EstudianteProgramaController::class, 'index'])->name('programa');
 
     Route::get('aula', [EstudianteAulaController::class, 'index'])->name('aula');
+    Route::post('aula/evaluaciones/{evaluacion}/iniciar', [EstudianteAulaController::class, 'iniciar'])->whereNumber('evaluacion')->name('aula.iniciar');
     Route::post('aula/evaluaciones/{evaluacion}/respuestas', [EstudianteAulaController::class, 'responder'])->whereNumber('evaluacion')->name('aula.responder');
     Route::post('aula/actividades/{actividad}/entrega', [EstudianteAulaController::class, 'entregar'])->whereNumber('actividad')->name('aula.entregar');
     Route::get('aula/entregas/{entrega}/archivo', [EstudianteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
+    Route::get('aula/actividades/{actividad}/guia', [EstudianteAulaController::class, 'guia'])->whereNumber('actividad')->name('aula.guia');
+    Route::get('aula/materiales/{material}/archivo', [EstudianteAulaController::class, 'material'])->whereNumber('material')->name('aula.material');
 
     Route::get('pagos', [EstudiantePagoController::class, 'index'])->name('pagos');
     Route::post('pagos/plan', [EstudiantePagoController::class, 'plan'])->name('pagos.plan');

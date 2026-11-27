@@ -55,13 +55,13 @@ class ProgramaController extends Controller
 
             return $programa;
         });
-        Auditoria::registrar('crear', $programa, "Creó el programa {$programa->nombre} ({$programa->codigo}) por $ ".$this->plata($programa->precio_total).'.');
+        Auditoria::registrar('crear', $programa, "Creó la carrera {$programa->nombre} ({$programa->codigo}) por $ ".$this->plata($programa->precio_total).'.');
         [$agregadas] = $this->ofrecerEn($programa, $request->validated('sedes') ?? []);
         $n = count($agregadas);
-        $donde = $n === 0 ? 'Queda en el catálogo: cada secretaría lo agrega a su sede cuando lo vaya a ofrecer.'
+        $donde = $n === 0 ? 'Queda en el catálogo: cada administrativo la agrega a su sede cuando la vaya a ofrecer.'
             : ($n === Sede::count() && $n > 1 ? 'Se ofrece en todas las sedes.' : 'Se ofrece en '.collect($agregadas)->pluck('nombre')->join(', ', ' y ').'.');
 
-        return response()->json(['mensaje' => "Se creó el programa. {$donde}", 'id' => $programa->id], 201);
+        return response()->json(['mensaje' => "Se creó la carrera. {$donde}", 'id' => $programa->id], 201);
     }
 
     public function update(ProgramaRequest $request, Programa $programa): JsonResponse
@@ -88,7 +88,7 @@ class ProgramaController extends Controller
             }
         });
         $detalle = $cambios ? ': '.implode('; ', $cambios) : '';
-        Auditoria::registrar('editar', $programa, "Editó el programa {$programa->nombre} ({$programa->codigo}){$detalle}.");
+        Auditoria::registrar('editar', $programa, "Editó la carrera {$programa->nombre} ({$programa->codigo}){$detalle}.");
         $sedes = '';
         if ($request->has('sedes')) {
             [$agregadas, $quitadas] = $this->ofrecerEn($programa, $request->validated('sedes'));
@@ -99,20 +99,20 @@ class ProgramaController extends Controller
             $sedes = $partes ? ' '.ucfirst(implode('; ', $partes)).'.' : '';
         }
 
-        return response()->json(['mensaje' => "Se guardaron los cambios del programa{$detalle}.{$sedes}"]);
+        return response()->json(['mensaje' => "Se guardaron los cambios de la carrera{$detalle}.{$sedes}"]);
     }
 
     /** Activo ⇄ inactivo. No se desactiva con grupos vigentes en alguna sede. */
     public function estado(Programa $programa): JsonResponse
     {
         $activar = $programa->estado === 'inactivo';
-        if (! $activar && ($n = $programa->cursos()->where('estado', '!=', 'finalizado')->count())) {
-            return $this->error("No se puede desactivar: tiene {$n} ".($n === 1 ? 'grupo vigente' : 'grupos vigentes').' en las sedes. Se desactiva cuando terminen.');
+        if (! $activar && $error = $programa->impedimentoParaRetirar()) {
+            return $this->error("No se puede desactivar: en las sedes {$error}");
         }
         $programa->update(['estado' => $activar ? 'activo' : 'inactivo']);
-        Auditoria::registrar($activar ? 'activar' : 'desactivar', $programa, ($activar ? 'Activó' : 'Desactivó')." el programa {$programa->nombre} ({$programa->codigo}).");
+        Auditoria::registrar($activar ? 'activar' : 'desactivar', $programa, ($activar ? 'Activó' : 'Desactivó')." la carrera {$programa->nombre} ({$programa->codigo}).");
 
-        return response()->json(['mensaje' => $activar ? 'Se activó el programa.' : 'Se desactivó el programa.']);
+        return response()->json(['mensaje' => $activar ? 'Se activó la carrera.' : 'Se desactivó la carrera.']);
     }
 
     /** Ofrece o deja de ofrecer el programa en una sede (no se quita con grupos vigentes allí). */
@@ -121,20 +121,19 @@ class ProgramaController extends Controller
         $ofrece = $programa->sedes()->where('sedes.id', $sede->id)->exists();
         $corto = str_replace('Técnico Laboral en ', '', $programa->nombre);
         if ($ofrece) {
-            $n = $programa->cursos()->where('sede_id', $sede->id)->where('estado', '!=', 'finalizado')->count();
-            if ($n) {
-                return $this->error("No se puede quitar de {$sede->nombre}: tiene {$n} ".($n === 1 ? 'grupo vigente' : 'grupos vigentes').'. Se quita cuando terminen.');
+            if ($error = $programa->impedimentoParaRetirar($sede->id)) {
+                return $this->error("No se puede quitar de {$sede->nombre}: {$error}");
             }
             $programa->sedes()->detach($sede->id);
-            Auditoria::registrar('editar', $programa, "Quitó el programa {$programa->nombre} de la sede {$sede->nombre}.", $sede->id);
+            Auditoria::registrar('editar', $programa, "Quitó la carrera {$programa->nombre} de la sede {$sede->nombre}.", $sede->id);
 
             return response()->json(['mensaje' => "La sede {$sede->nombre} ya no ofrece {$corto}."]);
         }
         if ($programa->estado === 'inactivo') {
-            return $this->error('El programa está inactivo: actívalo antes de ofrecerlo en una sede.');
+            return $this->error('La carrera está inactiva: actívala antes de ofrecerla en una sede.');
         }
         $programa->sedes()->attach($sede->id);
-        Auditoria::registrar('editar', $programa, "Asignó el programa {$programa->nombre} a la sede {$sede->nombre}.", $sede->id);
+        Auditoria::registrar('editar', $programa, "Asignó la carrera {$programa->nombre} a la sede {$sede->nombre}.", $sede->id);
 
         return response()->json(['mensaje' => "La sede {$sede->nombre} ya puede abrir grupos de {$corto}."]);
     }
@@ -155,10 +154,10 @@ class ProgramaController extends Controller
         $quitadas = Sede::whereIn('id', array_diff($actuales, $sedes))->orderBy('nombre')->get()->all();
         DB::transaction(fn () => $programa->sedes()->sync($sedes));
         foreach ($agregadas as $s) {
-            Auditoria::registrar('editar', $programa, "Asignó el programa {$programa->nombre} a la sede {$s->nombre}.", $s->id);
+            Auditoria::registrar('editar', $programa, "Asignó la carrera {$programa->nombre} a la sede {$s->nombre}.", $s->id);
         }
         foreach ($quitadas as $s) {
-            Auditoria::registrar('editar', $programa, "Quitó el programa {$programa->nombre} de la sede {$s->nombre}.", $s->id);
+            Auditoria::registrar('editar', $programa, "Quitó la carrera {$programa->nombre} de la sede {$s->nombre}.", $s->id);
         }
 
         return [$agregadas, $quitadas];

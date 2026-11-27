@@ -38,7 +38,7 @@
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="search" id="est-buscar" placeholder="Buscar por nombre o documento..." autocomplete="off" aria-label="Buscar estudiante">
         </div>
-        @foreach ([['est-cb-sede', 'Todas las sedes'], ['est-cb-programa', 'Todos los programas'], ['est-cb-estado', 'Matrículas vigentes'], ['est-cb-pago', 'Todos los pagos']] as [$id, $texto])
+        @foreach ([['est-cb-sede', 'Todas las sedes'], ['est-cb-programa', 'Todas las carreras'], ['est-cb-estado', 'Matrículas vigentes'], ['est-cb-pago', 'Todos los pagos']] as [$id, $texto])
         <div class="app-combobox" id="{{ $id }}" data-position="absolute">
             <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-label="{{ $texto }}">
                 <span data-combobox-label>{{ $texto }}</span>
@@ -57,7 +57,7 @@
                 <tr>
                     <th scope="col">Estudiante</th>
                     <th scope="col">Sede</th>
-                    <th scope="col">Programa</th>
+                    <th scope="col">Carrera</th>
                     <th scope="col">Matrícula</th>
                     <th scope="col">Pagos</th>
                     <th scope="col"><span class="est-sr">Acciones</span></th>
@@ -122,7 +122,7 @@
             </button>
         </div>
         <div class="est-modal-body">
-            <p class="est-modal-text">Vas a trabajar en esta sede con las mismas pantallas de la secretaría; entrarás a Matrículas para matricularlo o cobrarle. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
+            <p class="est-modal-text">Vas a trabajar en esta sede con las mismas pantallas del administrativo; entrarás a Matrículas para matricularlo o cobrarle. Todo lo que hagas queda en la auditoría de la sede con tu nombre.</p>
         </div>
         <div class="est-modal-foot">
             <button type="button" class="est-btn est-btn-ghost" data-cerrar-modal>Cancelar</button>
@@ -154,6 +154,10 @@
                     <div class="est-field"><label for="est-f-documento">Número de documento</label><input type="text" id="est-f-documento" inputmode="numeric" maxlength="11" autocomplete="off"><span class="est-field-error" data-error="documento" hidden></span></div>
                     <div class="est-field"><label for="est-f-nacimiento">Fecha de nacimiento</label><input type="date" id="est-f-nacimiento"><span class="est-hint" id="est-edad"></span><span class="est-field-error" data-error="nacimiento" hidden></span></div>
                     <div class="est-field"><label for="est-f-genero">Género</label><select id="est-f-genero"><option value="">Selecciona</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Otro</option></select><span class="est-field-error" data-error="genero" hidden></span></div>
+                    {{-- Solo con cédula de extranjería o PPT (EstudianteRequest::DOCUMENTOS_EXTRANJERO) --}}
+                    <div class="est-field est-field-full" id="est-w-nac-donde" hidden><label for="est-f-nac-donde">¿Dónde nació?</label><select id="est-f-nac-donde"><option value="co">En Colombia</option><option value="fuera">En otro país</option></select></div>
+                    <div class="est-field" id="est-w-pais-nac" hidden><label for="est-f-pais-nac">País de nacimiento</label><select id="est-f-pais-nac"></select><span class="est-field-error" data-error="pais-nac" hidden></span></div>
+                    <div class="est-field" id="est-w-ciudad-ext" hidden><label for="est-f-ciudad-ext">Ciudad de nacimiento</label><input type="text" id="est-f-ciudad-ext" maxlength="100" placeholder="Maracaibo" autocomplete="off"><span class="est-field-error" data-error="ciudad-ext" hidden></span></div>
                     <div class="est-field"><label for="est-f-depto-nac">Departamento de nacimiento</label><select id="est-f-depto-nac"></select><span class="est-field-error" data-error="depto-nac" hidden></span></div>
                     <div class="est-field"><label for="est-f-ciudad-nac">Ciudad de nacimiento</label><select id="est-f-ciudad-nac"></select><span class="est-field-error" data-error="ciudad-nac" hidden></span></div>
                 </div>
@@ -166,19 +170,13 @@
                     <div class="est-field"><label for="est-f-depto">Departamento de residencia</label><select id="est-f-depto"></select><span class="est-field-error" data-error="depto" hidden></span></div>
                     <div class="est-field"><label for="est-f-ciudad">Ciudad o municipio de residencia</label><select id="est-f-ciudad"></select><span class="est-field-error" data-error="ciudad" hidden></span></div>
                 </div>
-                <h3 class="est-seccion">Acudiente <span class="est-muted" id="est-acu-req"></span></h3>
+                <h3 class="est-seccion">Contacto de emergencia</h3>
                 <div class="est-fields">
-                    <div class="est-field"><label for="est-f-acudiente">Acudiente de la sede</label><select id="est-f-acudiente"></select><span class="est-field-error" data-error="acudiente" hidden></span></div>
+                    <div class="est-field est-field-full"><label for="est-f-con-nombre">Nombre completo</label><input type="text" id="est-f-con-nombre" maxlength="120" autocomplete="off"><span class="est-field-error" data-error="con-nombre" hidden></span></div>
+                    <div class="est-field"><label for="est-f-con-celular">Celular</label><input type="tel" id="est-f-con-celular" inputmode="numeric" maxlength="14" placeholder="3001234567" autocomplete="off"><span class="est-field-error" data-error="con-celular" hidden></span></div>
                     <div class="est-field"><label for="est-f-parentesco">Parentesco</label><select id="est-f-parentesco"></select><span class="est-field-error" data-error="parentesco" hidden></span></div>
                 </div>
-                <div class="est-fields est-acu-nuevo" id="est-acu-nuevo" hidden>
-                    <div class="est-field"><label for="est-f-a-documento">Cédula del acudiente</label><input type="text" id="est-f-a-documento" inputmode="numeric" maxlength="11" autocomplete="off"><span class="est-field-error" data-error="a-documento" hidden></span></div>
-                    <div class="est-field"><label for="est-f-a-telefono">Celular del acudiente</label><input type="tel" id="est-f-a-telefono" inputmode="numeric" maxlength="14" autocomplete="off"><span class="est-field-error" data-error="a-telefono" hidden></span></div>
-                    <div class="est-field"><label for="est-f-a-nombres">Nombres</label><input type="text" id="est-f-a-nombres" maxlength="100" autocomplete="off"><span class="est-field-error" data-error="a-nombres" hidden></span></div>
-                    <div class="est-field"><label for="est-f-a-apellidos">Apellidos</label><input type="text" id="est-f-a-apellidos" maxlength="100" autocomplete="off"><span class="est-field-error" data-error="a-apellidos" hidden></span></div>
-                    <div class="est-field est-field-full"><label for="est-f-a-correo">Correo del acudiente (es su usuario)</label><input type="email" id="est-f-a-correo" maxlength="120" autocomplete="off"><span class="est-field-error" data-error="a-correo" hidden></span></div>
-                </div>
-                <p class="est-hint est-hint-acu" id="est-acu-ayuda">¿El acudiente no está en la lista? Elige «Registrar un acudiente nuevo»: su clave inicial será su cédula.</p>
+                <p class="est-hint est-hint-acu">A quién llamar si le pasa algo. Si es menor de edad, también le llegan los WhatsApp de cobros y comunicados.</p>
                 <p class="est-nota" id="est-nota-clave">La clave inicial es su número de documento. Para matricularlo, entra a la sede: sin todos los documentos requeridos entregados no se matricula.</p>
             </div>
         </div>

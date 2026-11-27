@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Programa extends Model
 {
@@ -94,6 +95,39 @@ class Programa extends Model
     public function cursos(): HasMany
     {
         return $this->hasMany(Curso::class);
+    }
+
+    /**
+     * Ids (de $ids) de los programas cuya malla ya no se cambia: algún módulo tiene notas, o evaluaciones o actividades del
+     * Aula virtual (guardarMalla actualiza los módulos por posición: renombrar o borrar uno las dejaría en otro módulo o
+     * sin módulo). Sin $ids, de todos.
+     *
+     * @return array<int, int>
+     */
+    public static function mallaEnUso(?array $ids = null): array
+    {
+        $con = fn (string $tabla) => DB::table($tabla)->join('programa_modulos', 'programa_modulos.id', '=', $tabla.'.programa_modulo_id')
+            ->when($ids !== null, fn ($q) => $q->whereIn('programa_modulos.programa_id', $ids))
+            ->distinct()->pluck('programa_modulos.programa_id')->all();
+
+        return array_values(array_unique(array_merge($con('calificaciones'), $con('evaluaciones'), $con('actividades'))));
+    }
+
+    /**
+     * Por qué no se puede dejar de ofrecer en $sedeId (o desactivar en todo ESAT, con null): tiene grupos sin finalizar, o
+     * estudiantes aplazados, que para volver necesitan un grupo del programa en su sede. Null si se puede.
+     */
+    public function impedimentoParaRetirar(?int $sedeId = null): ?string
+    {
+        $grupos = $this->cursos()->where('estado', '!=', 'finalizado')->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))->count();
+        if ($grupos) {
+            return "tiene {$grupos} ".($grupos === 1 ? 'grupo vigente' : 'grupos vigentes').'. Se quita cuando terminen.';
+        }
+        $aplazados = $this->matriculas()->where('estado', 'aplazado')->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))->count();
+
+        return $aplazados
+            ? "tiene {$aplazados} ".($aplazados === 1 ? 'estudiante aplazado' : 'estudiantes aplazados').' que necesitan un grupo de la carrera para volver. Se quita cuando se reintegren o se retiren.'
+            : null;
     }
 
     /**

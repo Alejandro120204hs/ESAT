@@ -4,7 +4,7 @@
      horas: ProgramaRequest) y la malla no cambia si ya hay notas. Todo queda en la auditoría. --}}
 @extends('admin_general.layout')
 
-@section('title', 'Programas')
+@section('title', 'Escuelas y carreras')
 @section('active', 'programas')
 
 @push('styles')
@@ -20,30 +20,30 @@
 
     <div class="prg-header">
         <div>
-            <h1 class="prg-title">Programas</h1>
-            <p class="prg-sub">El catálogo de ESAT: escuelas, programas, malla de módulos y precios, iguales para todas las sedes. Cada secretaría elige cuáles ofrece en su sede.</p>
+            <h1 class="prg-title" id="prg-titulo">Escuelas</h1>
+            <p class="prg-sub">El catálogo de ESAT: escuelas, carreras, malla de módulos y precios, iguales para todas las sedes. Cada administrativo elige cuáles ofrece en su sede.</p>
         </div>
         <button type="button" class="prg-btn prg-btn-primary" id="prg-nuevo">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span id="prg-nuevo-txt">Nuevo programa</span>
+            <span id="prg-nuevo-txt">Nueva escuela</span>
         </button>
     </div>
 
     <div class="prg-kpis" id="prg-kpis"></div>
 
     <div class="prg-ptabs" role="tablist">
-        <button type="button" class="prg-ptab is-active" role="tab" data-ptab="programas" aria-selected="true">Programas</button>
-        <button type="button" class="prg-ptab" role="tab" data-ptab="escuelas" aria-selected="false">Escuelas</button>
+        <button type="button" class="prg-ptab is-active" role="tab" data-ptab="escuelas" aria-selected="true">Escuelas</button>
+        <button type="button" class="prg-ptab" role="tab" data-ptab="programas" aria-selected="false">Carreras</button>
     </div>
 
     {{-- ─── Programas ─── --}}
-    <section class="prg-ppanel" data-ppanel="programas" aria-label="Programas">
+    <section class="prg-ppanel" data-ppanel="programas" aria-label="Carreras" hidden>
         <div class="prg-filters">
             <div class="prg-search">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="search" id="prg-buscar" placeholder="Buscar por nombre o código..." autocomplete="off" aria-label="Buscar programa">
+                <input type="search" id="prg-buscar" placeholder="Buscar por nombre o código..." autocomplete="off" aria-label="Buscar carrera">
             </div>
-            @foreach ([['prg-cb-escuela', 'Todas las escuelas'], ['prg-cb-sede', 'Ofrecido en cualquier sede'], ['prg-cb-estado', 'Todos los estados']] as [$id, $texto])
+            @foreach ([['prg-cb-escuela', 'Todas las escuelas'], ['prg-cb-sede', 'Ofrecida en cualquier sede'], ['prg-cb-estado', 'Todos los estados']] as [$id, $texto])
             <div class="app-combobox" id="{{ $id }}" data-position="absolute">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-label="{{ $texto }}">
                     <span data-combobox-label>{{ $texto }}</span>
@@ -58,20 +58,20 @@
         <div class="prg-table-wrap">
             <table class="prg-table">
                 <thead><tr>
-                    <th scope="col">Programa</th><th scope="col">Escuela</th><th scope="col">Duración</th><th scope="col" class="prg-num">Precio</th>
-                    <th scope="col">Sedes que lo ofrecen</th><th scope="col" class="prg-num">Estudiantes</th><th scope="col">Estado</th>
+                    <th scope="col">Carrera</th><th scope="col">Escuela</th><th scope="col">Duración</th><th scope="col" class="prg-num">Precio</th>
+                    <th scope="col">Sedes que la ofrecen</th><th scope="col" class="prg-num">Estudiantes</th><th scope="col">Estado</th>
                 </tr></thead>
                 <tbody id="prg-body"></tbody>
             </table>
-            <p class="prg-empty" id="prg-empty" hidden>No hay programas con esos filtros.</p>
+            <p class="prg-empty" id="prg-empty" hidden>No hay carreras con esos filtros.</p>
         </div>
     </section>
 
     {{-- ─── Escuelas ─── --}}
-    <section class="prg-ppanel" data-ppanel="escuelas" aria-label="Escuelas" hidden>
+    <section class="prg-ppanel" data-ppanel="escuelas" aria-label="Escuelas">
         <div class="prg-table-wrap">
             <table class="prg-table">
-                <thead><tr><th scope="col">Escuela</th><th scope="col">Sigla</th><th scope="col" class="prg-num">Programas</th><th scope="col" class="prg-num">Docentes</th><th scope="col"><span class="prg-sr">Acciones</span></th></tr></thead>
+                <thead><tr><th scope="col">Escuela</th><th scope="col">Sigla</th><th scope="col" class="prg-num">Carreras</th><th scope="col" class="prg-num">Docentes</th><th scope="col"><span class="prg-sr">Acciones</span></th></tr></thead>
                 <tbody id="prg-esc-body"></tbody>
             </table>
         </div>
@@ -101,7 +101,7 @@
         </div>
         <div class="prg-drawer-foot">
             <button type="button" class="prg-btn prg-btn-ghost" id="prg-dw-estado"></button>
-            <button type="button" class="prg-btn prg-btn-primary" id="prg-dw-editar">Editar programa</button>
+            <button type="button" class="prg-btn prg-btn-primary" id="prg-dw-editar">Editar carrera</button>
         </div>
     </div>
 </div>
@@ -112,8 +112,8 @@
     <form class="prg-modal-panel prg-modal-lg" id="prg-form" role="dialog" aria-modal="true" aria-labelledby="prg-modal-titulo" novalidate>
         <div class="prg-modal-head">
             <div>
-                <h2 class="prg-modal-title" id="prg-modal-titulo">Nuevo programa</h2>
-                <p class="prg-modal-sub" id="prg-modal-sub">Paso 1 de 4 · Datos del programa</p>
+                <h2 class="prg-modal-title" id="prg-modal-titulo">Nueva carrera</h2>
+                <p class="prg-modal-sub" id="prg-modal-sub">Paso 1 de 4 · Datos de la carrera</p>
             </div>
             <button type="button" class="prg-close" data-cerrar-modal aria-label="Cerrar">{!! $cerrar !!}</button>
         </div>
@@ -143,15 +143,15 @@
                 <div class="prg-fields">
                     <div class="prg-field"><label for="prg-f-meses">Duración (meses)</label><input type="number" id="prg-f-meses" min="3" max="36" step="1"><span class="prg-field-error" data-error="meses" hidden></span></div>
                     <div class="prg-field"><label for="prg-f-periodo">Se divide en</label><select id="prg-f-periodo"><option value="trimestre">Trimestres</option><option value="semestre">Semestres</option></select><span class="prg-hint" id="prg-periodos"></span></div>
-                    <div class="prg-field"><label for="prg-f-precio">Precio total del programa</label><div class="prg-prefijo"><span>$</span><input type="text" id="prg-f-precio" inputmode="numeric" maxlength="13"></div><span class="prg-field-error" data-error="precio" hidden></span></div>
+                    <div class="prg-field"><label for="prg-f-precio">Precio total de la carrera</label><div class="prg-prefijo"><span>$</span><input type="text" id="prg-f-precio" inputmode="numeric" maxlength="13"></div><span class="prg-field-error" data-error="precio" hidden></span></div>
                     <div class="prg-field"><label for="prg-f-matricula">Derecho de matrícula</label><div class="prg-prefijo"><span>$</span><input type="text" id="prg-f-matricula" inputmode="numeric" maxlength="11"></div><span class="prg-field-error" data-error="matricula" hidden></span></div>
                 </div>
                 <p class="prg-nota" id="prg-duracion-bloqueada" hidden></p>
                 <div class="prg-resumen" id="prg-resumen-precio"></div>
             </div>
             <div class="prg-paso" data-paso="3" hidden>
-                <p class="prg-hint prg-malla-ayuda">Los módulos se dictan en este orden. Las horas del programa son la suma de las horas de los módulos.</p>
-                <p class="prg-nota" id="prg-malla-bloqueada" hidden>Ya hay notas puestas en los módulos de este programa: la malla queda como está.</p>
+                <p class="prg-hint prg-malla-ayuda">Los módulos se dictan en este orden. Las horas de la carrera son la suma de las horas de los módulos.</p>
+                <p class="prg-nota" id="prg-malla-bloqueada" hidden>Los módulos de esta carrera ya tienen notas o evaluaciones y actividades del Aula virtual: la malla queda como está.</p>
                 <ol class="prg-malla-edit" id="prg-malla-edit"></ol>
                 <button type="button" class="prg-btn prg-btn-ghost prg-btn-sm" id="prg-mod-agregar">
                     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -191,7 +191,7 @@
         <div class="prg-modal-body">
             <div class="prg-fields">
                 <div class="prg-field prg-field-full"><label for="prg-e-nombre">Nombre</label><input type="text" id="prg-e-nombre" maxlength="80" placeholder="Ej. Belleza"><span class="prg-field-error" data-error="e-nombre" hidden></span></div>
-                <div class="prg-field" id="prg-e-sigla-campo"><label for="prg-e-sigla">Sigla</label><input type="text" id="prg-e-sigla" readonly><span class="prg-hint">Se generó al crearla y no cambia: va en el código de sus programas.</span></div>
+                <div class="prg-field" id="prg-e-sigla-campo"><label for="prg-e-sigla">Sigla</label><input type="text" id="prg-e-sigla" readonly><span class="prg-hint">Se generó al crearla y no cambia: va en el código de sus carreras.</span></div>
             </div>
         </div>
         <div class="prg-modal-foot">

@@ -12,22 +12,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Reglas de negocio del estudiante (panel Admin › Estudiantes): registro, acudiente
+ * Reglas de negocio del estudiante (panel Admin › Estudiantes): registro, contacto de emergencia
  * y el resumen de pagos/asistencia de su matrícula que se consulta en la ficha.
  * Las validaciones de entrada viven en los Form Requests de Admin/Estudiantes.
  */
 class EstudianteService
 {
-    /** Parentescos que se pueden registrar entre acudiente y estudiante. */
-    public const PARENTESCOS = ['Madre', 'Padre', 'Abuelo(a)', 'Tío(a)', 'Hermano(a)', 'Otro'];
-
     /**
-     * Registra al estudiante: su cuenta (clave inicial = documento), su lista de
-     * documentos y, si viene, su acudiente. No lo matricula (eso es de Matrículas).
+     * Registra al estudiante: su cuenta (clave inicial = documento), su lista de documentos y su contacto de emergencia.
+     * No lo matricula (eso es de Matrículas).
      */
-    public function registrar(array $datos, ?array $acudiente, ?string $parentesco, int $sedeId): User
+    public function registrar(array $datos, array $contacto, int $sedeId): User
     {
-        return DB::transaction(function () use ($datos, $acudiente, $parentesco, $sedeId) {
+        return DB::transaction(function () use ($datos, $contacto, $sedeId) {
             $estudiante = User::create($datos + [
                 'role'     => RolUsuario::Estudiante,
                 'sede_id'  => $sedeId,
@@ -38,47 +35,26 @@ class EstudianteService
             $estudiante->documentos()->createMany(
                 array_map(fn ($d) => ['documento' => $d], EstudianteDocumento::REQUERIDOS)
             );
-
-            if ($acudiente) {
-                $this->vincularAcudiente($estudiante, $acudiente, $parentesco, $sedeId);
-            }
+            $this->guardarContacto($estudiante, $contacto);
 
             return $estudiante;
         });
     }
 
-    /**
-     * Deja a $acudiente como el acudiente del estudiante (reemplaza al anterior).
-     * $acudiente es ['id' => …] si ya existe o los datos para registrarlo
-     * (clave inicial = su cédula). Devuelve el acudiente.
-     */
-    public function vincularAcudiente(User $estudiante, array $acudiente, string $parentesco, int $sedeId): User
+    /** Crea o reemplaza el contacto de emergencia (nombre, celular y parentesco) del estudiante. */
+    public function guardarContacto(User $estudiante, array $contacto): void
     {
-        return DB::transaction(function () use ($estudiante, $acudiente, $parentesco, $sedeId) {
-            $usuario = isset($acudiente['id'])
-                ? User::findOrFail($acudiente['id'])
-                : User::create([
-                    'role'             => RolUsuario::Acudiente,
-                    'sede_id'          => $sedeId,
-                    'nombres'          => $acudiente['nombres'],
-                    'apellidos'        => $acudiente['apellidos'],
-                    'tipo_documento'   => 'CC',
-                    'numero_documento' => $acudiente['documento'],
-                    'telefono'         => $acudiente['telefono'],
-                    'email'            => $acudiente['email'],
-                    'password'         => Hash::make($acudiente['documento']),
-                    'activo'           => true,
-                ]);
-
-            $estudiante->acudientes()->sync([$usuario->id => ['parentesco' => $parentesco]]);
-
-            return $usuario;
-        });
+        $estudiante->contactoEmergencia()->updateOrCreate([], [
+            'nombre'     => $contacto['nombre'],
+            'celular'    => $contacto['celular'],
+            'parentesco' => $contacto['parentesco'],
+        ]);
+        $estudiante->unsetRelation('contactoEmergencia');
     }
 
     /**
      * Matrícula que se muestra: la activa o, si no hay, la más reciente (las anuladas no cuentan).
-     * Se consulta en Estudiantes y Acudientes, pero se gestiona en Matrículas.
+     * Se consulta en Estudiantes, pero se gestiona en Matrículas.
      * Espera cargada la relación matriculas.
      */
     public function matriculaVigente(User $estudiante): ?Matricula
@@ -127,7 +103,7 @@ class EstudianteService
      */
     public function resumenPagos(Matricula $matricula): array
     {
-        // Una sola regla de cobro para Matrículas, Estudiantes y Acudientes
+        // Una sola regla de cobro para Matrículas y Estudiantes
         return app(PagoService::class)->resumen($matricula);
     }
 
@@ -135,12 +111,22 @@ class EstudianteService
      * Porcentaje de asistencia en su grupo: presente o tarde cuentan como asistió;
      * las excusas no cuentan en contra. null si todavía no hay clases registradas.
      */
-    public function porcentajeAsistencia(User $estudiante, ?Curso $curso): ?int
+    public function porcentajeAsistencia(User $estudiante, ?Curso $curso, ?Matricula $matricula = null): ?int
     {
         if (! $curso) {
             return null;
         }
         $registros = $estudiante->asistencias->where('curso_id', $curso->id);
+        // Con la matrícula: lo registrado en cada grupo por el que pasó, solo en las fechas en que contaba allí
+        if ($matricula) {
+            $matricula->loadMissing('grupos');
+            $cursos = Curso::whereIn('id', $matricula->periodos()->pluck('curso_id')->push($curso->id)->unique())->get()->keyBy('id');
+            $registros = $estudiante->asistencias->filter(function ($a) use ($matricula, $cursos) {
+                $c = $cursos->get($a->curso_id);
+
+                return $c && Matricula::enVentanas($matricula->ventanasEn($c), $a->fecha->toDateString());
+            });
+        }
 
         // Misma regla que el panel Asistencia
         return AsistenciaService::porcentaje(

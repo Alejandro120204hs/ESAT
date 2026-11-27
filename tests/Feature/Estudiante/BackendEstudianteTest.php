@@ -126,7 +126,7 @@ class BackendEstudianteTest extends TestCase
 
         // No se cambia
         $this->actingAs($this->laura->estudiante)->postJson('/estudiante/pagos/plan', ['plan' => 'periodo'])
-            ->assertStatus(422)->assertJsonPath('errors.plan.0', 'Ya elegiste tu plan de pago y no se puede cambiar. Si necesitas ayuda, habla con la secretaría de tu sede.');
+            ->assertStatus(422)->assertJsonPath('errors.plan.0', 'Ya elegiste tu plan de pago y no se puede cambiar. Si necesitas ayuda, habla con el administrativo de tu sede.');
         $this->assertSame(3, Pago::where('matricula_id', $this->laura->id)->where('tipo', '!=', 'matricula')->count());
     }
 
@@ -231,9 +231,12 @@ class BackendEstudianteTest extends TestCase
             ->assertOk()->assertJsonPath('mensaje', 'Enviada. Acertaste 1 de 2: tu nota es 2,5.')
             ->assertJsonPath('datos.evaluaciones.0.respuesta.nota', 2.5);
 
-        // Una sola vez; y el docente ya no la edita ni la elimina
+        // Una sola vez; el docente ya no la elimina ni le agrega preguntas, pero sí corrige textos (27-11-2026)
         $this->actingAs($this->laura->estudiante)->postJson("/estudiante/aula/evaluaciones/{$ev->id}/respuestas", ['respuestas' => $correctas])->assertStatus(422);
-        $this->actingAs($this->docente)->putJson("/docente/aula/evaluaciones/{$ev->id}", $this->evaluacion())->assertStatus(422);
+        $mas = $this->evaluacion();
+        $mas['preguntas'][] = ['enunciado' => '¿Tercera?', 'opciones' => [['texto' => 'Sí', 'correcta' => true], ['texto' => 'No', 'correcta' => false]]];
+        $this->actingAs($this->docente)->putJson("/docente/aula/evaluaciones/{$ev->id}", $mas)->assertJsonValidationErrors(['preguntas' => 'no agregar ni quitar']);
+        $this->actingAs($this->docente)->putJson("/docente/aula/evaluaciones/{$ev->id}", $this->evaluacion())->assertOk();
         $this->actingAs($this->docente)->deleteJson("/docente/aula/evaluaciones/{$ev->id}")->assertStatus(422);
 
         // Le falta una pregunta: no se guarda nada
