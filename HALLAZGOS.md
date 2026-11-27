@@ -746,6 +746,323 @@ Decidido con el usuario: el precio sigue siendo uno para todas las sedes y un te
 - "Grupo A" (CUR-ADM-002-A) sigue activo aunque terminó el 02-11-2026.
 - Sede "Prueba1" con 2 secretarías de prueba (María Pérez y Pedro Ramírez, `admin@esat.test`).
 
+## 11. Auditoría del panel Estudiante (27-11-2026)
+
+Revisión de todo el panel **Estudiante** (rol `estudiante`, `/estudiante`) sobre `develop` después del PR #59 (panel
+Docente terminado). Incluye lo que el estudiante comparte con otros roles: el Aula virtual del docente, Mis pagos y el
+plan, comunicados, foro, perfil, login y bloqueo de cuentas.
+
+**Cómo se revisó:**
+- Cuatro revisiones independientes: seguridad, lógica contra las reglas de este documento y de `CLAUDE.md`, frontend
+  (XSS, reloj, accesibilidad, 375 px, impresión), y pruebas, estructura y rendimiento.
+- Cada hallazgo se volvió a comprobar contra el código. Los cuatro más serios se **reprodujeron con pruebas** sobre
+  SQLite en memoria (no tocan `esat`); esas pruebas no quedaron en el repo.
+- **✓ reproducido** = hay una prueba que lo muestra. **✓ código** = se siguió el camino completo en el código.
+  Sin ✓ = lo reportó una revisión y no se volvió a trazar.
+- Suite completa: **391 pruebas OK** (`CLAUDE.md` todavía dice 372). No hay Xdebug ni PCOV: la cobertura no se midió.
+
+**Lo que salió bien:**
+- **Ningún XSS:**
+  - todo lo que viene de la BD pasa por `esc()` antes de `innerHTML`;
+  - `@json` escapa `</script>`;
+  - el único `{!! !!}` es texto fijo;
+  - lo que escribe un estudiante sale escapado en los paneles del Docente, la secretaría y el Admin.
+- **Nada de otro estudiante:**
+  - cada descarga y escritura revisa que el recurso sea suyo (entregas, guía, material, comunicados, adjuntos del foro);
+  - el payload no trae datos personales de compañeros, ni lo oculto del foro, ni quién reportó;
+  - las preguntas de una evaluación con tiempo no salen antes de comenzarla.
+- **No hay asignación masiva en el perfil:** el estudiante solo cambia teléfono, dirección y correo.
+- **Doble envío protegido:** responder dos veces, reiniciar el reloj, entregar después de la fecha o ya calificada,
+  elegir el plan dos veces y reportar dos veces se rechazan con la fila bloqueada y, además, con índices únicos.
+- **Archivos:** las subidas validan el tipo real, se guardan con nombre aleatorio en el disco privado y sus rutas solo
+  llevan ids.
+- **Fuera del panel:** no hay registro público, y los otros roles reciben 403 en `/estudiante`.
+- **Lo que ve el estudiante cuadra con la secretaría:**
+  - asistencia, con festivos, "No hubo clase" e historial de grupos;
+  - promedio y aprobados;
+  - resumen de pagos de la matrícula que se muestra;
+  - destinatarios de comunicados y reglas del foro.
+- **Sin rastros de la maqueta:** no quedan `datos-ejemplo`, `?ejemplo` ni textos en inglés.
+
+### Altos
+
+#### ES1 ✓ Una evaluación con tiempo entrega las respuestas correctas y todavía acepta el envío (reproducido)
+- `AulaService::paraEstudiante` (`AulaService.php:69`, `:101`) manda `correcta` en cuanto pasa `fecha_limite`.
+- `responder` (`:183-187`) acepta hasta `terminaPara(inicio) + GRACIA_SEGUNDOS` y no revisa el cierre (`puedeResponder(…, false)`).
+- **Reproducido:** la evaluación dura 30 min y cierra a las 09:20; Laura la comienza a las 09:00.
+  1. A las 09:20:30 abre el Aula: cada pregunta trae su `correcta`.
+  2. Envía esas respuestas y recibe 200: "tu nota es 5,0".
+- **Variante:** un compañero que ya terminó le pasa las correctas a quien sigue dentro de su minuto de gracia.
+
+**Arreglo:** una sola regla, por ejemplo `Evaluacion::correctasVisibles($ahora)` = `ahora > fecha_limite + GRACIA_SEGUNDOS`.
+La usan `paraEstudiante` y el texto de `aula.js:359` ("Abajo están las respuestas correctas").
+
+#### ES2 ✓ El docente puede reabrir una evaluación que ya cerró (reproducido)
+- `EvaluacionRequest.php:59`: `after:now` acepta cualquier cierre futuro.
+- `mismoCierre()` (`:117`) solo exime cuando se conserva el mismo cierre, así que nada impide alargar uno vencido.
+- **Reproducido:** la evaluación cerró a las 09:30 y a las 10:00 Laura ya ve las correctas. El docente le pone cierre al
+  día siguiente y Laura responde con 5,0.
+- Sin respuestas, las preguntas se vuelven a crear con ids nuevos, pero el texto de la opción correcta es el mismo.
+
+**Arreglo:** si la evaluación ya cerró, solo se conserva su cierre; para dar más tiempo se publica otra.
+
+#### ES3 ✓ El Inicio se congela si el grupo todavía no tiene horario (código)
+- `dashboard.js`, `pintarHorario`: con `M.horario = []`, `Math.min.apply(null, [])` da `Infinity` y `Math.max` da `-Infinity`.
+- El `while (hFin - hIni < RANGO_MIN_H)` nunca termina y la pestaña se cuelga.
+- Sí pasa: un grupo existe sin horario ("Nuevo horario" solo ofrece grupos sin sesiones) y matricular no lo exige.
+- Es la primera pantalla después del login.
+- El Docente tiene la guarda (`docente/dashboard.js:397`, `#ini-sem-empty`); en la copia se perdió.
+
+**Arreglo:** copiar esa guarda al principio de `pintarHorario` ("Tu grupo todavía no tiene horario").
+
+### Medios
+
+#### ES4 ✓ Cinco claves malas con el correo de alguien lo sacan de la sesión que ya tenía abierta (reproducido)
+- `BloqueoService::registrarFallo` bloquea la cuenta 15 minutos (`MINUTOS_INTENTOS`).
+- `EnsureAccountIsEnabled::motivo` revisa `bloqueada()` en cada petición y cierra la sesión abierta.
+- **Reproducido:** con la sesión de Laura abierta, 5 fallos con su correo → su siguiente petición recibe 401.
+- **Impacto:**
+  - puede tumbar a un compañero en medio de una evaluación con tiempo o antes de una fecha de entrega;
+  - se repite cada 15 minutos y se pueden dejar 4 fallos listos para disparar el quinto cuando convenga;
+  - vale para todos los roles salvo el Admin y el superadmin.
+
+**Arreglo:** el bloqueo por intentos fallidos impide los **ingresos nuevos**, no corta una sesión abierta (`motivo()` en
+cada petición ignora `intentos_fallidos`). Además, contar los intentos por correo + IP.
+
+#### ES5 ✓ Mis pagos no muestra la deuda de otra matrícula (reproducido)
+- `PanelEstudianteService::pagosDe` solo mira la matrícula que se muestra (`matriculaVigente`).
+- La regla de este proyecto dice: "la cartera de un estudiante suma lo vencido de **todas** sus matrículas". Pagos de la
+  secretaría la cobra y el paz y salvo se le niega.
+- **Reproducido:** matrícula retirada con cuotas vencidas y una nueva activa. El panel dice vencido $0 y "al día".
+- Tampoco ve los recibos de la vieja.
+
+**Arreglo:** que el estado de cuenta sume lo vencido y lo por pagar de todas las matrículas no anuladas, o al menos que
+avise "Debes $ X de tu matrícula anterior".
+
+#### ES6 ✓ El envío automático de una evaluación con tiempo se puede perder (código)
+- `aula.js`, `tic()`: pone `ev.intento.enviando = true` y llama `mandar()`, que sale sin hacer nada si hay otro envío en curso.
+- **Se pierde:**
+  - si al llegar a 0:00 había otro envío en curso (el de otra evaluación), esa evaluación nunca se envía;
+  - si el envío automático falla por la red, no se reintenta aunque el servidor lo aceptaría dentro de la gracia.
+- La pantalla se queda en "Quedan 0:00".
+
+**Arreglo:** marca de envío por evaluación (no la global) y reintento dentro de la gracia; si se rechaza, marcarla
+`expirada`.
+
+#### ES7 ✓ El aviso promete un envío que no pasa si se cierra la ventana (código)
+- `aula.js:309`, `:322`, `:429` dicen: "si cierras esta ventana el tiempo sigue corriendo. Cuando se acabe se envía lo
+  que hayas marcado".
+- Pero solo envía la pestaña que tiene el Aula abierta: si la cierra o se va a otra pantalla, queda sin responder
+  (regla del servidor: quien la comenzó y no envió a tiempo queda sin responder).
+- **Dos pestañas o dispositivos:** las dos envían al llegar a cero, cada una con sus marcas; gana la primera, aunque la
+  otra fuera la que tenía las respuestas.
+
+**Arreglo:** corregir el texto ya. De fondo, guardar las marcas en el servidor mientras responde y calificar al vencer.
+
+#### ES8 ✓ En un computador compartido, las marcas de una evaluación pasan al siguiente estudiante (código)
+- `aula.js`, `leerMarcas`/`guardarMarcas`: la clave de `sessionStorage` es `'aul-marcas-' + id`, sin el estudiante.
+- `sessionStorage` sobrevive al cerrar sesión en la misma pestaña.
+- **Escenario (sala de sistemas):**
+  1. Laura marca parte de la evaluación 12 y cierra sesión.
+  2. Juan entra en la misma pestaña, abre la evaluación 12 y la ve marcada.
+  3. Si es con tiempo, el envío automático lleva las marcas de Laura.
+
+**Arreglo:** poner el id del estudiante en la clave y borrar las `aul-marcas-*` al cerrar sesión.
+
+#### ES9 ✓ Un aplazado, retirado o graduado ve tareas que no puede hacer (código)
+- `PanelEstudianteService.php:84` arma el Aula sin mirar el estado de la matrícula.
+- `aula.js` muestra Comenzar, Responder y Entregar, y `dashboard.js` las cuenta en "N cosas pendientes".
+- El servidor las rechaza al final ("Solo responde quien tiene la matrícula activa").
+
+**Arreglo:** mandar una bandera como `participaForo` (por ejemplo `puedeAula`) y mostrar todo como solo consulta, sin
+contarlo en el Inicio.
+
+#### ES10 ✓ "Sin nota todavía" en módulos que el docente no puede calificar (código)
+- `PanelEstudianteService::modulos` solo marca `no_cursado` si el módulo terminó antes del **inicio de la primera
+  ventana**.
+- El docente decide con el cruce contra **todas** las ventanas (`cursoAqui` en `docente/datos.js`, `NotasRequest`).
+- **Escenario:** aplazada el 20-08.
+  - "Normativa" (24-08 al 14-09) le sale "tu docente todavía no pone la nota", pero el docente no puede ponerla ("no
+    cursó este módulo").
+  - El módulo en curso le sale "En curso" aunque está aplazada.
+- `CalificacionService.php:194`, `:209` usa la misma regla: esos módulos le cuentan al docente como pendientes.
+
+**Arreglo:** `no_cursado` cuando el módulo no se cruza con ninguna ventana de `ventanasEn`, en los dos servicios.
+
+#### ES11 ✓ Elegir el plan después de un reintegro cobra los meses de aplazamiento (código)
+- `PagoService::elegirPlan` (`:150`) siempre genera desde `primeraCuota($grupo)`.
+- El reintegro (`MatriculaService.php:97`) genera "desde el reintegro, o desde que empieza ese grupo si es después".
+- **Escenario:** se matricula sin plan, se aplaza, se reintegra meses después y entonces elige el plan. Las cuotas de
+  los meses en que estuvo aplazado le quedan vencidas de una vez.
+- El aviso de cuántas quedarían vencidas (`cuotasVencidasSiElige`) repite el mismo cálculo.
+
+**Arreglo:** que `elegirPlan` y el aviso usen la misma fecha de arranque que el reintegro.
+
+#### ES12 ✓ Tras un cambio de grupo desaparece el Aula del grupo anterior (código)
+- `paraEstudiante` (`AulaService.php:62`) solo consulta el grupo actual: sus resultados, entregas y notas del grupo
+  viejo dejan de verse.
+- `estudioEn` (`:139`) mira `matriculas.curso_id`, no `matricula_grupos`: la guía y el material del grupo viejo dan 404.
+- Eso contradice "lo descarga quien tiene (o tuvo) matrícula en el grupo".
+
+**Arreglo:** recorrer los grupos de `matricula_grupos` en los dos.
+
+#### ES13 ✓ El archivo anterior se borra antes de que la petición confirme (código)
+- `AulaService::entregar` (`:257-260`) borra el archivo viejo al salir del `DB::transaction` interno.
+- Dentro de `TransaccionEscritura` esa transacción interna es solo un punto de guardado: la petición todavía no confirmó.
+- Si después falla `datos()` (500), la BD vuelve a apuntar al archivo viejo, que ya no existe, y el nuevo queda huérfano.
+- Mismo patrón en la guía y el material del docente (`:121`, `:173`).
+
+**Arreglo:** `DB::afterCommit(fn () => Storage::delete($viejo))` y borrar el nuevo si se deshace.
+
+#### ES14 ✓ Ninguna escritura del estudiante tiene límite de frecuencia (código)
+- `route:list` no muestra `throttle` en ninguna ruta de `/estudiante`.
+- **Ejemplo:** un bucle de temas del foro con adjuntos de 5 MB llena `storage/app/private/foro/{sede}` (hosting
+  compartido) y llena de spam el foro que ven menores de edad hasta que alguien modere.
+- Lo mismo con reportes, entregas de 10 MB e `iniciar`.
+
+**Arreglo:** `throttle` por usuario en las escrituras (por ejemplo 10 por minuto en el foro) y un tope diario de adjuntos.
+
+#### ES15 ✓ Cada página y cada escritura arma y manda todo el panel (código; medido en la revisión)
+- **N+1 en el foro:** `ForoTema::primerMensaje()` (`ForoTema.php:56`) hace `$this->mensajes()->first()` y no usa la
+  relación ya cargada. `ForoService::panel` llama `oculto()` por cada tema: **una consulta por tema**, en cada página y
+  cada escritura (también en el panel Docente).
+- **Medido** con 40 temas del foro, 30 comunicados y 12 evaluaciones y 12 actividades:
+  - `GET /estudiante`: 79 consultas y 217 KB de JSON (el foro son 139 KB);
+  - abrir un comunicado (`leido`): 100 consultas, porque `visible()` y `datos()` arman lo mismo dos veces.
+- El foro y los comunicados crecen sin límite y viajan a todas las pantallas, aunque solo los usan las suyas.
+
+**Arreglo:** usar `$this->mensajes->first()` cuando ya está cargada, un `datos()` por pantalla (que cada escritura
+devuelva solo lo que cambió) y paginar el foro.
+
+#### ES16 ✓ Bloqueos que duran toda la petición y la fecha límite medida tarde (código)
+- `responder` y `entregar` bloquean la fila **compartida** de la evaluación o la actividad (`AulaService.php:176`, `:232`).
+- Ese bloqueo sigue hasta que confirma `TransaccionEscritura`, es decir, después de armar `datos()`.
+- En `entregar`, el archivo de hasta 10 MB se guarda dentro del bloqueo y la fecha límite se compara después de esperarlo.
+- **Consecuencia:** cerca del cierre se atiende a uno por uno. Quien envió a las 23:59:50 puede recibir "La fecha límite
+  ya pasó" o un error por tiempo de espera del bloqueo.
+
+**Arreglo:**
+- tomar la hora al llegar la petición;
+- guardar el archivo antes de la transacción;
+- bloquear la fila del estudiante (su entrega o su matrícula) en vez de la compartida: los índices únicos ya impiden el
+  doble envío.
+
+### Bajos
+
+**Seguridad y cuentas**
+- **ES17** Los 60 s de gracia también sirven para hacer trampa: quien bloquea el envío automático gana un minuto. Bajar a
+  10–15 s o guardar las marcas en el servidor (ES7).
+- **ES18** Perfil (relacionado con M20):
+  - el estudiante cambia su correo, que es su usuario, sin escribir su clave actual: una sesión robada se vuelve una
+    cuenta robada;
+  - el cambio no queda en la auditoría y `PATCH /profile` está fuera de `transaccion`;
+  - puede poner su celular igual al de su contacto de emergencia (esa regla solo está en las Form Requests de la
+    secretaría).
+- **ES19** "¿Olvidaste tu contraseña?":
+  - responde "No encontramos ningún usuario…": deja saber qué correos existen;
+  - la ruta no tiene `throttle` propio (además, M27: todavía no envía el correo).
+- **ES20** Endurecimiento:
+  - los archivos se sirven en línea sin `X-Content-Type-Options: nosniff` ni CSP;
+  - `.env.example` trae `APP_DEBUG=true` y `SESSION_SECURE_COOKIE` sin definir;
+  - posible: un nombre de archivo con caracteres de control (TAB) rompe su descarga con 500. Limpiar el nombre al subir.
+- **ES21** Foro:
+  - los temas, respuestas y reportes del estudiante no quedan en la auditoría (decidir y dejarlo escrito);
+  - `ForoService::responder` no vuelve a revisar "cerrado u oculto" con la fila bloqueada (M13).
+- Ya conocido y decidido: la clave inicial es el documento y no se obliga a cambiarla (**A1**, descartado).
+
+**Lógica y pantallas** (✓ código las marcadas; las demás las reportó la revisión)
+- **ES22** Inicio y Mi carrera:
+  - ✓ el "% de la carrera" (`dashboard.js:185`) es clases dictadas ÷ clases: un aplazado o retirado sale en 100 % y un
+    cambio de grupo mezcla los dos grupos;
+  - una evaluación con el tiempo vencido sigue en "Por responder";
+  - "Lo perdiste… tienes una habilitación" con nota < 3,0 en un módulo que sigue en curso;
+  - el calendario no llega a las clases del grupo anterior;
+  - "Docente: " vacío si el grupo no tiene docente;
+  - ✓ el boletín deja en blanco los módulos `no_cursado` (`programa.js:260`) y no dice si la matrícula está aplazada.
+- **ES23** Mis pagos:
+  - "A pagar este mes" y "Próxima cuota" pueden mostrar la misma cifra;
+  - el pie dice "N cuotas" con la duración de hoy de la carrera y no con `totalCuotas` (B29);
+  - sin plan no aparece el estado de cuenta aunque deba el derecho;
+  - el aviso de vencidas no tiene en cuenta la beca del 100 % ni el saldo a favor;
+  - una cuota de $0 sale "Pagado" con "—";
+  - pueden aparecer textos como "anuló: null".
+- **ES24** Aula, foro y comunicados:
+  - el envío automático deshabilita el botón de otra evaluación abierta en el cajón;
+  - cerrar el cajón del foro con un envío en curso da un TypeError o repinta otro tema y borra su borrador;
+  - al abrir un comunicado el foco se pierde y el lector de pantalla lo lee dos veces;
+  - en "Todos" sin comunicados dice "No tienes comunicados sin leer";
+  - comunicados, instrucciones y comentarios pierden los saltos de línea (falta `white-space: pre-line`);
+  - los errores 409, 429 y 500 salen como "Revisa tu conexión" en vez del mensaje del servidor;
+  - dos respuestas que llegan en desorden pueden pisar el estado;
+  - el enlace del material solo pasa por `esc()`: conviene aceptar solo `http(s)` también en el JS.
+- **ES25** Accesibilidad e impresión:
+  - el `<input type=file>` invisible más su `label` hacen dos paradas de tabulador;
+  - la tarjeta del Aula (`<article tabindex=0>`) tiene un botón adentro;
+  - el foco se pierde al pulsar Comenzar;
+  - el menú móvil no tiene `aria-expanded`, se puede tabular estando cerrado y no se cierra con Escape;
+  - el menú de usuario no tiene `aria-expanded`;
+  - los errores del perfil no están ligados a sus campos;
+  - hay textos de menos de 12 px;
+  - con Ctrl+P, sin haber usado un botón de imprimir, sale una hoja en blanco o el último documento armado.
+- **ES26** Fechas:
+  - `datos($ahora)` usa `today()` en pagos y comunicados;
+  - "En curso" y la cuenta regresiva usan el reloj del equipo, y `D.hoy` queda fijo si la página pasa la medianoche abierta;
+  - el % de asistencia de las fichas cuenta la clase de hoy apenas se toma; el del panel, cuando termina.
+
+**Estructura y BD**
+- **ES27** Código muerto o viejo:
+  - `PagoService::derechoVencido` (solo lo usa una prueba; el índice de M26 ya no sirve);
+  - `PanelEstudianteService::institucion()` (el Blade de datos consulta la BD por su cuenta);
+  - imports sin usar en `PanelEstudianteService`;
+  - la condición `!== 'anulado'` de `:84`, que nunca se cumple;
+  - la columna `entregas.contenido`;
+  - comentarios viejos en `bootstrap/app.php:19` y `PanelEstudianteTest.php:11`;
+  - estilos del combobox y colores por escuela sin uso en el CSS del estudiante;
+  - `var URL` en `dashboard.js` tapa `window.URL`.
+- **ES28** Lógica repetida o en el lugar equivocado:
+  - `opcionesPlan` y `cuotasVencidasSiElige` repiten `generarCuotas`;
+  - `comunicadosVisibles` repite los destinatarios de `ComunicadoService`;
+  - `insertOrIgnore` de lecturas y `ForoReporte::create` están en los controladores, repetidos con el Docente;
+  - el servicio importa un trait de `Http\Requests`;
+  - los nombres no coinciden: `adjunto_ruta`/`adjunto_peso` contra `archivo_path`/`*_tamano`.
+- **ES29** Migraciones:
+  - se borran en cascada:
+    - `matricula_grupos.matricula_id`;
+    - `matricula_grupos.curso_id`;
+    - `evaluacion_intentos.estudiante_id`;
+    - el `curso_id` de `materiales`, `actividades` y `evaluaciones`.
+
+    Va contra "nada de historial se borra" (hoy ninguna ruta borra grupos);
+  - `Programa::mallaEnUso` no cuenta el material: si se quita un módulo, su material pasa a "todo el grupo" sin aviso;
+  - posible: en el MariaDB de XAMPP `evaluacion_intentos.iniciada_en` (primer `timestamp NOT NULL`) toma
+    `ON UPDATE CURRENT_TIMESTAMP`. Hoy esa fila nunca se actualiza; revisarlo con `SHOW CREATE TABLE`.
+
+### Pruebas que faltan (por riesgo)
+1. **Escrituras según el estado de la matrícula:** iniciar, responder, entregar y plan con matrícula aplazada,
+   retirada, graduada, anulada o sin matrícula.
+2. **Evaluación con tiempo:**
+   - las correctas no salen durante la gracia (ES1) ni al reabrirla (ES2);
+   - envío a los +40 s;
+   - envío automático vacío;
+   - iniciar ya cerrada o respondida;
+   - opción de otra pregunta.
+3. **Adjuntos del foro:** `GET foro/mensajes/{id}/adjunto` no tiene ninguna prueba (otra sede, oculto, archivo que falta).
+4. **Entregas:**
+   - de otro grupo;
+   - de un aplazado;
+   - de más de 10 MB;
+   - el archivo viejo no se pierde si la petición falla (ES13).
+5. **Comunicados (`leido` y `adjunto`):** otra sede, programado, archivado, borrador, `visible_hasta` vencido, cuenta
+   inactiva.
+6. **Foro y plan:**
+   - foro: responder o reportar sin matrícula vigente; el aplazado sí participa;
+   - plan: beca del 100 %; por periodo; después de un reintegro (ES11).
+7. **Lo que muestra el panel:**
+   - festivos y "No hubo clase" en el calendario del estudiante (`FestivosTest` solo prueba al docente);
+   - dos matrículas en el tiempo;
+   - deuda de una matrícula anterior (ES5).
+8. **Rendimiento:** una prueba que limite el número de consultas de `datos()` (habría detectado ES15).
+
 ## Orden sugerido
 
 1. ~~**C1–C5**, cada uno con su prueba.~~ Hecho y fusionado en `develop` (PR #42). **Falta pasarlo a `main`.**
@@ -763,3 +1080,7 @@ Decidido con el usuario: el precio sigue siendo uno para todas las sedes y un te
 6. Que un clon nuevo arranque: **A11** (seeder con superadmin, README y `.env.example`), **R5, R6**. Y **A12**: proteger las migraciones contra rollback.
 7. Antes del panel Estudiante: **A10** (elegir plan) y **M26** (índice para `derechoVencido`).
 8. Resto de medios, luego bajos, sitio público, limpieza del repo y **R7** antes de desplegar.
+9. Panel Estudiante (§11):
+   - primero **ES1–ES3**: las correctas que se filtran, reabrir una evaluación cerrada y el Inicio que se congela;
+   - luego **ES4–ES9**: la sesión que se tumba, la deuda que no se ve y el reloj de las evaluaciones;
+   - después el resto de medios, cada uno con su prueba.
