@@ -345,7 +345,8 @@ Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiant
 
 Route::middleware(['auth', 'transaccion'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Pide la contraseña actual para cambiar el correo: con límite, para no probar claves con una sesión ajena abierta
+    Route::patch('/profile', [ProfileController::class, 'update'])->middleware('throttle:10,1')->name('profile.update');
     // Sin "eliminar mi cuenta": borraría en cascada matrículas, pagos y recibos. Desactivar es del admin.
 });
 

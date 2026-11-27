@@ -80,7 +80,7 @@ class EvaluacionesTest extends TestCase
         $est = $this->laura->estudiante;
         $this->actingAs($est)->postJson("/estudiante/aula/evaluaciones/{$ev->id}/iniciar")->assertOk();
 
-        // El envío automático puede llegar unos segundos tarde (gracia de 60 s)
+        // El envío automático puede llegar unos segundos tarde (gracia de 20 s, Evaluacion::GRACIA_SEGUNDOS)
         Carbon::setTestNow('2026-10-21 09:10:40');
         $otra = $this->matricula();
         $this->actingAs($otra->estudiante)->postJson("/estudiante/aula/evaluaciones/{$ev->id}/iniciar")->assertOk();

@@ -13,8 +13,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Panel Estudiante › Comunicados: los que le llegan (ComunicadoService::recibidosPorEstudiantedosVisibles, los destinatarios de
- * siempre). Abrir uno lo marca leído en comunicado_lecturas, y así la secretaría ve lecturas reales.
+ * Panel Estudiante › Comunicados: los que le llegan (ComunicadoService::recibidosPorEstudiante, los destinatarios de siempre). Abrir uno lo marca leído en comunicado_lecturas, y así la secretaría ve lecturas reales.
  */
 class ComunicadoController extends Controller
 {

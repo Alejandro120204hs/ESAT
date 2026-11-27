@@ -360,6 +360,27 @@ class AuditoriaEstudianteTest extends TestCase
         $desconocido->assertSessionHasNoErrors();
         $this->assertNotNull($conocido->getSession()->get('status'));
         $this->assertSame($conocido->getSession()->get('status'), $desconocido->getSession()->get('status'));
+        // Pedirlo otra vez enseguida tampoco lo delata ("espera un momento" solo le pasaba a una cuenta que existe)
+        $this->post('/forgot-password', ['email' => $laura->email])->assertSessionHasNoErrors()
+            ->assertSessionHas('status', $conocido->getSession()->get('status'));
+    }
+
+    public function test_es18_la_contrasena_actual_no_se_puede_probar_sin_limite(): void
+    {
+        $laura = $this->matriculada();
+        for ($i = 0; $i < 10; $i++) {
+            $this->actingAs($laura)->patch('/profile', ['email' => 'otro@esat.test', 'clave_actual' => "mala$i"])->assertSessionHasErrors('clave_actual');
+        }
+        $this->patch('/profile', ['email' => 'otro@esat.test', 'clave_actual' => 'password'])->assertStatus(429);
+        $this->assertSame($laura->email, $laura->fresh()->email);
+    }
+
+    public function test_el_perfil_del_admin_no_queda_en_la_auditoria_de_la_sede_en_la_que_trabaja(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_general', 'sede_id' => null]);
+        $this->actingAs($admin)->post("/general/sedes/{$this->sede->id}/entrar")->assertRedirect();
+        $this->patch('/profile', ['nombres' => 'Ana', 'apellidos' => 'Gómez', 'email' => $admin->email, 'telefono' => '3001112233'])->assertSessionHasNoErrors();
+        $this->assertNull(Auditoria::where('entidad_id', $admin->id)->where('descripcion', 'like', 'Actualizó su perfil%')->value('sede_id'));
     }
 
     public function test_es20_cabeceras_de_seguridad_y_nombres_de_archivo_limpios(): void
@@ -368,7 +389,18 @@ class AuditoriaEstudianteTest extends TestCase
             ->assertHeader('X-Content-Type-Options', 'nosniff')
             ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $this->assertSame('Mi informe final.pdf', Archivos::nombre(UploadedFile::fake()->create("Mi\tinforme\nfinal.pdf", 10)));
+        // También en las páginas de error que arman otros middlewares
+        $this->get('/no-existe')->assertNotFound()->assertHeader('X-Content-Type-Options', 'nosniff');
+
+        $nombre = fn (string $n, string $tipo = 'application/pdf') => Archivos::nombre(UploadedFile::fake()->create($n, 10, $tipo));
+        $this->assertSame('Mi informe final.pdf', $nombre("Mi\tinforme\nfinal.pdf"));
+        // El U+202E invertía lo que se ve ("tareaexe.pdf") y la extensión del nombre no es de las aceptadas: la del contenido
+        $this->assertSame('tarea fdp.exe.pdf', $nombre("tarea\u{202E}fdp.exe"));
+        $this->assertSame('informe.pdf', $nombre('informe'));
+        $this->assertSame('archivo.pdf', $nombre("\t.pdf"));
+        $largo = $nombre(str_repeat('a', 300).'.pdf');
+        $this->assertSame(150, mb_strlen($largo));
+        $this->assertStringEndsWith('a.pdf', $largo);
     }
 
     public function test_es21_no_se_responde_un_tema_que_se_cerro_mientras_tanto(): void

@@ -1176,6 +1176,48 @@ perfil, imprimir con Ctrl+P y "¿Olvidaste tu contraseña?". La migración nueva
     `SHOW CREATE TABLE`);
   - `Programa::mallaEnUso` cuenta el material de clase.
 
+### Revisión de los bajos (27-11-2026)
+
+Dos revisiones después de corregir los bajos:
+- **Revisor independiente** (leyó el código sin conocer las conclusiones).
+- **Prueba con datos reales** sobre una copia de la BD, ya borrada, con dos estudiantes de grupos distintos:
+  - en las 7 pantallas y en la respuesta de una escritura no aparece ningún correo, documento, celular ni dirección de
+    otra persona (212 datos buscados), ni hashes, tokens o rutas de archivos, ni las correctas antes de tiempo;
+  - las 23 pruebas de acceso a lo ajeno quedan bloqueadas: otro grupo, otra sede, mensajes ocultos, paneles de otros roles
+    y sin sesión. En cada caso hay un control: lo propio sí abre.
+
+**Ninguna de las dos encontró fugas de datos ni accesos a lo ajeno.** El revisor sí encontró fallas de lógica, todas
+corregidas:
+- **Envío automático con la pestaña en segundo plano** (media):
+  - el problema: oculta más de 5 minutos, Chrome despierta los relojes repetidos una vez por minuto, y con 20 s de gracia
+    la evaluación podía quedar sin responder;
+  - el arreglo: `aula.js` deja avisos únicos desde la hora de fin (`armarAlarmas`; esos no se frenan así) y revisa enseguida
+    al volver a la pestaña;
+  - comprobado en el navegador con `setInterval` apagado: el envío sale con lo marcado.
+  - Con la pantalla del celular bloqueada el navegador no corre nada: eso solo lo resuelve guardar las marcas en el
+    servidor (sigue abierto, ES7).
+- **Recuperar la clave** (baja): "espera un momento" solo le salía a un correo que existe. Ahora la respuesta es siempre la
+  misma.
+- **Contraseña actual** (baja): `PATCH /profile` y `PUT /password` con `throttle:10,1`.
+  - Sigue: la clave inicial es el documento, que el estudiante ve en su panel; quien tenga su sesión abierta y nunca la
+    haya cambiado puede cambiar el correo (A1, decidido).
+- **Respuestas cruzadas** (baja): `datos.js` se queda con la que el servidor armó más tarde (`datos.reloj`), no con la del
+  envío más nuevo.
+- **Nombres de archivo** (baja): `Archivos::nombre` quita también los caracteres de formato (U+202E y demás) y deja una
+  extensión de las aceptadas (si la del nombre no lo es, la del contenido).
+- **Menores:**
+  - el cambio de perfil del Admin ya no queda en la sede en la que está trabajando;
+  - `CabecerasDeSeguridad` es global (también en 404 y 419);
+  - el diálogo del foro no se confunde con uno abierto después;
+  - dos comentarios.
+
+**Para antes de desplegar (R7):**
+- la CSP (ES20);
+- `trustProxies` si Hostinger pone un proxy delante: sin eso, los límites por IP (`throttle`) cuentan a todos como una sola
+  IP;
+- poner en cola el correo de recuperar la clave (el tiempo de respuesta delata si la cuenta existe; hoy el correo no se
+  envía, M27).
+
 ### Pruebas que faltan (por riesgo, antes de la corrección; casi todas están ahora en `AuditoriaEstudianteTest`)
 1. **Escrituras según el estado de la matrícula:** iniciar, responder, entregar y plan con matrícula aplazada,
    retirada, graduada, anulada o sin matrícula.

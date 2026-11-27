@@ -58,7 +58,11 @@ class ProfileController extends Controller
         // Lo que cada quien cambia de su perfil queda en la auditoría (HALLAZGOS M20, ES18)
         if ($cambios) {
             $nombres = ['email' => 'correo', 'telefono' => 'celular', 'direccion' => 'dirección', 'nombres' => 'nombres', 'apellidos' => 'apellidos'];
-            Auditoria::registrar('editar', $u, 'Actualizó su perfil: '.implode(', ', array_map(fn ($k) => $nombres[$k] ?? $k, $cambios)).'.', $u->sede_id);
+            $a = Auditoria::registrar('editar', $u, 'Actualizó su perfil: '.implode(', ', array_map(fn ($k) => $nombres[$k] ?? $k, $cambios)).'.', $u->sede_id);
+            // Sin sede propia (Admin, superadmin) el registro no va a la sede en la que el Admin esté trabajando
+            if ($u->sede_id === null && $a->sede_id !== null) {
+                $a->update(['sede_id' => null]);
+            }
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');

@@ -17,11 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'transaccion' => \App\Http\Middleware\TransaccionEscritura::class,
         ]);
         // Cuenta desactivada o bloqueada: se corta también la sesión abierta (el bloqueo por intentos fallidos solo frena
-        // ingresos nuevos). Y las cabeceras de seguridad en todas las respuestas web (ES20)
+        // ingresos nuevos)
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountIsEnabled::class,
-            \App\Http\Middleware\CabecerasDeSeguridad::class,
         ]);
+        // Las cabeceras de seguridad en toda respuesta, también las de error que arman otros middlewares (419, 404; ES20)
+        $middleware->append(\App\Http\Middleware\CabecerasDeSeguridad::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Dos envíos iguales al mismo tiempo (doble clic o dos personas): la BD rechaza el segundo por un índice único.

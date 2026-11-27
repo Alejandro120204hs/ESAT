@@ -39,14 +39,13 @@ class PasswordResetLinkController extends Controller
             return back()->with('status', __(Password::RESET_LINK_SENT));
         }
 
-        $status = Password::sendResetLink(
+        Password::sendResetLink(
             $request->only('email')
         );
 
         // Un correo que no existe recibe la misma respuesta que uno que sí: así no se puede averiguar quién tiene cuenta
-        // (auditoría del panel Estudiante, ES19). Solo "espera un momento" (el límite del broker por cuenta) se dice.
-        return $status == Password::RESET_THROTTLED
-                    ? back()->withInput($request->only('email'))->withErrors(['email' => __($status)])
-                    : back()->with('status', __(Password::RESET_LINK_SENT));
+        // (auditoría del panel Estudiante, ES19). Tampoco se dice "espera un momento": solo le pasa a una cuenta que existe
+        // y pidió el enlace hace menos de un minuto (revisión de ES19); el límite se sigue cumpliendo, en silencio.
+        return back()->with('status', __(Password::RESET_LINK_SENT));
     }
 }

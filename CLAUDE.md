@@ -424,10 +424,15 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   "Otras matrículas de X". Matrículas tiene 3 pestañas: vigentes (activas/aplazadas), Por matricular
   (sin matrícula vigente: nunca matriculados, o retirados/graduados que vuelven) y Finalizadas
   (graduadas/retiradas, solo consulta).
-- **Endurecimiento** (auditoría del panel Estudiante, ES19–ES20): `CabecerasDeSeguridad` (grupo `web`) pone `nosniff`,
-  `X-Frame-Options: SAMEORIGIN` y `Referrer-Policy`; todo nombre de archivo subido pasa por `App\Support\Archivos::nombre()`
-  (al agregar una subida, usarlo); "¿Olvidaste tu contraseña?" responde lo mismo exista o no el correo y tiene
-  `throttle:6,1`. Sin CSP todavía (los paneles pasan sus datos en `<script>` en línea; haría falta nonce).
+- **Endurecimiento** (auditoría del panel Estudiante, ES19–ES20 y su revisión):
+  - `CabecerasDeSeguridad` (middleware global, también en 404/419) pone `nosniff`, `X-Frame-Options: SAMEORIGIN` y
+    `Referrer-Policy`;
+  - todo nombre de archivo subido pasa por `App\Support\Archivos::nombre()`: sin caracteres de control ni de formato y
+    con una extensión de las aceptadas. Al agregar una subida, usarlo; si acepta otra extensión, agregarla a
+    `Archivos::EXTENSIONES`;
+  - "¿Olvidaste tu contraseña?" responde siempre lo mismo (tampoco "espera un momento") y tiene `throttle:6,1`;
+  - `PATCH /profile` y `PUT /password` tienen `throttle:10,1`;
+  - sin CSP todavía: los paneles pasan sus datos en `<script>` en línea y haría falta un nonce.
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
   guarda `users.ultimo_acceso` (también el de la cookie "Recordarme": listener de `Login` en `AppServiceProvider`, B22). El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
   `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o se bloquea,
@@ -549,7 +554,7 @@ Sitio público (una página por programa y escuela, rutas de siempre, cierre del
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (casi todas las 415 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 417 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Páginas de error
@@ -807,6 +812,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     `respuestas_estudiante.opcion_id` null y cuenta como malo (20 s de gracia, `GRACIA_SEGUNDOS`, ES17; un envío que falla
     por red, sesión o servidor se reintenta cada 3 s dentro de la gracia y conserva las marcas; agotada, queda sin responder).
     Quien la comenzó y no envió a tiempo queda sin responder (salir de la página con el tiempo corriendo pregunta antes).
+    Además del reloj de cada segundo, `armarAlarmas` deja avisos únicos desde la hora de fin y se revisa al volver a la
+    pestaña: Chrome despierta los relojes repetidos de una pestaña oculta una vez por minuto, más que la gracia.
     Las correctas le llegan al estudiante solo **pasada la gracia** (`Evaluacion::correctasVisibles`, ES1). Una evaluación
     **ya comenzada o respondida se corrige** (textos, cierre —se puede conservar uno vencido— y la respuesta correcta, que
     recalcula `es_correcta` de quienes ya respondieron) pero no se agregan ni quitan preguntas u opciones, no cambia el
@@ -876,7 +883,8 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
   con matrícula vigente y cuenta activa); foro de su sede sin lo oculto. Todo con la hora de `datos($ahora)` (nunca
   `today()`), y el panel recibe `reloj` (ms del servidor) y `zona` (minutos): `EST_DATOS.minutosAhora()` / `hoyAhora()` dan
   la hora de la sede aunque el equipo tenga otra, y al pasar la medianoche `datos.js` cambia `D.hoy` y avisa con el evento
-  `est:nuevo-dia` (el Inicio se recarga, ES26). Cada vista lo pasa con `@include('estudiante.partials.datos')`
+  `est:nuevo-dia` (el Inicio se recarga, ES26). Si dos escrituras se cruzan, `datos.js` se queda con la respuesta de
+  `reloj` más alto (la que el servidor armó después). Cada vista lo pasa con `@include('estudiante.partials.datos')`
   (`window.EST_SERVIDOR`: datos, institución de Admin › Configuración, sede, logo y rutas) y
   `public/assets/js/estudiante/datos.js` arma `EST_DATOS` y `EST_API` (`fetch` con CSRF; 401/419 recarga, 422 muestra el
   primer error; 409/429/500 con mensaje propio). Toda escritura responde `{ok, mensaje, datos}` y `datos.js` reemplaza

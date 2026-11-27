@@ -102,10 +102,11 @@
     function ruta(nombre, id) { return String(RUTAS[nombre] || '').replace('__ID__', encodeURIComponent(id)); }
 
     // cuerpo: objeto (va como JSON) o FormData (archivos). Resuelve {ok, mensaje, ...}; nunca rechaza.
-    // Si dos envíos se cruzan, los datos de uno viejo no pisan los de uno más nuevo (auditoría, ES24)
-    var turnos = 0, aplicado = 0;
+    // Si dos envíos se cruzan, se queda la respuesta que el servidor armó más tarde (datos.reloj), no la del envío más nuevo:
+    // una entrega pesada que se mandó primero llega al servidor después de un envío rápido y trae los datos más completos
+    // (ES24 y su revisión)
+    var aplicado = (S.datos && S.datos.reloj) || 0;
     function enviar(url, cuerpo) {
-        var turno = ++turnos;
         var esForm = typeof FormData !== 'undefined' && cuerpo instanceof FormData;
         var headers = { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' };
         if (!esForm) headers['Content-Type'] = 'application/json';
@@ -119,8 +120,8 @@
                 }
                 return r.json().catch(function () { return {}; }).then(function (j) {
                     if (r.ok && j.ok) {
-                        if (j.datos && turno > aplicado) {
-                            aplicado = turno;
+                        if (j.datos && (j.datos.reloj || 0) >= aplicado) {
+                            aplicado = j.datos.reloj || aplicado;
                             poner(j.datos);
                         }
                         return j;

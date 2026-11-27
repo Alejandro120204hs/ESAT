@@ -531,6 +531,7 @@
                 actual = buscar(clave(x));
                 pintarCajon();
                 render();
+                armarAlarmas();
                 var primera = $('aul-dw-body').querySelector('input[type=radio]');
                 (primera || $('aul-dw-cerrar')).focus();
             });
@@ -567,6 +568,20 @@
         });
     }
     setInterval(tic, 1000);
+    // Con la pestaña en segundo plano más de 5 minutos, Chrome despierta los relojes repetidos una vez por minuto, y la
+    // gracia es de 20 s: cada evaluación lleva además avisos únicos desde su hora de fin (esos no se frenan así), y al
+    // volver a la pestaña se revisa enseguida (revisión independiente de los bajos)
+    var alarmas = {};
+    function armarAlarmas() {
+        enCurso().forEach(function (ev) {
+            (alarmas[ev.id] || []).forEach(clearTimeout);
+            var falta = Math.max(0, ev.intento.finEn - Date.now());
+            alarmas[ev.id] = [200, 3300, 6600, 9900, 13200, 16500].map(function (ms) { return setTimeout(tic, falta + ms); });
+        });
+    }
+    armarAlarmas();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) tic(); });
+    window.addEventListener('focus', tic);
     // Salir de la página con una evaluación corriendo la deja sin responder: el navegador lo pregunta antes (ES7)
     window.addEventListener('beforeunload', function (e) {
         if (window.EST_RECARGANDO) return;

@@ -217,8 +217,10 @@
     });
 
     /* ── Diálogo: abrir tema / reportar ───────── */
-    var alEnviar = null, focoAntes = null, adjTema = null;
+    // dialogos: cuántos se han abierto; una respuesta solo toca el diálogo del que salió (si cerró ese y abrió otro, no)
+    var alEnviar = null, focoAntes = null, adjTema = null, dialogos = 0;
     function abrirDialogo(titulo, boton, cuerpo, fn) {
+        dialogos++;
         focoAntes = document.activeElement;
         alEnviar = fn;
         $('for-dlg-titulo').textContent = titulo;
@@ -259,8 +261,9 @@
                 if (titulo.value.trim().length < 5) { $('for-dlg-error').textContent = 'Escribe un título de al menos 5 letras.'; titulo.classList.add('is-invalido'); titulo.focus(); return; }
                 if (texto.value.trim().length < 10) { $('for-dlg-error').textContent = 'Escribe tu mensaje (al menos 10 caracteres).'; texto.classList.add('is-invalido'); texto.focus(); return; }
                 $('for-dlg-si').disabled = true;
+                var dlg = dialogos;
                 API.abrirTema({ categoria: cat, titulo: titulo.value, texto: texto.value, adjunto: adjTema }).then(function (r) {
-                    var seguia = !$('for-dialogo').hidden;
+                    var seguia = !$('for-dialogo').hidden && dialogos === dlg;
                     if (!r.ok) {
                         if (seguia) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; } else { toast(r.mensaje, true); }
                         return;
@@ -286,9 +289,9 @@
                 var m = $('for-rep-motivo');
                 if (m.value.trim().length < 5) { $('for-dlg-error').textContent = 'Cuéntale al administrativo por qué lo reportas (al menos 5 caracteres).'; m.classList.add('is-invalido'); m.focus(); return; }
                 $('for-dlg-si').disabled = true;
-                var temaId = abierto && abierto.id;
+                var temaId = abierto && abierto.id, dlg = dialogos;
                 API.reportar(mensajeId, m.value).then(function (r) {
-                    var seguia = !$('for-dialogo').hidden;
+                    var seguia = !$('for-dialogo').hidden && dialogos === dlg;
                     if (!r.ok) {
                         if (seguia) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; } else { toast(r.mensaje, true); }
                         return;
