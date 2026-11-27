@@ -98,9 +98,9 @@ class Programa extends Model
     }
 
     /**
-     * Ids (de $ids) de los programas cuya malla ya no se cambia: algún módulo tiene notas, o evaluaciones o actividades del
-     * Aula virtual (guardarMalla actualiza los módulos por posición: renombrar o borrar uno las dejaría en otro módulo o
-     * sin módulo). Sin $ids, de todos.
+     * Ids (de $ids) de los programas cuya malla ya no se cambia: algún módulo tiene notas, o evaluaciones, actividades o
+     * material de clase del Aula virtual (guardarMalla actualiza los módulos por posición: renombrar o borrar uno las
+     * dejaría en otro módulo o sin módulo; el material quedaba en "todo el grupo" sin aviso, ES29). Sin $ids, de todos.
      *
      * @return array<int, int>
      */
@@ -110,7 +110,7 @@ class Programa extends Model
             ->when($ids !== null, fn ($q) => $q->whereIn('programa_modulos.programa_id', $ids))
             ->distinct()->pluck('programa_modulos.programa_id')->all();
 
-        return array_values(array_unique(array_merge($con('calificaciones'), $con('evaluaciones'), $con('actividades'))));
+        return array_values(array_unique(array_merge($con('calificaciones'), $con('evaluaciones'), $con('actividades'), $con('materiales'))));
     }
 
     /**

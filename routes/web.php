@@ -343,7 +343,7 @@ Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiant
     Route::get('foro/mensajes/{mensaje}/adjunto', [EstudianteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'transaccion'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // Sin "eliminar mi cuenta": borraría en cascada matrículas, pagos y recibos. Desactivar es del admin.

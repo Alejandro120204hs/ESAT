@@ -74,22 +74,22 @@
 .for-tema-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; color: var(--muted); }
 .for-tema-der { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
 .for-tema-num { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1; }
-.for-tema-num small { display: block; margin-top: 3px; font-family: "Public Sans", system-ui, sans-serif; font-size: 0.72rem; font-weight: 600; color: var(--muted); }
-.for-tema-ult { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.for-tema-num small { display: block; margin-top: 3px; font-family: "Public Sans", system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.for-tema-ult { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .for-tags { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-.for-cat { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; background: #EEF2F7; color: var(--navy-3); }
-.for-pin { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #EEF2F7; color: var(--navy-2); }
+.for-cat { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; background: #EEF2F7; color: var(--navy-3); }
+.for-pin { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: #EEF2F7; color: var(--navy-2); }
 .for-pin svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Rol de la persona (punto de color + texto) — Secretaría › Foro */
-.for-rol { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.for-rol { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .for-rol i { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; flex-shrink: 0; }
 .for-rol i.r-e { background: var(--navy-2); }
 .for-rol i.r-d { background: var(--orange); }
 .for-rol i.r-x { background: #475569; }
 .for-av {
     width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.74rem; color: var(--white); background: #64748B;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.75rem; color: var(--white); background: #64748B;
 }
 .for-tema .for-av { width: 40px; height: 40px; }
 .for-av.r-e { background: var(--navy-2); }
@@ -127,7 +127,7 @@
 .for-msg-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .for-msg-quien { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .for-msg-nombre { font-weight: 700; font-size: 0.86rem; color: var(--navy-3); }
-.for-msg-fecha { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.for-msg-fecha { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .for-msg-texto { margin: 8px 0 0; font-size: 0.9rem; line-height: 1.6; color: #1F2937; white-space: pre-line; overflow-wrap: anywhere; }
 .for-msg-pie { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .for-msg-pie:empty { display: none; }
@@ -138,7 +138,7 @@
 .for-adjunto { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; margin-top: 10px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: var(--radius-md); background: var(--white); }
 .for-adjunto svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: var(--navy-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .for-adjunto strong { display: block; font-size: 0.82rem; color: var(--navy-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.for-adjunto small { font-size: 0.72rem; color: var(--muted); }
+.for-adjunto small { font-size: 0.75rem; color: var(--muted); }
 a.for-adjunto { text-decoration: none; transition: border-color 0.15s; }
 a.for-adjunto:hover { border-color: var(--orange); }
 a.for-adjunto:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }

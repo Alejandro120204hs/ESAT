@@ -81,8 +81,11 @@ class Evaluacion extends Model
     /** Por qué no se cambia el cierre de una evaluación que ya cerró (lo dicen la Form Request y el servicio). */
     public const NO_REABRIR = 'Esta evaluación ya cerró y sus estudiantes pueden ver las respuestas correctas: su cierre no se cambia. Para dar más tiempo publica una nueva.';
 
-    /** Segundos de más que se aceptan al enviar cuando se acabó el tiempo (lo que tarda en llegar el envío automático). */
-    public const GRACIA_SEGUNDOS = 60;
+    /**
+     * Segundos de más que se aceptan al enviar cuando se acabó el tiempo (lo que tarda en llegar el envío automático, con
+     * sus reintentos). 20 y no 60: quien bloquea el envío automático solo gana eso (auditoría del panel Estudiante, ES17).
+     */
+    public const GRACIA_SEGUNDOS = 20;
 
     /** Hasta cuándo puede responder quien la comenzó en $inicio: su tiempo o el cierre, lo que llegue primero. */
     public function terminaPara(DateTimeInterface $inicio): Carbon

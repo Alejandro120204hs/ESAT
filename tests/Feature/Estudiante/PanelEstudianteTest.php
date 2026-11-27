@@ -8,8 +8,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Panel Estudiante (solo frontend por ahora): el estudiante entra a su propio panel, solo él ve sus
- * pantallas, y su perfil es el del panel (real: guarda con ProfileController).
+ * Panel Estudiante: el estudiante entra a su propio panel, solo él ve sus pantallas, y su perfil es el del panel
+ * (guarda con ProfileController). Lo que ve y guarda está en BackendEstudianteTest y AuditoriaEstudianteTest.
  */
 class PanelEstudianteTest extends TestCase
 {

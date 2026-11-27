@@ -151,7 +151,7 @@
             </div>
             <div class="prg-paso" data-paso="3" hidden>
                 <p class="prg-hint prg-malla-ayuda">Los módulos se dictan en este orden. Las horas de la carrera son la suma de las horas de los módulos.</p>
-                <p class="prg-nota" id="prg-malla-bloqueada" hidden>Los módulos de esta carrera ya tienen notas o evaluaciones y actividades del Aula virtual: la malla queda como está.</p>
+                <p class="prg-nota" id="prg-malla-bloqueada" hidden>Los módulos de esta carrera ya tienen notas o contenido del Aula virtual (evaluaciones, actividades o material): la malla queda como está.</p>
                 <ol class="prg-malla-edit" id="prg-malla-edit"></ol>
                 <button type="button" class="prg-btn prg-btn-ghost prg-btn-sm" id="prg-mod-agregar">
                     <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

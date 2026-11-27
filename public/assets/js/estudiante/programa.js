@@ -93,7 +93,10 @@
             } else if (e === 'sin_nota') {
                 txt = '<p class="mpr-mod-txt">Terminó el ' + esc(fechaCorta(m.fin)) + '. Tu docente todavía no pone la nota.</p>';
             } else if (e === 'por_habilitar') {
-                txt = '<p class="mpr-mod-txt">Lo perdiste con <b>' + esc(nota(m.n)) + '</b>. Tienes una habilitación: tu docente te dirá la fecha.</p>';
+                // La habilitación es después de que el módulo termina: mientras sigue, la nota todavía puede cambiar
+                txt = m.estado === 'terminado'
+                    ? '<p class="mpr-mod-txt">Lo perdiste con <b>' + esc(nota(m.n)) + '</b>. Tienes una habilitación: tu docente te dirá la fecha.</p>'
+                    : '<p class="mpr-mod-txt">Tu nota va en <b>' + esc(nota(m.n)) + '</b>. Si el módulo termina por debajo de 3,0, tendrás una habilitación.</p>';
             } else if (e === 'habilito') {
                 txt = '<p class="mpr-mod-txt">Lo perdiste con ' + esc(nota(m.n)) + ' y lo aprobaste en la habilitación el ' + esc(fechaCorta(m.fechaHab)) + '.</p>';
             } else if (e === 'no_cursado') {
@@ -143,7 +146,9 @@
 
     var porFecha = {};
     D.clases.forEach(function (c) { porFecha[c.fecha] = c; });
-    var primerMes = fecha(G ? G.inicio : D.hoy); primerMes = new Date(primerMes.getFullYear(), primerMes.getMonth(), 1);
+    // Desde la primera clase que cuenta (puede ser de su grupo anterior) o el inicio de su grupo, lo que sea antes
+    var desdeCal = D.clases.length && (!G || D.clases[0].fecha < G.inicio) ? D.clases[0].fecha : (G ? G.inicio : D.hoy);
+    var primerMes = fecha(desdeCal); primerMes = new Date(primerMes.getFullYear(), primerMes.getMonth(), 1);
     var ultimoMes = fecha(G ? G.fin : D.hoy); ultimoMes = new Date(ultimoMes.getFullYear(), ultimoMes.getMonth(), 1);
     var mes = fecha(D.hoy); mes = new Date(mes.getFullYear(), mes.getMonth(), 1);
     if (mes < primerMes) mes = primerMes;
@@ -260,6 +265,7 @@
     });
 
     /* ── Boletín imprimible ───────────────────── */
+    var ESTADO_MAT_DOC = { aplazado: 'Aplazada', retirado: 'Retirada', graduado: 'Graduada' };
     var ESTADO_DOC = { aprobado: 'Aprobado', habilito: 'Aprobado (habilitación)', por_habilitar: 'Por habilitar', reprobado: 'Reprobado', sin_nota: 'Sin nota', en_curso: 'En curso', por_iniciar: 'Por iniciar', no_cursado: 'No cursado' };
     $('mpr-imprimir').addEventListener('click', function () {
         var E = D.estudiante, A = D.asistencia, e = window.EST_DOC.esc;
@@ -280,6 +286,7 @@
                     '<div><span>Grupo</span><strong>' + e(G ? G.nombre + ' · ' + G.codigo + ' · ' + G.jornada : '—') + '</strong></div>' +
                     '<div><span>Docente</span><strong>' + e(G && G.docente ? G.docente : '—') + '</strong></div>' +
                     '<div><span>Clases</span><strong>' + e(G ? 'Del ' + fechaAnio(G.inicio) + ' al ' + fechaAnio(G.fin) : '—') + '</strong></div>' +
+                    (M.estado !== 'activo' ? '<div><span>Matrícula</span><strong>' + e((ESTADO_MAT_DOC[M.estado] || M.estado) + (M.estadoFecha ? ' desde el ' + fechaAnio(M.estadoFecha) : '')) + '</strong></div>' : '') +
                 '</div>' +
                 '<table class="rc-tabla"><thead><tr><th>#</th><th>Módulo</th><th class="rc-num">Horas</th><th class="rc-num">Nota</th><th class="rc-num">Habilitación</th><th>Estado</th></tr></thead>' +
                 '<tbody>' + filas + '</tbody>' +

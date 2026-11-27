@@ -6,7 +6,7 @@
 
 <header class="app-topbar">
     <div class="app-topbar-left">
-        <button type="button" class="app-menu-toggle" aria-label="Abrir menú">
+        <button type="button" class="app-menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="app-sidebar">
             <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
         </button>
         <div class="app-topbar-sede">
@@ -22,7 +22,7 @@
             <div class="app-user-name">{{ auth()->user()->nombres }}</div>
             <div class="app-user-role">{{ auth()->user()->role->label() }}</div>
         </div>
-        <button type="button" class="app-user-trigger" aria-label="Menú de usuario" aria-haspopup="true">
+        <button type="button" class="app-user-trigger" aria-label="Menú de usuario" aria-haspopup="true" aria-expanded="false">
             <div class="app-user-avatar">{{ $initials }}</div>
         </button>
         <div class="app-user-dropdown">

@@ -2,8 +2,6 @@
 
 namespace App\Services\Academico;
 
-use App\Http\Requests\Estudiante\Foro\ExigeMatriculaVigente;
-use App\Enums\RolUsuario;
 use App\Models\Academico\Asistencia;
 use App\Models\Academico\Calificacion;
 use App\Models\Academico\Curso;
@@ -13,13 +11,11 @@ use App\Models\Comunicacion\Comunicado;
 use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\Finanzas\Recaudo;
-use App\Models\Institucional\Configuracion;
 use App\Models\User;
+use App\Services\Comunicacion\ComunicadoService;
 use App\Services\Comunicacion\ForoService;
 use App\Services\Finanzas\PagoService;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 /**
  * Panel Estudiante: todo lo que leen sus pantallas, en la forma que documenta public/assets/js/estudiante/datos.js
@@ -50,6 +46,7 @@ class PanelEstudianteService
         private PagoService $pagos,
         private AulaService $aula,
         private ForoService $foro,
+        private ComunicadoService $comunicados,
     ) {}
 
     /**
@@ -97,6 +94,9 @@ class PanelEstudianteService
 
         return [
             'hoy'          => $ahora->toDateString(),
+            // El reloj del servidor y su zona (Colombia): "En curso" y el cambio de día no dependen del reloj del equipo (ES26)
+            'reloj'        => $ahora->getTimestampMs(),
+            'zona'         => $ahora->utcOffset(),
             'estudiante'   => [
                 'id'        => $estudiante->id,
                 'nombres'   => $estudiante->nombres,
@@ -107,6 +107,7 @@ class PanelEstudianteService
             'matricula'    => $m ? $this->datosMatricula($m, $curso) : null,
             'modulos'      => $modulos,
             'moduloActual' => collect($modulos)->firstWhere('estado', 'en_curso'),
+            'avance'       => $m && $curso ? $this->avance($m, $curso, $ahora) : 0,
             'promedio'     => $conNota->isNotEmpty() ? round($conNota->avg('nota'), 1) : null,
             'aprobados'    => collect($modulos)->whereIn('estadoNota', ['aprobado', 'habilito'])->count(),
             'clases'       => $clases,
@@ -115,11 +116,11 @@ class PanelEstudianteService
             'actividades'  => $aula['actividades'],
             'materiales'   => $aula['materiales'],
             'aulaMotivo'   => $m && $m->estado !== 'activo' ? (self::AULA_SIN_MATRICULA_ACTIVA[$m->estado] ?? null) : null,
-            'pagos'        => $m ? $this->pagosDe($m, $curso, $estudiante) : null,
-            'comunicados'  => $this->comunicados($estudiante, $m),
+            'pagos'        => $m ? $this->pagosDe($m, $curso, $estudiante, $ahora) : null,
+            'comunicados'  => $this->comunicados($estudiante, $m, $ahora),
             'foro'         => $conForo ? $this->foro->panel($estudiante, 'estudiante.foro.adjunto') : null,
             // Abrir temas, responder y reportar: solo con matrícula vigente (los Form Requests del foro lo exigen)
-            'participaForo' => ExigeMatriculaVigente::participa($estudiante),
+            'participaForo' => ForoService::participa($estudiante),
         ];
     }
 
@@ -154,6 +155,31 @@ class PanelEstudianteService
                 'dia' => $s->dia, 'diaIso' => self::DIA_ISO[$s->dia] ?? 0, 'ini' => $s->inicio(), 'fin' => $s->fin(),
             ])->sortBy('diaIso')->values()->all() : [],
         ];
+    }
+
+    /**
+     * Cuánto lleva de la carrera: las clases de su grupo ya dictadas ÷ todas las del grupo, de su inicio a su fin (Curso::
+     * claseEn: festivos y "No hubo clase" no cuentan). Si se aplazó, retiró o graduó, se queda en ese día. Antes eran las
+     * clases de la propia ventana: un aplazado salía en 100 % y un cambio de grupo mezclaba los dos (auditoría, ES22).
+     */
+    private function avance(Matricula $m, Curso $curso, CarbonInterface $ahora): int
+    {
+        $hoy = $ahora->copy()->startOfDay();
+        $corte = $m->estado !== 'activo' && $m->estado_fecha && $m->estado_fecha->lt($hoy) ? $m->estado_fecha->copy()->startOfDay() : $hoy;
+        $total = 0;
+        $dictadas = 0;
+        for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($curso->fin()); $d->addDay()) {
+            if (! $s = $curso->claseEn($d)) {
+                continue;
+            }
+            $total++;
+            // La de hoy cuenta cuando termina (como en la asistencia)
+            if ($d->lt($corte) || ($d->equalTo($hoy) && $corte->equalTo($hoy) && $ahora->gte($d->copy()->setTimeFromTimeString($s->hora_fin)))) {
+                $dictadas++;
+            }
+        }
+
+        return $total ? (int) round($dictadas * 100 / $total) : 0;
     }
 
     /** Módulos de la malla con sus fechas (las del grupo) y la nota de esta matrícula. */
@@ -252,7 +278,7 @@ class PanelEstudianteService
 
     /* ── Pagos ─────────────────────────────────────────────────────────── */
 
-    private function pagosDe(Matricula $m, ?Curso $curso, User $estudiante): array
+    private function pagosDe(Matricula $m, ?Curso $curso, User $estudiante, CarbonInterface $ahora): array
     {
         $programa = $m->programa;
         $resumen = $this->pagos->resumen($m);
@@ -278,7 +304,7 @@ class PanelEstudianteService
                 ];
             });
 
-        $hoy = today()->toDateString();
+        $hoy = $ahora->toDateString();
         $proxima = $cobros->filter(fn ($c) => $c['restante'] > 0 && $c['vence'] && $c['vence'] >= $hoy)->sortBy('vence')->first();
         $derecho = $m->pagos->firstWhere('tipo', 'matricula');
 
@@ -291,10 +317,12 @@ class PanelEstudianteService
             'descuentoPct'  => (float) $m->descuento_pct,
             'opciones'      => $curso ? $this->opcionesPlan($m, $curso) : null,
             'vencidasSiElige' => $curso && ! $m->plan_pago && $m->estado === 'activo' ? [
-                'mensual' => $this->cuotasVencidasSiElige($m, $curso, 'mensual'),
-                'periodo' => $this->cuotasVencidasSiElige($m, $curso, 'periodo'),
+                'mensual' => $this->cuotasVencidasSiElige($m, $curso, 'mensual', $ahora),
+                'periodo' => $this->cuotasVencidasSiElige($m, $curso, 'periodo', $ahora),
             ] : ['mensual' => 0, 'periodo' => 0],
             'cobros'        => $cobros->all(),
+            // Las cuotas que se le generaron (B29), no la duración de hoy de la carrera
+            'totalCuotas'   => $total,
             'otras'         => $this->otrasDeudas($estudiante, $m),
             'recibos'       => $m->recaudos->sortByDesc(fn (Recaudo $r) => [$r->fecha_pago->timestamp, $r->id])->values()
                 ->map(fn (Recaudo $r) => [
@@ -343,7 +371,7 @@ class PanelEstudianteService
         $primera = $this->pagos->primeraCuota($curso)->toDateString();
         $op = function (string $plan) use ($programa, $precio, $primera, $m) {
             [$base, $sistema] = $this->pagos->valoresCuota($programa, $plan, $precio);
-            $base -= round($base * min((float) $m->descuento_pct, 100) / 100);
+            $base -= $this->pagos->descuentoDe($base, (float) $m->descuento_pct);
             $cuotas = $plan === 'mensual' ? (int) $programa->duracion_meses : (int) $programa->duracion_periodos;
 
             return [
@@ -362,41 +390,28 @@ class PanelEstudianteService
         return ['mensual' => $op('mensual'), 'periodo' => $op('periodo')];
     }
 
-    /** Cuántas cuotas quedarían vencidas de una vez si elige ese plan hoy (cuentan desde el inicio de clases). */
-    private function cuotasVencidasSiElige(Matricula $m, Curso $curso, string $plan): int
+    /**
+     * Cuántas cuotas quedarían vencidas de una vez si elige ese plan hoy (cuentan desde el inicio de clases): las mismas
+     * fechas que crearía elegirPlan (también después de un reintegro, ES11). Una cuota en $ 0 (beca completa sin cuota del
+     * sistema) no se debe, y el saldo a favor cubre las primeras (ES23).
+     */
+    private function cuotasVencidasSiElige(Matricula $m, Curso $curso, string $plan, CarbonInterface $ahora): int
     {
-        // Las mismas fechas que crearía elegirPlan (también después de un reintegro, ES11)
-        return count(array_filter($this->pagos->fechasCuotas($m, $plan), fn ($f) => $f->lt(today())));
+        $cuota = $this->opcionesPlan($m, $curso)[$plan]['cuota'];
+        if ($cuota <= 0) {
+            return 0;
+        }
+        $hoy = $ahora->copy()->startOfDay();
+        $vencidas = count(array_filter($this->pagos->fechasCuotas($m, $plan), fn ($f) => $f->lt($hoy)));
+
+        return max(0, $vencidas - (int) floor((float) $m->saldo_favor / $cuota));
     }
 
     /* ── Comunicados y foro ─────────────────────────────────────────────── */
 
-    /**
-     * Comunicados que le llegan (los mismos destinatarios de ComunicadoService): publicados y sin archivar de su sede,
-     * para toda la sede o para estudiantes, y los de su docente a su grupo; solo con matrícula vigente y cuenta activa.
-     */
-    public function comunicadosVisibles(User $estudiante, ?Matricula $m): Collection
+    private function comunicados(User $estudiante, ?Matricula $m, CarbonInterface $ahora): array
     {
-        if (! $m || ! in_array($m->estado, Matricula::VIGENTES, true) || ! $estudiante->activo || ! $estudiante->sede_id) {
-            return collect();
-        }
-        $hoy = today()->toDateString();
-
-        return Comunicado::where('sede_id', $estudiante->sede_id)
-            ->whereNull('archivado_en')
-            ->whereIn('estado', ['publicado', 'programado'])
-            ->where(fn ($q) => $q->whereIn('destino', ['sede', 'estudiantes'])
-                ->orWhere(fn ($q2) => $q2->where('destino', 'grupo')->where('curso_id', $m->curso_id)))
-            ->where(fn ($q) => $q->whereNull('visible_hasta')->orWhereDate('visible_hasta', '>=', $hoy))
-            ->with(['autor', 'curso.programa', 'lectores' => fn ($q) => $q->where('users.id', $estudiante->id)])
-            ->get()
-            ->filter(fn (Comunicado $c) => $c->estadoActual() === 'publicado')
-            ->values();
-    }
-
-    private function comunicados(User $estudiante, ?Matricula $m): array
-    {
-        return $this->comunicadosVisibles($estudiante, $m)
+        return $this->comunicados->recibidosPorEstudiante($estudiante, $m, $ahora)
             ->sortByDesc(fn (Comunicado $c) => [(int) $c->fijado, ($c->publicado_en ?? $c->created_at)->timestamp])
             ->values()
             ->map(function (Comunicado $c) {
@@ -424,14 +439,5 @@ class PanelEstudianteService
                     ] : null,
                 ];
             })->all();
-    }
-
-    /** Datos legales de ESAT y la sede para los documentos imprimibles (Admin › Configuración). */
-    public function institucion(User $estudiante): array
-    {
-        return [
-            'institucion' => Configuracion::institucion(),
-            'sede'        => $estudiante->sede?->only(['nombre', 'direccion', 'ciudad']),
-        ];
     }
 }

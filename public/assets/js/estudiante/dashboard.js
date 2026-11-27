@@ -9,7 +9,7 @@
     var app = document.getElementById('ini-app');
     if (!D || !app) return;
 
-    var URL = {
+    var RUTA = {
         programa: app.dataset.urlPrograma, aula: app.dataset.urlAula,
         pagos: app.dataset.urlPagos, comunicados: app.dataset.urlComunicados
     };
@@ -44,7 +44,8 @@
     function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
     function diaIso(d) { var w = d.getDay(); return w === 0 ? 7 : w; }
     function minutos(hhmm) { var p = String(hhmm).split(':'); return +p[0] * 60 + +p[1]; }
-    function ahoraMin() { var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+    // La hora de la sede (la del servidor), no la del computador (ES26)
+    function ahoraMin() { return D.minutosAhora(); }
     function capital(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
     function diasEntre(a, b) { return Math.round((fecha(b) - fecha(a)) / 86400000); }
     function fechaLarga(iso) { var f = fecha(iso); return DIAS[f.getDay()] + ' ' + f.getDate() + ' de ' + MESES[f.getMonth()]; }
@@ -70,6 +71,9 @@
     }
     function tonoNota(n) { return n == null ? 'none' : (n >= 4 ? 'ok' : (n >= D.reglas.APRUEBA ? 'warn' : 'bad')); }
     function tonoAsis(p) { return p == null ? 'none' : (p >= 90 ? 'ok' : (p >= D.reglas.MINIMO ? 'warn' : 'bad')); }
+
+    // Pasó la medianoche con la página abierta: lo de "hoy" (clase, pendientes, saludo) se vuelve a pedir
+    document.addEventListener('est:nuevo-dia', function () { window.EST_RECARGANDO = true; window.location.reload(); });
 
     var M = D.matricula, G = M && M.grupo;
     // Sin matrícula o sin grupo no hay clases, avance ni horario: solo el saludo y el aviso
@@ -172,7 +176,8 @@
             '<div class="ini-clase-info">' +
                 '<div class="ini-clase-tags"><span class="app-status-tag ' + chip[0] + '">' + chip[1] + '</span></div>' +
                 '<h4 class="ini-clase-prog">' + esc(mod ? mod.nombre : M.programa) + '</h4>' +
-                '<p class="ini-clase-meta">Módulo ' + (mod ? mod.numero + ' de ' + D.modulos.length : '') + ' · Docente: <b>' + esc(G.docente) + '</b></p>' +
+                '<p class="ini-clase-meta">' + [mod ? 'Módulo ' + mod.numero + ' de ' + D.modulos.length : '', G.docente ? 'Docente: <b>' + esc(G.docente) + '</b>' : 'Docente por asignar']
+                    .filter(Boolean).join(' · ') + '</p>' +
                 '<p class="ini-clase-cuenta" data-ini="' + esc(c.ini) + '" data-fin="' + esc(c.fin) + '" data-est="' + est + '">' + esc(cuentaTxt(c, est)) + '</p>' +
             '</div>' +
         '</li></ul>';
@@ -186,9 +191,8 @@
 
     /* ── Tu avance ────────────────────────────── */
     function pintarAvance() {
-        var total = D.clases.length;
-        var dictadas = D.clases.filter(function (c) { return c.estado !== 'futura' && c.estado !== 'hoy'; }).length;
-        var pct = total ? Math.round(dictadas * 100 / total) : 0;
+        // Lo calcula el servidor con el calendario de su grupo (PanelEstudianteService::avance)
+        var pct = D.avance || 0;
         var mod = D.moduloActual, A = D.asistencia;
         $('ini-avance-sub').textContent = M.programa + ' · ' + G.nombre + ' · termina el ' + fechaLarga(G.fin);
 
@@ -209,7 +213,7 @@
                 '<div class="ini-dato"><span class="ini-dato-lbl">Asistencia</span><span class="ini-dato-val ini-tono-' + tA + '">' + (A.pct == null ? '—' : A.pct + NB + '%') + '</span>' +
                     '<span class="ini-dato-sub">' + (A.pct != null && A.pct < 90 ? 'La referencia es el 80' + NB + '%' : 'Faltaste a ' + esc(plural(A.A, 'clase', 'clases'))) + '</span></div>' +
             '</div>' +
-            '<div class="ini-avance-pie"><a class="ini-btn ini-btn-ghost" href="' + esc(URL.programa) + '">' + ICON.notas + 'Ver notas y asistencia</a></div>';
+            '<div class="ini-avance-pie"><a class="ini-btn ini-btn-ghost" href="' + esc(RUTA.programa) + '">' + ICON.notas + 'Ver notas y asistencia</a></div>';
     }
 
     /* ── Pendientes ───────────────────────────── */
@@ -241,35 +245,35 @@
         var tareas = p.tareas.map(function (t) {
             var esEval = t.tipo === 'evaluacion';
             var dia = t.cierra.slice(0, 10);
-            return itemHtml(enlace(URL.aula, { id: t.tipo + '-' + t.id }), fichaFecha(dia, 'ini-ficha-pend'), t.titulo,
+            return itemHtml(enlace(RUTA.aula, { id: t.tipo + '-' + t.id }), fichaFecha(dia, 'ini-ficha-pend'), t.titulo,
                 (esEval ? 'Evaluación · cierra ' : 'Actividad · se entrega hasta ') + cuando(dia) + ' a las ' + t.cierra.slice(11));
         });
         var hab = p.hab.map(function (m) {
-            return itemHtml(URL.programa, '<span class="ini-ficha ini-ficha-riesgo"><small>nota</small><b>' + esc(nota(m.n)) + '</b></span>',
+            return itemHtml(RUTA.programa, '<span class="ini-ficha ini-ficha-riesgo"><small>nota</small><b>' + esc(nota(m.n)) + '</b></span>',
                 'Habilitación de ' + m.nombre, 'Perdiste el módulo ' + m.numero + ': tu docente te dirá la fecha');
         });
         var pagos = p.pagos.map(function (x) {
             if (x.tipo === 'plan') {
-                return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-pend" aria-hidden="true">' + ICON.plata + '</span>',
+                return itemHtml(RUTA.pagos, '<span class="ini-ficha ini-ficha-pend" aria-hidden="true">' + ICON.plata + '</span>',
                     'Elige tu plan de pago', 'Mensual o ' + D.pagos.opciones.periodo.nombre.toLowerCase() + '. Sin plan no se generan tus cuotas');
             }
             if (x.tipo === 'otra') {
                 var debe = x.otras.reduce(function (s, o) { return s + o.vencido; }, 0);
-                return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
+                return itemHtml(RUTA.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
                     'Tienes ' + plata(debe) + ' vencido en ' + (x.otras.length === 1 ? 'tu otra matrícula' : 'tus otras matrículas'),
                     x.otras.map(function (o) { return o.programa; }).join(', ') + ' · se paga en la sede');
             }
             var venc = D.pagos.cobros.filter(function (c) { return c.estado === 'vencido'; });
             if (x.tipo === 'vencido') {
-                return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
+                return itemHtml(RUTA.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
                     'Tienes ' + plata(R.vencido) + ' vencido',
                     (venc.length === 1 ? venc[0].concepto + ' · venció el ' + fechaCorta(venc[0].vence) : plural(venc.length, 'cobro vencido', 'cobros vencidos')) + ' · se paga en la sede');
             }
-            return itemHtml(URL.pagos, fichaFecha(R.proxima.vence, 'ini-ficha-pend'),
+            return itemHtml(RUTA.pagos, fichaFecha(R.proxima.vence, 'ini-ficha-pend'),
                 'Tu cuota vence ' + cuando(R.proxima.vence), R.proxima.concepto + ' · ' + plata(R.proxima.restante));
         });
         var leer = p.leer.map(function (c) {
-            return itemHtml(enlace(URL.comunicados, { id: c.id }), fichaFecha(c.fecha, 'ini-ficha-leer'), c.titulo, c.de.nombre + ' · ' + hace(c.fecha));
+            return itemHtml(enlace(RUTA.comunicados, { id: c.id }), fichaFecha(c.fecha, 'ini-ficha-leer'), c.titulo, c.de.nombre + ' · ' + hace(c.fecha));
         });
 
         $('ini-pend-body').innerHTML =

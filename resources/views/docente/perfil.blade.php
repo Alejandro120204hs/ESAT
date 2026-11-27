@@ -78,23 +78,33 @@
                 <div class="prf-field">
                     <label for="email">Correo electrónico</label>
                     <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required autocomplete="email"
-                           aria-describedby="email-ayuda" @error('email') aria-invalid="true" @enderror>
+                           data-actual="{{ $user->email }}"
+                           aria-describedby="email-ayuda @error('email') email-err @enderror" @error('email') aria-invalid="true" @enderror>
                     <span class="prf-ayuda" id="email-ayuda">Es tu usuario para ingresar a ESAT.</span>
-                    @error('email') <span class="prf-err">{{ $message }}</span> @enderror
+                    @error('email') <span class="prf-err" id="email-err">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Cambiar el correo (que es el usuario) pide la contraseña actual: una sesión abierta en otro computador no basta --}}
+                <div class="prf-field" id="prf-clave-correo" @unless ($errors->has('clave_actual') || old('email', $user->email) !== $user->email) hidden @endunless>
+                    <label for="clave_actual">Tu contraseña actual</label>
+                    <input id="clave_actual" name="clave_actual" type="password" autocomplete="current-password"
+                           aria-describedby="clave-actual-ayuda @error('clave_actual') clave-actual-err @enderror" @error('clave_actual') aria-invalid="true" @enderror>
+                    <span class="prf-ayuda" id="clave-actual-ayuda">Para cambiar tu correo, confirma que eres tú.</span>
+                    @error('clave_actual') <span class="prf-err" id="clave-actual-err">{{ $message }}</span> @enderror
                 </div>
 
                 <div class="prf-row">
                     <div class="prf-field">
                         <label for="telefono">Celular</label>
                         <input id="telefono" name="telefono" type="tel" inputmode="numeric" value="{{ old('telefono', $user->telefono) }}"
-                               placeholder="Ej.: 3001234567" autocomplete="tel" @error('telefono') aria-invalid="true" @enderror>
-                        @error('telefono') <span class="prf-err">{{ $message }}</span> @enderror
+                               placeholder="Ej.: 3001234567" autocomplete="tel" @error('telefono') aria-invalid="true" aria-describedby="telefono-err" @enderror>
+                        @error('telefono') <span class="prf-err" id="telefono-err">{{ $message }}</span> @enderror
                     </div>
                     <div class="prf-field">
                         <label for="direccion">Dirección de residencia</label>
                         <input id="direccion" name="direccion" type="text" value="{{ old('direccion', $user->direccion) }}"
-                               placeholder="Calle, carrera, barrio..." autocomplete="street-address" @error('direccion') aria-invalid="true" @enderror>
-                        @error('direccion') <span class="prf-err">{{ $message }}</span> @enderror
+                               placeholder="Calle, carrera, barrio..." autocomplete="street-address" @error('direccion') aria-invalid="true" aria-describedby="direccion-err" @enderror>
+                        @error('direccion') <span class="prf-err" id="direccion-err">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
@@ -154,27 +164,30 @@
                 <label for="current_password">Contraseña actual</label>
                 <div class="prf-input-wrap">
                     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <input id="current_password" name="current_password" type="password" autocomplete="current-password" placeholder="••••••••">
+                    <input id="current_password" name="current_password" type="password" autocomplete="current-password" placeholder="••••••••"
+                           @error('current_password', 'updatePassword') aria-invalid="true" aria-describedby="current-password-err" @enderror>
                 </div>
-                @error('current_password', 'updatePassword') <span class="prf-err">{{ $message }}</span> @enderror
+                @error('current_password', 'updatePassword') <span class="prf-err" id="current-password-err">{{ $message }}</span> @enderror
             </div>
 
             <div class="prf-field">
                 <label for="password">Nueva contraseña</label>
                 <div class="prf-input-wrap">
                     <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+                    <input id="password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"
+                           @error('password', 'updatePassword') aria-invalid="true" aria-describedby="password-err" @enderror>
                 </div>
-                @error('password', 'updatePassword') <span class="prf-err">{{ $message }}</span> @enderror
+                @error('password', 'updatePassword') <span class="prf-err" id="password-err">{{ $message }}</span> @enderror
             </div>
 
             <div class="prf-field">
                 <label for="password_confirmation">Confirmar contraseña</label>
                 <div class="prf-input-wrap">
                     <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" placeholder="Repite la nueva contraseña">
+                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" placeholder="Repite la nueva contraseña"
+                           @error('password_confirmation', 'updatePassword') aria-invalid="true" aria-describedby="password-confirmation-err" @enderror>
                 </div>
-                @error('password_confirmation', 'updatePassword') <span class="prf-err">{{ $message }}</span> @enderror
+                @error('password_confirmation', 'updatePassword') <span class="prf-err" id="password-confirmation-err">{{ $message }}</span> @enderror
             </div>
 
             <div class="prf-tip">
@@ -198,3 +211,16 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    // La contraseña actual se pide solo si cambia el correo (ProfileUpdateRequest)
+    (function () {
+        var correo = document.getElementById('email'), caja = document.getElementById('prf-clave-correo');
+        if (!correo || !caja) return;
+        correo.addEventListener('input', function () {
+            caja.hidden = correo.value.trim().toLowerCase() === String(correo.dataset.actual).toLowerCase() && !caja.querySelector('.prf-err');
+        });
+    })();
+</script>
+@endpush

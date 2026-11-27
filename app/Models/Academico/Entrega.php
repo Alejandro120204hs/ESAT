@@ -6,6 +6,11 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Entrega de una actividad del Aula virtual: un archivo del estudiante (archivo_path/_nombre/_tamano) y la nota del
+ * docente. La columna `contenido` (texto) viene de las tablas de septiembre y no se usa: la entrega es solo un archivo.
+ * No se borra para no tocar una tabla con datos (auditoría, ES27).
+ */
 class Entrega extends Model
 {
     protected $fillable = [

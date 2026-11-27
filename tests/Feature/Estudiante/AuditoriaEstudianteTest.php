@@ -3,6 +3,8 @@
 namespace Tests\Feature\Estudiante;
 
 use App\Models\Academico\Actividad;
+use App\Models\Academico\Asistencia;
+use App\Models\Academico\ContactoEmergencia;
 use App\Models\Academico\Curso;
 use App\Models\Academico\Evaluacion;
 use App\Models\Academico\Material;
@@ -10,22 +12,31 @@ use App\Models\Academico\Programa;
 use App\Models\Comunicacion\ForoMensaje;
 use App\Models\Comunicacion\ForoTema;
 use App\Models\Finanzas\Matricula;
+use App\Models\Institucional\Configuracion;
+use App\Models\Sistema\Auditoria;
 use App\Models\User;
+use App\Services\Academico\EstudianteService;
+use App\Services\Academico\PanelEstudianteService;
 use App\Services\Academico\AulaService;
 use App\Services\Academico\MatriculaService;
+use App\Services\Comunicacion\ForoService;
 use App\Services\Finanzas\PagoService;
 use App\Services\Sistema\BloqueoService;
+use App\Support\Archivos;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\Feature\Admin\DatosAcademicos;
 use Tests\TestCase;
 
 /**
- * Auditoría del panel Estudiante (27-11-2026, HALLAZGOS §11): una prueba por cada hallazgo alto y medio corregido.
- * Lo que vive solo en el navegador (ES3 Inicio sin horario, ES6–ES8 reloj y marcas) se comprobó en el navegador.
+ * Auditoría del panel Estudiante (27-11-2026, HALLAZGOS §11): una prueba por cada hallazgo alto y medio corregido, y
+ * las de los bajos (ES17–ES29) que viven en el servidor. Lo que vive solo en el navegador (ES3 Inicio sin horario, ES6–ES8
+ * reloj y marcas, ES24–ES25 pantallas y accesibilidad) se comprobó en el navegador.
  */
 class AuditoriaEstudianteTest extends TestCase
 {
@@ -67,13 +78,13 @@ class AuditoriaEstudianteTest extends TestCase
         $this->actingAs($laura)->postJson("/estudiante/aula/evaluaciones/{$ev->id}/iniciar")->assertOk();
 
         // Ya cerró, pero está dentro de la gracia de su envío automático: no ve las correctas y su envío se recibe
-        Carbon::setTestNow('2026-10-21 09:20:30');
+        Carbon::setTestNow('2026-10-21 09:20:15');
         $this->actingAs($laura)->get('/estudiante/aula')->assertViewHas('datos', fn (array $d) => $d['evaluaciones'][0]['verCorrectas'] === false
             && collect($d['evaluaciones'][0]['preguntas'])->pluck('correcta')->filter()->isEmpty());
         $this->postJson("/estudiante/aula/evaluaciones/{$ev->id}/respuestas", ['respuestas' => [$ev->preguntas[0]->id => $this->opcion($ev, 0, false)]])->assertOk();
 
         // Pasada la gracia nadie puede enviar: ahora sí salen
-        Carbon::setTestNow('2026-10-21 09:21:01');
+        Carbon::setTestNow('2026-10-21 09:20:21');
         $this->actingAs($laura)->get('/estudiante/aula')->assertViewHas('datos', fn (array $d) => $d['evaluaciones'][0]['verCorrectas'] === true
             && collect($d['evaluaciones'][0]['preguntas'])->pluck('correcta')->filter()->count() === 2);
     }
@@ -315,6 +326,153 @@ class AuditoriaEstudianteTest extends TestCase
 
         $this->actingAs($laura)->get('/estudiante')->assertViewHas('datos', fn (array $d) => $d['foro'] === null);
         $this->get('/estudiante/foro')->assertViewHas('datos', fn (array $d) => count($d['foro']['temas']) === 15);
+    }
+
+    /* ── Bajos (ES17–ES29) ── */
+
+    public function test_es18_cambiar_el_correo_pide_la_clave_y_queda_en_la_auditoria(): void
+    {
+        $laura = $this->matriculada();
+        $this->actingAs($laura)->patch('/profile', ['email' => 'nuevo.correo@esat.test'])->assertSessionHasErrors(['clave_actual' => 'Para cambiar tu correo escribe tu contraseña actual.']);
+        $this->patch('/profile', ['email' => 'nuevo.correo@esat.test', 'clave_actual' => 'mala'])->assertSessionHasErrors(['clave_actual' => 'La contraseña no es correcta.']);
+        $this->assertNotSame('nuevo.correo@esat.test', $laura->fresh()->email);
+
+        $this->patch('/profile', ['email' => 'nuevo.correo@esat.test', 'clave_actual' => 'password', 'telefono' => '3001234567'])->assertSessionHasNoErrors();
+        $this->assertSame('nuevo.correo@esat.test', $laura->fresh()->email);
+        $this->assertSame('Actualizó su perfil: correo, celular.', Auditoria::where('entidad_id', $laura->id)->where('descripcion', 'like', 'Actualizó su perfil%')->latest('id')->value('descripcion'));
+        // Sin cambiar el correo no pide la clave
+        $this->patch('/profile', ['email' => 'nuevo.correo@esat.test', 'direccion' => 'Calle 5 # 3-20'])->assertSessionHasNoErrors();
+    }
+
+    public function test_es18_el_celular_no_puede_ser_el_de_su_contacto_de_emergencia(): void
+    {
+        $laura = $this->matriculada();
+        ContactoEmergencia::updateOrCreate(['estudiante_id' => $laura->id], ['nombre' => 'Rosa Pérez', 'celular' => '3109876543', 'parentesco' => 'Madre']);
+        $this->actingAs($laura)->patch('/profile', ['email' => $laura->email, 'telefono' => '310 987 6543'])
+            ->assertSessionHasErrors(['telefono' => 'Tu celular debe ser distinto al de tu contacto de emergencia.']);
+    }
+
+    public function test_es19_recuperar_la_clave_no_dice_que_correos_existen(): void
+    {
+        $laura = $this->matriculada();
+        $conocido = $this->post('/forgot-password', ['email' => $laura->email]);
+        $desconocido = $this->post('/forgot-password', ['email' => 'nadie@esat.test']);
+        $desconocido->assertSessionHasNoErrors();
+        $this->assertNotNull($conocido->getSession()->get('status'));
+        $this->assertSame($conocido->getSession()->get('status'), $desconocido->getSession()->get('status'));
+    }
+
+    public function test_es20_cabeceras_de_seguridad_y_nombres_de_archivo_limpios(): void
+    {
+        $this->actingAs($this->matriculada())->get('/estudiante')
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $this->assertSame('Mi informe final.pdf', Archivos::nombre(UploadedFile::fake()->create("Mi\tinforme\nfinal.pdf", 10)));
+    }
+
+    public function test_es21_no_se_responde_un_tema_que_se_cerro_mientras_tanto(): void
+    {
+        $tema = ForoTema::create(['sede_id' => $this->sede->id, 'autor_id' => $this->docente->id, 'categoria' => 'vida', 'titulo' => 'Salida']);
+        ForoMensaje::create(['tema_id' => $tema->id, 'autor_id' => $this->docente->id, 'texto' => 'Primer mensaje']);
+        $this->actingAs($this->matriculada());
+        // La Form Request lo vio abierto; mientras tanto la administración lo cerró
+        ForoTema::whereKey($tema->id)->update(['cerrado_en' => now(), 'cerrado_por' => $this->admin->id]);
+
+        try {
+            app(ForoService::class)->responder($tema, 'Yo voy', null);
+            $this->fail('Respondió un tema cerrado');
+        } catch (ValidationException) {
+            $this->assertSame(1, ForoMensaje::where('tema_id', $tema->id)->count());
+        }
+    }
+
+    public function test_es22_el_avance_de_un_aplazado_se_queda_en_el_dia_en_que_se_aplazo(): void
+    {
+        $activa = $this->matriculada();
+        $aplazada = $this->matriculada();
+        $m = Matricula::where('estudiante_id', $aplazada->id)->firstOrFail();
+        Carbon::setTestNow('2026-09-01 09:00:00');
+        app(MatriculaService::class)->cambiarEstado($m, 'aplazado', Carbon::parse('2026-09-01'), 'Viaje');
+        Carbon::setTestNow('2026-10-21 09:00:00');
+
+        $avance = fn (User $e) => app(PanelEstudianteService::class)->datos($e->fresh())['avance'];
+        $this->assertGreaterThan(60, $avance($activa));
+        $this->assertLessThan(100, $avance($activa));
+        // Antes salía en 100 % (todas las clases de su ventana estaban dictadas)
+        $this->assertGreaterThan(0, $avance($aplazada));
+        $this->assertLessThan(40, $avance($aplazada));
+    }
+
+    public function test_es23_el_aviso_de_cuotas_vencidas_cuenta_la_beca_completa_y_el_saldo_a_favor(): void
+    {
+        $laura = $this->matriculada();
+        $m = Matricula::where('estudiante_id', $laura->id)->firstOrFail();
+        $pagos = fn () => $this->actingAs($laura)->get('/estudiante/pagos')->viewData('datos')['pagos'];
+        // El grupo empezó el 3 de agosto: vencieron las del 10 de agosto, septiembre y octubre
+        $this->assertSame(3, $pagos()['vencidasSiElige']['mensual']);
+
+        $m->update(['saldo_favor' => $pagos()['opciones']['mensual']['cuota'] * 2]);
+        $this->assertSame(1, $pagos()['vencidasSiElige']['mensual']);
+
+        // Beca del 100 % sin cuota del sistema: no se debe nada
+        Configuracion::guardar('cuota_sistema_mensual', 0);
+        $m->update(['saldo_favor' => 0, 'descuento_pct' => 100]);
+        $this->assertSame(['mensual' => 0, 'periodo' => 0], $pagos()['vencidasSiElige']);
+
+        app(PagoService::class)->elegirPlan($m->fresh(), 'mensual');
+        $this->assertSame(3, $pagos()['totalCuotas']);
+    }
+
+    public function test_es26_la_clase_de_hoy_cuenta_en_la_ficha_cuando_termina_y_el_panel_usa_el_reloj_del_servidor(): void
+    {
+        $laura = $this->matriculada();
+        $m = Matricula::where('estudiante_id', $laura->id)->firstOrFail();
+        // Miércoles 21 a las 9:00, en plena clase (7:00–11:00): el docente ya tomó la lista
+        Asistencia::create(['curso_id' => $this->grupo->id, 'estudiante_id' => $laura->id, 'fecha' => '2026-10-21', 'estado' => 'ausente', 'registrado_por' => $this->docente->id]);
+        Asistencia::create(['curso_id' => $this->grupo->id, 'estudiante_id' => $laura->id, 'fecha' => '2026-10-19', 'estado' => 'presente', 'registrado_por' => $this->docente->id]);
+        $pct = fn () => app(EstudianteService::class)->porcentajeAsistencia($laura->fresh(), $this->grupo->fresh(), $m->fresh());
+        $this->assertSame(100, $pct());
+
+        Carbon::setTestNow('2026-10-21 11:00:00');
+        $this->assertSame(50, $pct());
+
+        $this->actingAs($laura)->get('/estudiante')->assertViewHas('datos', fn (array $d) => $d['zona'] === -300
+            && $d['reloj'] === Carbon::parse('2026-10-21 11:00:00')->getTimestampMs());
+    }
+
+    public function test_es28_el_reporte_pasa_por_el_servicio_del_foro(): void
+    {
+        $laura = $this->matriculada();
+        $tema = ForoTema::create(['sede_id' => $this->sede->id, 'autor_id' => $this->docente->id, 'categoria' => 'vida', 'titulo' => 'Salida']);
+        $msg = ForoMensaje::create(['tema_id' => $tema->id, 'autor_id' => $this->docente->id, 'texto' => 'Primer mensaje']);
+        $this->actingAs($laura)->postJson(route('estudiante.foro.reportar', $msg), ['motivo' => 'No tiene que ver con la sede.'])->assertOk();
+        $this->assertSame(1, $msg->reportes()->count());
+        $this->assertTrue(ForoService::participa($laura));
+        $this->assertTrue(ForoService::participa($this->docente));
+    }
+
+    public function test_es29_el_historial_y_el_aula_no_se_borran_con_su_grupo_y_el_material_fija_la_malla(): void
+    {
+        $this->matriculada();
+        $vacio = $this->grupo($this->programa, 'Mañana', $this->docente, 'activo', '2026-11-02', $this->horario());
+        Material::create(['curso_id' => $vacio->id, 'docente_id' => $this->docente->id, 'programa_modulo_id' => $this->programa->modulos[0]->id,
+            'titulo' => 'Guía', 'enlace' => 'https://esat.test/guia']);
+        $this->assertContains($this->programa->id, Programa::mallaEnUso([$this->programa->id]));
+
+        // Se quita lo que sí se puede ir con el grupo; el historial de grupos (uno) y el material (otro) lo impiden
+        foreach ([$this->grupo, $vacio] as $g) {
+            DB::table('curso_docente')->where('curso_id', $g->id)->delete();
+            DB::table('curso_sesiones')->where('curso_id', $g->id)->delete();
+            DB::table('curso_estudiante')->where('curso_id', $g->id)->delete();
+            DB::table('matriculas')->where('curso_id', $g->id)->update(['curso_id' => null]);
+            try {
+                DB::table('cursos')->where('id', $g->id)->delete();
+                $this->fail('Se borró el grupo '.$g->nombre.' con su historial');
+            } catch (QueryException) {
+                $this->assertTrue(Curso::whereKey($g->id)->exists());
+            }
+        }
     }
 
     /* ── Ayudas ── */

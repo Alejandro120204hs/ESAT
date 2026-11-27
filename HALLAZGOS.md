@@ -1080,13 +1080,7 @@ completa: **405 OK**. Lo del navegador se comprobó con Playwright sobre una cop
   - la hora se toma al llegar;
   - el archivo se guarda antes de la transacción.
 
-**Quedan abiertos:**
-- **ES17–ES29** (bajos), salvo:
-  - el boletín con `no_cursado`;
-  - la habilitación solo de módulos terminados;
-  - la evaluación vencida en el Inicio;
-  - el texto de la secretaría al elegir el plan;
-  - los mensajes de error.
+**Quedan abiertos** (después de corregir también los bajos, ver la sección siguiente):
 - **De ES5, ES7 y ES15:**
   - los recibos de la otra matrícula;
   - guardar las marcas en el servidor: hoy, quien cierra la página antes de que se envíe queda sin responder, como se
@@ -1097,6 +1091,90 @@ completa: **405 OK**. Lo del navegador se comprobó con Playwright sobre una cop
     mes (ya pasaba);
   - el ingreso con "Recordarme" de una cuenta bloqueada por intentos entra (la cookie se trata como la sesión abierta);
   - se puede volver a publicar una evaluación nueva con las mismas preguntas después de que se vieran las correctas.
+
+### Corrección de los bajos ES17–ES29 (27-11-2026)
+
+Corregidos el mismo día. Pruebas: 10 más en `AuditoriaEstudianteTest` (25 en total); suite completa **415 OK**; detector
+de diseño en 0. En el navegador (Playwright sobre una copia de la BD, ya borrada): las 8 pantallas sin errores de JS y sin
+texto de menos de 12 px, 375 px sin scroll horizontal, la hora del panel con el equipo en otra zona, el menú móvil, el
+perfil, imprimir con Ctrl+P y "¿Olvidaste tu contraseña?". La migración nueva se probó en el MariaDB de XAMPP (en la copia).
+
+- **ES17** La gracia del envío automático baja a 20 s (`Evaluacion::GRACIA_SEGUNDOS`; `aula.js` reintenta cada 3 s
+  hasta 17 s): las correctas salen antes y el margen sigue cubriendo una red lenta.
+- **ES18** Perfil (estudiante y docente):
+  - cambiar el correo pide la contraseña actual (`ProfileUpdateRequest`, campo `clave_actual` que aparece al editar el
+    correo);
+  - lo que cambia va a la auditoría ("Actualizó su perfil: correo, celular.");
+  - el celular del estudiante no puede ser el de su contacto de emergencia;
+  - `/profile` escribe dentro de una transacción (`transaccion`).
+- **ES19** "¿Olvidaste tu contraseña?" responde lo mismo exista o no el correo (salvo el aviso de esperar) y tiene
+  `throttle:6,1`. Sigue sin enviar el correo (M27).
+- **ES20** Endurecimiento:
+  - `CabecerasDeSeguridad` (grupo `web`): `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` y
+    `Referrer-Policy`;
+  - `App\Support\Archivos::nombre()` limpia el nombre de lo que se sube (caracteres de control, barras) en el Aula, los
+    comunicados y el foro;
+  - `.env.example` dice qué poner en producción (`APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`).
+  - **Sin CSP todavía:** los paneles pasan sus datos con `<script>` en línea (`window.EST_SERVIDOR`, `DOC_SERVIDOR`…);
+    una CSP útil necesita nonces en esas etiquetas. Queda para antes de desplegar (R7).
+- **ES21** Foro:
+  - `ForoService::responder` y `ocultar` bloquean el tema y vuelven a revisar si está cerrado u oculto (M13);
+  - **decidido:** los temas, respuestas y reportes de estudiantes y docentes no van a la auditoría. El foro ya guarda
+    autor, fecha y adjunto de cada uno, y lo que importa (ocultar, restaurar, fijar, cerrar, descartar reportes) sí queda
+    en la auditoría.
+- **ES22** Inicio y Mi carrera:
+  - el avance de la carrera lo calcula el servidor (`PanelEstudianteService::avance`): clases dictadas de su grupo ÷
+    clases del grupo, congelado el día en que se aplazó, retiró o graduó;
+  - el calendario empieza en su primera clase (también la del grupo anterior);
+  - "Docente por asignar" si el grupo no tiene;
+  - el boletín dice si la matrícula no está activa.
+- **ES23** Mis pagos:
+  - "Próxima cuota" es la siguiente a la de este mes (cada cifra una vez);
+  - el pie usa `totalCuotas` (B29);
+  - sin plan, el estado de cuenta sale igual si debe el derecho;
+  - el aviso de vencidas no cuenta cuotas de $ 0 (beca completa) y descuenta el saldo a favor;
+  - una cuota de $ 0 dice "No se cobra";
+  - el recibo anulado sin motivo ya no dice "null".
+- **ES24** Aula, foro y comunicados:
+  - responder, abrir tema y reportar en el foro no tocan el cajón si mientras tanto se cerró o se abrió otro tema;
+  - al abrir un comunicado el foco sigue en la lista y el lector no se repinta;
+  - el texto vacío depende de la pestaña;
+  - comunicados, instrucciones y comentarios conservan los saltos de línea (`white-space: pre-line`);
+  - dos respuestas en desorden: solo se aplica la más nueva (`datos.js`);
+  - el enlace del material solo se pinta si es `http(s)`.
+- **ES25** Accesibilidad e impresión:
+  - el `<input type=file>` y la tarjeta del Aula ya no son paradas de tabulador (las hacen su etiqueta y su botón);
+  - al pulsar Comenzar el foco va a la primera pregunta;
+  - menú móvil y menú de usuario con `aria-expanded`, Escape y nada tabulable con el menú cerrado (`visibility`);
+  - los errores del perfil están ligados a su campo (`aria-describedby`, `aria-invalid`);
+  - ningún texto de pantalla baja de 12 px (0,75 rem) en el panel ni en el perfil del docente;
+  - Ctrl+P sin un botón de imprimir imprime la página (`body.est-imprimiendo` solo lo pone el botón).
+- **ES26** Fechas:
+  - pagos y comunicados usan la hora de `datos($ahora)`;
+  - el panel recibe la hora del servidor y su zona (`reloj`, `zona`): "En curso" y el cambio de día no dependen del
+    reloj del equipo, y si la página pasa la medianoche abierta el Inicio se recarga;
+  - el % de asistencia de las fichas (Estudiantes, Matrículas, panel general) cuenta la clase de hoy cuando termina, como
+    Admin › Asistencia y el panel.
+- **ES27** Código muerto:
+  - se quitaron `PagoService::derechoVencido`, `PanelEstudianteService::institucion()`, los imports sin uso, el combobox,
+    los colores por escuela y `.ini-linea-ok` del CSS del estudiante;
+  - `var URL` del Inicio se llama `RUTA`;
+  - `entregas.contenido` no se usa (la entrega es un archivo): queda escrito en el modelo y no se borra la columna;
+  - el índice de M26 se deja (no estorba; quitarlo sería otra migración).
+- **ES28** Lógica en su lugar:
+  - `ComunicadoService::recibidosPorEstudiante` (antes en el panel) junto a `personas()`, las dos con
+    `Matricula::VIGENTES`;
+  - `ComunicadoService::marcarLeido` y `ForoService::reportar` (antes en los controladores del Estudiante y del Docente);
+  - `ForoService::participa` (antes en el trait de `Http\Requests`);
+  - el descuento de las opciones del plan usa `PagoService::descuentoDe` (el de `generarCuotas`);
+  - **decidido:** los nombres de columnas distintos (`adjunto_ruta`/`adjunto_peso` contra `archivo_path`/`*_tamano`) no se
+    renombran: son tablas con datos y el cambio no arregla nada.
+- **ES29** BD (migración `2026_11_27_000006_restringir_borrado_del_aula`):
+  - `matricula_grupos` (matrícula y grupo), `evaluacion_intentos.estudiante_id` y el `curso_id` de `materiales`,
+    `actividades` y `evaluaciones` pasan de CASCADE a RESTRICT;
+  - `evaluacion_intentos.iniciada_en` pasa a DATETIME (en MariaDB tomaba `ON UPDATE CURRENT_TIMESTAMP`; confirmado con
+    `SHOW CREATE TABLE`);
+  - `Programa::mallaEnUso` cuenta el material de clase.
 
 ### Pruebas que faltan (por riesgo, antes de la corrección; casi todas están ahora en `AuditoriaEstudianteTest`)
 1. **Escrituras según el estado de la matrícula:** iniciar, responder, entregar y plan con matrícula aplazada,
@@ -1141,5 +1219,5 @@ completa: **405 OK**. Lo del navegador se comprobó con Playwright sobre una cop
 6. Que un clon nuevo arranque: **A11** (seeder con superadmin, README y `.env.example`), **R5, R6**. Y **A12**: proteger las migraciones contra rollback.
 7. Antes del panel Estudiante: **A10** (elegir plan) y **M26** (índice para `derechoVencido`).
 8. Resto de medios, luego bajos, sitio público, limpieza del repo y **R7** antes de desplegar.
-9. ~~Panel Estudiante (§11): ES1–ES16~~ corregidos y reauditados el 27-11-2026. Quedan los bajos ES17–ES29 y lo
-   pendiente que dice "Corrección y reauditoría".
+9. ~~Panel Estudiante (§11): ES1–ES29~~ corregidos el 27-11-2026 (ES1–ES16 reauditados). Queda lo pendiente que dice
+   "Corrección y reauditoría" y la CSP (ES20).

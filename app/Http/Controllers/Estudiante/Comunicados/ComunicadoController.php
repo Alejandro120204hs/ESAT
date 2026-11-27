@@ -8,18 +8,17 @@ use App\Models\User;
 use App\Services\Academico\PanelEstudianteService;
 use App\Services\Comunicacion\ComunicadoService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Panel Estudiante › Comunicados: los que le llegan (PanelEstudianteService::comunicadosVisibles, los destinatarios de
+ * Panel Estudiante › Comunicados: los que le llegan (ComunicadoService::recibidosPorEstudiantedosVisibles, los destinatarios de
  * siempre). Abrir uno lo marca leído en comunicado_lecturas, y así la secretaría ve lecturas reales.
  */
 class ComunicadoController extends Controller
 {
-    public function __construct(private PanelEstudianteService $panel) {}
+    public function __construct(private PanelEstudianteService $panel, private ComunicadoService $comunicados) {}
 
     public function index(): View
     {
@@ -29,9 +28,7 @@ class ComunicadoController extends Controller
     public function leido(Comunicado $comunicado): JsonResponse
     {
         $this->visible($comunicado);
-        DB::table('comunicado_lecturas')->insertOrIgnore([
-            'comunicado_id' => $comunicado->id, 'user_id' => auth()->id(), 'leido_en' => now(),
-        ]);
+        $this->comunicados->marcarLeido($comunicado, auth()->user());
 
         return response()->json(['ok' => true, 'mensaje' => '', 'datos' => $this->panel->datos(User::findOrFail(auth()->id()))]);
     }
@@ -50,7 +47,7 @@ class ComunicadoController extends Controller
     private function visible(Comunicado $comunicado): void
     {
         $e = User::findOrFail(auth()->id());
-        $ids = $this->panel->comunicadosVisibles($e, $this->panel->matricula($e))->pluck('id');
+        $ids = $this->comunicados->recibidosPorEstudiante($e, $this->panel->matricula($e))->pluck('id');
         abort_unless($ids->contains($comunicado->id), 404);
     }
 }

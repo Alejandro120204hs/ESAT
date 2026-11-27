@@ -61,9 +61,11 @@ class ComunicacionDocenteTest extends TestCase
         $this->actingAs($this->docente)->get('/profile')->assertOk()->assertViewIs('docente.perfil');
 
         $nombre = $this->docente->nombres;
-        $this->actingAs($this->docente)->patch('/profile', [
-            'nombres' => 'Otro', 'apellidos' => 'Nombre', 'email' => 'nuevo.correo@esat.test', 'telefono' => '310 555 1234', 'direccion' => 'Calle 5 # 3-20',
-        ])->assertRedirect('/profile');
+        $cambios = ['nombres' => 'Otro', 'apellidos' => 'Nombre', 'email' => 'nuevo.correo@esat.test', 'telefono' => '310 555 1234', 'direccion' => 'Calle 5 # 3-20'];
+        // Cambiar el correo (su usuario) pide su contraseña actual (auditoría del panel Estudiante, ES18)
+        $this->actingAs($this->docente)->from('/profile')->patch('/profile', $cambios)->assertSessionHasErrors('clave_actual');
+        $this->assertNotSame('nuevo.correo@esat.test', $this->docente->fresh()->email);
+        $this->actingAs($this->docente)->patch('/profile', $cambios + ['clave_actual' => 'password'])->assertRedirect('/profile');
 
         $d = $this->docente->fresh();
         $this->assertSame($nombre, $d->nombres);

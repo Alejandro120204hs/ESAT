@@ -78,9 +78,7 @@ class ComunicadoController extends Controller
     public function leido(Comunicado $comunicado): JsonResponse
     {
         abort_unless($this->servicio->recibidosDe(auth()->user())->contains('id', $comunicado->id), 404);
-        DB::table('comunicado_lecturas')->insertOrIgnore([
-            'comunicado_id' => $comunicado->id, 'user_id' => auth()->id(), 'leido_en' => now(),
-        ]);
+        app(ComunicadoService::class)->marcarLeido($comunicado, auth()->user());
 
         return $this->respuesta('');
     }

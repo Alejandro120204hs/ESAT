@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -32,7 +33,13 @@ class ProfileUpdateRequest extends FormRequest
             'apellidos' => ['required', 'string', 'max:255'],
         ];
 
-        return $nombre + [
+        // Cambiar el correo (que es su usuario) pide la contraseña actual: una sesión abierta en otro computador no basta
+        // para quedarse con la cuenta (auditoría del panel Estudiante, ES18)
+        $u = $this->user();
+        $cambiaCorreo = mb_strtolower(trim((string) $this->input('email'))) !== mb_strtolower((string) $u->email);
+        $clave = ($u->isEstudiante() || $u->isDocente()) && $cambiaCorreo ? ['clave_actual' => ['required', 'current_password']] : [];
+
+        return $nombre + $clave + [
             'telefono' => ['nullable', 'regex:/^3\d{9}$/'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'email' => [
@@ -46,8 +53,23 @@ class ProfileUpdateRequest extends FormRequest
         ];
     }
 
+    /** El celular del estudiante no puede ser el de su contacto de emergencia (la misma regla de la secretaría). */
+    public function after(): array
+    {
+        return [function (Validator $v) {
+            $u = $this->user();
+            if ($u->isEstudiante() && $this->filled('telefono') && $u->contactoEmergencia?->celular === $this->input('telefono')) {
+                $v->errors()->add('telefono', 'Tu celular debe ser distinto al de tu contacto de emergencia.');
+            }
+        }];
+    }
+
     public function messages(): array
     {
-        return ['telefono.regex' => 'El celular debe tener 10 dígitos y empezar por 3.'];
+        return [
+            'telefono.regex'               => 'El celular debe tener 10 dígitos y empezar por 3.',
+            'clave_actual.required'        => 'Para cambiar tu correo escribe tu contraseña actual.',
+            'clave_actual.current_password' => 'La contraseña no es correcta.',
+        ];
     }
 }

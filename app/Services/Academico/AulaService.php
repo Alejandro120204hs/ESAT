@@ -14,6 +14,7 @@ use App\Models\Academico\RespuestaEstudiante;
 use App\Models\Finanzas\Matricula;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
+use App\Support\Archivos;
 use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -323,7 +324,7 @@ class AulaService
                 $viejo = $e?->archivo_path;
                 $datos = [
                     'archivo_path'   => $ruta,
-                    'archivo_nombre' => mb_substr($archivo->getClientOriginalName(), 0, 150),
+                    'archivo_nombre' => Archivos::nombre($archivo),
                     'archivo_tamano' => $archivo->getSize(),
                     'fecha_entrega'  => $ahora,
                 ];
@@ -670,7 +671,7 @@ class AulaService
     {
         return [
             $prefijo.'_path'   => $archivo->store($carpeta, self::DISCO),
-            $prefijo.'_nombre' => mb_substr($archivo->getClientOriginalName(), 0, 150),
+            $prefijo.'_nombre' => Archivos::nombre($archivo),
             $prefijo.'_tamano' => $archivo->getSize(),
         ];
     }

@@ -8,10 +8,12 @@ use App\Models\Comunicacion\ForoReporte;
 use App\Models\Comunicacion\ForoTema;
 use App\Models\Finanzas\Matricula;
 use App\Models\User;
+use App\Support\Archivos;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Panel Admin › Foro de una sede: los temas con sus mensajes y reportes, quién es cada persona, y lo que hace la
@@ -165,8 +167,17 @@ class ForoService
     public function responder(ForoTema $t, string $texto, ?UploadedFile $archivo): ForoTema
     {
         DB::transaction(function () use ($t, $texto, $archivo) {
-            $this->nuevoMensaje($t, $texto, $archivo);
-            $t->touch();
+            // Se vuelve a revisar con el tema bloqueado: otra persona pudo cerrarlo u ocultarlo al mismo tiempo (M13; la
+            // Form Request ya lo revisó antes, sin bloquear; auditoría del panel Estudiante, ES21)
+            $tema = ForoTema::whereKey($t->id)->lockForUpdate()->with('mensajes')->firstOrFail();
+            if ($tema->cerrado()) {
+                throw ValidationException::withMessages(['texto' => 'El tema está cerrado: nadie puede responder.']);
+            }
+            if ($tema->oculto()) {
+                throw ValidationException::withMessages(['texto' => 'El tema está oculto: no recibe respuestas.']);
+            }
+            $this->nuevoMensaje($tema, $texto, $archivo);
+            $tema->touch();
         });
 
         return $this->cargar($t);
@@ -190,6 +201,8 @@ class ForoService
     public function ocultar(ForoMensaje $m, string $motivo): ForoTema
     {
         DB::transaction(function () use ($m, $motivo) {
+            // El tema primero: una respuesta que llega a la vez espera y ve el tema oculto (responder)
+            ForoTema::whereKey($m->tema_id)->lockForUpdate()->first();
             $m->update(['oculto_en' => now(), 'oculto_por' => auth()->id(), 'motivo_oculto' => trim($motivo)]);
             $m->reportes()->where('estado', 'pendiente')->update(['estado' => 'atendido', 'revisado_por' => auth()->id(), 'revisado_en' => now()]);
         });
@@ -211,6 +224,22 @@ class ForoService
         return $this->cargar($m->tema);
     }
 
+    /**
+     * Abren temas, responden y reportan los estudiantes con matrícula vigente (un retirado o graduado conserva su cuenta y
+     * lee, pero ya no escribe). Los docentes y la administración siempre participan. La usan las Form Requests del foro del
+     * estudiante (ExigeMatriculaVigente) y su panel (antes vivía en el trait de Http\Requests, ES28).
+     */
+    public static function participa(User $u): bool
+    {
+        return ! $u->isEstudiante() || Matricula::where('estudiante_id', $u->id)->whereIn('estado', Matricula::VIGENTES)->exists();
+    }
+
+    /** Un reporte por persona y mensaje (la Form Request revisa que no lo haya reportado ya); paneles Estudiante y Docente. */
+    public function reportar(ForoMensaje $mensaje, User $u, string $motivo): ForoReporte
+    {
+        return ForoReporte::create(['mensaje_id' => $mensaje->id, 'user_id' => $u->id, 'motivo' => $motivo]);
+    }
+
     public static function disco(): string
     {
         return ForoMensaje::DISCO;
@@ -224,7 +253,7 @@ class ForoService
             'texto'    => trim($texto),
         ] + ($archivo ? [
             'adjunto_ruta'   => $archivo->store("foro/{$t->sede_id}", self::disco()),
-            'adjunto_nombre' => mb_substr($archivo->getClientOriginalName(), 0, 150),
+            'adjunto_nombre' => Archivos::nombre($archivo),
             'adjunto_tipo'   => strtolower($archivo->getClientOriginalExtension()) === 'pdf' ? 'pdf' : 'imagen',
             'adjunto_peso'   => $archivo->getSize(),
         ] : []));

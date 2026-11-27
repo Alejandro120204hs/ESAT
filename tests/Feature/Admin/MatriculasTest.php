@@ -335,7 +335,8 @@ class MatriculasTest extends TestCase
 
         $this->post('/login', ['email' => $e->email, 'password' => 'password'])->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($e);
-        $this->assertNotNull(app(PagoService::class)->derechoVencido($e), 'La deuda sigue ahí');
+        $derecho = Pago::where('tipo', 'matricula')->whereHas('matricula', fn ($q) => $q->where('estudiante_id', $e->id))->first();
+        $this->assertSame('vencido', $derecho->estadoActual(), 'La deuda sigue ahí');
     }
 
     public function test_con_el_derecho_vencido_no_pierde_la_sesion_abierta(): void

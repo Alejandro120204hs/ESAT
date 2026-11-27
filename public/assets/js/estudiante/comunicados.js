@@ -31,7 +31,10 @@
     var vista = 'todos', abierto = null;
     var idParam = +((window.location.search.match(/[?&]id=(\d+)/) || [])[1] || 0);
 
-    function render() {
+    // sinLector: solo la lista (al marcar leído no se repinta el lector: el lector de pantalla no lo lee dos veces, ES24)
+    function render(sinLector) {
+        var foco = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.com-item') : null;
+        var focoId = foco ? foco.dataset.id : null;
         var sinLeer = D.comunicados.filter(function (c) { return !c.leido; });
         $('com-num-sinleer').textContent = sinLeer.length || '';
         var lista = vista === 'sinleer' ? sinLeer : D.comunicados;
@@ -47,7 +50,13 @@
             '</button></li>';
         }).join('');
         $('com-lista-vacia').hidden = lista.length > 0;
-        pintarLector();
+        $('com-lista-vacia').textContent = vista === 'sinleer' ? 'No tienes comunicados sin leer.' : 'Todavía no tienes comunicados.';
+        // La lista se rehace: el foco vuelve al mismo comunicado en vez de perderse (ES24)
+        if (focoId) {
+            var nb = $('com-lista').querySelector('[data-id="' + focoId + '"]');
+            if (nb) nb.focus();
+        }
+        if (!sinLector) pintarLector();
     }
 
     function pintarLector() {
@@ -90,7 +99,7 @@
         if (!c.leido) {
             API.marcarLeido(id).then(function () {
                 abierto = D.comunicados.filter(function (x) { return x.id === id; })[0] || abierto;
-                render();
+                render(true);
             });
         }
     }

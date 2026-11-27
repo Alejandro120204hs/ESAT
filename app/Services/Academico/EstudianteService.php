@@ -117,6 +117,7 @@ class EstudianteService
             return null;
         }
         $registros = $estudiante->asistencias->where('curso_id', $curso->id);
+        $cursos = collect([$curso->id => $curso]);
         // Con la matrícula: lo registrado en cada grupo por el que pasó, solo en las fechas en que contaba allí
         if ($matricula) {
             $matricula->loadMissing('grupos');
@@ -127,6 +128,18 @@ class EstudianteService
                 return $c && Matricula::enVentanas($matricula->ventanasEn($c), $a->fecha->toDateString());
             });
         }
+
+        // La clase de hoy cuenta cuando termina, como en Admin › Asistencia y en el panel del estudiante: antes la ficha la
+        // contaba apenas el docente tomaba la lista y las dos cifras no cuadraban durante la clase (auditoría, ES26)
+        $ahora = now();
+        $registros = $registros->reject(function ($a) use ($cursos, $ahora) {
+            if (! $a->fecha->isSameDay($ahora)) {
+                return false;
+            }
+            $s = $cursos->get($a->curso_id)?->sesionEn($a->fecha);
+
+            return ! $s || $ahora->lt($a->fecha->copy()->setTimeFromTimeString($s->hora_fin));
+        });
 
         // Misma regla que el panel Asistencia
         return AsistenciaService::porcentaje(

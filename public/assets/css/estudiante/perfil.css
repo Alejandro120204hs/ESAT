@@ -100,6 +100,7 @@
 .prf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .prf-field { display: flex; flex-direction: column; gap: 6px; }
+.prf-field[hidden] { display: none; }
 .prf-field label {
     font-size: 0.78rem; font-weight: 700; color: var(--navy-3);
     text-transform: uppercase; letter-spacing: 0.04em;
@@ -165,7 +166,7 @@
 .prf-field input[aria-invalid="true"] { border-color: #B3261E; }
 .prf-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; margin: 0; }
 .prf-datos div { min-width: 0; }
-.prf-datos dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.prf-datos dt { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .prf-datos dd { margin: 3px 0 0; font-size: 0.92rem; font-weight: 600; color: var(--navy-3); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .prf-vacio { font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
 .prf-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }

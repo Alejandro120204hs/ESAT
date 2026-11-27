@@ -58,8 +58,9 @@ nunca inglés, en toda la UI. Instalación nueva: README (`.env.example` con MyS
 `SUPERADMIN_*` / `ADMIN_GENERAL_*`; es lo único que siembra: los datos de prueba siguen yendo directo a la BD).
 **Nunca deshacer migraciones** con datos: `AppServiceProvider::protegerMigraciones` lo niega (A12); se vuelve atrás
 restaurando un respaldo. **Nada de dinero ni historial se borra**: la BD rechaza (RESTRICT) borrar un estudiante con
-matrícula, una matrícula con cobros/recibos, y una cuenta que registró recibos, notas, asistencia o auditoría (B35); las
-cuentas se desactivan. `database/esat.sql` es un volcado de la BD local con
+matrícula, una matrícula con cobros/recibos, y una cuenta que registró recibos, notas, asistencia o auditoría (B35), ni un
+grupo con historial de matrículas o contenido del Aula, ni un estudiante con intentos de evaluación (ES29); las cuentas se
+desactivan. `database/esat.sql` es un volcado de la BD local con
 datos personales, hashes y sesiones: **no subirlo a Git**.
 
 Los problemas abiertos de la revisión completa (21-10-2026) están en `HALLAZGOS.md`,
@@ -97,7 +98,9 @@ tienen panel (ver "Panel Docente" y "Panel Estudiante"). La secretaría, el Admi
 el estudiante y el docente tienen su propio perfil (`estudiante/perfil` y `docente/perfil`, desde `ProfileController@edit`; ninguno de los dos cambia su nombre). **Nadie elimina su propia
 cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
 El teléfono, también el de `/profile`, se guarda solo con dígitos y debe ser un celular
-(`^3\d{9}$`).
+(`^3\d{9}$`). En el perfil del estudiante y del docente, **cambiar el correo pide la contraseña actual** (`clave_actual`,
+el campo aparece al editar el correo), lo que cambia va a la auditoría y el celular del estudiante no puede ser el de su
+contacto de emergencia (`ProfileUpdateRequest`, ES18).
 
 **Convención de contraseña**: la clave inicial de cualquier cuenta creada
 (admin, estudiante, etc.) es su número de documento/cédula — no se pide
@@ -280,7 +283,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     "Por matricular".
   - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). **No bloquea el ingreso**
     (decidido el 24-11-2026, lo pidió el cliente; antes no lo dejaba entrar): sin pagarlo entra igual, la deuda se
-    acumula como cualquier cobro vencido y no se gradúa sin paz y salvo (`derechoVencido` ya no se usa para el acceso).
+    acumula como cualquier cobro vencido y no se gradúa sin paz y salvo (`derechoVencido` se quitó, ES27).
     Al **aplazar** sin haberlo pagado queda **en espera**
     (`fecha_vencimiento` null) y vence al iniciar el grupo al que se reintegre; si ya lo pagó se le
     guarda. Al **retirarse** antes de que venza, se anula (con abono parcial o pagado completo, A9): de lo
@@ -421,6 +424,10 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   "Otras matrículas de X". Matrículas tiene 3 pestañas: vigentes (activas/aplazadas), Por matricular
   (sin matrícula vigente: nunca matriculados, o retirados/graduados que vuelven) y Finalizadas
   (graduadas/retiradas, solo consulta).
+- **Endurecimiento** (auditoría del panel Estudiante, ES19–ES20): `CabecerasDeSeguridad` (grupo `web`) pone `nosniff`,
+  `X-Frame-Options: SAMEORIGIN` y `Referrer-Policy`; todo nombre de archivo subido pasa por `App\Support\Archivos::nombre()`
+  (al agregar una subida, usarlo); "¿Olvidaste tu contraseña?" responde lo mismo exista o no el correo y tiene
+  `throttle:6,1`. Sin CSP todavía (los paneles pasan sus datos en `<script>` en línea; haría falta nonce).
 - **Login** (`LoginRequest`): una cuenta con `activo=0` no puede ingresar, y cada ingreso
   guarda `users.ultimo_acceso` (también el de la cookie "Recordarme": listener de `Login` en `AppServiceProvider`, B22). El middleware `EnsureAccountIsEnabled` (agregado al grupo `web` en
   `bootstrap/app.php`) revisa lo mismo **en cada petición**: si la cuenta se desactiva o se bloquea,
@@ -536,12 +543,13 @@ Panel Estudiante: acceso por rol, redirección y su perfil en `tests/Feature/Est
 que ve y lo que guarda (plan de pago —también el que elige la Secretaría—, comunicados leídos, foro, evaluaciones,
 entregas y lo que crea y califica el docente en su Aula virtual) en `tests/Feature/Estudiante/BackendEstudianteTest.php`;
 la auditoría del panel (HALLAZGOS §11: correctas en la gracia, reabrir, sesión, otras deudas, aplazado, plan tras reintegro,
-grupo anterior, archivos, límites, foro) en `tests/Feature/Estudiante/AuditoriaEstudianteTest.php`.
+grupo anterior, archivos, límites, foro; y los bajos: correo con clave, recuperar clave, cabeceras, tema cerrado, avance,
+aviso de vencidas, clase de hoy, RESTRICT del Aula) en `tests/Feature/Estudiante/AuditoriaEstudianteTest.php`.
 Sitio público (una página por programa y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (casi todas las 405 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 415 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Páginas de error
@@ -723,7 +731,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   `sedeId()`, que el general sobrescribe con la elegida) o agregan lo propio (malla del programa, sedes de un comunicado).
   Todo queda en la auditoría con la sede afectada (`Auditoria::registrar(..., $sedeId)`).
   - Programas: la malla se guarda en orden (conserva ids), las horas del programa = suma de módulos, y con notas **o
-    evaluaciones/actividades del Aula virtual** en sus módulos la malla no cambia (`Programa::mallaEnUso`). Un programa no
+    evaluaciones/actividades/material del Aula virtual** en sus módulos la malla no cambia (`Programa::mallaEnUso`). Un programa no
     se desactiva, ni sale de "activo" desde el formulario, ni deja de ofrecerse en una sede (Admin o secretaría) con
     grupos vigentes **o estudiantes aplazados** (`Programa::impedimentoParaRetirar`). **La duración (meses y división) no cambia con matrículas vigentes** (activas o aplazadas) en el
     programa: sus cuotas y su grado dependen de ella; el formulario la muestra bloqueada (`vigentes`) y lo valida
@@ -796,8 +804,8 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     los segundos que da el servidor (`intento.restante`), lo marcado se guarda en `localStorage` (clave
     `aul-marcas-{estudiante}-{evaluación}`, una marca por pregunta: dos pestañas se juntan; se borra al terminar, al abrir
     el Aula si ya no sirve y al cerrar sesión) y al llegar a cero se envía solo: lo que falte queda con
-    `respuestas_estudiante.opcion_id` null y cuenta como malo (60 s de gracia, `GRACIA_SEGUNDOS`; un envío que falla por
-    red, sesión o servidor se reintenta cada 5 s dentro de la gracia y conserva las marcas; agotada, queda sin responder).
+    `respuestas_estudiante.opcion_id` null y cuenta como malo (20 s de gracia, `GRACIA_SEGUNDOS`, ES17; un envío que falla
+    por red, sesión o servidor se reintenta cada 3 s dentro de la gracia y conserva las marcas; agotada, queda sin responder).
     Quien la comenzó y no envió a tiempo queda sin responder (salir de la página con el tiempo corriendo pregunta antes).
     Las correctas le llegan al estudiante solo **pasada la gracia** (`Evaluacion::correctasVisibles`, ES1). Una evaluación
     **ya comenzada o respondida se corrige** (textos, cierre —se puede conservar uno vencido— y la respuesta correcta, que
@@ -863,8 +871,12 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
   de `fechasModulos` y el estado de `Calificacion::estado()` (o `no_cursado`, `sin_nota`, `en_curso`, `por_iniciar`); clases
   desde su matrícula hasta que se aplazó/retiró (P/T/A/E, sin registrar, hoy, futura) y % de `AsistenciaService::porcentaje`;
   pagos con `PagoService::resumen` (cobros, recibos sin anulados, "A pagar este mes" = vencido + del mes, y cuántas cuotas
-  quedarían vencidas con cada plan); comunicados visibles (su sede o rol, o su grupo; publicados, sin archivar, con matrícula
-  vigente y cuenta activa); foro de su sede sin lo oculto. Cada vista lo pasa con `@include('estudiante.partials.datos')`
+  quedarían vencidas con cada plan: sin cuotas de $ 0 y descontando el saldo a favor); comunicados que le llegan
+  (`ComunicadoService::recibidosPorEstudiante`, junto a `personas()`: su sede o rol, o su grupo; publicados, sin archivar,
+  con matrícula vigente y cuenta activa); foro de su sede sin lo oculto. Todo con la hora de `datos($ahora)` (nunca
+  `today()`), y el panel recibe `reloj` (ms del servidor) y `zona` (minutos): `EST_DATOS.minutosAhora()` / `hoyAhora()` dan
+  la hora de la sede aunque el equipo tenga otra, y al pasar la medianoche `datos.js` cambia `D.hoy` y avisa con el evento
+  `est:nuevo-dia` (el Inicio se recarga, ES26). Cada vista lo pasa con `@include('estudiante.partials.datos')`
   (`window.EST_SERVIDOR`: datos, institución de Admin › Configuración, sede, logo y rutas) y
   `public/assets/js/estudiante/datos.js` arma `EST_DATOS` y `EST_API` (`fetch` con CSRF; 401/419 recarga, 422 muestra el
   primer error; 409/429/500 con mensaje propio). Toda escritura responde `{ok, mensaje, datos}` y `datos.js` reemplaza
@@ -873,8 +885,9 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
   (`AppServiceProvider::limitarEscrituras`: `throttle:estudiante` 60/min; `throttle:estudiante-publicar` —temas,
   respuestas y reportes del foro, entregas— 10/min y 100/día; ES14).
 - Pantallas (cada una con su Blade/CSS/JS y su prefijo):
-  - **Inicio** (`dashboard`, `ini-`): saludo con resumen, clase de hoy, tu avance (promedio, módulos aprobados,
-    asistencia), pendientes con enlace (por responder y entregar, por habilitar, pagos, comunicados sin leer) y el horario
+  - **Inicio** (`dashboard`, `ini-`): saludo con resumen, clase de hoy, tu avance (el % de la carrera lo calcula
+    `PanelEstudianteService::avance`: clases dictadas de su grupo ÷ clases del grupo, congelado el día en que se aplazó,
+    retiró o graduó; promedio, módulos aprobados, asistencia), pendientes con enlace (por responder y entregar, por habilitar, pagos, comunicados sin leer) y el horario
     semanal del Docente con un solo grupo (tono neutro `ini-c-grupo`).
   - **Mi programa** (`programa/index`, `mpr-`): pestañas Notas (malla con nota, estado y lo que tiene en el Aula) y
     Asistencia (calendario del mes con P/T/A/E, lista de faltas, tardes y excusas); **boletín imprimible** (informativo:
@@ -899,10 +912,13 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
     Lo que debe en **otras matrículas** (una retirada que quedó debiendo) sale aparte (`pagos.otras`, aviso en Mis pagos y
     pendiente en el Inicio, ES5). Constancia y paz y salvo: en la secretaría.
   - **Comunicados** (`comunicados/index`, `com-`): lista + lector; se marca leído al abrir
-    (`comunicado_lecturas`, `insertOrIgnore`: la primera lectura no cambia); adjunto por `estudiante.comunicados.adjunto`.
+    (`ComunicadoService::marcarLeido`, el mismo del Docente: la primera lectura no cambia); adjunto por
+    `estudiante.comunicados.adjunto`.
     Uno que no le corresponde responde 404. `?id=ID`.
   - **Foro** (`foro/index`, `for-`): lo lee cualquiera; abre temas, responde y reporta **solo con matrícula vigente**
-    (`Requests/Estudiante/Foro/ExigeMatriculaVigente`, `participaForo`). El de su sede con `ForoService` y las Form Requests de la secretaría (las suyas las
+    (`ForoService::participa`, que usan `Requests/Estudiante/Foro/ExigeMatriculaVigente` y `participaForo`; reportar es
+    `ForoService::reportar`). **Decidido:** los temas, respuestas y reportes de estudiantes y docentes no van a la
+    auditoría (el foro guarda autor y fecha; la moderación sí va, ES21). El de su sede con `ForoService` y las Form Requests de la secretaría (las suyas las
     extienden: solo su sede, no fija temas); categorías, búsqueda, conversación en cajón, responder (no en temas cerrados ni
     ocultos), abrir tema y reportar con motivo (uno por mensaje, ni los propios ni los ocultos), con un adjunto PDF/JPG/PNG
     ≤ 5 MB. `?tema=ID`.

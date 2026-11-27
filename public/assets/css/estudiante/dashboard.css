@@ -59,7 +59,7 @@
     padding: 12px 6px; border-radius: 10px; background: var(--jbg); color: var(--jc);
 }
 .ini-clase-ini { font-family: "Archivo", system-ui; font-size: 1.3rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
-.ini-clase-fin { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ini-clase-fin { font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .ini-clase-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .ini-clase-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .ini-clase-prog { font-family: "Archivo", system-ui; font-size: 1rem; font-weight: 800; color: var(--navy-3); margin: 2px 0 0; line-height: 1.3; }
@@ -94,12 +94,12 @@
 .ini-pend-bloque { padding: 12px 20px 14px; border-top: 1px solid var(--line); }
 .ini-pend-titulo {
     display: flex; align-items: center; gap: 8px; margin: 0 0 6px;
-    font-family: "Archivo", system-ui; font-size: 0.72rem; font-weight: 700;
+    font-family: "Archivo", system-ui; font-size: 0.75rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
 }
 .ini-pend-titulo-num {
     padding: 1px 8px; border-radius: 999px; background: rgba(10,27,51,0.07); color: var(--navy-3);
-    font-size: 0.72rem; font-variant-numeric: tabular-nums; letter-spacing: 0;
+    font-size: 0.75rem; font-variant-numeric: tabular-nums; letter-spacing: 0;
 }
 .ini-pend-lista { list-style: none; margin: 0; padding: 0; }
 .ini-pend-item {
@@ -117,7 +117,7 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     font-variant-numeric: tabular-nums;
 }
-.ini-ficha small { font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.ini-ficha small { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 .ini-ficha b { font-family: "Archivo", system-ui; font-size: 1.02rem; font-weight: 900; line-height: 1; }
 .ini-ficha-pend   { background: #FDF1E6; color: #9A4A12; }   /* por hacer o por elegir */
 .ini-ficha-riesgo { background: #FEE2E2; color: #991B1B; }   /* vencido o por habilitar */
@@ -152,10 +152,10 @@
 .ini-datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--line); border-radius: var(--radius-md); }
 .ini-dato { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .ini-dato + .ini-dato { border-left: 1px solid var(--line); }
-.ini-dato-lbl { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.ini-dato-lbl { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .ini-dato-val { font-family: "Archivo", system-ui; font-size: 1.25rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .ini-dato-val small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
-.ini-dato-sub { font-size: 0.74rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
+.ini-dato-sub { font-size: 0.75rem; color: var(--muted); font-weight: 600; line-height: 1.4; }
 /* Tonos de nota (≥ 4 / 3–3,9 / < 3) y de asistencia (≥ 90 / 80–89 / < 80), los de Mis grupos del Docente */
 .ini-tono-ok   { color: #2D7A3A; }
 .ini-tono-warn { color: #B45309; }
@@ -165,12 +165,6 @@
 
 
 /* ── Vacíos ─────────────────────────────────────────── */
-.ini-linea-ok {
-    display: flex; align-items: center; gap: 8px; margin: 0 20px 18px;
-    font-size: 0.86rem; font-weight: 600; color: #2D6A27;
-}
-.ini-linea-ok[hidden] { display: none; }
-.ini-linea-ok svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .ini-empty { text-align: center; padding: 18px 24px 26px; }
 .ini-empty[hidden] { display: none; }
 .ini-empty-icono {
@@ -186,25 +180,12 @@
 .ini-empty .ini-btn { margin-top: 14px; }
 
 /* ── Mi horario ─────────────────────────────────────── */
-/* El mismo horario semanal de Admin › Horarios (horarios.css: .hor-cal y .hor-bloque): colores por escuela,
-   jornadas en la columna de horas, líneas de hora y media hora, separador entre jornadas y duración en
-   cada bloque. Lo propio del docente: la fecha de cada día (es el horario de esta semana).
+/* El horario semanal del Docente (el de Admin › Horarios: jornadas en la columna de horas, líneas de hora y media
+   hora, separador entre jornadas y duración en cada bloque) con la fecha de cada día de esta semana. Un solo grupo: el
+   tono neutro de la marca (el color por escuela del Docente distingue grupos que aquí no hay).
    La grilla depende del ancho de la tarjeta (con o sin menú lateral), no de la pantalla. */
-.ini-horario {
-    container-type: inline-size;
-    /* Escuela sin color propio */
-    --hc: #475569; --hbg: #F1F5F9; --hbd: #E2E8F0; --hink: #334155;
-}
-/* Un solo grupo: el tono neutro de la marca (el color por escuela del Docente distingue grupos que aquí no hay) */
+.ini-horario { container-type: inline-size; }
 .ini-c-grupo { --hc: var(--navy-2); --hbg: #EEF2F7; --hbd: #D5DEEA; --hink: var(--navy-3); }
-/* Colores por escuela: acento, fondo, borde y texto (los de Admin › Horarios) */
-.ini-c-sal { --hc: #BE123C; --hbg: #FFE4E6; --hbd: #FECDD3; --hink: #7F1D1D; }
-.ini-c-tur { --hc: #B45309; --hbg: #FEF3C7; --hbd: #FDE68A; --hink: #713F12; }
-.ini-c-adm { --hc: #1D4ED8; --hbg: #DBEAFE; --hbd: #BFDBFE; --hink: #1E3A8A; }
-.ini-c-edu { --hc: #047857; --hbg: #D1FAE5; --hbd: #A7F3D0; --hink: #064E3B; }
-.ini-c-dep { --hc: #6D28D9; --hbg: #EDE9FE; --hbd: #DDD6FE; --hink: #4C1D95; }
-.ini-c-cie { --hc: #0369A1; --hbg: #E0F2FE; --hbd: #BAE6FD; --hink: #0C4A6E; }
-.ini-c-bel { --hc: #BE185D; --hbg: #FCE7F3; --hbd: #FBCFE8; --hink: #831843; }
 
 /* Tabla días × horas */
 .ini-sem { display: grid; grid-template-columns: 78px repeat(6, minmax(0, 1fr)); padding: 0 20px 20px; }
@@ -221,18 +202,18 @@
 .ini-sem-head.is-hoy { border-bottom-color: var(--orange); }
 .ini-hoy-pill {
     padding: 1px 7px; border-radius: 999px; background: var(--orange); color: var(--white);
-    font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
 }
 
 .ini-sem-horas { position: relative; }
 .ini-sem-hora {
     position: absolute; left: 0; right: 12px; transform: translateY(-50%);
     display: flex; flex-direction: column; align-items: flex-end;
-    font-size: 0.72rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+    font-size: 0.75rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .ini-sem-hora:first-child { transform: translateY(6px); }
 .ini-sem-hora:last-child  { transform: translateY(-100%); }
-.ini-sem-jor { margin-top: 2px; font-style: normal; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.ini-sem-jor { margin-top: 2px; font-style: normal; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .ini-sem-jor-manana { color: #C05621; }
 .ini-sem-jor-tarde  { color: #1E40AF; }
 .ini-sem-jor-noche  { color: #5B21B6; }
@@ -263,14 +244,14 @@
 .ini-sem-bloque.is-hoy { border-color: rgba(217,123,46,0.55); box-shadow: 0 0 0 3px rgba(217,123,46,0.12); }
 .ini-sem-bloque-hora {
     display: flex; align-items: center; justify-content: space-between; gap: 6px;
-    font-size: 0.7rem; font-weight: 800; color: var(--hc); font-variant-numeric: tabular-nums; white-space: nowrap;
+    font-size: 0.75rem; font-weight: 800; color: var(--hc); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.ini-sem-bloque-dur { padding: 1px 6px; border-radius: 999px; background: var(--white); font-size: 0.62rem; color: var(--hc); }
+.ini-sem-bloque-dur { padding: 1px 6px; border-radius: 999px; background: var(--white); font-size: 0.75rem; color: var(--hc); }
 .ini-sem-bloque-prog {
     font-size: 0.86rem; font-weight: 800; line-height: 1.25;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
 }
-.ini-sem-bloque-grupo { margin-top: auto; font-size: 0.72rem; font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ini-sem-bloque-grupo { margin-top: auto; font-size: 0.75rem; font-weight: 600; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ini-sem-bloque.is-corto { padding: 6px 10px; gap: 1px; }
 .ini-sem-bloque.is-corto .ini-sem-bloque-prog { -webkit-line-clamp: 1; font-size: 0.8rem; }
 .ini-sem-bloque.is-corto .ini-sem-bloque-grupo { display: none; }
@@ -298,7 +279,7 @@
 }
 .ini-dia-info { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ini-dia-info b { font-size: 0.85rem; font-weight: 800; line-height: 1.3; }
-.ini-dia-info small { font-size: 0.74rem; font-weight: 600; opacity: 0.85; }
+.ini-dia-info small { font-size: 0.75rem; font-weight: 600; opacity: 0.85; }
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 1279px) {
@@ -326,7 +307,6 @@
     .ini-avance-body { padding: 0 16px 16px; }
     .ini-datos { grid-template-columns: 1fr; }
     .ini-dato + .ini-dato { border-left: none; border-top: 1px solid var(--line); }
-    .ini-linea-ok { margin: 0 16px 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

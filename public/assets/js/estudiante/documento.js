@@ -45,7 +45,11 @@
                 '</main>';
             // Esperar a que cargue el logo para que salga en la impresión
             var img = cont.querySelector('img');
-            var listo = function () { window.print(); };
+            var listo = function () {
+                document.body.classList.add('est-imprimiendo');
+                window.addEventListener('afterprint', function () { document.body.classList.remove('est-imprimiendo'); }, { once: true });
+                window.print();
+            };
             if (img && !img.complete) { img.addEventListener('load', listo, { once: true }); img.addEventListener('error', listo, { once: true }); }
             else listo();
         }

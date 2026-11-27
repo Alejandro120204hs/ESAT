@@ -5,28 +5,34 @@ document.addEventListener('DOMContentLoaded', function () {
     var userBtn  = document.querySelector('.app-user-trigger');
     var userEl   = document.querySelector('.app-user');
 
+    // Menú móvil: dice si está abierto y se cierra con Escape (ES25)
+    function menu(abrir) {
+        shell.classList.toggle('is-nav-open', abrir);
+        if (toggle) toggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    }
     if (toggle && shell) {
-        toggle.addEventListener('click', function () {
-            shell.classList.toggle('is-nav-open');
+        toggle.addEventListener('click', function () { menu(!shell.classList.contains('is-nav-open')); });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && shell.classList.contains('is-nav-open')) { menu(false); toggle.focus(); }
         });
     }
 
     if (backdrop && shell) {
-        backdrop.addEventListener('click', function () {
-            shell.classList.remove('is-nav-open');
-        });
+        backdrop.addEventListener('click', function () { menu(false); });
     }
 
     if (userBtn && userEl) {
+        var usuario = function (abrir) {
+            userEl.classList.toggle('is-open', abrir);
+            userBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        };
         userBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            userEl.classList.toggle('is-open');
+            usuario(!userEl.classList.contains('is-open'));
         });
-        document.addEventListener('click', function () {
-            userEl.classList.remove('is-open');
-        });
+        document.addEventListener('click', function () { usuario(false); });
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') userEl.classList.remove('is-open');
+            if (e.key === 'Escape') usuario(false);
         });
     }
 

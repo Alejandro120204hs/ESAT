@@ -112,13 +112,21 @@
     /* ── Estado de cuenta ─────────────────────── */
     function pintarCuenta() {
         var P = D.pagos, R = P.resumen, cont = $('pag-cuenta');
-        if (!P.plan) { cont.innerHTML = ''; return; }
+        // Sin plan, el estado de cuenta sale igual si debe algo (por ejemplo el derecho de matrícula)
+        var debeAlgo = P.cobros.some(function (c) { return c.restante > 0; });
+        cont.hidden = !P.plan && !debeAlgo;
+        if (cont.hidden) { cont.innerHTML = ''; return; }
         var venc = P.cobros.filter(function (c) { return c.estado === 'vencido'; });
         var subPagar = R.vencido > 0
             ? (venc.length === 1 ? venc[0].concepto + ': venció el ' + fechaSinAnio(venc[0].vence) : plural(venc.length, 'cobro vencido', 'cobros vencidos'))
             : (R.aPagar > 0 ? 'Vence este mes' : ((P.otras || []).length ? 'Al día en esta matrícula' : 'Estás al día'));
         var total = R.pagado + R.porPagar, pct = total ? Math.round(R.pagado * 100 / total) : 0;
-        var px = R.proxima;
+        var px = R.proxima, finMes = D.hoy.slice(0, 7) + '-31';
+        if (px && R.aPagar > 0 && px.vence <= finMes) {
+            // La de este mes ya está en "A pagar este mes": aquí va la que sigue (cada cifra una vez)
+            px = P.cobros.filter(function (c) { return c.restante > 0 && c.vence && c.vence > finMes; })
+                .sort(function (a, b) { return a.vence < b.vence ? -1 : 1; })[0] || null;
+        }
         cont.innerHTML =
             '<div class="pag-cifra"><span class="pag-cifra-lbl">A pagar este mes</span>' +
                 '<span class="pag-cifra-val' + (R.vencido > 0 ? ' is-riesgo' : (R.aPagar === 0 ? ' is-bien' : '')) + '">' + esc(plata(R.aPagar)) + '</span>' +
@@ -130,8 +138,10 @@
                 '<span class="pag-cifra-val">' + esc(plata(R.pagado)) + '</span>' +
                 '<span class="pag-barra" role="progressbar" aria-label="Pagado del total" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></span>' +
                 '<span class="pag-cifra-sub">' + esc('Te faltan ' + plata(R.porPagar) + ' de ' + plata(total)) + '</span></div>' +
-            '<p class="pag-cuenta-pie">Plan <b>' + esc(P.opciones[P.plan].nombre.toLowerCase()) + '</b>: ' + esc(plural(P.opciones[P.plan].cuotas, 'cuota', 'cuotas')) +
-                ' el día 10 (' + esc(desglose(primeraCuota())) + '). El diploma se entrega cuando estés a paz y salvo.</p>';
+            (P.plan && P.opciones
+                ? '<p class="pag-cuenta-pie">Plan <b>' + esc(P.opciones[P.plan].nombre.toLowerCase()) + '</b>: ' + esc(plural(P.totalCuotas || P.opciones[P.plan].cuotas, 'cuota', 'cuotas')) +
+                    ' el día 10 (' + esc(desglose(primeraCuota())) + '). El diploma se entrega cuando estés a paz y salvo.</p>'
+                : '<p class="pag-cuenta-pie">Todavía no tienes plan de pago: tus cuotas aparecen cuando lo elijas. El diploma se entrega cuando estés a paz y salvo.</p>');
     }
 
     /* ── Cobros ───────────────────────────────── */
@@ -150,7 +160,7 @@
                 '<td><span class="pag-concepto">' + esc(c.concepto) + '</span>' + (sub ? '<span class="pag-concepto-sub">' + esc(sub) + '</span>' : '') + '</td>' +
                 '<td data-lbl="Vence">' + esc(c.vence ? fechaCorta(c.vence) : 'Al reintegrarte') + '</td>' +
                 '<td class="pag-num" data-lbl="Valor">' + esc(plata(c.valor)) + '</td>' +
-                '<td class="pag-num' + (c.abonado ? '' : ' pag-falta') + '" data-lbl="Pagado">' + (c.abonado ? esc(plata(c.abonado)) : '—') + '</td>' +
+                '<td class="pag-num' + (c.abonado || !c.valor ? '' : ' pag-falta') + '" data-lbl="Pagado">' + (!c.valor ? 'No se cobra' : (c.abonado ? esc(plata(c.abonado)) : '—')) + '</td>' +
                 '<td><span class="app-status-tag ' + tag[0] + '">' + tag[1] + '</span>' + falta + '</td>' +
             '</tr>';
         }).join('');
@@ -169,7 +179,7 @@
                     '<div class="pag-recibo-top"><span class="pag-recibo-num">' + esc(r.numero) + '</span>' +
                         (r.anulado ? '<span class="app-status-tag app-status-muted">Anulado</span>' : '') + '</div>' +
                     '<span class="pag-recibo-sub">' + esc(fechaCorta(r.fecha) + ' · ' + r.medio + (r.referencia ? ' (ref. ' + r.referencia + ')' : '') + ' · ' + conceptos) + '</span>' +
-                    (r.anulado ? '<span class="pag-recibo-sub">' + esc('El administrativo lo anuló: ' + r.motivo + ' No cuenta como pago.') + '</span>' : '') +
+                    (r.anulado ? '<span class="pag-recibo-sub">' + esc('La administración lo anuló' + (r.motivo ? ': ' + String(r.motivo).replace(/\.?\s*$/, '.') : '.') + ' No cuenta como pago.') + '</span>' : '') +
                 '</div>' +
                 '<span class="pag-recibo-total">' + esc(plata(r.total)) + '</span>' +
                 '<button type="button" class="pag-btn pag-btn-ghost pag-btn-sm" data-recibo="' + i + '" aria-label="' + esc('Imprimir el recibo ' + r.numero) + '">' + ICON.imprimir + 'Imprimir</button>' +
@@ -189,7 +199,7 @@
             extra: fechaAnio(r.fecha),
             sello: r.anulado ? 'Anulado' : null,
             contenido:
-                (r.anulado ? '<div class="rc-aviso"><strong>Este recibo fue anulado.</strong><span>Motivo: ' + e(r.motivo) + '</span></div>' : '') +
+                (r.anulado ? '<div class="rc-aviso"><strong>Este recibo fue anulado.</strong>' + (r.motivo ? '<span>Motivo: ' + e(r.motivo) + '</span>' : '') + '</div>' : '') +
                 '<section class="rc-datos">' +
                     '<div><span>Estudiante</span><strong>' + e((E.nombres + ' ' + E.apellidos).trim()) + '</strong></div>' +
                     '<div><span>Documento</span><strong>' + e(E.documento || '—') + '</strong></div>' +

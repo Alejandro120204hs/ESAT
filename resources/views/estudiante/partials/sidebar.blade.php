@@ -9,7 +9,7 @@
     };
 @endphp
 
-<aside class="app-sidebar">
+<aside class="app-sidebar" id="app-sidebar">
     {{-- Cabecera: solo logo --}}
     <div class="app-sidebar-head">
         <div class="app-sidebar-brand">

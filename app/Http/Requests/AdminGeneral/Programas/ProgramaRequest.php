@@ -78,7 +78,7 @@ class ProgramaRequest extends ProgramaSedeRequest
             $antes = $programa->modulos->map(fn ($m) => [$m->nombre, (int) $m->horas])->all();
             $ahora = collect($this->input('modulos'))->map(fn ($m) => [$m['nombre'], (int) $m['horas']])->all();
             if ($antes !== $ahora) {
-                $v->errors()->add('modulos', 'La malla ya no se puede cambiar: sus módulos ya tienen notas o evaluaciones y actividades del Aula virtual.');
+                $v->errors()->add('modulos', 'La malla ya no se puede cambiar: sus módulos ya tienen notas o contenido del Aula virtual (evaluaciones, actividades o material).');
             }
         }]);
     }

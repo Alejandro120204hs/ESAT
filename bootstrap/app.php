@@ -16,9 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'sede.trabajo' => \App\Http\Middleware\EnsureSedeDeTrabajo::class,
             'transaccion' => \App\Http\Middleware\TransaccionEscritura::class,
         ]);
-        // Cuenta desactivada o derecho de matrícula vencido: se corta también la sesión abierta
+        // Cuenta desactivada o bloqueada: se corta también la sesión abierta (el bloqueo por intentos fallidos solo frena
+        // ingresos nuevos). Y las cabeceras de seguridad en todas las respuestas web (ES20)
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountIsEnabled::class,
+            \App\Http\Middleware\CabecerasDeSeguridad::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

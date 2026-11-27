@@ -7,6 +7,8 @@ use App\Models\Academico\Curso;
 use App\Models\Comunicacion\Comunicado;
 use App\Models\Finanzas\Matricula;
 use App\Models\User;
+use App\Support\Archivos;
+use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -42,7 +44,7 @@ class ComunicadoService
     /** Las personas que pueden recibir comunicados en la sede, en el formato de comunicados.js. */
     public function personas(int $sedeId): array
     {
-        $matriculas = Matricula::where('sede_id', $sedeId)->whereIn('estado', ['activo', 'aplazado'])
+        $matriculas = Matricula::where('sede_id', $sedeId)->whereIn('estado', Matricula::VIGENTES)
             ->whereHas('estudiante', fn ($q) => $q->where('activo', true))
             ->with(['estudiante.contactoEmergencia', 'curso', 'programa'])
             ->get()->sortBy(fn (Matricula $m) => $m->estudiante->nombres.' '.$m->estudiante->apellidos);
@@ -161,7 +163,7 @@ class ComunicadoService
             if ($archivo) {
                 $c->fill([
                     'adjunto_ruta'   => $archivo->store("comunicados/{$sedeId}", self::disco()),
-                    'adjunto_nombre' => mb_substr($archivo->getClientOriginalName(), 0, 150),
+                    'adjunto_nombre' => Archivos::nombre($archivo),
                     'adjunto_tipo'   => strtolower($archivo->getClientOriginalExtension()) === 'pdf' ? 'pdf' : 'imagen',
                     'adjunto_peso'   => $archivo->getSize(),
                 ]);
@@ -198,6 +200,39 @@ class ComunicadoService
         if ($ruta) {
             Storage::disk(self::disco())->delete($ruta);
         }
+    }
+
+    /**
+     * Lo contrario de personas(): los comunicados que le llegan a un estudiante, con la misma regla de destinatarios.
+     * Publicados y sin archivar de su sede, para toda la sede o para estudiantes, y los de su docente a su grupo; solo con
+     * matrícula vigente y cuenta activa. Lo usan su panel y la descarga del adjunto (antes vivía en el panel, ES28).
+     */
+    public function recibidosPorEstudiante(User $estudiante, ?Matricula $m, ?CarbonInterface $ahora = null): Collection
+    {
+        if (! $m || ! in_array($m->estado, Matricula::VIGENTES, true) || ! $estudiante->activo || ! $estudiante->sede_id) {
+            return collect();
+        }
+        $ahora ??= now();
+        $hoy = $ahora->toDateString();
+
+        return Comunicado::where('sede_id', $estudiante->sede_id)
+            ->whereNull('archivado_en')
+            ->whereIn('estado', ['publicado', 'programado'])
+            ->where(fn ($q) => $q->whereIn('destino', ['sede', 'estudiantes'])
+                ->orWhere(fn ($q2) => $q2->where('destino', 'grupo')->where('curso_id', $m->curso_id)))
+            ->where(fn ($q) => $q->whereNull('visible_hasta')->orWhereDate('visible_hasta', '>=', $hoy))
+            ->with(['autor', 'curso.programa', 'lectores' => fn ($q) => $q->where('users.id', $estudiante->id)])
+            ->get()
+            ->filter(fn (Comunicado $c) => $c->estadoActual($ahora) === 'publicado')
+            ->values();
+    }
+
+    /** Abrir un comunicado que le llegó lo marca leído; la primera lectura no cambia (paneles Estudiante y Docente). */
+    public function marcarLeido(Comunicado $c, User $u): void
+    {
+        DB::table('comunicado_lecturas')->insertOrIgnore([
+            'comunicado_id' => $c->id, 'user_id' => $u->id, 'leido_en' => now(),
+        ]);
     }
 
     public static function disco(): string

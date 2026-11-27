@@ -93,9 +93,9 @@ class Comunicado extends Model
     }
 
     /** Un programado cuya hora ya llegó cuenta como publicado (no hace falta que corra ninguna tarea). */
-    public function estadoActual(): string
+    public function estadoActual(?\Carbon\CarbonInterface $ahora = null): string
     {
-        return $this->estado === 'programado' && $this->publicado_en?->lte(now()) ? 'publicado' : $this->estado;
+        return $this->estado === 'programado' && $this->publicado_en?->lte($ahora ?? now()) ? 'publicado' : $this->estado;
     }
 
     public function esDelAdmin(): bool

@@ -7,7 +7,6 @@ use App\Http\Requests\Estudiante\Foro\ReporteRequest;
 use App\Http\Requests\Estudiante\Foro\RespuestaRequest;
 use App\Http\Requests\Estudiante\Foro\TemaRequest;
 use App\Models\Comunicacion\ForoMensaje;
-use App\Models\Comunicacion\ForoReporte;
 use App\Models\Comunicacion\ForoTema;
 use App\Models\User;
 use App\Services\Academico\PanelEstudianteService;
@@ -46,7 +45,7 @@ class ForoController extends Controller
 
     public function reportar(ReporteRequest $request, ForoMensaje $mensaje): JsonResponse
     {
-        ForoReporte::create(['mensaje_id' => $mensaje->id, 'user_id' => $request->user()->id, 'motivo' => $request->input('motivo')]);
+        $this->foro->reportar($mensaje, $request->user(), $request->input('motivo'));
 
         return $this->respuesta('Gracias. El administrativo revisará el mensaje.');
     }

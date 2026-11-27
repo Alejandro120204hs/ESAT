@@ -82,7 +82,7 @@ body.app-page {
 .app-nav-group:last-child { margin-bottom: 0; }
 .app-nav-group-label {
     font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
-    font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em;
     color: rgba(255,255,255,0.45); padding: 0 10px; margin-bottom: 6px;
 }
 
@@ -126,7 +126,7 @@ body.app-page {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .app-sidebar-user-role {
-    font-size: 0.72rem; color: rgba(255,255,255,0.38);
+    font-size: 0.75rem; color: rgba(255,255,255,0.38);
     text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
 }
 
@@ -166,7 +166,7 @@ body.app-page {
 .app-user { position: relative; display: flex; align-items: center; gap: 12px; }
 .app-user-info { line-height: 1.25; text-align: right; }
 .app-user-name  { font-weight: 700; font-size: 0.875rem; color: var(--navy-3); }
-.app-user-role  { font-size: 0.74rem; color: var(--muted); }
+.app-user-role  { font-size: 0.75rem; color: var(--muted); }
 
 .app-user-trigger {
     display: flex; align-items: center; justify-content: center;
@@ -243,63 +243,15 @@ body.app-page {
 .app-status-danger  { background: #FEE2E2; color: #991B1B; }
 .app-status-muted   { background: #F1F5F9; color: var(--muted); }
 
-/* ── Combobox (departamento / ciudad) ─────────── */
-.app-combobox { position: relative; }
-.app-combobox-trigger {
-    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    font-family: inherit; font-size: 0.92rem; color: var(--text); text-align: left;
-    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md);
-    background: var(--white); cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
-}
-.app-combobox-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-combobox.is-open .app-combobox-trigger {
-    outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(217, 123, 46, 0.15);
-}
-.app-combobox-chevron {
-    width: 15px; height: 15px; flex-shrink: 0; color: var(--muted);
-    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-    transition: transform 0.2s var(--ease-out);
-}
-.app-combobox.is-open .app-combobox-chevron { transform: rotate(180deg); }
-.app-combobox-panel {
-    position: fixed; z-index: 9999;
-    background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md); padding: 8px; display: flex; flex-direction: column; gap: 6px;
-}
-.app-combobox-panel[hidden] { display: none; }
-.app-combobox[data-position="absolute"] { position: relative; }
-.app-combobox[data-position="absolute"] .app-combobox-panel {
-    position: absolute; top: calc(100% + 6px); left: 0; right: 0; width: auto; bottom: auto;
-    z-index: 200; min-width: 180px;
-}
-.app-combobox-search-wrap {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px;
-}
-.app-combobox-search-wrap svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.app-combobox-search { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
-.app-combobox-search::placeholder { color: var(--muted); }
-.app-combobox-list { list-style: none; max-height: 220px; overflow-y: auto; }
-.app-combobox-list li {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    padding: 9px 10px; border-radius: 8px; font-size: 0.88rem; color: var(--navy-3);
-    cursor: pointer; transition: background-color 0.15s;
-}
-.app-combobox-list li[hidden] { display: none; }
-.app-combobox-list li:hover { background: rgba(16, 40, 74, 0.06); }
-.app-combobox-list li.is-selected { background: #FBE9D8; color: var(--orange-2); font-weight: 700; }
-.app-combobox-list li.is-selected svg { display: block; }
-.app-combobox-list li svg { display: none; width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.app-combobox-empty { padding: 14px 10px; font-size: 0.86rem; color: var(--muted); text-align: center; }
-
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 900px) {
+    /* Cerrado no se puede tabular (visibility); se oculta después de deslizarse */
     .app-sidebar {
         position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
-        transform: translateX(-100%);
-        transition: transform 0.3s var(--ease-out);
+        transform: translateX(-100%); visibility: hidden;
+        transition: transform 0.3s var(--ease-out), visibility 0s linear 0.3s;
     }
-    .app-shell.is-nav-open .app-sidebar { transform: translateX(0); }
+    .app-shell.is-nav-open .app-sidebar { transform: translateX(0); visibility: visible; transition: transform 0.3s var(--ease-out); }
     .app-shell.is-nav-open .app-sidebar-backdrop { display: block; }
     .app-menu-toggle { display: flex; }
     .app-topbar { padding: 0 18px; }

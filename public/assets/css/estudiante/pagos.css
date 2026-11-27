@@ -65,7 +65,7 @@
 .pag-cuenta:empty { display: none; }
 .pag-cifra { padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .pag-cifra + .pag-cifra { border-left: 1px solid var(--line); }
-.pag-cifra-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.pag-cifra-lbl { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .pag-cifra-val { font-family: "Archivo", system-ui, sans-serif; font-size: 1.55rem; font-weight: 900; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .pag-cifra-val.is-riesgo { color: var(--red); }
 .pag-cifra-val.is-bien { color: #2D7A3A; }
@@ -87,7 +87,7 @@
 .pag-vista-btn:hover { color: var(--navy-3); }
 .pag-vista-btn.is-active { background: var(--white); color: var(--navy-3); box-shadow: 0 1px 3px rgba(10,27,51,.14); }
 .pag-vista-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
-.pag-vista-num { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08); font-size: 0.74rem; font-variant-numeric: tabular-nums; text-align: center; }
+.pag-vista-num { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08); font-size: 0.75rem; font-variant-numeric: tabular-nums; text-align: center; }
 .pag-vista-num:empty { display: none; }
 .pag-panel[hidden], .pag-cuenta[hidden] { display: none; }
 
@@ -96,7 +96,7 @@
 .pag-tabla { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .pag-tabla th {
     padding: 11px 16px; text-align: left; background: var(--bg);
-    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); white-space: nowrap;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); white-space: nowrap;
 }
 .pag-tabla td { padding: 12px 16px; border-top: 1px solid var(--line); vertical-align: middle; color: var(--text); }
 .pag-tabla .pag-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

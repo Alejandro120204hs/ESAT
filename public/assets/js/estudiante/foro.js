@@ -163,7 +163,7 @@
     }
 
     function adjuntoHtml(id) {
-        return '<span class="for-adj"><input type="file" id="' + id + '" accept=".pdf,.jpg,.jpeg,.png">' +
+        return '<span class="for-adj"><input type="file" id="' + id + '" tabindex="-1" accept=".pdf,.jpg,.jpeg,.png">' +
             '<label for="' + id + '" class="for-btn for-btn-ghost for-btn-sm" tabindex="0" role="button" data-adj-btn>' + ICON.clip + 'Adjuntar</label>' +
             '<span class="for-adj-elegido" data-adj-nombre></span>' +
             '<button type="button" class="for-adj-quitar" data-adj-quitar hidden>Quitar</button></span>';
@@ -192,14 +192,21 @@
         if (!txt.value.trim()) { $('for-resp-error').textContent = 'Escribe tu respuesta.'; txt.classList.add('is-invalido'); txt.focus(); return; }
         enviando = true;
         $('for-resp-enviar').disabled = true;
-        API.responderTema(abierto.id, { texto: txt.value, adjunto: adjunto }).then(function (r) {
+        var id = abierto.id;
+        API.responderTema(id, { texto: txt.value, adjunto: adjunto }).then(function (r) {
             enviando = false;
-            if (!r.ok) { $('for-resp-error').textContent = r.mensaje; $('for-resp-enviar').disabled = false; return; }
+            // Si mientras tanto cerró el cajón o abrió otro tema, no se toca lo que tiene en pantalla (ES24)
+            var mismo = abierto && abierto.id === id;
+            if (!r.ok) {
+                if (mismo) { $('for-resp-error').textContent = r.mensaje; $('for-resp-enviar').disabled = false; } else { toast(r.mensaje, true); }
+                return;
+            }
             toast(r.mensaje);
-            abierto = temaDe(abierto.id);
+            pintarTemas();
+            if (!mismo) return;
+            abierto = temaDe(id);
             adjunto = null;
             pintarHilo(true);
-            pintarTemas();
             $('for-resp-texto').focus();
         });
     }
@@ -253,14 +260,19 @@
                 if (texto.value.trim().length < 10) { $('for-dlg-error').textContent = 'Escribe tu mensaje (al menos 10 caracteres).'; texto.classList.add('is-invalido'); texto.focus(); return; }
                 $('for-dlg-si').disabled = true;
                 API.abrirTema({ categoria: cat, titulo: titulo.value, texto: texto.value, adjunto: adjTema }).then(function (r) {
-                    if (!r.ok) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; return; }
-                    cerrarDialogo();
+                    var seguia = !$('for-dialogo').hidden;
+                    if (!r.ok) {
+                        if (seguia) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; } else { toast(r.mensaje, true); }
+                        return;
+                    }
+                    if (seguia) cerrarDialogo();
                     toast(r.mensaje);
                     categoria = 'todas';
                     $('for-buscar').value = '';
                     pintarCats();
                     pintarTemas();
-                    if (r.tema) abrir(r.tema, $('for-nuevo'));
+                    // Si cerró el diálogo mientras se enviaba, el tema queda en la lista pero no se le abre por sorpresa
+                    if (r.tema && seguia) abrir(r.tema, $('for-nuevo'));
                 });
             });
         conectarAdjunto('for-nt-adj', function (a) { adjTema = a; }, 'for-dlg-error');
@@ -274,11 +286,17 @@
                 var m = $('for-rep-motivo');
                 if (m.value.trim().length < 5) { $('for-dlg-error').textContent = 'Cuéntale al administrativo por qué lo reportas (al menos 5 caracteres).'; m.classList.add('is-invalido'); m.focus(); return; }
                 $('for-dlg-si').disabled = true;
+                var temaId = abierto && abierto.id;
                 API.reportar(mensajeId, m.value).then(function (r) {
-                    if (!r.ok) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; return; }
-                    cerrarDialogo();
+                    var seguia = !$('for-dialogo').hidden;
+                    if (!r.ok) {
+                        if (seguia) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; } else { toast(r.mensaje, true); }
+                        return;
+                    }
+                    if (seguia) cerrarDialogo();
                     toast(r.mensaje);
-                    abierto = temaDe(abierto.id);
+                    if (!abierto || abierto.id !== temaId) { pintarTemas(); return; }
+                    abierto = temaDe(temaId);
                     pintarHilo();
                     var el = $('for-msg-' + mensajeId);
                     if (el) el.scrollIntoView({ block: 'center' });

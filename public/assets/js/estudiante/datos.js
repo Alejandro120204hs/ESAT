@@ -69,6 +69,12 @@
         D.evaluaciones = D.evaluaciones || [];
         D.actividades = D.actividades || [];
         D.materiales = D.materiales || [];
+        // Reloj de la sede: la hora del servidor en Colombia, no la del computador (puede estar mal o en otra zona, ES26).
+        // D.ahora() se lee con getUTC*: ya trae la zona sumada
+        var dif = typeof D.reloj === 'number' ? D.reloj - Date.now() : 0, zona = (D.zona || 0) * 60000;
+        D.ahora = function () { return new Date(Date.now() + dif + zona); };
+        D.minutosAhora = function () { var d = D.ahora(); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
+        D.hoyAhora = function () { return D.ahora().toISOString().slice(0, 10); };
         // Evaluación con tiempo: cuándo se acaba según el reloj del servidor (restante en segundos), no el del computador
         D.evaluaciones.forEach(function (ev) { if (ev.intento && ev.intento.restante != null) ev.intento.finEn = Date.now() + ev.intento.restante * 1000; });
         D.comunicados = D.comunicados || [];
@@ -83,12 +89,23 @@
         }
     }
     poner(S.datos);
+    // Si la página sigue abierta al pasar la medianoche, cambia D.hoy y avisa a la pantalla (el Inicio recarga, ES26)
+    setInterval(function () {
+        var hoy = D.hoyAhora();
+        if (hoy > D.hoy) {
+            D.hoy = hoy;
+            document.dispatchEvent(new CustomEvent('est:nuevo-dia'));
+        }
+    }, 60000);
 
     /* ── Guardar ─────────────────────────────── */
     function ruta(nombre, id) { return String(RUTAS[nombre] || '').replace('__ID__', encodeURIComponent(id)); }
 
     // cuerpo: objeto (va como JSON) o FormData (archivos). Resuelve {ok, mensaje, ...}; nunca rechaza.
+    // Si dos envíos se cruzan, los datos de uno viejo no pisan los de uno más nuevo (auditoría, ES24)
+    var turnos = 0, aplicado = 0;
     function enviar(url, cuerpo) {
+        var turno = ++turnos;
         var esForm = typeof FormData !== 'undefined' && cuerpo instanceof FormData;
         var headers = { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' };
         if (!esForm) headers['Content-Type'] = 'application/json';
@@ -102,7 +119,10 @@
                 }
                 return r.json().catch(function () { return {}; }).then(function (j) {
                     if (r.ok && j.ok) {
-                        if (j.datos) poner(j.datos);
+                        if (j.datos && turno > aplicado) {
+                            aplicado = turno;
+                            poner(j.datos);
+                        }
                         return j;
                     }
                     var errores = j.errors || {};

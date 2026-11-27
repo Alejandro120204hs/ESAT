@@ -153,7 +153,7 @@
         if (est === 'por_hacer') btn = '<button type="button" class="aul-btn aul-btn-primary aul-btn-sm" data-abrir="' + clave(x) + '">' + (x.tipo === 'evaluacion' ? ICON.evaluacion + 'Responder' : ICON.subir + 'Entregar') + '</button>';
         else if (est === 'entregada' && !x.cerrada && x.participa) btn = '<button type="button" class="aul-btn aul-btn-ghost aul-btn-sm" data-abrir="' + clave(x) + '">Ver o cambiar</button>';
         else btn = '<button type="button" class="aul-btn aul-btn-ghost aul-btn-sm" data-abrir="' + clave(x) + '">' + (est === 'calificada' ? 'Ver resultado' : 'Ver detalle') + '</button>';
-        return '<article class="aul-card" tabindex="0" data-id="' + clave(x) + '" aria-label="' + esc(x.titulo) + '">' +
+        return '<article class="aul-card" data-id="' + clave(x) + '">' +
             '<div class="aul-card-head">' +
                 '<span class="aul-card-tipo">' + ICON[x.tipo] + esc(tipoTxt(x)) + '</span>' +
                 (tag ? '<span class="app-status-tag ' + tag[0] + '">' + tag[1] + '</span>' : '') +
@@ -230,6 +230,7 @@
         }
     }
     function enlaceHtml(url) {
+        if (!/^https?:\/\//i.test(String(url))) return '';
         var corto = String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
         return '<div class="aul-archivo"><span class="aul-archivo-icono" aria-hidden="true">' + ICON.enlace + '</span>' +
             '<span class="aul-archivo-info"><a class="aul-archivo-nombre" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
@@ -242,10 +243,6 @@
         if (card && card.classList.contains('aul-mat')) return;
         if (b) { abrir(b.dataset.abrir, b); return; }
         if (card) abrir(card.dataset.id, card);
-    });
-    $('aul-grid').addEventListener('keydown', function (e) {
-        var card = e.target.closest('.aul-card:not(.aul-mat)');
-        if (card && e.target === card && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(card.dataset.id, card); }
     });
 
     /* ── Cajón ────────────────────────────────── */
@@ -379,15 +376,15 @@
             var r = x.respuesta;
             body = '<div class="aul-resultado"><span class="aul-resultado-nota aul-tono-' + tono(r.nota) + '">' + esc(nota(r.nota)) + '</span>' +
                 '<span class="aul-resultado-txt"><b>Acertaste ' + r.aciertos + ' de ' + x.preguntas.length + '</b>Respondida el ' + esc(fechaCorta(r.fecha)) + ' a las ' + esc(hora(r.fecha)) + '</span></div>';
-            body += x.verCorrectas ? '' : aviso('neutro', 'info', x.cerrada ? 'En un minuto verás aquí las respuestas correctas. Mientras tanto ves lo que marcaste.'
+            body += x.verCorrectas ? '' : aviso('neutro', 'info', x.cerrada ? 'En unos segundos verás aquí las respuestas correctas. Mientras tanto ves lo que marcaste.'
                 : 'Las respuestas correctas se muestran después del cierre, el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>. Mientras tanto ves lo que marcaste.');
         } else if (x.intento && x.intento.expirada) {
             body = aviso('riesgo', 'alerta', 'Se acabó tu tiempo sin que se enviaran tus respuestas, así que quedó sin responder.' +
                 (x.verCorrectas ? ' Abajo están las respuestas correctas para que estudies.'
-                    : (x.cerrada ? ' En un minuto verás aquí las respuestas correctas.' : ' Las respuestas correctas se ven después del cierre, el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>.')));
+                    : (x.cerrada ? ' En unos segundos verás aquí las respuestas correctas.' : ' Las respuestas correctas se ven después del cierre, el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>.')));
         } else {
             body = aviso('riesgo', 'alerta', 'No la respondiste. Cerró el <b>' + esc(fechaCorta(x.cierra)) + ' a las ' + esc(hora(x.cierra)) + '</b>.' +
-                (x.verCorrectas ? ' Abajo están las respuestas correctas para que estudies.' : ' En un minuto verás aquí las respuestas correctas.'));
+                (x.verCorrectas ? ' Abajo están las respuestas correctas para que estudies.' : ' En unos segundos verás aquí las respuestas correctas.'));
         }
         var marcadas = x.respuesta ? x.respuesta.marcadas : {};
         body += '<ol class="aul-preguntas">' + x.preguntas.map(function (p, i) {
@@ -534,6 +531,8 @@
                 actual = buscar(clave(x));
                 pintarCajon();
                 render();
+                var primera = $('aul-dw-body').querySelector('input[type=radio]');
+                (primera || $('aul-dw-cerrar')).focus();
             });
         });
     }
@@ -542,8 +541,8 @@
     function enCurso() {
         return D.evaluaciones.filter(function (ev) { return ev.participa && ev.intento && !ev.intento.expirada && !ev.respuesta && ev.intento.finEn; });
     }
-    // El servidor recibe hasta 60 s después del fin (Evaluacion::GRACIA_SEGUNDOS); se reintenta cada 5 s dentro de ese margen
-    var GRACIA_MS = 55000, REINTENTO_MS = 5000;
+    // El servidor recibe hasta 20 s después del fin (Evaluacion::GRACIA_SEGUNDOS); se reintenta cada 3 s dentro de ese margen
+    var GRACIA_MS = 17000, REINTENTO_MS = 3000;
     function tic() {
         var ahora = Date.now();
         enCurso().forEach(function (ev) {
@@ -605,7 +604,7 @@
             body += '<div class="aul-subir">' +
                 '<p class="aul-seccion-titulo">' + (x.entrega ? 'Cambiar el archivo' : 'Sube tu archivo') + '</p>' +
                 '<div class="aul-subir-fila">' +
-                    '<input type="file" id="aul-archivo" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">' +
+                    '<input type="file" id="aul-archivo" tabindex="-1" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">' +
                     '<label for="aul-archivo" class="aul-btn aul-btn-ghost aul-btn-sm" id="aul-elegir" tabindex="0" role="button">' + ICON.subir + 'Elegir archivo</label>' +
                     '<span class="aul-subir-elegido" id="aul-elegido"></span>' +
                 '</div>' +

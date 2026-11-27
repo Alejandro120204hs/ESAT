@@ -255,8 +255,8 @@ class PagoService
         ];
     }
 
-    /** Pesos que se rebajan de $valor con el porcentaje de descuento (enteros). */
-    private function descuentoDe(float $valor, float $pct): float
+    /** Pesos que se rebajan de $valor con el porcentaje de descuento (enteros). También lo usa el panel Estudiante. */
+    public function descuentoDe(float $valor, float $pct): float
     {
         return $pct > 0 ? (float) round($valor * min($pct, 100) / 100) : 0.0;
     }
@@ -687,18 +687,6 @@ class PagoService
         }
 
         return $cambiadas;
-    }
-
-    /**
-     * Derecho de matrícula vencido sin pagar completo en una matrícula vigente. Ya no bloquea el ingreso del
-     * estudiante (lo pidió el cliente, 24-11-2026): es una deuda más, y sin paz y salvo no se gradúa.
-     */
-    public function derechoVencido(User $estudiante): ?Pago
-    {
-        return Pago::where('tipo', 'matricula')->whereIn('estado', Pago::POR_PAGAR)
-            ->whereNotNull('fecha_vencimiento')->whereDate('fecha_vencimiento', '<', today()->toDateString())
-            ->whereHas('matricula', fn ($q) => $q->where('estudiante_id', $estudiante->id)->whereIn('estado', Matricula::VIGENTES))
-            ->orderBy('fecha_vencimiento')->first();
     }
 
     /** Guarda como vencidos los pendientes que ya pasaron su fecha (comando pagos:vencer). */
