@@ -1,5 +1,5 @@
 {{-- Comunicados (Comunicación): datos reales desde Admin\Comunicados\ComunicadoController (ComunicadoService).
-     El admin publica a toda la sede o a un rol (estudiantes, docentes, acudientes); los docentes publican a sus
+     El admin publica a toda la sede o a un rol (estudiantes, docentes); los docentes publican a sus
      grupos desde su panel y aquí el admin solo los ve y los archiva. Se registra quién lo leyó (comunicado_lecturas)
      y se puede reenviar por WhatsApp a quien no lo ha leído. Crear/editar: ComunicadoRequest; archivar:
      ArchivarComunicadoRequest. --}}
@@ -20,7 +20,7 @@
     <div class="com-header">
         <div>
             <h2 class="com-title">Comunicados</h2>
-            <p class="com-sub">Publica avisos para toda la sede o para estudiantes, docentes o acudientes, y revisa quién ya los leyó. Aquí también ves lo que los docentes les publican a sus grupos.</p>
+            <p class="com-sub">Publica avisos para toda la sede o para estudiantes o docentes, y revisa quién ya los leyó. Aquí también ves lo que los docentes les publican a sus grupos.</p>
         </div>
         <button type="button" class="com-btn com-btn-primary" id="com-btn-nuevo">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -166,7 +166,7 @@
 var COM_CFG = {
     ahora: @json(now()->format('Y-m-d H:i')),
     admin: @json(trim(auth()->user()->nombres.' '.auth()->user()->apellidos)),
-    sede: @json(auth()->user()->sede?->nombre),
+    sede: @json(auth()->user()->sedeTrabajo()?->nombre),
     url: @json(url('admin/comunicados'))
 };
 var COM_DATOS = {

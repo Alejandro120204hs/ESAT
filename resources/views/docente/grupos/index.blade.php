@@ -1,10 +1,7 @@
 {{--
-    Docente › Mis grupos — PANTALLA SOLO FRONTEND (todavía sin backend).
-    Todos los datos salen de window.DOC_DATOS (public/assets/js/docente/datos-ejemplo.js):
-    programas, escuelas y jornadas son reales; grupos, módulos, estudiantes, acudientes,
-    teléfonos, asistencias y notas son FICTICIOS.
-    Esta pantalla solo consulta: no guarda nada. "Tomar asistencia" y "Poner notas" llevan a
-    sus pantallas con ?grupo=ID; ahí se guarda vía DOC_API (sessionStorage) hasta que exista el backend.
+    Docente › Mis grupos (Docente/Grupos/GrupoController). Datos reales de los grupos que el docente tiene
+    a cargo (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js arma DOC_DATOS).
+    Esta pantalla solo consulta: "Tomar asistencia" y "Poner notas" llevan a sus pantallas con ?grupo=ID.
     Deep link: /docente/grupos?grupo=ID abre la ficha de ese grupo.
 --}}
 @extends('docente.layout')
@@ -13,6 +10,7 @@
 @section('active', 'grupos')
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/docente/documento.css') }}?v={{ filemtime(public_path('assets/css/docente/documento.css')) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/docente/grupos.css') }}?v={{ filemtime(public_path('assets/css/docente/grupos.css')) }}">
 @endpush
 
@@ -24,7 +22,7 @@
     {{-- Encabezado --}}
     <div class="grp-header">
         <h2 class="grp-title">Mis grupos</h2>
-        <p class="grp-sub">Los grupos que tienes a cargo: horario, avance del programa, asistencia y lo que te falta por registrar en cada uno.</p>
+        <p class="grp-sub">Los grupos que tienes a cargo: horario, avance de la carrera, asistencia y lo que te falta por registrar en cada uno.</p>
     </div>
 
     {{-- Pestañas + búsqueda --}}
@@ -42,7 +40,7 @@
 
         <div class="grp-search-box">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="search" id="grp-search" placeholder="Buscar por programa, código o grupo..." autocomplete="off" aria-label="Buscar grupo por programa, código o grupo">
+            <input type="search" id="grp-search" placeholder="Buscar por carrera, código o grupo..." autocomplete="off" aria-label="Buscar grupo por carrera, código o grupo">
         </div>
 
         <span class="grp-count-badge" id="grp-count" aria-live="polite"></span>
@@ -123,6 +121,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 Poner notas
             </a>
+            <button type="button" class="grp-btn grp-btn-ghost" id="grp-dw-imprimir">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir lista
+            </button>
         </div>
     </div>
 </div>
@@ -131,6 +133,7 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}" defer></script>
+@include('docente.partials.datos')
+<script src="{{ asset('assets/js/docente/documento.js') }}?v={{ filemtime(public_path('assets/js/docente/documento.js')) }}" defer></script>
 <script src="{{ asset('assets/js/docente/grupos.js') }}?v={{ filemtime(public_path('assets/js/docente/grupos.js')) }}" defer></script>
 @endpush

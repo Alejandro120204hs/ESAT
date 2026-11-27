@@ -17,7 +17,7 @@ class ReporteController extends Controller
 
     public function index(): View
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return view('admin.reportes.index', ['datos' => $this->reportes->datosSede((int) $sedeId)]);

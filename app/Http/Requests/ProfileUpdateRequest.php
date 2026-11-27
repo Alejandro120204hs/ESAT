@@ -25,9 +25,14 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        // El estudiante y el docente no cambian su nombre: sale en certificados, planillas y en la nómina, y lo corrige la
+        // secretaría. Sin estas reglas, validated() no los trae y ProfileController no los toca aunque lleguen en la petición.
+        $nombre = $this->user()->isEstudiante() || $this->user()->isDocente() ? [] : [
             'nombres' => ['required', 'string', 'max:255'],
             'apellidos' => ['required', 'string', 'max:255'],
+        ];
+
+        return $nombre + [
             'telefono' => ['nullable', 'regex:/^3\d{9}$/'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'email' => [

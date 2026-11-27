@@ -29,7 +29,7 @@ class GrupoController extends Controller
         $sedeId = $this->sedeId();
 
         $grupos = Curso::deSede($sedeId)
-            ->with(['programa.escuela', 'sesiones', 'docentes', 'estudiantesActivos'])
+            ->with(['programa.escuela', 'sesiones', 'historialSesiones', 'docentes', 'estudiantesActivos'])
             ->orderBy('codigo')
             ->get();
 
@@ -72,7 +72,8 @@ class GrupoController extends Controller
         [$inicio, $fin] = $request->fechas($programa);
 
         $curso = DB::transaction(function () use ($request, $programa, $inicio, $fin) {
-            // El grupo y el código no se escriben: salen del programa
+            // El grupo y el código no se escriben: salen del programa (bloqueado: dos grupos a la vez no sacan la misma letra)
+            Programa::whereKey($programa->id)->lockForUpdate()->first();
             $nombre = $this->siguienteNombre($programa->id);
             $curso = Curso::create([
                 'programa_id'  => $programa->id,
@@ -119,7 +120,7 @@ class GrupoController extends Controller
                 'estado'       => $request->input('estado'),
             ]);
             $curso->docentes()->sync($request->filled('docente_id') ? [$request->integer('docente_id')] : []);
-            // Si se corrió el inicio, el derecho de matrícula de sus estudiantes vence el nuevo día
+            // Si se corrió el inicio, el derecho de matrícula y las cuotas de sus estudiantes vencen según el nuevo día
             if ($curso->wasChanged('fecha_inicio')) {
                 app(PagoService::class)->reprogramarDerechosDelGrupo($curso);
             }
@@ -139,6 +140,10 @@ class GrupoController extends Controller
         if ($nuevo === 'activo' && $error = $this->impedimentoParaActivar($curso)) {
             return response()->json(['ok' => false, 'message' => $error], 422);
         }
+        // No antes de su fin con estudiantes vigentes (HALLAZGOS A8)
+        if ($nuevo === 'finalizado' && $error = $curso->impedimentoParaFinalizar()) {
+            return response()->json(['ok' => false, 'message' => $error], 422);
+        }
         $curso->update(['estado' => $nuevo]);
 
         $accion = $nuevo === 'activo' ? 'activar' : 'desactivar';
@@ -156,7 +161,7 @@ class GrupoController extends Controller
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return $sedeId;
@@ -183,7 +188,7 @@ class GrupoController extends Controller
 
         $programa = $curso->programa;
         if (! in_array($curso->jornada, $programa->jornadas ?? [], true)) {
-            return 'El programa ya no se ofrece en jornada '.mb_strtolower($curso->jornada).': cambia la jornada del grupo antes de activarlo.';
+            return 'La carrera ya no se ofrece en jornada '.mb_strtolower($curso->jornada).': cambia la jornada del grupo antes de activarlo.';
         }
 
         $sesiones = $curso->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()])->all();
@@ -256,7 +261,7 @@ class GrupoController extends Controller
             'sesiones'         => $sesiones,
             'horas_semana'     => round($minSemana / 60, 1),
             'horas_programa'   => $c->programa->horas,
-            'horas_programadas'=> round($this->horario->horasProgramadas($sesiones, $c->fecha_inicio, $c->fecha_fin)),
+            'horas_programadas'=> round($this->horario->horasDelGrupo($c)),   // con todos los horarios que ha tenido
             'fecha_inicio_iso' => $c->fecha_inicio->format('Y-m-d'),
             'fecha_fin_iso'    => $c->fecha_fin->format('Y-m-d'),
             'fecha_inicio'     => $this->fecha($c->fecha_inicio),

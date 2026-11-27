@@ -45,10 +45,10 @@
 .cal-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .cal-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .cal-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.cal-kpi-blue   .cal-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.cal-kpi-blue   .cal-kpi-val  { color: #1D4ED8; }
-.cal-kpi-green  .cal-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.cal-kpi-green  .cal-kpi-val  { color: #065F46; }
+.cal-kpi-blue   .cal-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.cal-kpi-blue   .cal-kpi-val  { color: var(--navy-3); }
+.cal-kpi-green  .cal-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.cal-kpi-green  .cal-kpi-val  { color: #2D6A27; }
 .cal-kpi-orange .cal-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .cal-kpi-orange .cal-kpi-val  { color: var(--orange-2); }
 .cal-kpi-red    .cal-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -182,13 +182,13 @@
 .cal-empty p   { font-size: 0.88rem; margin: 0; }
 
 /* ── Colores por escuela ────────────────────────────── */
-.cal-avatar.cal-esc-sal { background: #DC2626; }
-.cal-avatar.cal-esc-tur { background: #EA580C; }
-.cal-avatar.cal-esc-adm { background: #2563EB; }
-.cal-avatar.cal-esc-edu { background: #059669; }
-.cal-avatar.cal-esc-dep { background: #D97706; }
-.cal-avatar.cal-esc-cie { background: #4F46E5; }
-.cal-avatar.cal-esc-bel { background: #DB2777; }
+.cal-avatar.cal-esc-sal { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-tur { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-adm { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-edu { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-dep { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-cie { background: #E6ECF4; color: var(--navy-2); }
+.cal-avatar.cal-esc-bel { background: #E6ECF4; color: var(--navy-2); }
 
 /* ── Paginación ─────────────────────────────────────── */
 .cal-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0 4px; flex-wrap: wrap; }

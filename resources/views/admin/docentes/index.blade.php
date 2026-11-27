@@ -237,7 +237,6 @@ $escFiltro     = $docentes->pluck('escuela')->unique()->sort()->values();
             <button class="doc-dtab is-active" data-tab="general" role="tab">General</button>
             <button class="doc-dtab" data-tab="academico" role="tab">Académico</button>
             <button class="doc-dtab" data-tab="cursos" role="tab">Cursos</button>
-            <button class="doc-dtab" data-tab="documentos" role="tab">Documentos</button>
         </div>
 
         {{-- Cuerpo --}}
@@ -294,7 +293,7 @@ $escFiltro     = $docentes->pluck('escuela')->unique()->sort()->values();
                     </div>
                 </div>
                 <div class="doc-programas-section">
-                    <div class="doc-programas-title">Programas que dicta</div>
+                    <div class="doc-programas-title">Carreras que dicta</div>
                     <div id="dw-programas-list" class="doc-programas-list"></div>
                 </div>
             </div>
@@ -306,7 +305,7 @@ $escFiltro     = $docentes->pluck('escuela')->unique()->sort()->values();
                         <thead>
                             <tr>
                                 <th>Código</th>
-                                <th>Programa</th>
+                                <th>Carrera</th>
                                 <th>Grupo</th>
                                 <th>Horario</th>
                             </tr>
@@ -316,15 +315,6 @@ $escFiltro     = $docentes->pluck('escuela')->unique()->sort()->values();
                     <div class="doc-cursos-empty" id="dw-cursos-empty" style="display:none">
                         Sin cursos asignados actualmente.
                     </div>
-                </div>
-            </div>
-
-            {{-- Tab Documentos --}}
-            <div class="doc-tab-panel" data-panel="documentos">
-                <div class="doc-docs-placeholder">
-                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <p>Gestión de documentos próximamente</p>
-                    <span>Hoja de vida, títulos, certificaciones y contratos.</span>
                 </div>
             </div>
 

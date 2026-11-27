@@ -254,7 +254,7 @@
                         @foreach($bloqueados as $b)
                         <tr class="cfg-bloq-row">
                             <td>
-                                <span class="cfg-bloq-avatar">{{ strtoupper(substr($b['nombre'], 0, 1)) }}</span>
+                                <span class="cfg-bloq-avatar">{{ mb_strtoupper(mb_substr($b['nombre'], 0, 1)) }}</span>
                                 <span class="cfg-bloq-name">{{ $b['nombre'] }}</span>
                             </td>
                             <td><span class="cfg-role-chip cfg-role-{{ strtolower($b['rol']) }}">{{ $b['rol'] }}</span></td>

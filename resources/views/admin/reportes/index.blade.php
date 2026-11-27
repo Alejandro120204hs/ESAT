@@ -22,7 +22,7 @@
     <div class="rep-header">
         <div>
             <h2 class="rep-title">Reportes</h2>
-            <p class="rep-sub">Los documentos formales que la sede entrega: a la Secretaría de Educación, a los docentes y a la administración. Elige el mes y cada documento sale como estaba al cierre de ese mes; imprímelo o descárgalo en Excel.</p>
+            <p class="rep-sub">Los documentos formales que la sede entrega: a la Secretaría de Educación, a los docentes y para uso interno de la sede. Elige el mes y cada documento sale como estaba al cierre de ese mes; imprímelo o descárgalo en Excel.</p>
         </div>
     </div>
 
@@ -62,9 +62,9 @@
             </div>
 
             <div class="rep-filters" id="rep-filtros">
-                @foreach(['programa' => 'Todos los programas', 'grupo' => 'Elige el grupo'] as $k => $lbl)
+                @foreach(['programa' => 'Todas las carreras', 'grupo' => 'Elige el grupo'] as $k => $lbl)
                 <div class="app-combobox" id="rep-cb-{{ $k }}" data-position="absolute" hidden>
-                    <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-label="{{ ['programa' => 'Programa', 'grupo' => 'Grupo'][$k] }}">
+                    <button type="button" class="app-combobox-trigger" data-combobox-trigger aria-label="{{ ['programa' => 'Carrera', 'grupo' => 'Grupo'][$k] }}">
                         <span data-combobox-label>{{ $lbl }}</span>
                         <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                     </button>

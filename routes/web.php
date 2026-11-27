@@ -1,6 +1,20 @@
 <?php
 
-use App\Http\Controllers\Admin\Acudientes\AcudienteController;
+use App\Http\Controllers\AdminGeneral\Academico\AcademicoController as GeneralAcademicoController;
+use App\Http\Controllers\AdminGeneral\Auditoria\AuditoriaController as GeneralAuditoriaController;
+use App\Http\Controllers\AdminGeneral\Comunicados\ComunicadoController as GeneralComunicadoController;
+use App\Http\Controllers\AdminGeneral\Configuracion\ConfiguracionController as GeneralConfiguracionController;
+use App\Http\Controllers\AdminGeneral\Docentes\DocenteController as GeneralDocenteController;
+use App\Http\Controllers\AdminGeneral\Estudiantes\EstudianteController as GeneralEstudianteController;
+use App\Http\Controllers\AdminGeneral\Finanzas\FinanzasController as GeneralFinanzasController;
+use App\Http\Controllers\AdminGeneral\Foro\ForoController as GeneralForoController;
+use App\Http\Controllers\AdminGeneral\Inicio\InicioController as GeneralInicioController;
+use App\Http\Controllers\AdminGeneral\Programas\EscuelaController as GeneralEscuelaController;
+use App\Http\Controllers\AdminGeneral\Programas\ProgramaController as GeneralProgramaController;
+use App\Http\Controllers\AdminGeneral\Reportes\ReporteController as GeneralReporteController;
+use App\Http\Controllers\AdminGeneral\Secretarias\SecretariaController as GeneralSecretariaController;
+use App\Http\Controllers\AdminGeneral\Sedes\EntrarSedeController;
+use App\Http\Controllers\AdminGeneral\Sedes\SedeController as GeneralSedeController;
 use App\Http\Controllers\Admin\Asistencia\AsistenciaController;
 use App\Http\Controllers\Admin\Calificaciones\CalificacionController;
 use App\Http\Controllers\Admin\Docentes\DocenteController;
@@ -17,160 +31,44 @@ use App\Http\Controllers\Admin\Reportes\ReporteController;
 use App\Http\Controllers\Admin\Contabilidad\ContabilidadController;
 use App\Http\Controllers\Admin\Contabilidad\EgresoController;
 use App\Http\Controllers\Admin\Pagos\CarteraController;
-use App\Http\Controllers\Admin\Programas\EscuelaController;
 use App\Http\Controllers\Admin\Programas\ProgramaController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Sitio\PaginaController;
 use App\Http\Controllers\Superadmin\Administradores\AdministradorController;
 use App\Http\Controllers\Superadmin\Sedes\SedeController;
+use App\Http\Controllers\Docente\Asistencia\AsistenciaController as DocenteAsistenciaController;
+use App\Http\Controllers\Docente\Grupos\GrupoController as DocenteGrupoController;
+use App\Http\Controllers\Docente\Inicio\InicioController as DocenteInicioController;
+use App\Http\Controllers\Docente\Notas\NotaController as DocenteNotaController;
+use App\Http\Controllers\Docente\Aula\AulaController as DocenteAulaController;
+use App\Http\Controllers\Docente\Comunicados\ComunicadoController as DocenteComunicadoController;
+use App\Http\Controllers\Docente\Foro\ForoController as DocenteForoController;
+use App\Http\Controllers\Estudiante\Aula\AulaController as EstudianteAulaController;
+use App\Http\Controllers\Estudiante\Comunicados\ComunicadoController as EstudianteComunicadoController;
+use App\Http\Controllers\Estudiante\Foro\ForoController as EstudianteForoController;
+use App\Http\Controllers\Estudiante\Inicio\InicioController as EstudianteInicioController;
+use App\Http\Controllers\Estudiante\Pagos\PagoController as EstudiantePagoController;
+use App\Http\Controllers\Estudiante\Programa\ProgramaController as EstudianteProgramaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// ============ ESCUELA DE SALUD ============
-Route::get('/servicios-geriatricos', function () {
-    return view('paginas.escuela-de-salud.servicios-geriatricos');
-})->name('programas.servicios-geriatricos');
-
-Route::get('/seguridad-ocupacional-y-laboral', function () {
-    return view('paginas.escuela-de-salud.seguridad-ocupacional-y-laboral');
-})->name('programas.seguridad-ocupacional-y-laboral');
-
-Route::get('/auxiliar-de-psiquiatria', function () {
-    return view('paginas.escuela-de-salud.auxiliar-de-psiquiatria');
-})->name('programas.auxiliar-de-psiquiatria');
-
-Route::get('/camillero-hospitalario', function () {
-    return view('paginas.escuela-de-salud.camillero-hospitalario');
-})->name('programas.camillero-hospitalario');
-
-// ============ ESCUELA DE COCINA Y TURISMO ============
-Route::get('/servicios-hoteleros-y-turisticos', function () {
-    return view('paginas.escuela-de-cocina-y-turismo.servicios-hoteleros-y-turisticos');
-})->name('programas.servicios-hoteleros-y-turisticos');
-
-Route::get('/cocina-nacional-e-internacional', function () {
-    return view('paginas.escuela-de-cocina-y-turismo.cocina-nacional-e-internacional');
-})->name('programas.cocina-nacional-e-internacional');
-
-Route::get('/sommelier', function () {
-    return view('paginas.escuela-de-cocina-y-turismo.sommelier');
-})->name('programas.sommelier');
-
-Route::get('/inspector-de-calidad-de-alimentos-y-bebidas', function () {
-    return view('paginas.escuela-de-cocina-y-turismo.inspector-de-calidad-de-alimentos-y-bebidas');
-})->name('programas.inspector-de-calidad-de-alimentos-y-bebidas');
-
-// ============ ESCUELA ADMINISTRATIVA ============
-Route::get('/auditoria-y-facturacion-de-cuentas-medicas', function () {
-    return view('paginas.escuela-administrativa.auditoria-y-facturacion-de-cuentas-medicas');
-})->name('programas.auditoria-y-facturacion-de-cuentas-medicas');
-
-Route::get('/agente-de-transito', function () {
-    return view('paginas.escuela-administrativa.agente-de-transito');
-})->name('programas.agente-de-transito');
-
-Route::get('/auxiliar-contable-y-administrativo', function () {
-    return view('paginas.escuela-administrativa.auxiliar-contable-y-administrativo');
-})->name('programas.auxiliar-contable-y-administrativo');
-
-// ============ DEPORTE Y CULTURA ============
-Route::get('/salvamento-acuatico', function () {
-    return view('paginas.deporte-y-cultura.salvamento-acuatico');
-})->name('programas.salvamento-acuatico');
-
-Route::get('/gestion-y-promocion-artistica', function () {
-    return view('paginas.deporte-y-cultura.gestion-y-promocion-artistica');
-})->name('programas.gestion-y-promocion-artistica');
-
-Route::get('/servicios-de-recreacion-y-deportes', function () {
-    return view('paginas.deporte-y-cultura.servicios-de-recreacion-y-deportes');
-})->name('programas.servicios-de-recreacion-y-deportes');
-
-// ============ ESCUELA CIENCIAS ============
-Route::get('/produccion-agropecuaria-y-zootecnia', function () {
-    return view('paginas.escuela-ciencias.produccion-agropecuaria-y-zootecnia');
-})->name('programas.produccion-agropecuaria-y-zootecnia');
-
-Route::get('/asistente-de-veterinaria-y-zootecnia', function () {
-    return view('paginas.escuela-ciencias.asistente-de-veterinaria-y-zootecnia');
-})->name('programas.asistente-de-veterinaria-y-zootecnia');
-
-Route::get('/obras-civiles-y-arquitectura', function () {
-    return view('paginas.escuela-ciencias.obras-civiles-y-arquitectura');
-})->name('programas.obras-civiles-y-arquitectura');
-
-Route::get('/criminalistica-investigacion-judicial-y-ciencias-forenses', function () {
-    return view('paginas.escuela-ciencias.criminalistica-investigacion-judicial-y-ciencias-forenses');
-})->name('programas.criminalistica-investigacion-judicial-y-ciencias-forenses');
-
-Route::get('/energias-renovables-y-alternativas', function () {
-    return view('paginas.escuela-ciencias.energias-renovables-y-alternativas');
-})->name('programas.energias-renovables-y-alternativas');
-
-Route::get('/asistente-de-laboratorio-clinico-veterinario', function () {
-    return view('paginas.escuela-ciencias.asistente-de-laboratorio-clinico-veterinario');
-})->name('programas.asistente-de-laboratorio-clinico-veterinario');
-
-Route::get('/electricista', function () {
-    return view('paginas.escuela-ciencias.electricista');
-})->name('programas.electricista');
-
-Route::get('/electromecanica', function () {
-    return view('paginas.escuela-ciencias.electromecanica');
-})->name('programas.electromecanica');
-
-Route::get('/mecanica-y-electronica-de-motos', function () {
-    return view('paginas.escuela-ciencias.mecanica-y-electronica-de-motos');
-})->name('programas.mecanica-y-electronica-de-motos');
-
-// ============ EDUCACIÓN E IDIOMAS ============
-Route::get('/ingles-a1-a2-b1-b2', function () {
-    return view('paginas.educacion-e-idiomas.ingles-a1-a2-b1-b2');
-})->name('programas.ingles-a1-a2-b1-b2');
-
-Route::get('/frances-a1-a2-b1-b2', function () {
-    return view('paginas.educacion-e-idiomas.frances-a1-a2-b1-b2');
-})->name('programas.frances-a1-a2-b1-b2');
-
-Route::get('/asistente-de-preescolar', function () {
-    return view('paginas.educacion-e-idiomas.asistente-de-preescolar');
-})->name('programas.asistente-de-preescolar');
-
-// ============ ESCUELA DE BELLEZA ============
-Route::get('/barberia', function () {
-    return view('paginas.escuela-de-belleza.barberia');
-})->name('programas.barberia');
-
-// ============ EDUCACIÓN CONTINUADA ============
-Route::get('/salud-ocupacional', function () {
-    return view('paginas.educacion-continuada.salud-ocupacional');
-})->name('continuada.salud-ocupacional');
-
-Route::get('/areas-sociales', function () {
-    return view('paginas.educacion-continuada.areas-sociales');
-})->name('continuada.areas-sociales');
-
-Route::get('/pedagogia', function () {
-    return view('paginas.educacion-continuada.pedagogia');
-})->name('continuada.pedagogia');
-
-Route::get('/administracion-y-gerencia', function () {
-    return view('paginas.educacion-continuada.administracion-y-gerencia');
-})->name('continuada.administracion-y-gerencia');
-
-Route::get('/edificios-y-afines', function () {
-    return view('paginas.educacion-continuada.edificios-y-afines');
-})->name('continuada.edificios-y-afines');
-
-Route::get('/hoteleria-y-turismo', function () {
-    return view('paginas.educacion-continuada.hoteleria-y-turismo');
-})->name('continuada.hoteleria-y-turismo');
-
-Route::get('/salud', function () {
-    return view('paginas.educacion-continuada.salud');
-})->name('continuada.salud');
+// ============ SUBPÁGINAS DEL SITIO PÚBLICO ============
+// Una ruta por programa y por escuela, con su nombre de siempre
+// (programas.{slug}, escuelas.{slug}); el contenido sale
+// de config/contenido.php y config/sitio.php.
+foreach (array_keys(config('contenido.programas')) as $slug) {
+    Route::get('/' . $slug, [PaginaController::class, 'programa'])->defaults('slug', $slug)->name('programas.' . $slug);
+}
+foreach (config('sitio.escuelas') as $escuela) {
+    Route::get('/escuelas/' . $escuela['slug'], [PaginaController::class, 'escuela'])->defaults('slug', $escuela['slug'])->name('escuelas.' . $escuela['slug']);
+}
+// Programas, escuelas y líneas que cambiaron de nombre o salieron: su dirección vieja lleva a la de ahora
+foreach (config('sitio.redirecciones') as $antes => $ahora) {
+    Route::permanentRedirect('/' . $antes, '/' . $ahora);
+}
 
 // ============ ACADEMICO (Breeze) ============
 Route::get('/dashboard', function () {
@@ -191,6 +89,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::post('/administradores', [AdministradorController::class, 'store'])->name('administradores.store');
     Route::put('/administradores/{administrador}', [AdministradorController::class, 'update'])->name('administradores.update');
     Route::patch('/administradores/{administrador}/toggle', [AdministradorController::class, 'toggleActivo'])->name('administradores.toggle');
+    Route::patch('/administradores/{administrador}/clave', [AdministradorController::class, 'restablecerClave'])->name('administradores.clave');
 
     Route::get('/estudiantes', function () {
         return view('superadmin.estudiantes');
@@ -206,17 +105,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 });
 
 // ============ PANEL ADMIN ============
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+// La secretaría trabaja en su sede; el Admin de ESAT también entra aquí, en la sede que eligió ("Entrar a la sede").
+// Todas las pantallas leen la sede con User::sedeTrabajoId(); 'sede.trabajo' exige que el Admin ya haya elegido una.
+Route::middleware(['auth', 'role:admin,admin_general', 'sede.trabajo', 'transaccion'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [InicioController::class, 'index'])->name('dashboard');
 
+    // El catálogo (programas, precios, escuelas) lo maneja el Admin de ESAT; la sede elige cuáles ofrece
     Route::get('programas', [ProgramaController::class, 'index'])->name('programas');
-    Route::post('programas', [ProgramaController::class, 'store'])->name('programas.store');
-    Route::put('programas/{programa}', [ProgramaController::class, 'update'])->name('programas.update');
-    Route::patch('programas/{programa}/estado', [ProgramaController::class, 'cambiarEstado'])->name('programas.estado');
-
-    Route::post('escuelas', [EscuelaController::class, 'store'])->name('escuelas.store');
-    Route::put('escuelas/{escuela}', [EscuelaController::class, 'update'])->name('escuelas.update');
-    Route::delete('escuelas/{escuela}', [EscuelaController::class, 'destroy'])->name('escuelas.destroy');
+    Route::patch('programas/{programa}/oferta', [ProgramaController::class, 'oferta'])->name('programas.oferta');
 
     Route::get('docentes', [DocenteController::class, 'index'])->name('docentes');
     Route::post('docentes', [DocenteController::class, 'store'])->name('docentes.store');
@@ -232,12 +128,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('horarios', [HorarioController::class, 'index'])->name('horarios');
     Route::put('horarios/{curso}', [HorarioController::class, 'update'])->name('horarios.update');
 
-    // Panel "Estudiantes": la persona (datos, acudiente, documentos). Matricular es de Matrículas.
+    // Panel "Estudiantes": la persona (datos, contacto de emergencia, documentos). Matricular es de Matrículas.
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes');
     Route::post('estudiantes', [EstudianteController::class, 'store'])->name('estudiantes.store');
     Route::put('estudiantes/{estudiante}', [EstudianteController::class, 'update'])->name('estudiantes.update');
     Route::patch('estudiantes/{estudiante}/clave', [EstudianteController::class, 'restablecerClave'])->name('estudiantes.clave');
-    Route::put('estudiantes/{estudiante}/acudiente', [EstudianteController::class, 'acudiente'])->name('estudiantes.acudiente');
+    // La cuenta (no la matrícula): un retirado o graduado puede dejar de entrar; con matrícula vigente sigue activa
+    Route::patch('estudiantes/{estudiante}/estado', [EstudianteController::class, 'cambiarEstado'])->name('estudiantes.estado');
     Route::patch('estudiantes/{estudiante}/documentos/{documento}', [EstudianteController::class, 'documento'])->name('estudiantes.documento');
 
     // Panel "Matrículas": programa + grupo, cambio de grupo, estado de la matrícula y pagos
@@ -246,6 +143,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('matriculas/{matricula}/grupo', [MatriculaController::class, 'cambiarGrupo'])->name('matriculas.grupo');
     Route::patch('matriculas/{matricula}/estado', [MatriculaController::class, 'cambiarEstado'])->name('matriculas.estado');
     Route::patch('matriculas/{matricula}/descuento', [MatriculaController::class, 'descuento'])->name('matriculas.descuento');
+    // El plan lo elige el estudiante desde su panel; si todavía no lo eligió, la secretaría (24-11-2026)
+    Route::patch('matriculas/{matricula}/plan', [MatriculaController::class, 'plan'])->name('matriculas.plan');
     Route::post('matriculas/{matricula}/pagos', [PagoController::class, 'store'])->name('matriculas.pagos.store');
     Route::patch('matriculas/{matricula}/recaudos/{recaudo}/anular', [PagoController::class, 'anular'])->name('matriculas.pagos.anular');
     Route::get('matriculas/recibos/{recaudo}', [PagoController::class, 'recibo'])->name('matriculas.recibo');
@@ -293,34 +192,154 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Panel "Reportes": documentos formales por mes (solo consulta; reportes.js los arma al cierre del mes elegido)
     Route::get('reportes', [ReporteController::class, 'index'])->name('reportes');
 
-    // Panel "Acudientes": la persona responsable y sus estudiantes a cargo
-    Route::get('acudientes', [AcudienteController::class, 'index'])->name('acudientes');
-    Route::post('acudientes', [AcudienteController::class, 'store'])->name('acudientes.store');
-    Route::put('acudientes/{acudiente}', [AcudienteController::class, 'update'])->name('acudientes.update');
-    Route::post('acudientes/{acudiente}/estudiantes', [AcudienteController::class, 'vincular'])->name('acudientes.vincular');
-    Route::delete('acudientes/{acudiente}/estudiantes/{estudiante}', [AcudienteController::class, 'desvincular'])->name('acudientes.desvincular');
-    Route::patch('acudientes/{acudiente}/clave', [AcudienteController::class, 'restablecerClave'])->name('acudientes.clave');
-    Route::patch('acudientes/{acudiente}/estado', [AcudienteController::class, 'cambiarEstado'])->name('acudientes.estado');
+});
+
+// ============ PANEL ADMIN (ESAT GENERAL) ============
+// Rol admin_general ("Admin"): toda ESAT, sin sede propia. Ve todo consolidado con filtro de sede, maneja la
+// estructura (sedes, secretarías, catálogo), y para matricular/cobrar entra a una sede (EntrarSedeController).
+Route::middleware(['auth', 'role:admin_general', 'transaccion'])->prefix('general')->name('general.')->group(function () {
+    Route::post('sedes/{sede}/entrar', [EntrarSedeController::class, 'entrar'])->name('sedes.entrar');
+    Route::post('salir-de-sede', [EntrarSedeController::class, 'salir'])->name('sedes.salir');
+
+    Route::get('/', [GeneralInicioController::class, 'index'])->name('dashboard');
+
+    // Estructura
+    Route::get('sedes', [GeneralSedeController::class, 'index'])->name('sedes');
+    Route::post('sedes', [GeneralSedeController::class, 'store'])->name('sedes.store');
+    Route::put('sedes/{sede}', [GeneralSedeController::class, 'update'])->name('sedes.update');
+
+    Route::get('secretarias', [GeneralSecretariaController::class, 'index'])->name('secretarias');
+    Route::post('secretarias', [GeneralSecretariaController::class, 'store'])->name('secretarias.store');
+    Route::put('secretarias/{secretaria}', [GeneralSecretariaController::class, 'update'])->name('secretarias.update');
+    Route::patch('secretarias/{secretaria}/estado', [GeneralSecretariaController::class, 'estado'])->name('secretarias.estado');
+    Route::patch('secretarias/{secretaria}/clave', [GeneralSecretariaController::class, 'restablecerClave'])->name('secretarias.clave');
+
+    Route::get('programas', [GeneralProgramaController::class, 'index'])->name('programas');
+    Route::post('programas', [GeneralProgramaController::class, 'store'])->name('programas.store');
+    Route::put('programas/{programa}', [GeneralProgramaController::class, 'update'])->name('programas.update');
+    Route::patch('programas/{programa}/estado', [GeneralProgramaController::class, 'estado'])->name('programas.estado');
+    Route::patch('programas/{programa}/sedes/{sede}', [GeneralProgramaController::class, 'oferta'])->name('programas.oferta');
+    Route::post('escuelas', [GeneralEscuelaController::class, 'store'])->name('escuelas.store');
+    Route::put('escuelas/{escuela}', [GeneralEscuelaController::class, 'update'])->name('escuelas.update');
+    Route::delete('escuelas/{escuela}', [GeneralEscuelaController::class, 'destroy'])->name('escuelas.destroy');
+
+    // Personas
+    Route::get('estudiantes', [GeneralEstudianteController::class, 'index'])->name('estudiantes');
+    Route::post('estudiantes', [GeneralEstudianteController::class, 'store'])->name('estudiantes.store');
+    Route::put('estudiantes/{estudiante}', [GeneralEstudianteController::class, 'update'])->name('estudiantes.update');
+
+    Route::get('docentes', [GeneralDocenteController::class, 'index'])->name('docentes');
+    Route::post('docentes', [GeneralDocenteController::class, 'store'])->name('docentes.store');
+    Route::put('docentes/{docente}', [GeneralDocenteController::class, 'update'])->name('docentes.update');
+    Route::patch('docentes/{docente}/estado', [GeneralDocenteController::class, 'estado'])->name('docentes.estado');
+    Route::patch('docentes/{docente}/clave', [GeneralDocenteController::class, 'restablecerClave'])->name('docentes.clave');
+
+    // Seguimiento (solo consulta)
+    Route::get('academico', [GeneralAcademicoController::class, 'index'])->name('academico');
+    Route::get('finanzas', [GeneralFinanzasController::class, 'index'])->name('finanzas');
+    Route::get('reportes', [GeneralReporteController::class, 'index'])->name('reportes');
+
+    // Comunicación
+    Route::get('comunicados', [GeneralComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados', [GeneralComunicadoController::class, 'store'])->name('comunicados.store');
+    Route::put('comunicados/{comunicado}', [GeneralComunicadoController::class, 'update'])->name('comunicados.update');
+    Route::patch('comunicados/{comunicado}/archivar', [GeneralComunicadoController::class, 'archivar'])->name('comunicados.archivar');
+    Route::delete('comunicados/{comunicado}', [GeneralComunicadoController::class, 'destroy'])->name('comunicados.destroy');
+
+    Route::get('foro', [GeneralForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [GeneralForoController::class, 'store'])->name('foro.temas.store');
+    Route::post('foro/temas/{tema}/responder', [GeneralForoController::class, 'responder'])->name('foro.responder');
+    Route::patch('foro/temas/{tema}/estado', [GeneralForoController::class, 'estado'])->name('foro.estado');
+    Route::patch('foro/mensajes/{mensaje}/ocultar', [GeneralForoController::class, 'ocultar'])->name('foro.ocultar');
+    Route::patch('foro/mensajes/{mensaje}/restaurar', [GeneralForoController::class, 'restaurar'])->name('foro.restaurar');
+    Route::patch('foro/mensajes/{mensaje}/descartar', [GeneralForoController::class, 'descartar'])->name('foro.descartar');
+
+    // Supervisión
+    Route::get('auditoria', [GeneralAuditoriaController::class, 'index'])->name('auditoria');
+    Route::get('configuracion', [GeneralConfiguracionController::class, 'index'])->name('configuracion');
+    Route::put('configuracion/institucion', [GeneralConfiguracionController::class, 'institucion'])->name('configuracion.institucion');
+    Route::put('configuracion/cobros', [GeneralConfiguracionController::class, 'cobros'])->name('configuracion.cobros');
+    Route::put('configuracion/devolucion', [GeneralConfiguracionController::class, 'devolucion'])->name('configuracion.devolucion');
+    Route::put('configuracion/seguridad', [GeneralConfiguracionController::class, 'seguridad'])->name('configuracion.seguridad');
+    Route::patch('configuracion/bloqueadas/{usuario}', [GeneralConfiguracionController::class, 'desbloquear'])->name('configuracion.desbloquear');
 });
 
 // ============ PANEL DOCENTE ============
-// Solo frontend por ahora: las vistas usan datos de ejemplo (public/assets/js/docente/datos-ejemplo.js).
-Route::middleware(['auth', 'role:docente'])->prefix('docente')->name('docente.')->group(function () {
-    Route::get('/', function () {
-        return view('docente.dashboard');
-    })->name('dashboard');
+// Los grupos que tiene a cargo (curso_docente). Toma y corrige la asistencia y las notas mientras el
+// grupo no haya terminado (PanelDocenteService); Admin › Asistencia y Calificaciones solo consultan. Su perfil es
+// ProfileController (docente/perfil).
+Route::middleware(['auth', 'role:docente', 'transaccion'])->prefix('docente')->name('docente.')->group(function () {
+    Route::get('/', [DocenteInicioController::class, 'index'])->name('dashboard');
+    Route::get('grupos', [DocenteGrupoController::class, 'index'])->name('grupos');
+    Route::get('asistencia', [DocenteAsistenciaController::class, 'index'])->name('asistencia');
+    Route::post('asistencia/{curso}', [DocenteAsistenciaController::class, 'store'])->whereNumber('curso')->name('asistencia.guardar');
+    Route::post('asistencia/{curso}/sin-clase', [DocenteAsistenciaController::class, 'sinClase'])->whereNumber('curso')->name('asistencia.sin_clase');
+    Route::post('asistencia/{curso}/con-clase', [DocenteAsistenciaController::class, 'conClase'])->whereNumber('curso')->name('asistencia.con_clase');
+    Route::get('notas', [DocenteNotaController::class, 'index'])->name('notas');
+    Route::post('notas/{curso}/{modulo}', [DocenteNotaController::class, 'store'])->whereNumber(['curso', 'modulo'])->name('notas.guardar');
 
-    Route::get('grupos', function () {
-        return view('docente.grupos.index');
-    })->name('grupos');
+    // Aula virtual: evaluaciones y actividades de sus grupos (AulaService); los estudiantes responden y entregan desde su panel
+    Route::get('aula', [DocenteAulaController::class, 'index'])->name('aula');
+    Route::post('aula/{curso}/evaluaciones', [DocenteAulaController::class, 'crearEvaluacion'])->whereNumber('curso')->name('aula.evaluaciones.store');
+    Route::put('aula/evaluaciones/{evaluacion}', [DocenteAulaController::class, 'editarEvaluacion'])->whereNumber('evaluacion')->name('aula.evaluaciones.update');
+    Route::delete('aula/evaluaciones/{evaluacion}', [DocenteAulaController::class, 'eliminarEvaluacion'])->whereNumber('evaluacion')->name('aula.evaluaciones.destroy');
+    Route::post('aula/{curso}/actividades', [DocenteAulaController::class, 'crearActividad'])->whereNumber('curso')->name('aula.actividades.store');
+    Route::put('aula/actividades/{actividad}', [DocenteAulaController::class, 'editarActividad'])->whereNumber('actividad')->name('aula.actividades.update');
+    Route::delete('aula/actividades/{actividad}', [DocenteAulaController::class, 'eliminarActividad'])->whereNumber('actividad')->name('aula.actividades.destroy');
+    Route::get('aula/actividades/{actividad}/guia', [DocenteAulaController::class, 'guia'])->whereNumber('actividad')->name('aula.guia');
+    Route::post('aula/{curso}/materiales', [DocenteAulaController::class, 'crearMaterial'])->whereNumber('curso')->name('aula.materiales.store');
+    Route::put('aula/materiales/{material}', [DocenteAulaController::class, 'editarMaterial'])->whereNumber('material')->name('aula.materiales.update');
+    Route::delete('aula/materiales/{material}', [DocenteAulaController::class, 'eliminarMaterial'])->whereNumber('material')->name('aula.materiales.destroy');
+    Route::get('aula/materiales/{material}/archivo', [DocenteAulaController::class, 'material'])->whereNumber('material')->name('aula.material');
+    Route::patch('aula/entregas/{entrega}', [DocenteAulaController::class, 'calificar'])->whereNumber('entrega')->name('aula.calificar');
+    Route::get('aula/entregas/{entrega}/archivo', [DocenteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
 
-    Route::get('asistencia', function () {
-        return view('docente.asistencia.index');
-    })->name('asistencia');
+    // Comunicados: los que le llegan (abrir uno lo marca leído) y los que publica a uno o varios de sus grupos
+    // (ComunicadoDocenteService). El PUT llega como POST con _method porque puede traer el adjunto.
+    Route::get('comunicados', [DocenteComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados', [DocenteComunicadoController::class, 'store'])->name('comunicados.store');
+    Route::put('comunicados/{comunicado}', [DocenteComunicadoController::class, 'update'])->whereNumber('comunicado')->name('comunicados.update');
+    Route::patch('comunicados/{comunicado}/archivar', [DocenteComunicadoController::class, 'archivar'])->whereNumber('comunicado')->name('comunicados.archivar');
+    Route::delete('comunicados/{comunicado}', [DocenteComunicadoController::class, 'destroy'])->whereNumber('comunicado')->name('comunicados.destroy');
+    Route::post('comunicados/{comunicado}/leido', [DocenteComunicadoController::class, 'leido'])->whereNumber('comunicado')->name('comunicados.leido');
+    Route::get('comunicados/{comunicado}/adjunto', [DocenteComunicadoController::class, 'adjunto'])->whereNumber('comunicado')->name('comunicados.adjunto');
 
-    Route::get('notas', function () {
-        return view('docente.notas.index');
-    })->name('notas');
+    // Foro de su sede (ForoService): lee, abre temas, responde y reporta; moderar es de la secretaría
+    Route::get('foro', [DocenteForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [DocenteForoController::class, 'tema'])->name('foro.tema');
+    Route::post('foro/temas/{tema}/mensajes', [DocenteForoController::class, 'responder'])->whereNumber('tema')->name('foro.responder');
+    Route::post('foro/mensajes/{mensaje}/reportes', [DocenteForoController::class, 'reportar'])->whereNumber('mensaje')->name('foro.reportar');
+    Route::get('foro/mensajes/{mensaje}/adjunto', [DocenteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
+});
+
+// ============ PANEL ESTUDIANTE ============
+// Lo que ve el estudiante (PanelEstudianteService::datos) y lo poco que escribe: elegir su plan de pago (una vez),
+// responder evaluaciones y entregar actividades del Aula virtual (AulaService), marcar comunicados leídos y participar en
+// el foro de su sede (ForoService). Su perfil es ProfileController (estudiante/perfil).
+Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiante')->name('estudiante.')->group(function () {
+    Route::get('/', [EstudianteInicioController::class, 'index'])->name('dashboard');
+    Route::get('programa', [EstudianteProgramaController::class, 'index'])->name('programa');
+
+    Route::get('aula', [EstudianteAulaController::class, 'index'])->name('aula');
+    Route::post('aula/evaluaciones/{evaluacion}/iniciar', [EstudianteAulaController::class, 'iniciar'])->whereNumber('evaluacion')->name('aula.iniciar');
+    Route::post('aula/evaluaciones/{evaluacion}/respuestas', [EstudianteAulaController::class, 'responder'])->whereNumber('evaluacion')->name('aula.responder');
+    Route::post('aula/actividades/{actividad}/entrega', [EstudianteAulaController::class, 'entregar'])->whereNumber('actividad')->name('aula.entregar');
+    Route::get('aula/entregas/{entrega}/archivo', [EstudianteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
+    Route::get('aula/actividades/{actividad}/guia', [EstudianteAulaController::class, 'guia'])->whereNumber('actividad')->name('aula.guia');
+    Route::get('aula/materiales/{material}/archivo', [EstudianteAulaController::class, 'material'])->whereNumber('material')->name('aula.material');
+
+    Route::get('pagos', [EstudiantePagoController::class, 'index'])->name('pagos');
+    Route::post('pagos/plan', [EstudiantePagoController::class, 'plan'])->name('pagos.plan');
+
+    Route::get('comunicados', [EstudianteComunicadoController::class, 'index'])->name('comunicados');
+    Route::post('comunicados/{comunicado}/leido', [EstudianteComunicadoController::class, 'leido'])->whereNumber('comunicado')->name('comunicados.leido');
+    Route::get('comunicados/{comunicado}/adjunto', [EstudianteComunicadoController::class, 'adjunto'])->whereNumber('comunicado')->name('comunicados.adjunto');
+
+    Route::get('foro', [EstudianteForoController::class, 'index'])->name('foro');
+    Route::post('foro/temas', [EstudianteForoController::class, 'tema'])->name('foro.tema');
+    Route::post('foro/temas/{tema}/mensajes', [EstudianteForoController::class, 'responder'])->whereNumber('tema')->name('foro.responder');
+    Route::post('foro/mensajes/{mensaje}/reportes', [EstudianteForoController::class, 'reportar'])->whereNumber('mensaje')->name('foro.reportar');
+    Route::get('foro/mensajes/{mensaje}/adjunto', [EstudianteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
 });
 
 Route::middleware('auth')->group(function () {

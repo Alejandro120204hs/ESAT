@@ -13,7 +13,7 @@ class ArchivarComunicadoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->route('comunicado')->sede_id === (int) $this->user()->sede_id;
+        return $this->route('comunicado')->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     public function rules(): array

@@ -51,6 +51,31 @@
                         Notas
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('docente.aula') }}" class="app-nav-link {{ $active === 'aula' ? 'is-active' : '' }}" @if ($active === 'aula') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        Aula virtual
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        {{-- Comunicación --}}
+        <div class="app-nav-group">
+            <div class="app-nav-group-label">Comunicación</div>
+            <ul class="app-nav">
+                <li>
+                    <a href="{{ route('docente.comunicados') }}" class="app-nav-link {{ $active === 'comunicados' ? 'is-active' : '' }}" @if ($active === 'comunicados') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        Comunicados
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('docente.foro') }}" class="app-nav-link {{ $active === 'foro' ? 'is-active' : '' }}" @if ($active === 'foro') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Foro
+                    </a>
+                </li>
             </ul>
         </div>
 

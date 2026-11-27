@@ -19,7 +19,7 @@ class EgresoRequest extends FormRequest
     {
         $egreso = $this->route('egreso');
 
-        return ! $egreso || $egreso->sede_id === (int) $this->user()->sede_id;
+        return ! $egreso || $egreso->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     protected function prepareForValidation(): void
@@ -44,7 +44,7 @@ class EgresoRequest extends FormRequest
             'fecha'        => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:'.now()->subDays(Egreso::DIAS_ATRAS)->toDateString()],
             'concepto'     => ['required', 'string', 'min:5', 'max:160'],
             'docente_id'   => $esNomina
-                ? ['required', 'integer', Rule::exists('users', 'id')->where('role', 'docente')->where('sede_id', $this->user()->sede_id)]
+                ? ['required', 'integer', Rule::exists('users', 'id')->where('role', 'docente')->where('sede_id', $this->user()->sedeTrabajoId())]
                 : ['nullable'],
             'beneficiario' => $esNomina ? ['nullable'] : ['required', 'string', 'min:3', 'max:120'],
             'valor'        => ['required', 'integer', 'min:1', 'max:'.Egreso::VALOR_MAXIMO],

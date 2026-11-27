@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Programa extends Model
 {
@@ -96,10 +97,59 @@ class Programa extends Model
         return $this->hasMany(Curso::class);
     }
 
-    /** Cuántos meses dura cada periodo (semestre/trimestre) de este programa. */
-    public function mesesPorPeriodo(): float
+    /**
+     * Ids (de $ids) de los programas cuya malla ya no se cambia: algún módulo tiene notas, o evaluaciones o actividades del
+     * Aula virtual (guardarMalla actualiza los módulos por posición: renombrar o borrar uno las dejaría en otro módulo o
+     * sin módulo). Sin $ids, de todos.
+     *
+     * @return array<int, int>
+     */
+    public static function mallaEnUso(?array $ids = null): array
     {
-        return $this->duracion_meses / $this->duracion_periodos;
+        $con = fn (string $tabla) => DB::table($tabla)->join('programa_modulos', 'programa_modulos.id', '=', $tabla.'.programa_modulo_id')
+            ->when($ids !== null, fn ($q) => $q->whereIn('programa_modulos.programa_id', $ids))
+            ->distinct()->pluck('programa_modulos.programa_id')->all();
+
+        return array_values(array_unique(array_merge($con('calificaciones'), $con('evaluaciones'), $con('actividades'))));
+    }
+
+    /**
+     * Por qué no se puede dejar de ofrecer en $sedeId (o desactivar en todo ESAT, con null): tiene grupos sin finalizar, o
+     * estudiantes aplazados, que para volver necesitan un grupo del programa en su sede. Null si se puede.
+     */
+    public function impedimentoParaRetirar(?int $sedeId = null): ?string
+    {
+        $grupos = $this->cursos()->where('estado', '!=', 'finalizado')->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))->count();
+        if ($grupos) {
+            return "tiene {$grupos} ".($grupos === 1 ? 'grupo vigente' : 'grupos vigentes').'. Se quita cuando terminen.';
+        }
+        $aplazados = $this->matriculas()->where('estado', 'aplazado')->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))->count();
+
+        return $aplazados
+            ? "tiene {$aplazados} ".($aplazados === 1 ? 'estudiante aplazado' : 'estudiantes aplazados').' que necesitan un grupo de la carrera para volver. Se quita cuando se reintegren o se retiren.'
+            : null;
+    }
+
+    /**
+     * Meses que dura el periodo $i (desde 0): cada uno dura lo de su tipo (trimestre 3, semestre 6) y el último lo que
+     * quede. Así 8 meses por trimestre son 3 + 3 + 2 y la cuota del sistema suma justo los 8 meses (HALLAZGOS B28).
+     */
+    public function mesesDelPeriodo(int $i): int
+    {
+        $largo = $this->largoPeriodo();
+
+        return max(0, min($largo, $this->duracion_meses - $i * $largo));
+    }
+
+    /** Mes (desde 0, contado desde el inicio) en que empieza el periodo $i. */
+    public function inicioDelPeriodo(int $i): int
+    {
+        return $i * $this->largoPeriodo();
+    }
+
+    private function largoPeriodo(): int
+    {
+        return self::PERIODOS[$this->tipo_periodo] ?? max(1, (int) $this->duracion_meses);
     }
 
     /** Cuota del sistema vigente, tomada de configuraciones (ver Configuracion). */
@@ -114,11 +164,11 @@ class Programa extends Model
         return ($this->precio_total / $this->duracion_meses) + static::cuotaSistemaMensual();
     }
 
-    /** Lo que paga el estudiante de una vez si eligió pagar por periodo completo. */
+    /** Lo que paga el estudiante de una vez si eligió pagar por periodo completo (un periodo completo; el último puede ser más corto). */
     public function cuotaPorPeriodo(): float
     {
         $valorPrograma = $this->precio_total / $this->duracion_periodos;
-        $cuotaSistema = static::cuotaSistemaMensual() * $this->mesesPorPeriodo();
+        $cuotaSistema = static::cuotaSistemaMensual() * $this->mesesDelPeriodo(0);
 
         return $valorPrograma + $cuotaSistema;
     }

@@ -1,5 +1,5 @@
 /* =========================================================
-   ESAT — Panel Superadmin: página "Administradores"
+   ESAT — Panel Superadmin: página "Admin de ESAT" (la cuenta del Admin)
    Carga aparte de layout.css; solo la usa administradores.blade.php.
    ========================================================= */
 
@@ -16,70 +16,41 @@
     opacity: 0; transform: translateY(10px);
     animation: appFadeUp 0.5s var(--ease-out) 0.06s forwards;
 }
-.app-panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 16px; }
 
-/* ---------- Tabla ---------- */
-.app-table-scroll { overflow-x: auto; }
-.app-table-scroll-tall { max-height: 460px; overflow-y: auto; }
-.app-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.app-table thead th {
-    text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.03em; color: var(--muted); padding: 0 14px 10px; position: sticky; top: 0;
-    background: var(--white);
-}
-.app-table tbody td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--text); }
-.app-row-clickable { cursor: pointer; transition: background-color 0.15s; }
-.app-row-clickable:hover { background: rgba(16, 40, 74, 0.035); }
-.app-table-strong { font-weight: 700; color: var(--navy-3); }
-.app-table-actions-col { width: 44px; }
-.app-table-actions { text-align: right; }
-
-.app-icon-btn {
-    width: 32px; height: 32px; border-radius: 8px; border: none; background: none;
-    color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
-}
-.app-icon-btn:hover { background: rgba(16, 40, 74, 0.06); color: var(--navy-3); }
-.app-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-
-/* Estado activo/inactivo: botón-interruptor, no una etiqueta estática —
-   se puede cambiar con un clic (vista previa, no persiste todavía). */
-.app-status-toggle {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-family: inherit; font-size: 0.78rem; font-weight: 700;
-    padding: 5px 12px 5px 9px; border-radius: 999px; border: none; cursor: pointer;
-    background: rgba(16, 40, 74, 0.06); color: var(--muted);
-    transition: background-color 0.2s, color 0.2s;
-}
-.app-status-toggle-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.app-status-toggle.is-active { background: #E3EEE1; color: var(--green); }
-
-/* ---------- Buscador ---------- */
-.app-search {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
-    background: var(--white); min-width: 200px;
-}
-.app-search svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.app-search input { border: none; outline: none; font-family: inherit; font-size: 0.86rem; color: var(--text); width: 100%; background: none; }
-.app-search input::placeholder { color: var(--muted); }
-
-/* ---------- Paginación ---------- */
-.app-pagination {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--line);
-}
-.app-pagination[hidden] { display: none; }
-.app-pagination-btn {
-    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+/* ---------- Cuenta del Admin (una sola) ---------- */
+.app-adm-cuenta { display: flex; flex-direction: column; gap: 22px; }
+.app-adm-persona { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.app-adm-avatar {
+    width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    background: none; border: 1px solid var(--line); cursor: pointer; color: var(--navy-3);
-    transition: background-color 0.2s, opacity 0.2s;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.1rem;
+    background: #E6ECF4; color: var(--navy-2);
 }
-.app-pagination-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.app-pagination-btn:hover:not(:disabled) { background: rgba(16, 40, 74, 0.05); }
-.app-pagination-btn:disabled { opacity: 0.35; cursor: default; }
-.app-pagination-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); min-width: 110px; text-align: center; }
+.app-adm-avatar.is-off { background: rgba(16, 40, 74, 0.06); color: var(--muted); }
+.app-adm-id { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.app-adm-id h2 {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--navy-3);
+    overflow-wrap: anywhere;
+}
+.app-adm-estado {
+    font-size: 0.78rem; font-weight: 700; padding: 4px 11px; border-radius: 999px;
+    background: rgba(16, 40, 74, 0.06); color: var(--muted);
+}
+.app-adm-estado.is-activo { background: #E6F4E4; color: #2D6A27; }
+.app-adm-datos {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 22px;
+    padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.app-adm-datos div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.app-adm-datos dt { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.app-adm-datos dd { font-size: 0.9rem; font-weight: 600; color: var(--navy-3); overflow-wrap: anywhere; }
+.app-adm-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.app-adm-vacio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 0; }
+.app-adm-vacio h2 { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--navy-3); }
+.app-adm-vacio p { font-size: 0.92rem; color: var(--navy-2); margin-bottom: 8px; }
+.app-adm-confirmar-texto { font-size: 0.92rem; line-height: 1.55; color: var(--navy-2); margin: 14px 0 18px; }
+.app-adm-error { display: block; margin-top: 12px; }
+.app-wizard-summary--solo { margin-top: 0; padding-top: 0; border-top: none; }
 
 /* ---------- Botones ---------- */
 .app-btn-primary {
@@ -232,8 +203,12 @@
 }
 .app-wizard-progress { font-size: 0.78rem; color: var(--muted); margin-right: auto; }
 
+@media (max-width: 1100px) {
+    .app-adm-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 640px) {
     .app-form-grid { grid-template-columns: 1fr; }
-    .app-panel-heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .app-adm-datos { grid-template-columns: 1fr; }
+    .app-adm-acciones .app-btn-secondary { flex: 1 1 100%; }
     .app-wizard-step-label { display: none; }
 }

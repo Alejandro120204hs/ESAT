@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Matriculas\CambioGrupoRequest;
 use App\Http\Requests\Admin\Matriculas\CambioProgramaRequest;
 use App\Http\Requests\Admin\Matriculas\DescuentoRequest;
+use App\Http\Requests\Admin\Matriculas\PlanRequest;
 use App\Http\Requests\Admin\Matriculas\EstadoRequest;
 use App\Http\Requests\Admin\Matriculas\MatriculaRequest;
 use App\Models\Academico\Curso;
@@ -55,7 +56,7 @@ class MatriculaController extends Controller
                 'recaudos' => fn ($q) => $q->with(['registradoPor', 'anuladoPor', 'cobros'])->latest('id'),
                 'devoluciones' => fn ($q) => $q->with(['registradoPor', 'cobros'])->latest('id'),
                 'origen', 'siguiente',
-                'estudiante' => fn ($q) => $q->with(['acudientes', 'documentos', 'asistencias', 'cursosComoEstudiante']),
+                'estudiante' => fn ($q) => $q->with(['contactoEmergencia', 'documentos', 'asistencias', 'cursosComoEstudiante']),
             ])
             ->latest('id')->get();
 
@@ -68,7 +69,7 @@ class MatriculaController extends Controller
         // Registrados que no tienen matrícula vigente (nunca matriculados, o retirados/graduados)
         $porMatricular = User::where('role', RolUsuario::Estudiante)->where('sede_id', $sedeId)
             ->whereDoesntHave('matriculas', fn ($q) => $q->whereIn('estado', Matricula::VIGENTES))
-            ->with(['acudientes', 'documentos', 'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('programa')])
+            ->with(['contactoEmergencia', 'documentos', 'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('programa')])
             ->orderBy('nombres')->get();
 
         $programas = Programa::deSede($sedeId)->where('estado', 'activo')->with('escuela')->orderBy('nombre')->get();
@@ -77,9 +78,16 @@ class MatriculaController extends Controller
         // Paz y salvo: se mira lo que debe la persona en todas sus matrículas, no solo en una
         $deudas  = $vista->groupBy('estudiante_id')->map(fn ($ms) => $ms->sum('por_pagar'));
         $sinPlan = $vista->filter(fn ($m) => in_array($m['estado'], Matricula::VIGENTES, true) && ! $m['plan_pago'])->pluck('estudiante_id')->flip();
+        // Grupos de su carrera que no le sirven a quien ya venía estudiando (reintegro o cambio de grupo), con la razón:
+        // la misma regla que revisa MatriculaService al guardar
+        $servicio = app(MatriculaService::class);
+        $noAlcanza = $matriculas->filter(fn (Matricula $m) => in_array($m->estado, Matricula::VIGENTES, true))
+            ->mapWithKeys(fn (Matricula $m) => [$m->id => (object) $grupos->where('programa_id', $m->programa_id)->reject(fn (Curso $c) => $c->cerrado())
+                ->mapWithKeys(fn (Curso $c) => [$c->id => $servicio->noAlcanza($c, $m, $m->estado === 'activo')])->filter()->all()]);
         $vista   = $vista->map(fn ($m) => $m + [
             'deuda_estudiante' => (int) $deudas[$m['estudiante_id']],
             'sin_plan_vigente' => $sinPlan->has($m['estudiante_id']),
+            'no_alcanza'       => $noAlcanza->get($m['id'], (object) []),
         ]);
 
         return view('admin.matriculas.index', [
@@ -94,7 +102,7 @@ class MatriculaController extends Controller
                 'metodos'         => Pago::METODOS,
                 'dia_vencimiento' => Pago::DIA_VENCIMIENTO,
                 'hoy'             => today()->toDateString(),
-                'sede'            => auth()->user()->sede?->nombre,
+                'sede'            => auth()->user()->sedeTrabajo()?->nombre,
             ],
         ]);
     }
@@ -137,7 +145,7 @@ class MatriculaController extends Controller
         $nombre = $matricula->estudiante->name;
         $texto  = match ($estado) {
             'aplazado' => "Aplazó la matrícula de {$nombre}",
-            'retirado' => "Retiró a {$nombre} del programa",
+            'retirado' => "Retiró a {$nombre} de la carrera",
             'graduado' => "Graduó a {$nombre}",
             'activo'   => "Reintegró a {$nombre} en el {$matricula->fresh()->curso->nombre}",
             'anulado'  => "Anuló la matrícula {$matricula->codigo} de {$nombre} (hecha por error)",
@@ -164,9 +172,9 @@ class MatriculaController extends Controller
         $abono = $trasladado > 0 ? ' Se trasladaron $ '.number_format($trasladado, 0, ',', '.').' pagados por adelantado.' : '';
 
         Auditoria::registrar('desactivar', $matricula,
-            "Cambió de programa a {$nombre}: retiró {$matricula->codigo} ({$matricula->programa->nombre}) y lo matriculó en {$grupo->programa->nombre} con {$nueva->codigo}: ".rtrim($request->input('motivo'), '.').".{$abono}");
+            "Cambió de carrera a {$nombre}: retiró {$matricula->codigo} ({$matricula->programa->nombre}) y lo matriculó en {$grupo->programa->nombre} con {$nueva->codigo}: ".rtrim($request->input('motivo'), '.').".{$abono}");
         Auditoria::registrar('crear', $nueva,
-            "Matriculó a {$nombre} en {$grupo->programa->nombre}, {$grupo->nombre} ({$grupo->codigo}) por cambio de programa desde {$matricula->codigo}.{$abono}");
+            "Matriculó a {$nombre} en {$grupo->programa->nombre}, {$grupo->nombre} ({$grupo->codigo}) por cambio de carrera desde {$matricula->codigo}.{$abono}");
 
         return response()->json([
             'ok'      => true,
@@ -176,6 +184,19 @@ class MatriculaController extends Controller
     }
 
     /** Beca o convenio: porcentaje sobre el valor del programa (0 lo quita). */
+    /**
+     * Elige el plan de pago por el estudiante que todavía no lo eligió desde su panel (una sola vez; las cuotas cuentan
+     * desde el inicio de clases del grupo). PagoService::elegirPlan lo revisa con la matrícula bloqueada y deja la
+     * auditoría.
+     */
+    public function plan(PlanRequest $request, Matricula $matricula): JsonResponse
+    {
+        $n = $this->pagos->elegirPlan($matricula, $request->input('plan'), true);
+        $nombre = $request->input('plan') === 'mensual' ? 'mensual' : ($matricula->programa->tipo_periodo === 'semestre' ? 'semestral' : 'trimestral');
+
+        return response()->json(['ok' => true, 'mensaje' => 'Elegiste el plan '.$nombre.' de '.$matricula->estudiante->name.': se generaron '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').'.']);
+    }
+
     public function descuento(DescuentoRequest $request, Matricula $matricula): JsonResponse
     {
         $pct    = round((float) $request->input('porcentaje'), 2);
@@ -210,7 +231,7 @@ class MatriculaController extends Controller
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return $sedeId;
@@ -220,8 +241,7 @@ class MatriculaController extends Controller
     private function matriculaParaVista(Matricula $m, Collection $historial): array
     {
         $e     = $m->estudiante;
-        $acu   = $e->acudientes->first();
-        $total = $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : $m->programa->duracion_periodos;
+        $total = $m->totalCuotas($m->pagos);
 
         return array_merge([
             'id'            => $m->id,
@@ -234,7 +254,7 @@ class MatriculaController extends Controller
             'fecha_nac'     => $e->fecha_nacimiento?->format('Y-m-d'),
             'telefono'      => $e->telefono,
             'email'         => $e->email,
-            'acudiente'     => $acu ? ['nombre' => $acu->name, 'telefono' => $acu->telefono, 'parentesco' => $acu->pivot->parentesco] : null,
+            'contacto'      => $e->contactoEmergencia?->paraVista(),
             'programa_id'   => $m->programa_id,
             'tipo_periodo'  => $m->programa->tipo_periodo,
             'grupo_id'      => $m->curso_id,
@@ -242,10 +262,11 @@ class MatriculaController extends Controller
             'estado_fecha'  => $m->estado_fecha?->format('Y-m-d'),
             'estado_motivo' => $m->estado_motivo,
             'fecha'         => $m->fecha_inicio->format('Y-m-d'),
-            'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $m->curso),
+            'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $m->curso, $m),
             'documentos_pendientes' => EstudianteDocumento::pendientesDe($e),
             // Módulos de la malla sin aprobar (graduar exige que no quede ninguno)
             'modulos_pendientes'    => $m->estado === 'activo' ? $this->calificaciones->pendientesParaGraduar($m) : [],
+            'sin_malla'             => $m->programa->modulos->isEmpty(),
             'descuento_pct'    => (float) $m->descuento_pct,
             'descuento_motivo' => $m->descuento_motivo,
             'cobros'        => $m->pagos->map(fn (Pago $p) => [
@@ -260,6 +281,7 @@ class MatriculaController extends Controller
                 'valor_sistema'  => (int) round($p->monto_sistema),
                 'abonado'     => (int) round($p->disponible()),
                 'reembolsado' => (int) round($p->reembolsado),
+                'retenido'    => (int) round($p->retenido),
                 'restante'    => (int) round($p->restante()),
                 'estado'      => $p->estadoActual(),
                 'fecha_pago'  => $p->fecha_pago?->format('Y-m-d'),
@@ -318,7 +340,6 @@ class MatriculaController extends Controller
 
     private function estudianteParaVista(User $e): array
     {
-        $acu    = $e->acudientes->first();
         $ultima = $e->matriculas->sortByDesc('id')->first();
 
         return [
@@ -328,7 +349,7 @@ class MatriculaController extends Controller
             'tipo_doc'    => $e->tipo_documento,
             'documento'   => $e->numero_documento,
             'fecha_nac'   => $e->fecha_nacimiento?->format('Y-m-d'),
-            'acudiente'   => $acu ? ['nombre' => $acu->name, 'parentesco' => $acu->pivot->parentesco] : null,
+            'contacto'    => $e->contactoEmergencia?->paraVista(),
             'documentos_pendientes' => EstudianteDocumento::pendientesDe($e),
             'anterior'    => $ultima ? ['codigo' => $ultima->codigo, 'estado' => $ultima->estado, 'programa' => $ultima->programa->nombre] : null,
             'registrado'  => $e->created_at->format('Y-m-d'),
@@ -348,7 +369,7 @@ class MatriculaController extends Controller
             'horario'     => $c->sesiones->isEmpty() ? ['Sin horario asignado'] : $c->horarioTexto(),
             'docente'     => $c->docente()?->name ?? 'Sin docente asignado',
             'inicio'      => $c->fecha_inicio->format('Y-m-d'),
-            'fin'         => $c->fecha_fin->format('Y-m-d'),
+            'fin'         => $c->fin()->format('Y-m-d'),
             'estado'      => $c->estado,
             'cupo'        => $c->programa->cupo_grupo,
             'inscritos'   => $c->estudiantes_activos_count,
@@ -368,6 +389,9 @@ class MatriculaController extends Controller
             'tipo_periodo'=> $p->tipo_periodo,
             'cuota_mensual' => (int) round($p->cuotaMensual()),
             'cuota_periodo' => (int) round($p->cuotaPorPeriodo()),
+            // El último periodo puede ser más corto (10 meses por trimestre: 3 + 3 + 3 + 1)
+            'meses_ultimo'  => $p->mesesDelPeriodo(max(0, $p->duracion_periodos - 1)),
+            'meses_periodo' => $p->mesesDelPeriodo(0),
         ];
     }
 }

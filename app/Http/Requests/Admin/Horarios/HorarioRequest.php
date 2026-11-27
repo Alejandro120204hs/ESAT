@@ -22,7 +22,7 @@ class HorarioRequest extends FormRequest
     /** Solo los grupos de la sede del admin. */
     public function authorize(): bool
     {
-        return $this->route('curso')->sede_id === (int) $this->user()->sede_id;
+        return $this->route('curso')->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     public function rules(): array
@@ -67,7 +67,7 @@ class HorarioRequest extends FormRequest
             }
 
             $docente = User::with('docentePerfil')->find($this->integer('docente_id'));
-            if (! $docente || $docente->role !== RolUsuario::Docente || $docente->sede_id !== (int) $this->user()->sede_id) {
+            if (! $docente || $docente->role !== RolUsuario::Docente || $docente->sede_id !== (int) $this->user()->sedeTrabajoId()) {
                 $v->errors()->add('docente_id', 'Selecciona un docente de tu sede.');
                 return;
             }
@@ -81,11 +81,14 @@ class HorarioRequest extends FormRequest
                 $v->errors()->add('sesiones', $error);
                 return;
             }
-            if ($error = $horario->excedeTope($curso->programa, $this->sesiones(), $curso->fecha_inicio, $curso->fecha_fin)) {
+            // Si se conserva el horario de antes, el nuevo rige desde mañana y el tope suma lo ya dictado (HALLAZGOS A7)
+            $desde = $curso->conservaHorarioAnterior() ? today()->addDay() : $curso->fecha_inicio;
+            $previas = $desde->gt($curso->fecha_inicio) ? $horario->horasDelGrupo($curso->load('historialSesiones'), $desde) : 0;
+            if ($error = $horario->excedeTope($curso->programa, $this->sesiones(), $desde, $curso->fecha_fin, $previas)) {
                 $v->errors()->add('sesiones', $error);
                 return;
             }
-            if ($error = $horario->cruceDocente($docente->id, $this->sesiones(), $curso->fecha_inicio, $curso->fecha_fin, $curso->id)) {
+            if ($error = $horario->cruceDocente($docente->id, $this->sesiones(), $desde, $curso->fecha_fin, $curso->id)) {
                 $v->errors()->add('docente_id', $error);
             }
         }];

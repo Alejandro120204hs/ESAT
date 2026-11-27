@@ -21,6 +21,24 @@ trait DatosAcademicos
     protected Escuela $escuela;
     private int $consecutivo = 0;
 
+    /**
+     * Corre $accion (matricular) el día en que empieza $grupo si el grupo ya empezó, y vuelve a la fecha de la prueba:
+     * nadie se matricula en un grupo en curso (MatriculaService::noAlcanza), así que se matricula cuando de verdad se podía.
+     */
+    protected function alIniciar(Curso $grupo, callable $accion): mixed
+    {
+        if (! $grupo->fecha_inicio || $grupo->fecha_inicio->gte(today())) {
+            return $accion();
+        }
+        $ahora = now()->copy();
+        Carbon::setTestNow($grupo->fecha_inicio->copy()->setTime(8, 0));
+        try {
+            return $accion();
+        } finally {
+            Carbon::setTestNow($ahora);
+        }
+    }
+
     protected function prepararSede(): void
     {
         $this->sede    = $this->otraSede('Sede de prueba', 'Sasaima');

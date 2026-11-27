@@ -29,7 +29,6 @@ class Comunicado extends Model
         'sede'        => 'Toda la sede',
         'estudiantes' => 'Estudiantes',
         'docentes'    => 'Docentes',
-        'acudientes'  => 'Acudientes',
     ];
 
     public const MAX_MENSAJE = 2000;
@@ -37,6 +36,7 @@ class Comunicado extends Model
     public const DISCO = 'local';
 
     protected $fillable = [
+        'lote',
         'sede_id',
         'autor_id',
         'titulo',

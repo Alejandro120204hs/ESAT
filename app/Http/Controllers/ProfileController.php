@@ -25,6 +25,18 @@ class ProfileController extends Controller
             return view('admin.profile', ['user' => $user]);
         }
 
+        if ($user->isAdminGeneral()) {
+            return view('admin_general.profile', ['user' => $user]);
+        }
+
+        if ($user->isEstudiante()) {
+            return view('estudiante.perfil', ['user' => $user]);
+        }
+
+        if ($user->isDocente()) {
+            return view('docente.perfil', ['user' => $user->load(['sede', 'docentePerfil.escuela'])]);
+        }
+
         return view('profile.edit', ['user' => $user]);
     }
 

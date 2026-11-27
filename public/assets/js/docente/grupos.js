@@ -1,6 +1,6 @@
 /* =========================================================
    ESAT — Panel Docente: Mis grupos
-   Solo frontend: lee window.DOC_DATOS (datos-ejemplo.js). Esta pantalla no guarda nada;
+   Lee window.DOC_DATOS (datos.js, datos reales de sus grupos). Esta pantalla no guarda nada;
    "Tomar asistencia" y "Poner notas" llevan a sus pantallas con ?grupo=ID.
    ========================================================= */
 (function () {
@@ -21,10 +21,8 @@
     var MES_C  = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
     var ICON = {
-        reloj:  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
         check:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
         estrella: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
-        ok:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
         flecha: '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>',
         cal:    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
         wa:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>'
@@ -179,12 +177,29 @@
         });
     }
 
+    // Finalizado (solo consulta) · Por iniciar (en planificación) · Activo (en la ficha; en la tarjeta lo dice la pestaña)
+    function estadoTag(g) {
+        if (g.soloConsulta) return '<span class="app-status-tag app-status-muted">Finalizado</span>';
+        if (g.estado === 'planificacion') return '<span class="app-status-tag app-status-muted">Por iniciar</span>';
+        return '<span class="app-status-tag app-status-active">Activo</span>';
+    }
+
+    // Botón de la tarjeta: naranja solo el que tiene algo pendiente primero; el número es lo que falta
+    function botonAccion(href, icono, texto, n, primario) {
+        return '<a class="grp-btn ' + (primario ? 'grp-btn-primary' : 'grp-btn-ghost') + ' grp-btn-sm" data-accion href="' + esc(href) + '"' +
+            (n ? ' aria-label="' + esc(texto + ': ' + n + ' por registrar') + '"' : '') + '>' +
+            icono + texto + (n ? '<span class="grp-btn-num" aria-hidden="true">' + n + '</span>' : '') + '</a>';
+    }
+
+    /* Tarjeta: qué grupo es, cuándo tiene clase, en qué va, cómo va su gente y qué le falta al docente.
+       Lo demás (escuela, fechas, cupo, malla) está en la ficha. */
     function tarjeta(g) {
-        var r = resumen(g), sg = sigla(g.escuela);
+        var r = resumen(g);
         var fin = g.soloConsulta;
-        var estado = fin
-            ? '<span class="app-status-tag app-status-muted">Finalizado</span>'
-            : '<span class="app-status-tag app-status-active">Activo</span>';
+        var hoyPendiente = r.deHoy && r.deHoy.estado !== 'registrada';
+
+        var marca = fin || g.estado === 'planificacion' ? estadoTag(g)
+            : (hoyPendiente ? '<span class="grp-hoy-tag">Clase hoy</span>' : '');
 
         var modulo;
         if (fin) {
@@ -192,53 +207,50 @@
         } else if (g.moduloActual) {
             modulo = '<span>Módulo ' + numeroModulo(g, g.moduloActual) + ' de ' + g.modulos.length + ':</span> <strong>' + esc(g.moduloActual.nombre) + '</strong>';
         } else if (r.siguiente) {
-            modulo = '<span>Sigue el módulo ' + numeroModulo(g, r.siguiente) + ':</span> <strong>' + esc(r.siguiente.nombre) + '</strong> <span>desde el ' + esc(fCorta(r.siguiente.ini)) + '</span>';
+            modulo = '<span>Empieza con el módulo ' + numeroModulo(g, r.siguiente) + ':</span> <strong>' + esc(r.siguiente.nombre) + '</strong> <span>el ' + esc(fCorta(r.siguiente.ini)) + '</span>';
         } else {
             modulo = '<span>Sin módulos en curso</span>';
         }
 
-        var estudiantes = fin
-            ? '<span class="grp-dato-val">' + g.graduados + '</span><span class="grp-dato-sub">graduados de ' + g.estudiantes.length + '</span>'
-            : '<span class="grp-dato-val">' + g.activos + ' <small>/ ' + g.cupo + '</small></span><span class="grp-dato-sub">activos / cupo</span>';
-        var t = tonoPct(g.pct);
-        var asistencia = '<span class="grp-dato-val grp-tono-' + t + '">' + esc(pctTxt(g.pct)) + '</span>' +
-            '<span class="grp-dato-sub">' + (g.bajoMinimo ? plural(g.bajoMinimo, 'estudiante', 'estudiantes') + ' bajo el ' + D.MINIMO + ' %' : 'del grupo') + '</span>';
+        var gente = '<span>' + (fin
+            ? esc(plural(g.graduados, 'graduado', 'graduados') + ' de ' + g.estudiantes.length)
+            : esc(plural(g.activos, 'estudiante', 'estudiantes') + ' de ' + g.cupo + ' cupos')) + '</span>';
+        var asistencia = g.pct == null
+            ? '<span>sin asistencia registrada</span>'
+            : '<span><b class="grp-tono-' + tonoPct(g.pct) + '">' + esc(pctTxt(g.pct)) + '</b> de asistencia</span>';
+        var bajo = !fin && g.bajoMinimo
+            ? '<span class="grp-tono-bad">' + esc(plural(g.bajoMinimo, 'estudiante', 'estudiantes') + ' bajo el ' + D.MINIMO + ' %') + '</span>'
+            : '';
 
-        var pend = [];
+        var pie;
         if (fin) {
-            pend.push('<span class="grp-pend grp-pend-muted">Solo consulta</span>');
+            pie = '<span class="grp-card-nota">Solo consulta</span>';
         } else {
-            if (g.sinRegistrar.length) pend.push('<span class="grp-pend grp-pend-asis">' + ICON.reloj + plural(g.sinRegistrar.length, 'asistencia sin registrar', 'asistencias sin registrar') + '</span>');
-            if (r.notasPorPoner) pend.push('<span class="grp-pend grp-pend-notas">' + ICON.estrella + plural(r.notasPorPoner, 'nota por poner', 'notas por poner') + '</span>');
-            if (!pend.length) pend.push('<span class="grp-pend grp-pend-ok">' + ICON.ok + 'Al día</span>');
+            var asisPend = g.sinRegistrar.length;
+            var primeroAsis = asisPend > 0 || hoyPendiente;
+            pie = botonAccion(urlAsistencia(g), ICON.check, 'Tomar asistencia', asisPend, primeroAsis) +
+                  botonAccion(urlNotas(g), ICON.estrella, 'Poner notas', r.notasPorPoner, !primeroAsis && r.notasPorPoner > 0);
         }
 
-        var pie = fin
-            ? '<span class="grp-card-nota">Consulta su asistencia y sus notas</span>'
-            : '<a class="grp-btn grp-btn-primary grp-btn-sm" data-accion href="' + esc(urlAsistencia(g)) + '">' + ICON.check + 'Tomar asistencia</a>' +
-              '<a class="grp-btn grp-btn-ghost grp-btn-sm" data-accion href="' + esc(urlNotas(g)) + '">' + ICON.estrella + 'Poner notas</a>';
-
-        var hoyTag = r.deHoy ? '<span class="grp-hoy-tag">Clase hoy</span>' : '';
-
-        return '<article class="grp-card grp-esc-' + sg + (fin ? ' is-finalizado' : '') + '" tabindex="0" data-id="' + g.id + '"' +
+        return '<article class="grp-card' + (fin ? ' is-finalizado' : '') + '" tabindex="0" data-id="' + g.id + '"' +
                 ' aria-labelledby="grp-c' + g.id + '-t grp-c' + g.id + '-s">' +
-            '<div class="grp-card-top"><span class="grp-esc-tag">' + esc(g.escuela) + '</span>' + estado + '</div>' +
             '<div class="grp-card-head">' +
-                '<h3 class="grp-card-prog" id="grp-c' + g.id + '-t">' + esc(g.programa) + '</h3>' +
-                '<span class="grp-card-grupo" id="grp-c' + g.id + '-s">' + esc(g.nombre) + ' · ' + esc(g.codigo) + '</span>' +
+                '<div class="grp-card-titulos">' +
+                    '<h3 class="grp-card-prog" id="grp-c' + g.id + '-t">' + esc(g.programa) + '</h3>' +
+                    '<span class="grp-card-grupo" id="grp-c' + g.id + '-s">' + esc(g.nombre) + ' · ' + esc(g.codigo) + '</span>' +
+                '</div>' + marca +
             '</div>' +
-            '<div class="grp-card-horario"><span class="grp-jornada-tag">' + esc(g.jornada) + '</span>' + horarioHtml(g) + hoyTag + '</div>' +
+            '<p class="grp-card-horario"><span class="grp-jornada">' + esc(g.jornada) + '</span>' + horarioHtml(g) + '</p>' +
             '<div class="grp-avance">' +
-                '<div class="grp-avance-fila"><span>' + esc(fCorta(g.inicio, true)) + ' → ' + esc(fCorta(g.fin, true)) + '</span><span><b>' + r.avance + ' %</b> de las clases</span></div>' +
-                '<div class="grp-barra" role="progressbar" aria-label="Clases dadas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + r.avance + '"' +
-                    ' aria-valuetext="' + r.dadas + ' de ' + r.total + ' clases dadas"><span style="width:' + r.avance + '%"></span></div>' +
                 '<p class="grp-modulo">' + modulo + '</p>' +
+                '<div class="grp-avance-fila">' +
+                    '<div class="grp-barra" role="progressbar" aria-label="Clases dadas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + r.avance + '"' +
+                        ' aria-valuetext="' + r.dadas + ' de ' + r.total + ' clases dadas"><span style="width:' + r.avance + '%"></span></div>' +
+                    '<span class="grp-avance-pct" aria-hidden="true">' + r.avance + ' %</span>' +
+                '</div>' +
             '</div>' +
-            '<div class="grp-card-datos">' +
-                '<div class="grp-card-dato"><span class="grp-dato-lbl">Estudiantes</span>' + estudiantes + '</div>' +
-                '<div class="grp-card-dato"><span class="grp-dato-lbl">Asistencia</span>' + asistencia + '</div>' +
-            '</div>' +
-            '<div class="grp-pendientes">' + pend.join('') + '</div>' +
+            '<p class="grp-card-resumen">' + gente + '<span class="grp-sep" aria-hidden="true"></span>' + asistencia +
+                (bajo ? '<span class="grp-sep" aria-hidden="true"></span>' + bajo : '') + '</p>' +
             '<div class="grp-card-pie">' + pie + '<span class="grp-card-ver" aria-hidden="true">Ver ficha' + ICON.flecha + '</span></div>' +
         '</article>';
     }
@@ -269,7 +281,7 @@
                 : 'Los grupos que termines quedarán aquí para consultar su asistencia y sus notas.';
         } else {
             vacioTtl.textContent = 'Ningún grupo coincide con «' + buscador.value.trim() + '»';
-            vacioSub.textContent = 'Busca por el nombre del programa, el código (por ejemplo CUR-ADM-014-A) o el grupo.';
+            vacioSub.textContent = 'Busca por el nombre de la carrera, el código (por ejemplo CUR-ADM-014-A) o el grupo.';
             vacioLimp.hidden = false;
         }
         if (q && cuenta[otra]) {
@@ -342,6 +354,42 @@
         horario:     document.getElementById('grp-dpanel-horario')
     };
     var actual = null, ultimoFoco = null, filtroEst = 'todos';
+
+    /* ── Lista de clase imprimible (documento.js): estudiantes del grupo con casillas para firmar 6 clases ── */
+    var CASILLAS = 6;
+    function imprimirLista(g) {
+        if (!window.DOC_DOC) return;
+        var S = window.DOC_SERVIDOR || {};
+        // Vigente: los que tienen la matrícula activa; finalizado: los que terminaron con el grupo
+        var lista = g.estudiantes.filter(function (e) { return g.soloConsulta ? e.matricula.estado === 'graduado' || e.matricula.estado === 'activo' : e.matricula.estado === 'activo'; })
+            .slice().sort(function (a, b) { return (a.apellidos + ' ' + a.nombres).localeCompare(b.apellidos + ' ' + b.nombres, 'es'); });
+        var horario = (g.horario || []).map(function (h) { return (DIAS_C[h.dia] || h.dia) + ' ' + h.ini + '–' + h.fin; }).join(' · ');
+        var dato = function (k, v, full) { return '<div' + (full ? ' class="rc-full"' : '') + '><span>' + esc(k) + '</span><strong>' + esc(v || '—') + '</strong></div>'; };
+        var casillas = '';
+        for (var i = 0; i < CASILLAS; i++) casillas += '<th class="rc-firma-celda">Fecha<br>___/___</th>';
+        var filas = lista.length ? lista.map(function (e, i) {
+            var vacias = '';
+            for (var j = 0; j < CASILLAS; j++) vacias += '<td class="rc-firma-celda"></td>';
+            return '<tr><td class="rc-centro">' + (i + 1) + '</td><td>' + esc(e.apellidos + ', ' + e.nombres) + '</td><td>' + esc(e.tipoDoc + ' ' + e.documento) + '</td>' + vacias + '</tr>';
+        }).join('') : '<tr><td colspan="' + (3 + CASILLAS) + '">El grupo no tiene estudiantes activos.</td></tr>';
+        DOC_DOC.imprimir({
+            titulo: 'Lista de clase',
+            numero: g.codigo,
+            extra: 'Impresa el ' + fLarga(D.hoy, true),
+            contenido:
+                '<section class="rc-datos">' +
+                    dato('Carrera', g.programa, true) +
+                    dato('Grupo', g.nombre + ' · ' + g.codigo) + dato('Jornada', g.jornada) +
+                    dato('Horario', horario) + dato('Docente', S.docente) +
+                    dato('Módulo en curso', g.moduloActual ? g.moduloActual.nombre : '') + dato('Clases', fLarga(g.inicio, true) + ' a ' + fLarga(g.fin, true)) +
+                '</section>' +
+                '<table class="rc-tabla is-compacta"><thead><tr><th class="rc-centro">#</th><th>Estudiante</th><th>Documento</th>' + casillas + '</tr></thead>' +
+                '<tbody>' + filas + '</tbody></table>' +
+                '<p class="rc-nota">Cada estudiante firma en la casilla de la clase a la que asistió. ' + lista.length + (lista.length === 1 ? ' estudiante' : ' estudiantes') + ' en la lista.</p>' +
+                '<footer class="rc-pie"><div class="rc-firma"><span></span>Firma del docente · ' + esc(S.docente || '') + '</div></footer>'
+        });
+    }
+    document.getElementById('grp-dw-imprimir').addEventListener('click', function () { if (actual) imprimirLista(actual); });
 
     function abrirFicha(id, origen) {
         var g = D.grupos.filter(function (x) { return x.id === id; })[0];
@@ -424,12 +472,15 @@
         dwTitulo.textContent = g.programa;
         dwSub.textContent = g.nombre + ' · ' + g.codigo;
         dwBadges.innerHTML =
-            (g.soloConsulta ? '<span class="app-status-tag app-status-muted">Finalizado</span>' : '<span class="app-status-tag app-status-active">Activo</span>') +
+            estadoTag(g) +
             '<span class="grp-jornada-tag">' + esc(g.jornada) + '</span>' +
             '<span class="grp-esc-tag">' + esc(g.escuela) + '</span>';
         dwSolo.hidden = !g.soloConsulta;
         dwSoloTxt.textContent = g.soloConsulta ? 'Terminó el ' + fLarga(g.fin) + '; su asistencia y sus notas ya no se modifican.' : '';
-        dwFoot.hidden = g.soloConsulta;
+        // Un grupo finalizado solo conserva "Imprimir lista"
+        dwFoot.hidden = false;
+        document.getElementById('grp-dw-asistencia').hidden = g.soloConsulta;
+        document.getElementById('grp-dw-notas').hidden = g.soloConsulta;
         if (!g.soloConsulta) {
             document.getElementById('grp-dw-asistencia').href = urlAsistencia(g);
             document.getElementById('grp-dw-notas').href = urlNotas(g);
@@ -443,7 +494,7 @@
     }
 
     /* Estudiantes */
-    var ORDEN_ESTADO = { activo: 0, graduado: 0, aplazado: 1, retirado: 2 };
+    var ORDEN_ESTADO = { activo: 0, graduado: 0, aplazado: 1, trasladado: 2, retirado: 2 };
     var FILTROS = [
         { id: 'todos',     lbl: 'Todos',              fn: function () { return true; } },
         // En un grupo finalizado ya no hay activos: el filtro muestra a los graduados
@@ -458,9 +509,10 @@
             activo:   ['app-status-active', 'Activo'],
             aplazado: ['app-status-warn', 'Aplazado'],
             retirado: ['app-status-muted', 'Retirado'],
+            trasladado: ['app-status-muted', 'Cambió de grupo'],
             graduado: ['grp-st-graduado', 'Graduado']
         }[m.estado] || ['app-status-muted', m.estado];
-        var desde = (m.estado === 'aplazado' || m.estado === 'retirado') && m.estadoFecha
+        var desde = (m.estado === 'aplazado' || m.estado === 'retirado' || m.estado === 'trasladado') && m.estadoFecha
             ? '<span class="grp-est-desde">desde el ' + esc(fCorta(m.estadoFecha)) + '</span>' : '';
         return '<span class="app-status-tag ' + mapa[0] + '">' + esc(mapa[1]) + '</span>' + desde;
     }
@@ -482,14 +534,12 @@
         if (n.reprobados) tags.push('<span class="grp-mini-tag grp-mini-bad">' + plural(n.reprobados, 'módulo perdido', 'módulos perdidos') + '</span>');
         if (n.sinNota && !g.soloConsulta) tags.push('<span class="grp-mini-tag grp-mini-pend">' + plural(n.sinNota, 'nota por poner', 'notas por poner') + '</span>');
 
-        var acudiente = '';
-        if (e.menor) {
-            acudiente = e.acudiente
-                ? '<div class="grp-acu"><span class="grp-est-lbl">Acudiente</span>' +
-                    '<span class="grp-acu-nombre">' + esc(e.acudiente.nombre) + ' <span class="grp-est-sub">(' + esc(e.acudiente.parentesco) + ')</span></span>' +
-                    telefonoHtml(e.acudiente.telefono, e.acudiente.nombre) + '</div>'
-                : '<div class="grp-acu"><span class="grp-est-lbl">Acudiente</span><span class="grp-est-sub">Sin acudiente registrado</span></div>';
-        }
+        // Contacto de emergencia de todos (si algo pasa en clase, el docente es quien llama)
+        var contacto = e.contacto
+            ? '<div class="grp-acu"><span class="grp-est-lbl">Contacto de emergencia</span>' +
+                '<span class="grp-acu-nombre">' + esc(e.contacto.nombre) + ' <span class="grp-est-sub">(' + esc(e.contacto.parentesco) + ')</span></span>' +
+                telefonoHtml(e.contacto.celular, e.contacto.nombre) + '</div>'
+            : '<div class="grp-acu"><span class="grp-est-lbl">Contacto de emergencia</span><span class="grp-est-sub">Sin registrar: pídelo en la administración</span></div>';
 
         return '<li class="grp-est' + (fuera ? ' is-fuera' : '') + '">' +
             '<div class="grp-est-top">' +
@@ -516,7 +566,7 @@
                     (tags.length ? '<span class="grp-est-tags">' + tags.join('') + '</span>' : '') +
                 '</div>' +
                 '<div class="grp-est-dato grp-est-contacto"><span class="grp-est-lbl">Celular</span>' +
-                    telefonoHtml(e.telefono, primerNombre(e.nombres)) + acudiente +
+                    telefonoHtml(e.telefono, primerNombre(e.nombres)) + contacto +
                 '</div>' +
             '</div>' +
         '</li>';
@@ -591,7 +641,7 @@
     };
     function pintarMalla(g) {
         var p = paneles.malla;
-        if (!g.modulos.length) { p.innerHTML = '<p class="grp-lista-vacia">El programa todavía no tiene módulos registrados.</p>'; return; }
+        if (!g.modulos.length) { p.innerHTML = '<p class="grp-lista-vacia">La carrera todavía no tiene módulos registrados.</p>'; return; }
         var faltan = {};
         g.modulosSinNota.forEach(function (x) { faltan[x.modulo.id] = x.faltan; });
         var horasTotal = g.modulos.reduce(function (s, m) { return s + m.horas; }, 0);
@@ -620,7 +670,7 @@
                     '<div class="grp-mod-der"><span class="app-status-tag ' + est[0] + '">' + est[1] + '</span>' + falta + '</div>' +
                 '</li>';
             }).join('') + '</ol>' +
-            '<div class="grp-malla-total"><span>Total del programa</span><span><b>' + horasTotal + ' h</b> · ' + plural(g.modulos.length, 'módulo', 'módulos') + '</span></div>';
+            '<div class="grp-malla-total"><span>Total de la carrera</span><span><b>' + horasTotal + ' h</b> · ' + plural(g.modulos.length, 'módulo', 'módulos') + '</span></div>';
     }
 
     /* Horario */
@@ -648,7 +698,7 @@
                 : '<p class="grp-lista-vacia">El grupo todavía no tiene horario asignado.</p>') +
             '<div class="grp-info-grid">' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Horas por semana</span><span class="grp-info-val">' + esc(fmtHoras(r.minSemana)) + '</span></div>' +
-                '<div class="grp-info-item"><span class="grp-info-lbl">Clases dadas</span><span class="grp-info-val">' + r.dadas + ' de ' + r.total + '<small>' + r.avance + ' % del programa</small></span></div>' +
+                '<div class="grp-info-item"><span class="grp-info-lbl">Clases dadas</span><span class="grp-info-val">' + r.dadas + ' de ' + r.total + '<small>' + r.avance + ' % de la carrera</small></span></div>' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Inicio del grupo</span><span class="grp-info-val">' + esc(fLarga(g.inicio, true)) + '</span></div>' +
                 '<div class="grp-info-item"><span class="grp-info-lbl">Fin del grupo</span><span class="grp-info-val">' + esc(fLarga(g.fin, true)) + '</span></div>' +
             '</div>';

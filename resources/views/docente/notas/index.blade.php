@@ -1,7 +1,6 @@
-{{-- Notas (panel Docente): pantalla SOLO FRONTEND con datos de ejemplo de public/assets/js/docente/datos-ejemplo.js.
-     Programas, escuelas y jornadas son reales; grupos, estudiantes, notas y asistencia son FICTICIOS.
-     "Guardar notas" llama DOC_API.guardarNotas, que por ahora guarda en el sessionStorage de la pestaña
-     mientras no exista el backend (CalificacionService).
+{{-- Notas (panel Docente, Docente/Notas/NotaController). Datos reales de los grupos del docente
+     (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js). "Guardar notas" llama DOC_API.guardarNotas →
+     POST docente.notas.guardar (NotasRequest) con solo las notas que cambiaron.
      Reglas: nota por módulo de 1,0 a 5,0 con un decimal, se aprueba con 3,0; una sola habilitación por módulo
      perdido y solo cuando el módulo ya terminó. Los grupos finalizados y las matrículas que no están activas
      solo se consultan. Enlace directo: ?grupo=ID&modulo=ID (los dos opcionales). --}}
@@ -11,6 +10,7 @@
 @section('active', 'notas')
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/docente/documento.css') }}?v={{ filemtime(public_path('assets/css/docente/documento.css')) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/docente/notas.css') }}?v={{ filemtime(public_path('assets/css/docente/notas.css')) }}">
 @endpush
 
@@ -64,10 +64,7 @@
         <div class="not-vista" id="not-panel-modulo" role="tabpanel" aria-labelledby="not-tab-modulo">
 
             <div class="not-modulos-zona">
-                <div class="not-seccion-fila">
-                    <h3 class="not-seccion-titulo" id="not-malla-titulo">Malla del grupo</h3>
-                    <span class="not-seccion-nota">Las fechas salen del horario y de las horas de cada módulo</span>
-                </div>
+                <h3 class="not-seccion-titulo" id="not-malla-titulo">Malla del grupo</h3>
                 <div class="not-modulos" id="not-modulos" role="tablist" aria-labelledby="not-malla-titulo"></div>
             </div>
 
@@ -75,28 +72,7 @@
                 <div class="not-hoja-head" id="not-hoja-head"></div>
                 <div class="not-avisos" id="not-hoja-avisos"></div>
 
-                <div class="not-kpis" id="not-kpis">
-                    <div class="not-kpi-chip not-kpi-blue">
-                        <div class="not-kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-                        <div><div class="not-kpi-val" id="not-k-prom">—</div><div class="not-kpi-lbl">Promedio del módulo</div></div>
-                    </div>
-                    <div class="not-kpi-chip not-kpi-green">
-                        <div class="not-kpi-icon"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
-                        <div><div class="not-kpi-val" id="not-k-aprob">0</div><div class="not-kpi-lbl">Aprobados</div></div>
-                    </div>
-                    <div class="not-kpi-chip not-kpi-amber">
-                        <div class="not-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></div>
-                        <div><div class="not-kpi-val" id="not-k-hab">0</div><div class="not-kpi-lbl">Por habilitar</div></div>
-                    </div>
-                    <div class="not-kpi-chip not-kpi-red">
-                        <div class="not-kpi-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                        <div><div class="not-kpi-val" id="not-k-rep">0</div><div class="not-kpi-lbl">Reprobados</div></div>
-                    </div>
-                    <div class="not-kpi-chip not-kpi-orange">
-                        <div class="not-kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                        <div><div class="not-kpi-val" id="not-k-sin">0</div><div class="not-kpi-lbl">Sin nota</div></div>
-                    </div>
-                </div>
+                <p class="not-resumen" id="not-resumen" aria-live="polite"></p>
 
                 <div class="not-table-wrap" id="not-tabla-wrap">
                     <table class="not-table">
@@ -137,6 +113,12 @@
 
         {{-- ═══════════ Planilla completa ═══════════ --}}
         <div class="not-vista" id="not-panel-completa" role="tabpanel" aria-labelledby="not-tab-completa" hidden>
+            <div class="not-completa-barra">
+                <button type="button" class="not-btn not-btn-ghost" id="not-imprimir">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimir planilla
+                </button>
+            </div>
             <div class="not-avisos" id="not-completa-avisos"></div>
             <div class="not-matriz-wrap" id="not-matriz-wrap" tabindex="0" role="region" aria-label="Notas de todos los módulos"></div>
             <div class="not-leyenda" id="not-leyenda">
@@ -171,6 +153,7 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}"></script>
+@include('docente.partials.datos')
+<script src="{{ asset('assets/js/docente/documento.js') }}?v={{ filemtime(public_path('assets/js/docente/documento.js')) }}" defer></script>
 <script src="{{ asset('assets/js/docente/notas.js') }}?v={{ filemtime(public_path('assets/js/docente/notas.js')) }}"></script>
 @endpush

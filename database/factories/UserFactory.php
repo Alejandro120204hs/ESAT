@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RolUsuario;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +37,26 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /** Todo estudiante tiene contacto de emergencia (obligatorio): sin él no se matricula. */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $u) {
+            if ($u->role === RolUsuario::Estudiante && ! $u->contactoEmergencia()->exists()) {
+                $u->contactoEmergencia()->create([
+                    'nombre'     => fake()->firstName().' '.fake()->lastName(),
+                    'celular'    => '3'.fake()->numerify('#########'),
+                    'parentesco' => 'Madre',
+                ]);
+            }
+        });
+    }
+
+    /** Un estudiante sin contacto de emergencia (para probar que sin él no se matricula). */
+    public function sinContacto(): static
+    {
+        return $this->afterCreating(fn (User $u) => $u->contactoEmergencia()->delete());
     }
 
     /**

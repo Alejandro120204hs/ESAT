@@ -77,15 +77,22 @@
         return m.estado_fecha && m.estado_fecha <= d ? m.estado : 'activo';
     }
     function vigenteAl(m, d) { var e = estadoAl(m, d); return e === 'activo' || e === 'aplazado'; }
-    /* Asistencia de un estudiante hasta la fecha (clases dictadas hasta ese día) */
+    /* Asistencia de un estudiante hasta la fecha (clases dictadas hasta ese día), sumando cada grupo por el que pasó */
     function asistenciaAl(m, d) {
-        var a = D.asistencia.find(function (x) { return x.matricula_id === m.id; });
-        if (!a) return null;
-        var g = grupoPorId[a.grupo_id], c = { P: 0, T: 0, A: 0, E: 0 };
-        g.fechas.forEach(function (f, i) { if (f <= d) { var x = a.cod.charAt(i); if (c[x] !== undefined) c[x]++; } });
+        var de = D.asistencia.filter(function (x) { return x.matricula_id === m.id; });
+        if (!de.length) return null;
+        var c = { P: 0, T: 0, A: 0, E: 0 };
+        de.forEach(function (a) {
+            var g = grupoPorId[a.grupo_id];
+            if (g) g.fechas.forEach(function (f, i) { if (f <= d) { var x = a.cod.charAt(i); if (c[x] !== undefined) c[x]++; } });
+        });
         var tom = c.P + c.T + c.A;
         return { c: c, pct: tom ? pct(c.P + c.T, tom) : null };
     }
+    /* Historial de grupos: ¿contaba en el grupo ese día? ¿pasó por el grupo entre dos fechas? (Matricula::ventanasEn) */
+    function pasos(m) { return m.pasos && m.pasos.length ? m.pasos : [{ grupo_id: m.grupo_id, desde: m.fecha, hasta: null }]; }
+    function enGrupoAl(m, gid, d) { return pasos(m).some(function (p) { return p.grupo_id === gid && p.desde <= d && (!p.hasta || d < p.hasta); }); }
+    function pasoPorGrupo(m, gid, ini, fin) { return pasos(m).some(function (p) { return p.grupo_id === gid && p.desde <= fin && (!p.hasta || ini < p.hasta); }); }
     /* Nota de un módulo a la fecha (solo lo que ya se había puesto) y su estado */
     function notaAl(matId, modId, d) {
         var k = D.notas.find(function (n) { return n.matricula_id === matId && n.modulo_id === modId; });
@@ -140,7 +147,7 @@
     var GRUPOS_DOC = [
         { id: 'secretaria', titulo: 'Para la Secretaría de Educación', sub: 'Matrícula y certificación que reporta la institución.' },
         { id: 'aula', titulo: 'Para los docentes y el aula', sub: 'Listas y planillas de un grupo, para imprimir y firmar.' },
-        { id: 'admin', titulo: 'Para la administración', sub: 'Lo que cruza varias pantallas y ninguna muestra por sí sola.' }
+        { id: 'admin', titulo: 'Para uso interno de la sede', sub: 'Lo que cruza varias pantallas y ninguna muestra por sí sola.' }
     ];
     var DOCS = {
         matriculados: { grupo: 'secretaria', titulo: 'Matriculados del mes', desc: 'Estudiantes con matrícula en el mes: documento, género, edad, residencia, programa, jornada y estado.', filtros: ['programa'] },
@@ -257,7 +264,7 @@
         },
         lista: function (f) {
             var g = grupoPorId[f.grupo], d = corte();
-            var lista = D.matriculas.filter(function (m) { return m.grupo_id === g.id && vigenteAl(m, d); }).sort(porNombre);
+            var lista = D.matriculas.filter(function (m) { return enGrupoAl(m, g.id, d) && vigenteAl(m, d); }).sort(porNombre);
             var doc = base('lista', subGrupo(g));
             doc.resumen = [['Estudiantes', lista.filter(function (m) { return estadoAl(m, d) === 'activo'; }).length], ['Aplazados', lista.filter(function (m) { return estadoAl(m, d) === 'aplazado'; }).length],
                 ['Docente', g.docente || 'Sin asignar'], ['Horario', g.horario || '—']];
@@ -277,7 +284,7 @@
         },
         planilla: function (f) {
             var g = grupoPorId[f.grupo], d = corte(), mods = g.modulos;
-            var lista = D.matriculas.filter(function (m) { return m.grupo_id === g.id && m.fecha <= d && (vigenteAl(m, d) || (m.estado_fecha && m.estado_fecha >= desde())); }).sort(porNombre);
+            var lista = D.matriculas.filter(function (m) { return m.fecha <= d && pasoPorGrupo(m, g.id, desde(), d) && (vigenteAl(m, d) || (m.estado_fecha && m.estado_fecha >= desde())); }).sort(porNombre);
             var doc = base('planilla', subGrupo(g) + ' · Docente: ' + (g.docente || 'sin asignar'));
             var SIT = { aprobado: 'A', habilito: 'H', por_habilitar: 'PH', reprobado: 'R' };
             var estMod = mods.map(function (m) { return estadoModulo(m, d); });
@@ -331,7 +338,8 @@
             }).filter(function (x) { return x.p !== null || x.c.E > 0; });
             filas.forEach(function (x, i) { x.fila = [i + 1, nombre(estPorId[x.a.estudiante_id])].concat(x.celdas).concat([x.c.P, x.c.T, x.c.A, x.c.E, x.p !== null ? x.p + ' %' : '—']); });
             var conPct = filas.filter(function (x) { return x.p !== null; });
-            doc.resumen = [['Clases en el mes', idx.length], ['Estudiantes', filas.length], ['Asistencia del grupo', conPct.length ? Math.round(conPct.reduce(function (s, x) { return s + x.p; }, 0) / conPct.length) + ' %' : '—'],
+            // Solo los que tienen asistencia registrada en el mes (la lista completa del grupo está en "Lista de clase")
+            doc.resumen = [['Clases en el mes', idx.length], ['Con asistencia registrada', filas.length], ['Asistencia del grupo', conPct.length ? Math.round(conPct.reduce(function (s, x) { return s + x.p; }, 0) / conPct.length) + ' %' : '—'],
                 ['Bajo el 80 %', conPct.filter(function (x) { return x.p < 80; }).length]];
             doc.grafica = conPct.length ? { titulo: 'Asistencia del mes por estudiante', max: 100, barras: conPct.map(function (x) { return { lbl: nombre(estPorId[x.a.estudiante_id]), val: x.p, txt: x.p + ' %' }; }) } : null;
             doc.tablas.push({ cuadricula: 1, cols: [{ t: 'N°', num: 1 }, { t: 'Estudiante' }].concat(idx.map(function (k) {
@@ -357,10 +365,10 @@
             doc.grafica = total ? { titulo: 'Vencido según su edad', barras: EDADES.map(function (e, i) { return { lbl: e, val: tot[i], txt: pesos(tot[i]) }; }) } : null;
             doc.tablas.push({ cols: [{ t: 'N°', num: 1 }, { t: 'Estudiante' }, { t: 'Programa y grupo' }, { t: 'Celular' }, { t: '1–30', num: 1 }, { t: '31–60', num: 1 }, { t: '61–90', num: 1 }, { t: '+90', num: 1 }, { t: 'Total', num: 1 }, { t: 'Días', num: 1 }],
                 filas: lista.map(function (x, i) {
-                    var e = estPorId[x.m.estudiante_id], cel = e.acudiente && edad(e.nacimiento, d) < 18 ? e.acudiente.celular + ' (acudiente)' : (e.celular || '—');
+                    var e = estPorId[x.m.estudiante_id], cel = e.contacto && edad(e.nacimiento, d) < 18 ? e.contacto.celular + ' (' + e.contacto.parentesco.toLowerCase() + ')' : (e.celular || '—');
                     return [i + 1, nombre(e), grupoTxt(x.m), cel].concat(x.b.map(function (v) { return v ? pesos(v) : '—'; })).concat([pesos(x.valor), { t: x.dias, clase: x.dias > 60 ? 'is-mal' : '' }]);
                 }), pie: ['', 'Total', '', ''].concat(tot.map(pesos)).concat([pesos(total), '']), vacio: 'No había cobros vencidos a esta fecha.' });
-            doc.notas.push('Se cuenta lo que faltaba por pagar de cada cobro con los pagos recibidos hasta la fecha de corte; la edad va desde su vencimiento (el día 10). A un menor de edad se le cobra al acudiente.');
+            doc.notas.push('Se cuenta lo que faltaba por pagar de cada cobro con los pagos recibidos hasta la fecha de corte; la edad va desde su vencimiento (el día 10). A un menor de edad se le cobra a su contacto de emergencia.');
             return doc;
         },
         riesgo: function (f) {
@@ -387,9 +395,9 @@
                         { t: x.a && x.a.pct !== null ? x.a.pct + ' %' : '—', clase: x.al.asis ? 'is-mal' : '' },
                         { t: notasTxt, clase: x.al.notas ? 'is-mal' : '' },
                         { t: x.mo ? pesos(x.mo.valor) + ' · ' + x.mo.dias + ' días' : 'Al día', clase: x.al.mora ? 'is-mal' : '' },
-                        x.cuantas, menor && e.acudiente ? e.acudiente.nombre + ' · ' + e.acudiente.celular : (e.celular || '—')];
+                        x.cuantas, menor && e.contacto ? e.contacto.nombre + ' · ' + e.contacto.celular : (e.celular || '—')];
                 }), vacio: 'Ningún estudiante tenía alertas a esta fecha.' });
-            doc.notas.push('Alertas al cierre del mes: asistencia acumulada bajo el 80 % (la misma regla de Asistencia), al menos un módulo por habilitar o reprobado, y un cobro vencido hace más de 30 días. De un menor de edad se da el contacto del acudiente.');
+            doc.notas.push('Alertas al cierre del mes: asistencia acumulada bajo el 80 % (la misma regla de Asistencia), al menos un módulo por habilitar o reprobado, y un cobro vencido hace más de 30 días. De un menor de edad se da su contacto de emergencia.');
             return doc;
         },
         caracterizacion: function (f) {
@@ -540,7 +548,7 @@
         var d = corte();
         return D.grupos.filter(function (g) {
             if (tipo === 'asistencia') return g.fechas.some(function (x) { return x.slice(0, 7) === mes && x <= d; });
-            var tiene = D.matriculas.some(function (m) { return m.grupo_id === g.id && vigenteAl(m, d); });
+            var tiene = D.matriculas.some(function (m) { return enGrupoAl(m, g.id, d) && vigenteAl(m, d); });
             if (tipo === 'planilla') return tiene && g.modulos.some(function (m) { return m.ini && m.ini <= d; });
             return tiene;
         });

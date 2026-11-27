@@ -49,11 +49,11 @@
     var ESTADOS = {
         activo:   { label: 'Activa',   cls: 'app-status-active', accion: 'Reintegrar', desc: 'Vuelve a clases en un grupo con cupo y se generan las cuotas que le faltan.' },
         aplazado: { label: 'Aplazada', cls: 'app-status-warn',   accion: 'Aplazar',    desc: 'Suspende sus estudios por un tiempo: libera el cupo y se anulan las cuotas que vencen después. Si no ha pagado el derecho de matrícula, queda en espera hasta que se reintegre.' },
-        retirado: { label: 'Retirada', cls: 'app-status-muted',  accion: 'Retirar',    desc: 'Deja el programa de forma definitiva: libera el cupo y se anulan las cuotas futuras (y el derecho de matrícula si aún no vencía). Lo atrasado se sigue debiendo.' },
-        graduado: { label: 'Graduada', cls: 'mat-status-graduado', accion: 'Graduar',  desc: 'Terminó el programa. Solo cuando su grupo finalizó, aprobó todos los módulos, pagó todas las cuotas y está a paz y salvo.' },
+        retirado: { label: 'Retirada', cls: 'app-status-muted',  accion: 'Retirar',    desc: 'Deja la carrera de forma definitiva: libera el cupo y se anulan las cuotas futuras (y el derecho de matrícula si aún no vencía). Lo atrasado se sigue debiendo.' },
+        graduado: { label: 'Graduada', cls: 'mat-status-graduado', accion: 'Graduar',  desc: 'Terminó la carrera. Solo cuando su grupo finalizó, aprobó todos los módulos, pagó todas las cuotas y está a paz y salvo.' },
         anulado:  { label: 'Anulada',  cls: 'app-status-danger', accion: 'Anular',     desc: 'Se hizo por error (estudiante o grupo equivocado). Solo si no tiene pagos: libera el cupo, no se cobra nada y queda en Finalizadas para consulta.' }
     };
-    var CAMBIO_PROGRAMA = { accion: 'Cambiar de programa', desc: 'Va a estudiar otro programa: esta matrícula queda retirada y se crea una nueva en el grupo que elijas. No se vuelve a cobrar el derecho de matrícula si ya lo pagó, y lo pagado por adelantado pasa como abono.' };
+    var CAMBIO_PROGRAMA = { accion: 'Cambiar de carrera', desc: 'Va a estudiar otra carrera: esta matrícula queda retirada y se crea una nueva en el grupo que elijas. No se vuelve a cobrar el derecho de matrícula si ya lo pagó, y lo pagado por adelantado pasa como abono.' };
     var PAGOS = {
         al_dia:    { label: 'Al día',          cls: 'app-status-active' },
         pendiente: { label: 'Cuota del mes',   cls: 'app-status-warn' },
@@ -131,9 +131,19 @@
     function pagoClave(m) { return m.pago === 'vencido' ? 'vencido' : (!m.plan_pago ? 'sin_plan' : m.pago); }
     function planNombre(plan, tipoPeriodo) { return plan === 'mensual' ? 'Mensual' : (tipoPeriodo === 'semestre' ? 'Semestral' : 'Trimestral'); }
     function cuposLibres(g) { return Math.max(0, g.cupo - g.inscritos); }
-    function abierto(g) { return g.estado !== 'finalizado'; }
+    // Recibe estudiantes: no está finalizado ni terminó sus clases por fecha (Curso::cerrado)
+    function abierto(g) { return g.estado !== 'finalizado' && g.fin > HOY; }
+    // Empezar una carrera (matrícula nueva o cambio de carrera): solo grupos que todavía no empiezan (MatriculaService::noAlcanza)
+    function paraEmpezar(g) { return abierto(g) && g.inicio >= HOY; }
+    // Quien ya venía estudiando (reintegro o cambio de grupo): el servidor manda los grupos que le harían perder módulos
+    function sirveA(m, g) { return abierto(g) && !(m.no_alcanza && m.no_alcanza[g.id]); }
+    // Por qué ningún grupo abierto le sirve (el motivo del primero que no le sirve)
+    function motivoSinGrupo(m, lista) {
+        var g = lista.find(function (x) { return m.no_alcanza && m.no_alcanza[x.id]; });
+        return g ? m.no_alcanza[g.id] : '';
+    }
 
-    /* ── Combobox (mismo patrón de Docentes, Estudiantes y Acudientes) ── */
+    /* ── Combobox (mismo patrón de Docentes y Estudiantes) ── */
     function initCombobox(root) {
         var trigger     = root.querySelector('[data-combobox-trigger]');
         var label       = root.querySelector('[data-combobox-label]');
@@ -326,25 +336,25 @@
     }
 
     function pendHTML(e) {
-        var menor = esMenor(e), sinAcu = menor && !e.acudiente, sinDocs = e.documentos_pendientes.length > 0;
+        var menor = esMenor(e), sinContacto = !e.contacto, sinDocs = e.documentos_pendientes.length > 0;
         var situacion = e.anterior
             ? 'Antes: ' + esc(ESTADOS[e.anterior.estado].label.toLowerCase()) + ' en ' + esc(corto(e.anterior.programa)) + '<span class="mat-fila-sub">' + esc(e.anterior.codigo) + '</span>'
             : 'Nunca se ha matriculado<span class="mat-fila-sub">Registrado el ' + fmtFecha(e.registrado) + '</span>';
         var docs = e.documentos_pendientes.length
             ? '<span class="mat-fila-aviso">' + ICONOS.doc + e.documentos_pendientes.length + (e.documentos_pendientes.length === 1 ? ' pendiente' : ' pendientes') + '</span>'
             : '<span class="mat-fila-ok">Completos</span>';
-        var acu = e.acudiente
-            ? esc(e.acudiente.nombre) + '<span class="mat-fila-sub">' + esc(e.acudiente.parentesco) + '</span>'
-            : (sinAcu ? '<span class="mat-fila-aviso">' + ICONOS.aviso + 'Menor sin acudiente</span>' : '<span class="mat-fila-sub">No tiene (mayor de edad)</span>');
+        var contacto = e.contacto
+            ? esc(e.contacto.nombre) + '<span class="mat-fila-sub">' + esc(e.contacto.parentesco) + '</span>'
+            : '<span class="mat-fila-aviso">' + ICONOS.aviso + 'Sin contacto de emergencia</span>';
         return '<tr class="mat-fila mat-fila-pend mat-esc-sin" data-pend="' + e.id + '">' +
             '<td><div class="mat-fila-est"><span class="mat-fila-foto" aria-hidden="true">' + esc(iniciales(e)) + '</span>' +
                 '<span class="mat-fila-datos"><span class="mat-fila-nombre">' + esc(nombreCompleto(e)) + '</span>' +
                 '<span class="mat-fila-doc">' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + (edad(e.fecha_nac) !== null ? ' · ' + edad(e.fecha_nac) + ' años' : '') + (menor ? ' <span class="mat-menor">Menor</span>' : '') + '</span></span></div></td>' +
             '<td>' + situacion + '</td>' +
-            '<td>' + acu + '</td>' +
+            '<td>' + contacto + '</td>' +
             '<td>' + docs + '</td>' +
             '<td class="mat-fila-acc"><button type="button" class="mat-btn mat-btn-primary" data-matricular="' + e.id + '"' +
-                (sinAcu ? ' disabled title="Vincúlale un acudiente en Estudiantes antes de matricularlo"'
+                (sinContacto ? ' disabled title="Regístrale el contacto de emergencia en Estudiantes antes de matricularlo"'
                     : sinDocs ? ' disabled title="Recibe sus documentos en Estudiantes antes de matricularlo"' : '') + '>Matricular</button></td>' +
         '</tr>';
     }
@@ -400,7 +410,7 @@
             ? (sinFiltros ? (fin ? 'Todavía no hay matrículas finalizadas' : 'Todavía no hay matrículas vigentes') : 'No hay matrículas con estos filtros')
             : (sinFiltros ? 'Todos los estudiantes están matriculados' : 'Nadie coincide con la búsqueda'));
         setTxt('mat-empty-sub', esMat
-            ? (sinFiltros ? (fin ? 'Aquí quedan las matrículas graduadas y retiradas para consultarlas.' : 'Matricula a un estudiante registrado con «Nueva matrícula».') : 'Prueba con otro nombre, documento o código, o quita el filtro de programa, grupo, estado o pago.')
+            ? (sinFiltros ? (fin ? 'Aquí quedan las matrículas graduadas y retiradas para consultarlas.' : 'Matricula a un estudiante registrado con «Nueva matrícula».') : 'Prueba con otro nombre, documento o código, o quita el filtro de carrera, grupo, estado o pago.')
             : (sinFiltros ? 'Cuando registres un estudiante nuevo en Estudiantes, aparecerá aquí para matricularlo.' : 'Prueba con otro nombre o documento.'));
         document.getElementById('mat-limpiar').hidden = sinFiltros;
 
@@ -431,13 +441,13 @@
     function exportar() {
         var filas;
         if (vista === 'pendientes') {
-            filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Edad', 'Acudiente', 'Parentesco', 'Documentos pendientes', 'Registrado']]
+            filas = [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Edad', 'Contacto de emergencia', 'Parentesco', 'Documentos pendientes', 'Registrado']]
                 .concat(listaActual.map(function (e) {
-                    return [e.nombres, e.apellidos, e.tipo_doc, e.documento, edad(e.fecha_nac), e.acudiente ? e.acudiente.nombre : '',
-                        e.acudiente ? e.acudiente.parentesco : '', e.documentos_pendientes.join(', '), e.registrado];
+                    return [e.nombres, e.apellidos, e.tipo_doc, e.documento, edad(e.fecha_nac), e.contacto ? e.contacto.nombre : '',
+                        e.contacto ? e.contacto.parentesco : '', e.documentos_pendientes.join(', '), e.registrado];
                 }));
         } else {
-            filas = [['Código', 'Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Programa', 'Grupo', 'Jornada', 'Estado', 'Fecha del estado',
+            filas = [['Código', 'Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Carrera', 'Grupo', 'Jornada', 'Estado', 'Fecha del estado',
                 'Fecha de matrícula', 'Plan de pago', 'Cuotas pagadas', 'Cuotas del plan', 'Descuento %', 'Pagado', 'A pagar este mes', 'Vencido', 'Por pagar en total', 'Celular', 'Correo']]
                 .concat(listaActual.map(function (m) {
                     var g = grupoDe(m.grupo_id) || {};
@@ -497,9 +507,9 @@
         if (m.grupo_id && grupoIds.indexOf(m.grupo_id) < 0) grupoIds.push(m.grupo_id);
     });
     function nombrePrograma(id) { var g = grupos.find(function (x) { return x.programa_id === id; }); var p = programaDe(id); return corto((p && p.nombre) || (g && g.programa) || ''); }
-    cbPrograma.setOptions([{ value: '', label: 'Todos los programas' }].concat(progIds.map(function (id) { return { value: String(id), label: nombrePrograma(id) }; })
+    cbPrograma.setOptions([{ value: '', label: 'Todas las carreras' }].concat(progIds.map(function (id) { return { value: String(id), label: nombrePrograma(id) }; })
         .sort(function (a, b) { return a.label.localeCompare(b.label, 'es'); })));
-    cbPrograma.setValue('', 'Todos los programas', { silent: true });
+    cbPrograma.setValue('', 'Todas las carreras', { silent: true });
     function opcionesGrupo() {
         var lista = grupoIds.map(grupoDe).filter(function (g) { return g && (!filtro.programa || String(g.programa_id) === filtro.programa); })
             .sort(function (a, b) { return a.codigo.localeCompare(b.codigo); });
@@ -528,7 +538,7 @@
         } else {
             filtro = { programa: '', grupo: '', estado: '', pago: '', texto: '' };
             document.getElementById('mat-search').value = '';
-            cbPrograma.setValue('', 'Todos los programas', { silent: true });
+            cbPrograma.setValue('', 'Todas las carreras', { silent: true });
             opcionesGrupo();
             cbEstado.setValue('', 'Todos los estados', { silent: true });
             cbPago.setValue('', 'Todos los pagos', { silent: true });
@@ -662,39 +672,41 @@
                     (m.estado === 'anulado' ? '<p>Se anuló porque se hizo por error: no ocupa cupo, no se le cobra nada y no cuenta en su trayectoria. Solo se consulta. ' +
                         (libre ? 'Si de verdad se va a matricular, crea una matrícula nueva.' : esc(primerNombre(m)) + ' ya tiene otra matrícula vigente.') + '</p>'
                     : cerrada(m) ? '<p>Esta matrícula está cerrada y solo se consulta. ' + (libre
-                        ? (m.estado === 'graduado' ? 'Si ' + esc(primerNombre(m)) + ' va a estudiar otro programa, crea una matrícula nueva.' : 'Si ' + esc(primerNombre(m)) + ' vuelve a estudiar, crea una matrícula nueva; esta queda como historial.')
+                        ? (m.estado === 'graduado' ? 'Si ' + esc(primerNombre(m)) + ' va a estudiar otra carrera, crea una matrícula nueva.' : 'Si ' + esc(primerNombre(m)) + ' vuelve a estudiar, crea una matrícula nueva; esta queda como historial.')
                         : esc(primerNombre(m)) + ' ya tiene otra matrícula vigente.') + '</p>' : '') +
                     (libre ? '<div class="mat-callout-acc"><button type="button" class="mat-btn mat-btn-secondary mat-btn-sm" data-rematricular="' + m.estudiante_id + '">' + ICONOS.mas +
-                        ({ graduado: 'Matricular en otro programa', anulado: 'Matricular de nuevo' }[m.estado] || 'Volver a matricular') + '</button></div>' : '') + '</div>';
+                        ({ graduado: 'Matricular en otra carrera', anulado: 'Matricular de nuevo' }[m.estado] || 'Volver a matricular') + '</button></div>' : '') + '</div>';
             }
             html += '<div class="mat-info-grid">' +
-                dato('Programa', esc(g.programa || (prog && prog.nombre)), true) +
+                dato('Carrera', esc(g.programa || (prog && prog.nombre)), true) +
                 dato('Escuela', '<span class="mat-esc-tag mat-esc-' + escClass(g.escuela) + '">' + esc(g.escuela) + '</span>') +
                 dato('Grupo', esc(g.grupo) + ' · <span class="mat-num-inline">' + esc(g.codigo) + '</span>') +
                 dato('Jornada', esc(g.jornada)) +
                 dato('Docente', esc(g.docente)) +
                 dato('Horario', (g.horario || []).map(function (h) { return '<span class="mat-horario-linea">' + esc(h) + '</span>'; }).join(''), true) +
                 dato('Inicio de clases', fmtFecha(g.inicio)) +
-                dato('Fin del programa', fmtFecha(g.fin)) +
+                dato('Fin de la carrera', fmtFecha(g.fin)) +
                 dato('Fecha de matrícula', fmtFecha(m.fecha)) +
                 dato('Asistencia', m.asistencia === null ? 'Sin clases registradas' : m.asistencia + ' %') +
             '</div>' +
-            (m.origen ? '<p class="mat-sec-nota">Viene de la matrícula <button type="button" class="mat-link-btn mat-link-neutro" data-ir="' + m.origen.id + '">' + esc(m.origen.codigo) + '</button> por cambio de programa.</p>' : '') +
-            (m.siguiente ? '<p class="mat-sec-nota">Cambió de programa: ahora está en la matrícula <button type="button" class="mat-link-btn mat-link-neutro" data-ir="' + m.siguiente.id + '">' + esc(m.siguiente.codigo) + '</button>.</p>' : '') +
+            (m.origen ? '<p class="mat-sec-nota">Viene de la matrícula <button type="button" class="mat-link-btn mat-link-neutro" data-ir="' + m.origen.id + '">' + esc(m.origen.codigo) + '</button> por cambio de carrera.</p>' : '') +
+            (m.siguiente ? '<p class="mat-sec-nota">Cambió de carrera: ahora está en la matrícula <button type="button" class="mat-link-btn mat-link-neutro" data-ir="' + m.siguiente.id + '">' + esc(m.siguiente.codigo) + '</button>.</p>' : '') +
             documentosHTML(m) +
             otrasHTML(m) +
             seccion('Contacto', '<div class="mat-info-grid">' +
                 dato('Celular', m.telefono ? fmtTel(m.telefono) : '—') +
                 dato('Correo', m.email ? esc(m.email) : '—') +
-                dato('Acudiente', m.acudiente ? esc(m.acudiente.nombre) + ' · ' + esc(m.acudiente.parentesco) + ' · ' + fmtTel(m.acudiente.telefono) : (esMenor(m) ? 'Sin acudiente' : 'No tiene (mayor de edad)'), true) +
+                dato('Contacto de emergencia', m.contacto ? esc(m.contacto.nombre) + ' · ' + esc(m.contacto.parentesco) + ' · ' + fmtTel(m.contacto.celular) : 'Sin registrar', true) +
             '</div>') +
-            '<p class="mat-sec-nota">Los datos personales, el acudiente y los documentos se actualizan en Estudiantes.</p>';
+            '<p class="mat-sec-nota">Los datos personales, el contacto de emergencia y los documentos se actualizan en Estudiantes.</p>';
         }
 
         if (tab === 'pagos') {
             if (!m.plan_pago) {
                 html += '<div class="mat-callout mat-callout-aviso"><strong>' + esc(primerNombre(m)) + ' todavía no elige su plan de pago</strong>' +
-                    '<p>Lo elige desde su panel: mensual o ' + planNombre('periodo', m.tipo_periodo).toLowerCase() + '. Mientras tanto solo tiene el derecho de matrícula (pago único); cuando elija, aquí aparecerán sus cuotas con su fecha de vencimiento.</p></div>';
+                    '<p>Lo elige desde su panel: mensual o ' + planNombre('periodo', m.tipo_periodo).toLowerCase() + '. Mientras tanto solo tiene el derecho de matrícula (pago único); cuando elija, aquí aparecerán sus cuotas con su fecha de vencimiento.</p>' +
+                    (m.estado === 'activo' && m.grupo_id ? '<button type="button" class="mat-link-btn mat-link-neutro" data-elegir-plan>Elegir el plan por ' + esc(primerNombre(m)) + '</button>' : '') +
+                    '</div>';
             }
             html += '<div class="mat-finanzas">' +
                 '<div class="mat-fin is-ok"><span>Pagado</span><strong>' + fmtPesos(m.pagado) + '</strong></div>' +
@@ -717,7 +729,7 @@
             }
             if (m.saldo_favor > 0) {
                 html += '<div class="mat-callout mat-callout-ok"><strong>Tiene ' + fmtPesos(m.saldo_favor) + ' a favor</strong>' +
-                    '<p>Es dinero trasladado de un programa anterior o de cuotas que se anularon. Se aplica solo a sus cuotas en cuanto existan (cuando elija su plan de pago).</p></div>';
+                    '<p>Es dinero trasladado de una carrera anterior o de cuotas que se anularon. Se aplica solo a sus cuotas en cuanto existan (cuando elija su plan de pago).</p></div>';
             }
             if (m.adelantado.total > 0) {
                 html += '<div class="mat-callout mat-callout-aviso"><strong>Pagó ' + fmtPesos(m.adelantado.total) + ' por adelantado</strong>' +
@@ -733,7 +745,7 @@
                       dato('Vencimiento', 'Día ' + (opciones.dia_vencimiento || 10) + ' de cada ' + (m.plan_pago === 'mensual' ? 'mes' : (m.tipo_periodo === 'semestre' ? 'semestre' : 'trimestre')))
                     : '') +
                 dato('Último pago', fmtFecha(m.ultimo_pago)) +
-                dato('Descuento', m.descuento_pct > 0 ? fmtPct(m.descuento_pct) + ' sobre el programa · ' + esc(m.descuento_motivo || '') : 'Sin descuento', true) +
+                dato('Descuento', m.descuento_pct > 0 ? fmtPct(m.descuento_pct) + ' sobre la carrera · ' + esc(m.descuento_motivo || '') : 'Sin descuento', true) +
             '</div>';
             html += seccion('Cobros', m.cobros.length ? '<div class="mat-cobros-wrap"><table class="mat-cobros"><thead><tr>' +
                     '<th>Concepto</th><th>Vence</th><th>Detalle</th><th class="mat-num-col">Valor</th></tr></thead><tbody>' +
@@ -804,6 +816,7 @@
             : tag(COBROS[c.estado]) + (porPagar(c) && c.abonado > 0
                 ? '<span class="mat-cobro-abono">Abonado ' + fmtPesos(c.abonado) + ' · faltan ' + fmtPesos(c.restante) + '</span>' : '') +
               (c.estado === 'anulado' && c.abonado > 0 ? '<span class="mat-cobro-abono">Adelantado ' + fmtPesos(c.abonado) + '</span>' : '') +
+              (c.retenido > 0 ? '<span class="mat-cobro-abono">ESAT retiene ' + fmtPesos(c.retenido) + ' (retiro antes de clases)</span>' : '') +
               (c.estado === 'anulado' && c.reembolsado > 0 ? '<span class="mat-cobro-abono">Salieron ' + fmtPesos(c.reembolsado) + ' (devueltos o trasladados)</span>' : '');
         return '<tr class="' + (c.estado === 'anulado' ? 'is-anulado' : '') + '">' +
             '<td class="mat-cobro-concepto"><strong>' + esc(c.concepto) + '</strong>' + (c.periodo ? '<span>' + esc(c.periodo) + '</span>' : '') + '</td>' +
@@ -890,7 +903,9 @@
             accionSub.textContent = '';
             accionCuerpo.innerHTML = '<div class="mat-callout mat-callout-alerta"><strong>Se anulará el recibo ' + esc(r.recibo) + ' por ' + fmtPesos(r.valor) + '</strong>' +
                 '<p>Pagado el ' + fmtFecha(r.fecha) + ' por ' + esc(r.metodo) + '. Cubría: ' + r.cubre.map(function (x) { return esc(x.concepto.toLowerCase()) + ' (' + fmtPesos(x.monto) + ')'; }).join(', ') +
-                '. Todo eso volverá a figurar como pendiente y el recibo quedará marcado como anulado. Úsalo solo si el pago se registró por error.</p></div>' +
+                '. ' + (m.estado === 'aplazado' || m.estado === 'retirado'
+                    ? 'Lo que ya debía al ' + (m.estado === 'aplazado' ? 'aplazarse' : 'retirarse') + ' volverá a figurar como pendiente; lo de los meses siguientes sigue sin cobrarse.'
+                    : 'Todo eso volverá a figurar como pendiente.') + ' El recibo quedará marcado como anulado. Úsalo solo si el pago se registró por error.</p></div>' +
                 '<div class="mat-field"><label class="mat-lbl" for="acc-motivo">Motivo *</label><textarea class="mat-input mat-textarea" id="acc-motivo" maxlength="255" placeholder="Ej. Se registró en la matrícula equivocada"></textarea></div>';
             btnConfirmar.textContent = 'Anular pago';
             btnConfirmar.className = 'mat-btn mat-btn-danger';
@@ -917,10 +932,26 @@
             btnConfirmar.textContent = ad.resto > 0 ? 'Registrar devolución' : 'Aplicar a lo que debe';
         }
 
+        if (tipo === 'plan') {
+            var progP = programaDe(m.programa_id) || {};
+            var opcPlan = [
+                ['mensual', 'Mensual', progP.meses + ' cuotas, una cada mes, de ' + fmtPesos(progP.cuota_mensual)],
+                ['periodo', planNombre('periodo', m.tipo_periodo), progP.periodos + ' cuotas, una al empezar cada ' + (m.tipo_periodo === 'semestre' ? 'semestre' : 'trimestre') + ', de ' + fmtPesos(progP.cuota_periodo) +
+                    (progP.meses_ultimo && progP.meses_ultimo !== progP.meses_periodo ? ' (la última cubre ' + progP.meses_ultimo + (progP.meses_ultimo === 1 ? ' mes)' : ' meses)') : '')]
+            ];
+            accionTtl.textContent = 'Elegir el plan de pago';
+            accionSub.textContent = 'Lo normal es que ' + primerNombre(m) + ' lo elija desde su panel. Elígelo aquí solo si ya lo acordaron: después no se puede cambiar. Las cuotas cuentan desde el inicio de clases del grupo, así que las que ya pasaron quedan vencidas.';
+            accionCuerpo.innerHTML = '<div class="mat-opciones" role="radiogroup" aria-label="Plan de pago">' + opcPlan.map(function (o) {
+                return '<label class="mat-opc"><input type="radio" name="acc-plan" value="' + o[0] + '"><span class="mat-opc-main">' +
+                    '<span class="mat-opc-top"><strong>' + esc(o[1]) + '</strong></span><span class="mat-opc-desc">' + esc(o[2]) + '. Antes de descuentos y con la cuota del sistema.</span></span></label>';
+            }).join('') + '</div>';
+            btnConfirmar.textContent = 'Elegir el plan';
+        }
+
         if (tipo === 'descuento') {
             var muestra = m.cobros.find(function (x) { return x.tipo !== 'matricula' && porPagar(x) && !x.abonado; });
             accionTtl.textContent = m.descuento_pct > 0 ? 'Cambiar descuento' : 'Aplicar descuento';
-            accionSub.textContent = 'Beca o convenio: un porcentaje sobre el valor del programa. No toca el derecho de matrícula ni la cuota del sistema, y solo cambia las cuotas que todavía no ha empezado a pagar.';
+            accionSub.textContent = 'Beca o convenio: un porcentaje sobre el valor de la carrera. No toca el derecho de matrícula ni la cuota del sistema, y solo cambia las cuotas que todavía no ha empezado a pagar.';
             accionCuerpo.innerHTML =
                 '<div class="mat-form-row">' +
                     '<div class="mat-field"><label class="mat-lbl" for="acc-pct">Porcentaje *</label><div class="mat-valor-wrap mat-pct-wrap"><input class="mat-input mat-input-valor" id="acc-pct" type="number" min="0" max="100" step="0.5" value="' + (m.descuento_pct || '') + '" placeholder="Ej. 20"><span aria-hidden="true">%</span></div></div>' +
@@ -934,12 +965,15 @@
 
         if (tipo === 'grupo') {
             var actualG = grupoDe(m.grupo_id);
-            var otros = grupos.filter(function (g) { return g.programa_id === m.programa_id && g.id !== m.grupo_id && abierto(g); });
+            var abiertos = grupos.filter(function (g) { return g.programa_id === m.programa_id && g.id !== m.grupo_id && abierto(g); });
+            var otros = abiertos.filter(function (g) { return sirveA(m, g); });
             accionTtl.textContent = 'Cambiar de grupo';
-            accionSub.textContent = 'Ahora está en el ' + actualG.grupo + ' (' + actualG.codigo + ', ' + actualG.jornada + '). Solo grupos del mismo programa que no han terminado.';
+            accionSub.textContent = 'Ahora está en el ' + actualG.grupo + ' (' + actualG.codigo + ', ' + actualG.jornada + '). Solo grupos de la misma carrera que no van más adelantados que el suyo en los módulos que le faltan.';
             accionCuerpo.innerHTML = otros.length
                 ? '<div class="mat-opciones" role="radiogroup" aria-label="Grupo nuevo">' + otros.map(function (g) { return grupoOpcHTML(g, 'acc-grupo', false); }).join('') + '</div>'
-                : '<div class="mat-callout"><strong>No hay otros grupos abiertos de este programa</strong><p>Crea uno nuevo en Grupos si necesitas cambiarlo de jornada.</p></div>';
+                : abiertos.length
+                ? '<div class="mat-callout"><strong>Ningún otro grupo le sirve</strong><p>' + esc(motivoSinGrupo(m, abiertos)) + '</p></div>'
+                : '<div class="mat-callout"><strong>No hay otros grupos abiertos de esta carrera</strong><p>Crea uno nuevo en Grupos si necesitas cambiarlo de jornada.</p></div>';
             btnConfirmar.textContent = 'Cambiar de grupo';
             btnConfirmar.hidden = !otros.length;
         }
@@ -999,7 +1033,7 @@
         if (!prog || pct < 0 || pct > 100) { cont.innerHTML = actual.plan_pago ? '' : '<p class="mat-campo-ayuda">Todavía no tiene plan de pago: el descuento se aplicará a sus cuotas cuando lo elija.</p>'; return; }
         var desc = Math.round(prog * pct / 100);
         cont.innerHTML = '<span class="mat-reparto-ttl">Ejemplo · ' + esc(cont.dataset.concepto) + '</span><ul>' +
-            '<li><span>Programa ' + fmtPesos(prog) + ' − ' + fmtPct(pct) + '</span><span>' + fmtPesos(prog - desc) + '</span></li>' +
+            '<li><span>Carrera ' + fmtPesos(prog) + ' − ' + fmtPct(pct) + '</span><span>' + fmtPesos(prog - desc) + '</span></li>' +
             '<li><span>Cuota del sistema</span><span>' + fmtPesos(sis) + '</span></li>' +
             '<li><span><strong>Nueva cuota</strong></span><span><strong>' + fmtPesos(prog - desc + sis) + '</strong></span></li></ul>';
     }
@@ -1012,44 +1046,49 @@
         document.querySelector('#acc-motivo-wrap .mat-lbl').firstChild.textContent = conMotivo ? 'Motivo * ' : 'Motivo ';
         extra.innerHTML = '';
         document.getElementById('acc-fecha-row').hidden = estado === 'programa';
-        btnConfirmar.textContent = estado === 'programa' ? 'Cambiar de programa' : 'Guardar estado';
+        btnConfirmar.textContent = estado === 'programa' ? 'Cambiar de carrera' : 'Guardar estado';
         if (estado === 'programa') {
             document.getElementById('acc-motivo-opc').textContent = '';
             document.querySelector('#acc-motivo-wrap .mat-lbl').firstChild.textContent = 'Motivo * ';
             var otros = progConGrupos.filter(function (p) { return p.id !== m.programa_id; });
             extra.innerHTML = otros.length
-                ? '<div class="mat-field"><span class="mat-lbl">Programa nuevo *</span><div class="mat-opciones mat-opciones-compactas" role="radiogroup" aria-label="Programa nuevo">' +
+                ? '<div class="mat-field"><span class="mat-lbl">Carrera nueva *</span><div class="mat-opciones mat-opciones-compactas" role="radiogroup" aria-label="Carrera nueva">' +
                     otros.map(function (p) {
                         return '<label class="mat-opc"><input type="radio" name="acc-prog" value="' + p.id + '"><span class="mat-opc-main"><span class="mat-opc-top"><strong>' + esc(corto(p.nombre)) + '</strong></span>' +
                             '<span class="mat-opc-meta">' + esc(p.escuela) + ' · ' + p.meses + ' meses</span></span></label>';
                     }).join('') + '</div></div>' +
-                  '<div class="mat-field"><span class="mat-lbl">Grupo *</span><div class="mat-opciones" id="acc-prog-grupos" role="radiogroup" aria-label="Grupo del programa nuevo"><p class="mat-campo-ayuda">Elige primero el programa.</p></div></div>'
-                : '<p class="mat-campo-ayuda">No hay otros programas con grupos abiertos en la sede.</p>';
+                  '<div class="mat-field"><span class="mat-lbl">Grupo *</span><div class="mat-opciones" id="acc-prog-grupos" role="radiogroup" aria-label="Grupo de la carrera nueva"><p class="mat-campo-ayuda">Elige primero la carrera.</p></div></div>'
+                : '<p class="mat-campo-ayuda">No hay otras carreras con grupos abiertos en la sede.</p>';
             return;
         }
         if (estado === 'graduado') {
             var g = grupoDe(m.grupo_id), termino = g.estado === 'finalizado' || g.fin <= HOY;
             var faltan = m.modulos_pendientes || [];
             extra.innerHTML = (!termino ? '<div class="mat-callout mat-callout-aviso"><strong>Su grupo termina el ' + fmtFecha(g.fin) + '</strong><p>Solo se puede graduar cuando el grupo finalice.</p></div>' : '') +
+                (m.sin_malla ? '<div class="mat-callout mat-callout-alerta"><strong>La carrera no tiene malla</strong><p>Sin módulos no hay notas que aprobar. El Admin debe cargarle la malla en Escuelas y carreras antes de graduar a alguien.</p></div>' : '') +
                 (faltan.length ? '<div class="mat-callout mat-callout-alerta"><strong>' + (faltan.length === 1 ? 'Le falta 1 módulo por aprobar' : 'Le faltan ' + faltan.length + ' módulos por aprobar') + '</strong><p>' +
                     esc(faltan.join(', ')) + '. Las notas las registra el docente; consúltalas en Calificaciones.</p></div>' : '') +
                 (m.por_pagar > 0 ? '<div class="mat-callout mat-callout-alerta"><strong>No está a paz y salvo</strong><p>Todavía debe ' + fmtPesos(m.por_pagar) + '. Registra sus pagos antes de graduarlo.</p></div>'
-                    : !m.plan_pago ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado el programa</strong><p>Nunca eligió su plan de pago, así que no tiene cuotas pagadas. No se puede graduar.</p></div>'
-                    : m.cuotas_pagadas < m.cuotas_total ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado todo el programa</strong><p>Lleva ' + m.cuotas_pagadas + ' de ' + m.cuotas_total + ' cuotas pagadas.</p></div>' : '');
+                    : !m.plan_pago ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado la carrera</strong><p>Nunca eligió su plan de pago, así que no tiene cuotas pagadas. No se puede graduar.</p></div>'
+                    : m.cuotas_pagadas < m.cuotas_total ? '<div class="mat-callout mat-callout-alerta"><strong>No ha pagado toda la carrera</strong><p>Lleva ' + m.cuotas_pagadas + ' de ' + m.cuotas_total + ' cuotas pagadas.</p></div>' : '');
         }
         if (estado === 'anulado') {
             var conPagos = m.recaudos.filter(function (r) { return !r.anulado; });
             extra.innerHTML = conPagos.length
                 ? '<div class="mat-callout mat-callout-alerta"><strong>Tiene pagos registrados</strong><p>Recibos ' + conPagos.map(function (r) { return esc(r.recibo); }).join(', ') +
                     '. Si fueron un error, anúlalos primero en Pagos. Si el estudiante se va, usa Retirar.</p></div>'
+                : m.pagado > 0
+                ? '<div class="mat-callout mat-callout-alerta"><strong>Tiene ' + fmtPesos(m.pagado) + ' que llegaron de otra matrícula</strong><p>Si se anulara, ese dinero se perdería. Si el estudiante se va, usa Retirar: así se puede devolver o trasladar.</p></div>'
                 : '<div class="mat-callout mat-callout-aviso"><strong>Úsalo solo si la matrícula se hizo por error</strong><p>Libera el cupo, se anulan sus cobros y queda en Finalizadas como anulada.</p></div>';
         }
         if (estado === 'activo') {
-            var opc = grupos.filter(function (x) { return x.programa_id === m.programa_id && abierto(x); });
+            var abiertosRe = grupos.filter(function (x) { return x.programa_id === m.programa_id && abierto(x); });
+            var opc = abiertosRe.filter(function (x) { return sirveA(m, x); });
             var preferido = opc.find(function (x) { return x.id === m.grupo_id && cuposLibres(x) > 0; });
             extra.innerHTML = '<div class="mat-field"><span class="mat-lbl">Grupo al que vuelve *</span><div class="mat-opciones" role="radiogroup" aria-label="Grupo">' +
                 (opc.length ? opc.map(function (x) { return grupoOpcHTML(x, 'acc-grupo-re', preferido && x.id === preferido.id); }).join('')
-                    : '<p class="mat-campo-ayuda">No hay grupos abiertos de este programa. Crea uno en Grupos.</p>') + '</div></div>';
+                    : abiertosRe.length ? '<p class="mat-campo-ayuda">Ningún grupo abierto le sirve: ' + esc(motivoSinGrupo(m, abiertosRe)) + ' Si no hay uno por empezar, créalo en Grupos.</p>'
+                    : '<p class="mat-campo-ayuda">No hay grupos abiertos de esta carrera. Crea uno en Grupos.</p>') + '</div></div>';
         }
     }
 
@@ -1068,6 +1107,7 @@
         var b = e.target.closest('[data-anular]');
         if (b) mostrarAccion('anular', parseInt(b.dataset.anular));
         if (e.target.closest('[data-descuento]')) mostrarAccion('descuento');
+        if (e.target.closest('[data-elegir-plan]')) mostrarAccion('plan');
         if (e.target.closest('[data-devolver]')) mostrarAccion('devolucion');
         var r = e.target.closest('[data-rematricular]');
         if (r) { cerrarFicha(); abrirModal(parseInt(r.dataset.rematricular)); }
@@ -1082,11 +1122,11 @@
         if (e.target.id === 'acc-pct') pintarDescuento();
         if (e.target.name === 'acc-estado') pintarExtraEstado(e.target.value);
         if (e.target.name === 'acc-prog') {
-            var lista = grupos.filter(function (g) { return g.programa_id === parseInt(e.target.value) && abierto(g); });
+            var lista = grupos.filter(function (g) { return g.programa_id === parseInt(e.target.value) && paraEmpezar(g); });
             var conCupo = lista.filter(function (g) { return cuposLibres(g) > 0; });
             document.getElementById('acc-prog-grupos').innerHTML = lista.length
                 ? lista.map(function (g) { return grupoOpcHTML(g, 'acc-grupo-prog', conCupo.length === 1 && conCupo[0] === g); }).join('')
-                : '<p class="mat-campo-ayuda">Este programa no tiene grupos abiertos.</p>';
+                : '<p class="mat-campo-ayuda">Esta carrera no tiene grupos por empezar: nadie empieza la carrera en un grupo en curso. Crea uno nuevo en Grupos.</p>';
         }
         if (e.target.name === 'acc-met') document.getElementById('acc-ref-opc').textContent = e.target.value === 'Efectivo' ? 'opcional en efectivo' : 'obligatoria';
     });
@@ -1129,6 +1169,12 @@
             peticion = enviar('PATCH', '/admin/matriculas/' + m.id + '/recaudos/' + accionPago + '/anular', { motivo: motivo });
             tab = 'pagos';
         }
+        if (accionActual === 'plan') {
+            var planElegido = (accionCuerpo.querySelector('input[name="acc-plan"]:checked') || {}).value;
+            if (!planElegido) return errorAccion('Selecciona el plan de pago.');
+            peticion = enviar('PATCH', '/admin/matriculas/' + m.id + '/plan', { plan: planElegido });
+            tab = 'pagos';
+        }
         if (accionActual === 'descuento') {
             var pctTxt = document.getElementById('acc-pct').value;
             var pct = parseFloat(pctTxt);
@@ -1161,10 +1207,10 @@
         }
         if (accionActual === 'estado' && (accionCuerpo.querySelector('input[name="acc-estado"]:checked') || {}).value === 'programa') {
             var grP = (accionCuerpo.querySelector('input[name="acc-grupo-prog"]:checked') || {}).value;
-            if (!(accionCuerpo.querySelector('input[name="acc-prog"]:checked'))) return errorAccion('Selecciona el programa nuevo.');
-            if (!grP) return errorAccion('Selecciona el grupo del programa nuevo.');
+            if (!(accionCuerpo.querySelector('input[name="acc-prog"]:checked'))) return errorAccion('Selecciona la carrera nueva.');
+            if (!grP) return errorAccion('Selecciona el grupo de la carrera nueva.');
             var motivoP = document.getElementById('acc-motivo-estado').value.trim();
-            if (motivoP.length < 5) return errorAccion('Escribe por qué cambia de programa.', 'acc-motivo-estado');
+            if (motivoP.length < 5) return errorAccion('Escribe por qué cambia de carrera.', 'acc-motivo-estado');
             peticion = enviar('PATCH', '/admin/matriculas/' + m.id + '/programa', { curso_id: parseInt(grP), motivo: motivoP });
             abrirTras = 'nueva';
         }
@@ -1216,14 +1262,13 @@
     [cbEst, cbProg].forEach(initCombobox);
     pintarChips(document.getElementById('nm-metodos'), 'nm-met', METODOS, 'Efectivo');
 
-    // Programas con al menos un grupo abierto en la sede
-    var progConGrupos = programas.filter(function (p) { return grupos.some(function (g) { return g.programa_id === p.id && abierto(g); }); });
+    // Programas con al menos un grupo por empezar en la sede (nadie empieza la carrera en un grupo en curso)
+    var progConGrupos = programas.filter(function (p) { return grupos.some(function (g) { return g.programa_id === p.id && paraEmpezar(g); }); });
     cbProg.setOptions(progConGrupos.map(function (p) { return { value: String(p.id), label: corto(p.nombre) }; }));
 
     function opcionesEstudiante() {
         return sinVigente.slice().sort(function (a, b) { return a.nombres.localeCompare(b.nombres, 'es'); }).map(function (e) {
-            var sinAcu = esMenor(e) && !e.acudiente;
-            var nota = sinAcu ? ' · menor sin acudiente' : (e.documentos_pendientes.length ? ' · documentos pendientes' : '');
+            var nota = !e.contacto ? ' · sin contacto de emergencia' : (e.documentos_pendientes.length ? ' · documentos pendientes' : '');
             return { value: String(e.id), label: nombreCompleto(e) + ' · ' + fmtDoc(e.documento) + nota };
         });
     }
@@ -1235,7 +1280,7 @@
         cbEst.reset();
         cbProg.reset();
         document.getElementById('nm-est-card').hidden = true;
-        document.getElementById('nm-grupos').innerHTML = '<p class="mat-campo-ayuda">Elige primero el programa.</p>';
+        document.getElementById('nm-grupos').innerHTML = '<p class="mat-campo-ayuda">Elige primero la carrera.</p>';
         document.getElementById('nm-pagar').checked = false;
         document.getElementById('nm-pago').hidden = true;
         document.getElementById('nm-fecha').value = HOY;
@@ -1283,13 +1328,13 @@
         if (!e) { card.hidden = true; return; }
         var menor = esMenor(e), ed = edad(e.fecha_nac);
         var avisos = [];
-        if (menor && !e.acudiente) avisos.push('<div class="mat-callout mat-callout-alerta"><strong>Es menor de edad y no tiene acudiente</strong><p>Vincúlale uno en Estudiantes antes de matricularlo.</p></div>');
+        if (!e.contacto) avisos.push('<div class="mat-callout mat-callout-alerta"><strong>No tiene contacto de emergencia</strong><p>Regístraselo en Estudiantes (Editar datos) antes de matricularlo.</p></div>');
         if (e.documentos_pendientes.length) avisos.push('<div class="mat-callout mat-callout-alerta"><strong>Documentos pendientes</strong><p>' + esc(e.documentos_pendientes.join(', ')) + '. Recíbelos en Estudiantes antes de matricularlo.</p></div>');
         card.innerHTML = '<div class="mat-est-top"><span class="mat-est-foto" aria-hidden="true">' + esc(iniciales(e)) + '</span><div>' +
                 '<strong>' + esc(nombreCompleto(e)) + '</strong>' +
                 '<span>' + esc(e.tipo_doc) + ' ' + fmtDoc(e.documento) + (ed !== null ? ' · ' + ed + ' años' : '') + '</span></div></div>' +
             '<div class="mat-info-grid">' +
-                dato('Acudiente', e.acudiente ? esc(e.acudiente.nombre) + ' · ' + esc(e.acudiente.parentesco) : (menor ? 'Sin acudiente' : 'No tiene (mayor de edad)')) +
+                dato('Contacto de emergencia', e.contacto ? esc(e.contacto.nombre) + ' · ' + esc(e.contacto.parentesco) : 'Sin registrar') +
                 dato('Matrícula anterior', e.anterior ? esc(ESTADOS[e.anterior.estado].label) + ' · ' + esc(corto(e.anterior.programa)) : 'Ninguna') +
             '</div>' + avisos.join('');
         card.hidden = false;
@@ -1298,12 +1343,12 @@
     /* Paso 2: grupos del programa elegido */
     document.getElementById('nm-programa').addEventListener('change', function (ev) {
         var pid = parseInt(ev.target.value);
-        var lista = grupos.filter(function (g) { return g.programa_id === pid && abierto(g); })
+        var lista = grupos.filter(function (g) { return g.programa_id === pid && paraEmpezar(g); })
             .sort(function (a, b) { return a.codigo.localeCompare(b.codigo); });
         var conCupo = lista.filter(function (g) { return cuposLibres(g) > 0; });
         document.getElementById('nm-grupos').innerHTML = lista.length
             ? lista.map(function (g) { return grupoOpcHTML(g, 'nm-grupo', conCupo.length === 1 && conCupo[0] === g); }).join('')
-            : '<p class="mat-campo-ayuda">Este programa no tiene grupos abiertos.</p>';
+            : '<p class="mat-campo-ayuda">Esta carrera no tiene grupos por empezar. Crea uno nuevo en Grupos.</p>';
     });
 
     document.getElementById('nm-pagar').addEventListener('change', function (e) { document.getElementById('nm-pago').hidden = !e.target.checked; });
@@ -1321,7 +1366,7 @@
         var vence = g.inicio > HOY ? g.inicio : HOY;
         document.getElementById('nm-resumen').innerHTML = '<h4>Resumen de la matrícula</h4><div class="mat-info-grid">' +
             dato('Estudiante', esc(nombreCompleto(e)) + ' · ' + fmtDoc(e.documento), true) +
-            dato('Programa', esc(p.nombre), true) +
+            dato('Carrera', esc(p.nombre), true) +
             dato('Grupo', esc(g.grupo) + ' · ' + esc(g.codigo)) +
             dato('Jornada', esc(g.jornada)) +
             dato('Inicio de clases', fmtFecha(g.inicio)) +
@@ -1329,9 +1374,10 @@
             dato('Derecho de matrícula', p.matricula
                 ? fmtPesos(p.matricula) + ' · pago único, ' + (vence > HOY ? 'antes de iniciar clases (' + fmtFecha(vence) + ')' : 'hoy (las clases ya empezaron)')
                 : 'No tiene', true) +
-            dato('Valor del programa', fmtPesos(p.precio), true) +
+            dato('Valor de la carrera', fmtPesos(p.precio), true) +
             dato('Plan mensual', p.meses + ' cuotas de ' + fmtPesos(p.cuota_mensual)) +
-            dato('Plan ' + planNombre('periodo', p.tipo_periodo).toLowerCase(), p.periodos + ' cuotas de ' + fmtPesos(p.cuota_periodo)) +
+            dato('Plan ' + planNombre('periodo', p.tipo_periodo).toLowerCase(), p.periodos + ' cuotas de ' + fmtPesos(p.cuota_periodo) +
+                (p.meses_ultimo < p.meses_periodo ? '; la última es de un periodo de ' + p.meses_ultimo + (p.meses_ultimo === 1 ? ' mes' : ' meses') : '')) +
         '</div>';
         document.getElementById('nm-pagar-wrap').hidden = !p.matricula;
         setTxt('nm-pagar-txt', 'Ya pagó el derecho de matrícula (pago único de ' + fmtPesos(p.matricula) + ')');
@@ -1355,11 +1401,11 @@
         if (paso === 1) {
             var e = pendDe(parseInt(cbEst.value()));
             if (!e) return errorNm('Selecciona el estudiante.', 'nm-cb-estudiante');
-            if (esMenor(e) && !e.acudiente) return errorNm(nombreCompleto(e) + ' es menor de edad y no tiene acudiente. Vincúlale uno en Estudiantes antes de matricularlo.', 'nm-cb-estudiante');
+            if (!e.contacto) return errorNm(nombreCompleto(e) + ' no tiene contacto de emergencia. Regístraselo en Estudiantes (Editar datos) antes de matricularlo.', 'nm-cb-estudiante');
             if (e.documentos_pendientes.length) return errorNm('A ' + nombreCompleto(e) + ' le faltan documentos: ' + e.documentos_pendientes.join(', ') + '. Recíbelos en Estudiantes antes de matricularlo.', 'nm-cb-estudiante');
         }
         if (paso === 2) {
-            if (!cbProg.value()) return errorNm('Selecciona el programa.', 'nm-cb-programa');
+            if (!cbProg.value()) return errorNm('Selecciona la carrera.', 'nm-cb-programa');
             if (!grupoElegido()) return errorNm('Selecciona el grupo.');
         }
         if (paso === 3 && document.getElementById('nm-pagar').checked) {

@@ -45,11 +45,11 @@
 .com-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .com-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .com-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.com-kpi-blue   .com-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.com-kpi-blue   .com-kpi-val  { color: #1D4ED8; }
+.com-kpi-blue   .com-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.com-kpi-blue   .com-kpi-val  { color: var(--navy-3); }
 .com-kpi-blue   .com-kpi-val.is-rojo { color: var(--red); }
-.com-kpi-green  .com-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.com-kpi-green  .com-kpi-val  { color: #065F46; }
+.com-kpi-green  .com-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.com-kpi-green  .com-kpi-val  { color: #2D6A27; }
 .com-kpi-orange .com-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .com-kpi-orange .com-kpi-val  { color: var(--orange-2); }
 .com-kpi-red    .com-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -130,7 +130,7 @@
 .com-comprobante { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.84rem; color: var(--navy-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .com-monto { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-3); }
 .com-monto.is-rojo    { color: var(--red); }
-.com-monto.is-verde   { color: #065F46; }
+.com-monto.is-verde   { color: #2D6A27; }
 .com-monto.is-tachado { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 
 /* Acciones */
@@ -362,10 +362,10 @@
 
 /* Categoría: etiqueta de color (misma forma que app-status-tag) */
 .com-cat { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
-.com-cat.c-general   { background: #EEF2F7; color: #334155; }
-.com-cat.c-academico { background: #E0EAFF; color: #1E40AF; }
-.com-cat.c-pagos     { background: #E6F4E4; color: #2D6A27; }
-.com-cat.c-evento    { background: #F1E8FD; color: #6B21A8; }
+.com-cat.c-general   { background: #EEF2F7; color: var(--navy-3); }
+.com-cat.c-academico { background: #EEF2F7; color: var(--navy-3); }
+.com-cat.c-pagos     { background: #EEF2F7; color: var(--navy-3); }
+.com-cat.c-evento    { background: #EEF2F7; color: var(--navy-3); }
 .com-cat.c-urgente   { background: #FEE2E2; color: #991B1B; }
 
 /* Lectura: barra + "18 de 27" */
@@ -383,10 +383,10 @@
 .com-dato-txt { font-size: 0.84rem; font-weight: 600; color: var(--navy-3); overflow-wrap: anywhere; }
 
 /* Avatar del cajón por categoría */
-.com-drawer-avatar.c-general   { background: #475569; }
-.com-drawer-avatar.c-academico { background: #2563EB; }
-.com-drawer-avatar.c-pagos     { background: #2D7A3A; }
-.com-drawer-avatar.c-evento    { background: #7C3AED; }
+.com-drawer-avatar.c-general   { background: var(--navy-2); }
+.com-drawer-avatar.c-academico { background: var(--navy-2); }
+.com-drawer-avatar.c-pagos     { background: var(--navy-2); }
+.com-drawer-avatar.c-evento    { background: var(--navy-2); }
 .com-drawer-avatar.c-urgente   { background: var(--red); }
 
 /* Vista previa: así lo ve quien lo recibe */
@@ -430,8 +430,8 @@
 .com-wstep span { font-size: 0.74rem; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color 0.2s; }
 .com-wstep.is-active .com-wstep-dot { border-color: var(--orange); background: var(--orange); }
 .com-wstep.is-active span { color: var(--orange); }
-.com-wstep.is-done .com-wstep-dot { border-color: #059669; background: #059669; }
-.com-wstep.is-done span { color: #059669; }
+.com-wstep.is-done .com-wstep-dot { border-color: #2D7A3A; background: #2D7A3A; }
+.com-wstep.is-done span { color: #2D7A3A; }
 .com-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
 .com-modal-footer-der { display: flex; gap: 8px; }
 .com-modal-footer .com-btn[hidden] { display: none; }

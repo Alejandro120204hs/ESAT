@@ -10,7 +10,7 @@
 
 @section('content')
     <div class="app-profile-hero">
-        <span class="app-profile-hero-avatar">{{ strtoupper(substr($user->nombres ?? $user->email, 0, 1)) }}</span>
+        <span class="app-profile-hero-avatar">{{ mb_strtoupper(mb_substr($user->nombres ?? $user->email, 0, 1)) }}</span>
         <div class="app-profile-hero-text">
             <h2>{{ $user->name }}</h2>
             <span class="app-profile-hero-role">{{ $user->role->label() }}</span>

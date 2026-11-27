@@ -29,7 +29,7 @@ class AsistenciaService
 
     private const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-    /** Una sola regla de porcentaje para Asistencia, Estudiantes, Acudientes y Matrículas. null = sin clases que contar. */
+    /** Una sola regla de porcentaje para Asistencia, Estudiantes y Matrículas. null = sin clases que contar. */
     public static function porcentaje(int $asistio, int $falto): ?int
     {
         $base = $asistio + $falto;
@@ -49,25 +49,25 @@ class AsistenciaService
     }
 
     /**
-     * Clases ya dictadas del grupo ('Y-m-d', de la más vieja a la más reciente).
-     * Espera cargadas sesiones y programa.
+     * Clases ya dictadas del grupo ('Y-m-d', de la más vieja a la más reciente), cada día con el horario que regía
+     * entonces (Curso::sesionEn): un cambio de horario no reescribe lo ya dictado. Espera cargados historialSesiones y programa.
      */
     public function fechasDictadas(Curso $curso, ?CarbonInterface $ahora = null): array
     {
         $ahora ??= now();
         $hoy = $ahora->copy()->startOfDay();
-        $finDia = $this->finPorDia($curso);
-        if (! $finDia) {
+        if ($curso->historialSesiones->isEmpty()) {
             return [];
         }
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
+        $fin = $curso->fin();
 
         $fechas = [];
         for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($fin) && $d->lte($hoy); $d->addDay()) {
-            if (! isset($finDia[$d->dayOfWeekIso])) {
+            $s = $curso->claseEn($d);
+            if (! $s) {
                 continue;
             }
-            if ($d->equalTo($hoy) && $ahora->lt($hoy->copy()->setTimeFromTimeString($finDia[$d->dayOfWeekIso]))) {
+            if ($d->equalTo($hoy) && $ahora->lt($hoy->copy()->setTimeFromTimeString($s->hora_fin))) {
                 continue;
             }
             $fechas[] = $d->toDateString();
@@ -91,9 +91,10 @@ class AsistenciaService
             ->whereHas('sesiones')
             ->with([
                 'programa.escuela',
-                'sesiones',
+                'sesiones', 'historialSesiones',
                 'docentes.docentePerfil.escuela',
-                'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('estudiante.acudientes'),
+                'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with(['estudiante.contactoEmergencia', 'grupos']),
+                'matriculasDelHistorial' => fn ($q) => $q->where('estado', '!=', 'anulado')->with(['estudiante.contactoEmergencia', 'grupos']),
             ])
             ->get()
             ->sortBy(fn (Curso $c) => [$c->programa->nombre, $c->nombre])
@@ -116,13 +117,13 @@ class AsistenciaService
             $docente   = $curso->docente();
             $sumAsis = 0; $sumFalta = 0; $activos = 0; $bajo = 0;
 
-            foreach ($curso->matriculas as $m) {
+            foreach ($curso->matriculasEnGrupo() as $m) {
                 $fila = $this->filaEstudiante($m, $curso, $fechas, $delGrupo);
                 if (! $fila) {
                     continue;
                 }
                 $estudiantes[] = $fila;
-                if ($m->estado === 'activo') {
+                if ($fila['estado'] === 'activo') {
                     $activos++;
                     $sumAsis += $fila['P'] + $fila['T'];
                     $sumFalta += $fila['A'];
@@ -183,23 +184,24 @@ class AsistenciaService
     }
 
     /**
-     * Una fila por matrícula del grupo. cod tiene una letra por clase dictada:
-     * P T A E = lo registrado, '-' = el docente no registró, '.' = no le corresponde
-     * (antes de matricularse o después de aplazarse/retirarse).
+     * Una fila por matrícula que pasó por el grupo. cod tiene una letra por clase dictada:
+     * P T A E = lo registrado, '-' = el docente no registró, '.' = no le corresponde (antes de llegar al grupo, mientras
+     * estuvo aplazado, o después de aplazarse, retirarse o cambiarse de grupo: Matricula::ventanasEn).
      */
     private function filaEstudiante(Matricula $m, Curso $curso, array $fechas, array $delGrupo): ?array
     {
         $e = $m->estudiante;
-        $desde  = max($m->fecha_inicio->toDateString(), $curso->fecha_inicio->toDateString());
-        $salida = $m->estado !== 'activo' ? $m->estado_fecha?->toDateString() : null;
-        if ($salida && $salida <= $desde) {
+        $ventanas = $m->ventanasEn($curso);
+        if (! $ventanas) {
             return null;
         }
+        $trasladado = $m->curso_id !== $curso->id && in_array($m->estado, Matricula::VIGENTES, true);
+        $salida = $trasladado || $m->estado !== 'activo' ? end($ventanas)['hasta'] : null;
 
         $cod = '';
         $motivos = [];
         foreach ($fechas as $i => $f) {
-            if ($f < $desde || ($salida && $f >= $salida)) {
+            if (! Matricula::enVentanas($ventanas, $f)) {
                 $cod .= '.';
             } elseif (! isset($delGrupo[$f][$e->id])) {
                 $cod .= '-';
@@ -228,7 +230,6 @@ class AsistenciaService
             $racha++;
         }
         $pos = strrpos($cod, 'A');
-        $acudiente = $e->acudientes->first();
 
         return [
             'id'               => $e->id,
@@ -237,8 +238,9 @@ class AsistenciaService
             'tipo_doc'         => $e->tipo_documento,
             'documento'        => $e->numero_documento,
             'telefono'         => preg_replace('/\D/', '', (string) $e->telefono),
+            'menor'            => $e->fecha_nacimiento !== null && $e->fecha_nacimiento->age < 18,
             'grupo_id'         => $curso->id,
-            'estado'           => $m->estado,
+            'estado'           => $trasladado ? 'trasladado' : $m->estado,
             'estado_desde'     => $salida ? $this->corta($salida) : null,
             'cod'              => $cod,
             'motivos'          => (object) $motivos,
@@ -248,11 +250,7 @@ class AsistenciaService
             'racha'            => $racha,
             'ultima_falla'     => $pos !== false ? $fechas[$pos] : null,
             'ultima_falla_txt' => $pos !== false ? $this->corta($fechas[$pos]) : null,
-            'acudiente'        => $acudiente ? [
-                'nombre'     => $acudiente->nombres.' '.$acudiente->apellidos,
-                'parentesco' => $acudiente->pivot->parentesco,
-                'telefono'   => preg_replace('/\D/', '', (string) $acudiente->telefono),
-            ] : null,
+            'contacto'         => $e->contactoEmergencia?->paraVista(),
         ];
     }
 
@@ -260,12 +258,12 @@ class AsistenciaService
     private function claseDeHoy(Curso $curso, array $delGrupo, CarbonInterface $ahora): ?string
     {
         $hoy = $ahora->copy()->startOfDay();
-        $finDia = $this->finPorDia($curso);
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
-        if (! isset($finDia[$hoy->dayOfWeekIso]) || $hoy->lt($curso->fecha_inicio->copy()->startOfDay()) || $hoy->gte($fin)) {
+        $sesion = $curso->claseEn($hoy);
+        $fin = $curso->fin();
+        if (! $sesion || $hoy->lt($curso->fecha_inicio->copy()->startOfDay()) || $hoy->gte($fin)) {
             return null;
         }
-        if ($ahora->lt($hoy->copy()->setTimeFromTimeString($finDia[$hoy->dayOfWeekIso]))) {
+        if ($ahora->lt($hoy->copy()->setTimeFromTimeString($sesion->hora_fin))) {
             return 'pendiente';
         }
 
@@ -302,18 +300,6 @@ class AsistenciaService
     }
 
     /** Día ISO (1 = lunes) => hora en que termina la clase de ese día. */
-    private function finPorDia(Curso $curso): array
-    {
-        $dias = array_flip(CursoSesion::DIAS);
-        $out = [];
-        foreach ($curso->sesiones as $s) {
-            $n = $dias[$s->dia] + 1;
-            $out[$n] = max($out[$n] ?? '00:00:00', $s->hora_fin);
-        }
-
-        return $out;
-    }
-
     private function corta(string $fecha): string
     {
         $f = Carbon::parse($fecha);

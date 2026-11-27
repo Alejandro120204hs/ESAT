@@ -10,7 +10,7 @@ use Illuminate\View\View;
 /**
  * Panel Admin › Matrículas › Documentos imprimibles para el estudiante:
  * - Constancia de matrícula: solo de una matrícula vigente (activa o aplazada).
- * - Paz y salvo: solo si no debe nada en ninguna de sus matrículas de la sede y ninguna vigente
+ * - Paz y salvo: solo si no debe nada en ninguna de sus matrículas (de cualquier sede) y ninguna vigente
  *   está sin plan de pago (sin plan no hay cuotas, pero tampoco ha pagado el programa).
  */
 class DocumentoController extends Controller
@@ -33,7 +33,8 @@ class DocumentoController extends Controller
         $this->asegurarSede($matricula);
         $matricula->load(['estudiante', 'programa', 'sede']);
 
-        $matriculas = Matricula::where('estudiante_id', $matricula->estudiante_id)->where('sede_id', $matricula->sede_id)
+        // Todas sus matrículas, también las de otra sede (el Admin pudo cambiarlo de sede): la deuda sigue a la persona
+        $matriculas = Matricula::where('estudiante_id', $matricula->estudiante_id)
             ->where('estado', '!=', 'anulado')->with(['pagos', 'recaudos', 'programa'])->orderBy('fecha_inicio')->get();
         $debe = $matriculas->sum(fn (Matricula $m) => $this->pagos->resumen($m)['por_pagar']);
         // Sin plan elegido "no debe nada" no significa que haya pagado el programa
@@ -45,6 +46,6 @@ class DocumentoController extends Controller
 
     private function asegurarSede(Matricula $matricula): void
     {
-        abort_unless($matricula->sede_id === (int) auth()->user()->sede_id, 404);
+        abort_unless($matricula->sede_id === (int) auth()->user()->sedeTrabajoId(), 404);
     }
 }

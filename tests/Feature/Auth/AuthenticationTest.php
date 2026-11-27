@@ -27,7 +27,8 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Cada rol llega a su panel (User::panelUrl); la cuenta de la fábrica es estudiante
+        $response->assertRedirect($user->panelUrl());
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

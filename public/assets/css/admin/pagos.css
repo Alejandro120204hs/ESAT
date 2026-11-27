@@ -45,10 +45,10 @@
 .pag-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .pag-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .pag-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.pag-kpi-blue   .pag-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.pag-kpi-blue   .pag-kpi-val  { color: #1D4ED8; }
-.pag-kpi-green  .pag-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.pag-kpi-green  .pag-kpi-val  { color: #065F46; }
+.pag-kpi-blue   .pag-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.pag-kpi-blue   .pag-kpi-val  { color: var(--navy-3); }
+.pag-kpi-green  .pag-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.pag-kpi-green  .pag-kpi-val  { color: #2D6A27; }
 .pag-kpi-orange .pag-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .pag-kpi-orange .pag-kpi-val  { color: var(--orange-2); }
 .pag-kpi-red    .pag-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -149,13 +149,13 @@
 .pag-empty p   { font-size: 0.88rem; margin: 0; }
 
 /* ── Colores por escuela ────────────────────────────── */
-.pag-avatar.pag-esc-sal { background: #DC2626; }
-.pag-avatar.pag-esc-tur { background: #EA580C; }
-.pag-avatar.pag-esc-adm { background: #2563EB; }
-.pag-avatar.pag-esc-edu { background: #059669; }
-.pag-avatar.pag-esc-dep { background: #D97706; }
-.pag-avatar.pag-esc-cie { background: #4F46E5; }
-.pag-avatar.pag-esc-bel { background: #DB2777; }
+.pag-avatar.pag-esc-sal { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-tur { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-adm { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-edu { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-dep { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-cie { background: #E6ECF4; color: var(--navy-2); }
+.pag-avatar.pag-esc-bel { background: #E6ECF4; color: var(--navy-2); }
 
 /* ── Paginación ─────────────────────────────────────── */
 .pag-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 0 4px; flex-wrap: wrap; }
@@ -345,8 +345,8 @@
 .pag-wstep span { font-size: 0.74rem; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color 0.2s; }
 .pag-wstep.is-active .pag-wstep-dot { border-color: var(--orange); background: var(--orange); }
 .pag-wstep.is-active span { color: var(--orange); }
-.pag-wstep.is-done .pag-wstep-dot { border-color: #059669; background: #059669; }
-.pag-wstep.is-done span { color: #059669; }
+.pag-wstep.is-done .pag-wstep-dot { border-color: #2D7A3A; background: #2D7A3A; }
+.pag-wstep.is-done span { color: #2D7A3A; }
 .pag-wstep-line { flex: 1 1 0; min-width: 16px; height: 2px; background: var(--line); margin: 0 10px; }
 .pag-modal-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .pag-modal-footer { padding: 14px 20px; border-top: 1.5px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; }

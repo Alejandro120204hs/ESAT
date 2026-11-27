@@ -44,6 +44,7 @@ class Pago extends Model
         'monto_total',
         'abonado',
         'reembolsado',
+        'retenido',
         'estado',
         'fecha_pago',
         'referencia_pasarela',
@@ -59,6 +60,7 @@ class Pago extends Model
             'monto_total' => 'decimal:2',
             'abonado' => 'decimal:2',
             'reembolsado' => 'decimal:2',
+            'retenido' => 'decimal:2',
             'fecha_pago' => 'datetime',
             'fecha_vencimiento' => 'date',
         ];
@@ -103,13 +105,32 @@ class Pago extends Model
     /** Lo pagado que todavía está en este cobro (lo abonado menos lo devuelto o trasladado). */
     public function disponible(): float
     {
-        return max(0, round((float) $this->abonado - (float) $this->reembolsado, 2));
+        return max(0, round((float) $this->abonado - (float) $this->reembolsado - (float) $this->retenido, 2));
     }
 
     /** Lo que falta por pagar de este cobro (0 si ya está pagado o anulado). */
     public function restante(): float
     {
         return $this->porPagar() ? max(0, round((float) $this->monto_total - $this->disponible(), 2)) : 0.0;
+    }
+
+    /**
+     * Lo pagado a este cobro con su fecha, [AAAA-MM-DD, monto], para saber cuánto debía en una fecha pasada (Inicio y
+     * Reportes). Son los recibos sin anular más lo que se cubrió sin recibo: el saldo a favor de un reintegro o de un cambio
+     * de programa, que se aplica al crear el cobro. Así lo pagado hoy es disponible() y lo vencido cuadra con restante().
+     */
+    public function pagosFechados(): array
+    {
+        $lista = $this->recaudos->whereNull('anulado_en')
+            ->map(fn (Recaudo $r) => [$r->fecha_pago->toDateString(), round((float) $r->pivot->monto, 2)])->values()->all();
+        $sinRecibo = round($this->disponible() - array_sum(array_column($lista, 1)), 2);
+        if (abs($sinRecibo) >= 0.5) {
+            // Lo que sobra (saldo a favor) cuenta desde que se creó el cobro; lo que falta (devuelto), desde su último cambio
+            $fecha = $sinRecibo > 0 ? $this->created_at : $this->updated_at;
+            $lista[] = [($fecha ?? now())->toDateString(), $sinRecibo];
+        }
+
+        return $lista;
     }
 
     /**
@@ -132,11 +153,9 @@ class Pago extends Model
         $prefijo = $tipo.'-'.$anio.'-';
         $clave   = $clave.'_'.$anio;
 
-        $contador = Configuracion::where('clave', $clave)->lockForUpdate()->first();
-        if (! $contador) {
-            $ultimo   = $modelo::where($columna, 'like', $prefijo.'%')->orderByDesc($columna)->value($columna);
-            $contador = Configuracion::create(['clave' => $clave, 'valor' => $ultimo ? (string) (int) substr($ultimo, strlen($prefijo)) : '0']);
-        }
+        $ultimo   = Configuracion::where('clave', $clave)->exists() ? null
+            : $modelo::where($columna, 'like', $prefijo.'%')->orderByDesc($columna)->value($columna);
+        $contador = Configuracion::bloquear($clave, $ultimo ? (string) (int) substr($ultimo, strlen($prefijo)) : '0');
         $n = (int) $contador->valor + 1;
         $contador->update(['valor' => (string) $n]);
 

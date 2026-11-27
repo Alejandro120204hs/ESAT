@@ -64,7 +64,7 @@
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .dash-kpi-blue::before   { background: var(--navy-2); }
-.dash-kpi-orange::before { background: var(--orange); }
+.dash-kpi-orange::before { background: var(--navy-2); }
 .dash-kpi-green::before  { background: var(--green); }
 .dash-kpi-warn::before   { background: #E9B949; }
 
@@ -74,9 +74,9 @@
     display: flex; align-items: center; justify-content: center;
 }
 .dash-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.dash-kpi-icon-blue   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
-.dash-kpi-icon-orange { background: rgba(217,123,46,0.12); color: var(--orange); }
-.dash-kpi-icon-green  { background: rgba(64,118,58,0.12); color: var(--green); }
+.dash-kpi-icon-blue   { background: #EEF2F7; color: var(--navy-2); }
+.dash-kpi-icon-orange { background: #EEF2F7; color: var(--navy-2); }
+.dash-kpi-icon-green  { background: #E6F4E4; color: #2D6A27; }
 .dash-kpi-icon-warn   { background: rgba(233,185,73,0.15); color: #92700A; }
 
 .dash-kpi-delta {
@@ -250,7 +250,7 @@
 }
 .dash-todo-tag-orange { background: rgba(217,123,46,0.12); color: var(--orange-2); }
 .dash-todo-tag-blue   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
-.dash-todo-tag-green  { background: rgba(64,118,58,0.12); color: var(--green); }
+.dash-todo-tag-green  { background: rgba(217,123,46,0.12); color: var(--orange-2); }
 
 /* ── Fila inferior: tabla + accesos rápidos ─── */
 .dash-bottom-grid {
@@ -315,50 +315,52 @@
 }
 .dash-quick-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .dash-quick-icon-blue   { background: rgba(23,59,103,0.1); color: var(--navy-2); }
-.dash-quick-icon-orange { background: rgba(217,123,46,0.12); color: var(--orange); }
-.dash-quick-icon-green  { background: rgba(64,118,58,0.12); color: var(--green); }
-.dash-quick-icon-purple { background: rgba(109,40,217,0.1); color: #6D28D9; }
+.dash-quick-icon-orange { background: #EEF2F7; color: var(--navy-2); }
+.dash-quick-icon-green  { background: #EEF2F7; color: var(--navy-2); }
+.dash-quick-icon-purple { background: #EEF2F7; color: var(--navy-2); }
 .dash-quick-label { font-size: 0.84rem; font-weight: 700; color: var(--navy-3); }
 .dash-quick-sub   { font-size: 0.74rem; color: var(--muted); }
 
 /* ── Bienvenida inicial (hero strip) ─────────── */
 .dash-welcome-strip {
-    background: linear-gradient(115deg, var(--navy-3) 0%, var(--navy-2) 55%, #1D4E8F 100%);
-    border-radius: var(--radius-lg);
-    padding: 28px 32px;
-    min-height: 160px;
+    /* Encabezado claro, como el "Hola, …" del panel Docente (antes, franja azul oscura) */
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    min-height: 0;
     display: flex; align-items: center; justify-content: space-between; gap: 24px;
     margin-bottom: 28px; position: relative; overflow: hidden;
 }
 .dash-welcome-mark {
     position: absolute; z-index: 0;
     right: 14px; top: 50%; transform: translateY(-50%);
-    width: 110px; height: 110px; object-fit: contain;
-    opacity: 0.35;
+    width: 72px; height: 72px; object-fit: contain;
+    opacity: 0.28;
     pointer-events: none; user-select: none;
 }
 .dash-welcome-text { position: relative; z-index: 1; }
 .dash-welcome-title {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 1.85rem; color: var(--white);
+    font-weight: 900; font-size: 1.85rem; color: var(--navy-3);
     line-height: 1.2; margin-bottom: 6px;
 }
-.dash-welcome-title span { color: var(--orange); }
-.dash-welcome-desc { font-size: 0.97rem; color: rgba(255,255,255,0.62); max-width: 480px; line-height: 1.55; }
+.dash-welcome-title span { color: var(--orange-2); }
+.dash-welcome-desc strong { color: var(--navy-3); }
+.dash-welcome-desc { font-size: 0.95rem; color: #4B5563; /* ≥ 4,5:1 sobre el fondo gris */ max-width: 480px; line-height: 1.55; }
 .dash-welcome-badge {
     position: relative; z-index: 1; flex-shrink: 0;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
-    background: rgba(255,255,255,0.08); border-radius: var(--radius-lg);
-    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.72); border-radius: var(--radius-lg);
+    border: 1.5px solid var(--line);
     padding: 16px 24px; text-align: center;
 }
 .dash-welcome-badge-num {
     font-family: "Archivo", system-ui, sans-serif;
-    font-weight: 900; font-size: 2.2rem; color: var(--orange);
+    font-weight: 900; font-size: 2.2rem; color: var(--navy-3);
     letter-spacing: -0.03em; line-height: 1;
 }
-.dash-welcome-badge-label { font-size: 0.77rem; color: rgba(255,255,255,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-@media (max-width: 700px) { .dash-welcome-badge { display: none; } .dash-welcome-strip { padding: 22px 20px; } }
+.dash-welcome-badge-label { font-size: 0.77rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+@media (max-width: 700px) { .dash-welcome-badge { display: none; } .dash-welcome-strip { padding: 0; } }
 
 /* ── Modal: actividad reciente ───────────────── */
 .dash-act-modal-overlay {

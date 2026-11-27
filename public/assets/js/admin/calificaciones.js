@@ -39,7 +39,6 @@
     function tono(v) { return v == null ? 'none' : (v >= 4 ? 'ok' : (v >= 3 ? 'warn' : 'bad')); }
     function iniciales(n, a) { return ((n || '').charAt(0) + (a || '').charAt(0)).toUpperCase(); }
     function primerNombre(n) { return (n || '').split(' ')[0]; }
-    function fmtTel(t) { return t ? t.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : ''; }
     function waLink(tel, texto) { return 'https://wa.me/57' + String(tel || '').replace(/\D/g, '') + (texto ? '?text=' + encodeURIComponent(texto) : ''); }
     function lista(t) { return t.length > 1 ? t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1] : (t[0] || ''); }
     function final(x) { return x == null ? null : (x.h != null ? x.h : x.n); }
@@ -539,7 +538,7 @@
     function csvNota(v) { return v == null ? '' : fmt(v); }
     var EXPORT = {
         grupos: function () {
-            return [['Programa', 'Grupo', 'Escuela', 'Jornada', 'Docente', 'Módulos terminados', 'Total de módulos', 'Módulo en curso', 'Módulos sin nota', 'Promedio', 'Por habilitar', 'Perdieron la habilitación', 'Listos para graduar']]
+            return [['Carrera', 'Grupo', 'Escuela', 'Jornada', 'Docente', 'Módulos terminados', 'Total de módulos', 'Módulo en curso', 'Módulos sin nota', 'Promedio', 'Por habilitar', 'Perdieron la habilitación', 'Listos para graduar']]
                 .concat(tGrupos.filtradas().map(function (r) {
                     var g = grupoPorId[r.dataset.id];
                     return [g.programa, g.grupo, g.escuela, g.jornada, g.docente, g.terminados, g.modulos.length,
@@ -549,7 +548,7 @@
                 }));
         },
         estudiantes: function () {
-            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Programa', 'Grupo', 'Módulos aprobados', 'Total de módulos', 'Promedio', 'Situación', 'Módulos perdidos', 'Celular']]
+            return [['Nombres', 'Apellidos', 'Tipo doc.', 'Documento', 'Carrera', 'Grupo', 'Módulos aprobados', 'Total de módulos', 'Promedio', 'Situación', 'Módulos perdidos', 'Celular']]
                 .concat(tEst.filtradas().map(function (r) {
                     var e = estPorId[r.dataset.id], g = grupoPorId[e.grupo_id];
                     var perdidos = g.modulos.map(function (m, i) {

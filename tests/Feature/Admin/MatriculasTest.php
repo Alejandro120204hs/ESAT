@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Academico\Calificacion;
 use App\Models\Academico\Curso;
 use App\Models\Academico\EstudianteDocumento;
 use App\Models\Academico\Programa;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /**
- * Panel Admin › Matrículas: matricular (cupo, una vigente por estudiante, menor con acudiente),
+ * Panel Admin › Matrículas: matricular (cupo, una vigente por estudiante, con contacto de emergencia),
  * cambio de grupo, estados (aplazar, retirar, graduar, reintegrar), plan de cuotas, pagos
  * con recibo y anulación. Más la regla de cupos con matrícula.curso_id.
  */
@@ -83,11 +84,16 @@ class MatriculasTest extends TestCase
         $this->matricular($e, $otro)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id']);
     }
 
-    public function test_un_menor_sin_acudiente_no_se_matricula(): void
+    public function test_sin_contacto_de_emergencia_no_se_matricula(): void
     {
-        $menor = $this->estudiante('1070000001', 16);
+        $e = $this->estudiante('1070000001');
+        $e->contactoEmergencia()->delete();
 
-        $this->matricular($menor, $this->grupoA)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id']);
+        $this->matricular($e, $this->grupoA)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id' => 'contacto de emergencia']);
+        $this->assertSame(0, $e->matriculas()->count());
+
+        $e->contactoEmergencia()->create(['nombre' => 'Rosa Patiño', 'celular' => '3104445566', 'parentesco' => 'Madre']);
+        $this->matricular($e, $this->grupoA)->assertOk();
     }
 
     public function test_sin_todos_los_documentos_no_se_matricula(): void
@@ -189,11 +195,13 @@ class MatriculasTest extends TestCase
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
 
         // Grupo terminado pero con deuda
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
 
-        // A paz y salvo: paga todo lo que debe
+        // A paz y salvo (paga todo lo que debe) y con la malla aprobada
         $this->pagar($m, ['valor' => $this->debe($m), 'metodo_pago' => 'Efectivo'])->assertOk();
+        $modulo = $m->programa->modulos()->create(['nombre' => 'Fundamentos', 'horas' => 1600, 'orden' => 1]);
+        Calificacion::create(['matricula_id' => $m->id, 'programa_modulo_id' => $modulo->id, 'nota' => 4.0, 'fecha_nota' => '2026-10-01']);
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertOk();
         $this->assertSame('graduado', $m->fresh()->estado);
 
@@ -210,7 +218,7 @@ class MatriculasTest extends TestCase
             ['nombre' => 'Práctica empresarial', 'horas' => 800, 'orden' => 2],
         ]);
         $m = $this->matriculaConPlan('mensual');
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
         $this->pagar($m, ['valor' => $this->debe($m), 'metodo_pago' => 'Efectivo'])->assertOk();
         $nota = fn ($mod, $n, $h = null) => $m->calificaciones()->updateOrCreate(['programa_modulo_id' => $mod->id], [
             'curso_id' => $this->grupoA->id, 'nota' => $n, 'fecha_nota' => '2026-10-01', 'habilitacion' => $h,
@@ -238,7 +246,7 @@ class MatriculasTest extends TestCase
         $this->matricular($e, $this->grupoA)->assertOk();
         $m = $e->matriculas()->first();
         $m->pagos()->update(['estado' => 'pagado', 'fecha_pago' => now()]);   // solo pagó el derecho de matrícula
-        $this->grupoA->update(['estado' => 'finalizado']);
+        $this->grupoA->update(['estado' => 'finalizado', 'fecha_fin' => '2026-10-01']);   // el grupo ya terminó (A8: se gradúa por fecha)
 
         $this->estado($m, ['estado' => 'graduado', 'fecha' => '2026-10-07'])->assertUnprocessable()->assertJsonValidationErrors(['estado']);
         $this->assertSame('activo', $m->fresh()->estado);
@@ -317,33 +325,28 @@ class MatriculasTest extends TestCase
         $this->assertAuthenticatedAs($e);
     }
 
-    public function test_con_el_derecho_de_matricula_vencido_sin_pagar_no_ingresa(): void
+    /** Decidido con el usuario el 24-11-2026 (lo pidió el cliente): el derecho vencido es una deuda más, no bloquea. */
+    public function test_con_el_derecho_de_matricula_vencido_sin_pagar_ingresa_igual_y_sigue_debiendolo(): void
     {
         $e = $this->estudiante('1070000001');
         $this->matricular($e, $this->grupoA)->assertOk();
         auth()->guard('web')->logout();
         Carbon::setTestNow('2026-11-04 09:00:00');   // las clases empezaron el 3
 
-        $this->post('/login', ['email' => $e->email, 'password' => 'password'])->assertSessionHasErrors('email');
-        $this->assertGuest();
-
-        // Paga en la sede y ya puede ingresar
-        $m = $e->matriculas()->first();
-        $this->pagar($m, ['valor' => 200000, 'metodo_pago' => 'Efectivo', 'fecha_pago' => '2026-11-04'])->assertOk();
-        auth()->guard('web')->logout();
-        $this->post('/login', ['email' => $e->email, 'password' => 'password']);
+        $this->post('/login', ['email' => $e->email, 'password' => 'password'])->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($e);
+        $this->assertNotNull(app(PagoService::class)->derechoVencido($e), 'La deuda sigue ahí');
     }
 
-    public function test_con_el_derecho_vencido_tambien_pierde_la_sesion_abierta(): void
+    public function test_con_el_derecho_vencido_no_pierde_la_sesion_abierta(): void
     {
         $e = $this->estudiante('1070000001');
         $this->matricular($e, $this->grupoA)->assertOk();
-        $this->actingAs($e)->get('/profile')->assertOk();   // antes de empezar clases está adentro
+        $this->actingAs($e)->get('/profile')->assertOk();
 
         Carbon::setTestNow('2026-11-04 09:00:00');   // las clases empezaron el 3 y no ha pagado
-        $this->actingAs($e)->get('/profile')->assertRedirect(route('login'))->assertSessionHasErrors('email');
-        $this->assertGuest();
+        $this->actingAs($e)->get('/profile')->assertOk();
+        $this->assertAuthenticatedAs($e);
     }
 
     public function test_volver_al_mismo_programa_ocupa_cupo_solo_en_el_grupo_nuevo(): void
@@ -561,7 +564,7 @@ class MatriculasTest extends TestCase
         $vieja = $m->fresh();
         $nueva = Matricula::find($r->json('id'));
         $this->assertSame('retirado', $vieja->estado);
-        $this->assertStringContainsString('Cambio de programa', $vieja->estado_motivo);
+        $this->assertStringContainsString('Cambio de carrera', $vieja->estado_motivo);
         $this->assertSame($vieja->id, $nueva->origen_id);
         $this->assertSame('activo', $nueva->estado);
         $this->assertSame(0, $nueva->pagos()->where('tipo', 'matricula')->count(), 'Ya pagó el derecho');

@@ -34,12 +34,11 @@ class CalificacionService
         $malla = $curso->programa->modulos;
         $total = (int) $malla->sum('horas');
 
-        // Días de clase entre el inicio y el fin del grupo, según su horario
-        $dias = $curso->sesiones->map(fn (CursoSesion $s) => array_search($s->dia, CursoSesion::DIAS, true) + 1)->unique()->all();
-        $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
+        // Días de clase entre el inicio y el fin del grupo, con el horario que regía cada día (un cambio no mueve lo pasado)
+        $fin = $curso->fin();
         $clases = [];
         for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($fin); $d->addDay()) {
-            if (in_array($d->dayOfWeekIso, $dias, true)) {
+            if ($curso->claseEn($d)) {
                 $clases[] = $d->copy();
             }
         }
@@ -98,8 +97,8 @@ class CalificacionService
             ->whereHas('sesiones')
             ->whereHas('programa.modulos')
             ->with([
-                'programa.escuela', 'programa.modulos', 'sesiones', 'docentes',
-                'matriculas' => fn ($q) => $q->whereIn('estado', ['activo', 'graduado'])->with(['estudiante', 'calificaciones']),
+                'programa.escuela', 'programa.modulos', 'sesiones', 'historialSesiones', 'docentes',
+                'matriculas' => fn ($q) => $q->whereIn('estado', ['activo', 'graduado'])->with(['estudiante', 'calificaciones', 'grupos']),
             ])
             ->get()
             ->sortBy(fn (Curso $c) => [$c->programa->nombre, $c->nombre])
@@ -114,7 +113,7 @@ class CalificacionService
             if (! $modulos) {
                 continue;
             }
-            $fin = Curso::finPara($curso->fecha_inicio, $curso->programa);
+            $fin = $curso->fin();
             $terminado = $curso->estado === 'finalizado' || $fin->lte($hoy);
 
             $suyos = $curso->matriculas
@@ -190,7 +189,9 @@ class CalificacionService
     {
         $e = $m->estudiante;
         $porModulo = $m->calificaciones->keyBy('programa_modulo_id');
-        $desde = $m->fecha_inicio->toDateString();
+        // Desde que llegó a este grupo (historial de grupos): lo que terminó aquí antes no lo cursó en este grupo
+        $ventanas = $m->ventanasEn($curso);
+        $desde = $ventanas ? $ventanas[0]['desde'] : $m->fecha_inicio->toDateString();
 
         $notas = []; $estados = []; $finales = [];
         $aprob = 0; $porHab = 0; $reprob = 0;

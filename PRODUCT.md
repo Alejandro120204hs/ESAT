@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Laravel Blade views (server-rendered). Hand-written CSS in `public/assets/css/` and hand-written JS in `public/assets/js/`, loaded directly (not through the Vite pipeline the default Laravel scaffold ships with, which sits unused under `resources/`). Two libraries are loaded via CDN on top of that hand-written base, added later at explicit user request: **Bootstrap 5** (`bootstrap.min.css` / `bootstrap.bundle.min.js` — used for the hero's auto-rotating photo carousel; the rest of the page still uses the site's own component CSS, not Bootstrap's) and **AOS** (Animate On Scroll, `aos.css` / `aos.js` — replaced an earlier hand-rolled IntersectionObserver reveal system; every scroll-reveal element carries `data-aos`). Because Bootstrap's Reboot resets (element-selector `h1-h6`, `p`, `ul/ol` margins) outrank a universal `*{margin/padding:0}` reset on specificity regardless of load order, `css_website.css` carries an explicit "Bootstrap Reboot hardening" block re-zeroing those — necessary context if either CDN dependency is ever swapped or upgraded.
+Laravel Blade views (server-rendered). Hand-written CSS in `public/assets/css/sitio/` (`base.css` shared by every page, `inicio.css` for the home, `subpaginas.css` for program / continuing-education / school pages) and hand-written JS in `public/assets/js/sitio/` (`motor.js` shared, plus `inicio.js` and `subpaginas.js`), loaded directly with a file-mtime version query (`$recurso`), not through the unused Vite pipeline. On top of that base, three CDN libraries pinned to exact versions: **GSAP 3.13 + ScrollTrigger** and **Lenis 1.3.4** (smooth scroll and scroll-linked motion, all disabled under `prefers-reduced-motion`), and **Leaflet 1.9.4** (campus maps). Bootstrap and AOS were removed in the November 2026 redesign. Site data lives in `config/sitio.php` (schools, programs, campuses, WhatsApp numbers, social URLs) and `config/contenido.php` (the text of every program and continuing-education page); one template per page type renders it.
 
 ## Users
 
@@ -18,7 +18,7 @@ Secondary: institutional and government evaluators (alcaldías, entidades like I
 
 ## Product Purpose
 
-ESAT (Escuela Nacional de Educación ESAT) is a licensed Colombian technical institute offering: técnico laboral programs across 7 schools, cursos obligatorios en salud, and educación continuada. The site's job is to let a prospective student find the right program and sede fast, understand ESAT is a real accredited institution, and convert to an inquiry/enrollment action (WhatsApp/phone contact, "ver más" on a convocatoria, or certificate lookup for existing students).
+ESAT (Escuela Nacional de Educación ESAT) is a licensed Colombian technical institute offering: técnico laboral programs across 8 schools, cursos obligatorios en salud, and educación continuada. The site's job is to let a prospective student find the right program and sede fast, understand ESAT is a real accredited institution, and convert to an inquiry/enrollment action (WhatsApp/phone contact, "ver más" on a convocatoria, or certificate lookup for existing students).
 
 ## Positioning
 
@@ -30,16 +30,16 @@ A regionally-rooted, officially licensed institution (Licencia de Funcionamiento
 - Modalities: presencial and virtual.
 - Enrollment/contact happens via phone/WhatsApp, not an online checkout.
 - Existing students look up certificates online ("ver mi certificado online").
-- Programs are grouped into a large catalog: 7 schools containing dozens of named programs, plus separate tracks for cursos obligatorios en salud and educación continuada, plus seasonal convocatorias (open intakes) that rotate.
+- Programs are grouped into a large catalog: 8 schools containing 41 of named programs, plus separate tracks for cursos obligatorios en salud and educación continuada, plus seasonal convocatorias (open intakes) that rotate.
 - Institutional convenios are a recurring credibility signal shown across alcaldías, government entities, and specialized-sector partners (clinics, farms, arts centers, universities).
-- Confirmed two-phase plan: Phase 1 (current) is a single-page site — everything lives in one Blade view with in-page anchor navigation, and every program/certificate CTA routes to a WhatsApp deep-link since no backend page exists for any of them yet. Phase 2 (future, not started) is real subpages — e.g. a page per school or program, a real contact page — so visitors can actually navigate the site instead of everything funneling through WhatsApp.
+- The single-page phase is over: real subpages exist for each of the 41 programs, the 7 continuing-education lines and the 8 schools (`/escuelas/{slug}`), with breadcrumbs, a sticky enrolment bar and a program-specific footer close. Enrolment and contact still happen through WhatsApp deep-links; there is no backend form.
 
 ## Capabilities and Constraints
 
 - `resources/views/welcome.blade.php` is the rebuilt ESAT homepage (was Laravel's default scaffold markup at project start).
-- Navigation has two dropdowns, both click-only (hover-to-open was tried and explicitly rejected — it opened just from the cursor passing over the trigger): "Programas Técnicos" is a full-width mega-panel (all 7 schools and their programs); "Educación Continuada" is a small single-column dropdown (7 categories: Salud Ocupacional, Áreas Sociales, Pedagogía, Administración y Gerencia, Edificios y Afines, Hotelería y Turismo, Salud). Both collapse to accordions in the mobile menu.
-- Hero background is an auto-rotating Bootstrap carousel of the 3 real photos (`data-bs-pause="false"` so it keeps advancing even though the cursor sits over the hero constantly). No dark tint sits over the photos themselves — legibility comes from a scrim confined to the text band, not a flat overlay across the image. An earlier hero treatment (floating mouse-reactive 3D icon badges over a flat navy gradient) was built, then explicitly removed once real photography replaced the flat background — it read as clutter over real photos.
-- Scroll-reveal animation per section, via AOS (see Stack).
+- Navigation has two dropdowns, both click-only (hover-to-open was tried and explicitly rejected — it opened just from the cursor passing over the trigger): "Programas Técnicos" is a full-width mega-panel with two panes (the 8 schools as tabs on the left, the chosen school's programs and photo on the right, so its height does not grow with the catalog); "Educación Continuada" is a small single-column dropdown (7 categories: Salud Ocupacional, Áreas Sociales, Pedagogía, Administración y Gerencia, Edificios y Afines, Hotelería y Turismo, Salud). Both collapse to accordions in the mobile menu.
+- Home hero: the 3 real photos rotate (6 s each, with progress bars) inside a rounded frame, with a navy scrim confined to the text side and the stats card riding the frame's bottom edge. An earlier hero treatment (floating mouse-reactive 3D icon badges over a flat navy gradient) was built, then explicitly removed once real photography replaced the flat background — it read as clutter over real photos.
+- Scroll motion is authored in `motor.js` through data attributes (`data-revelar`, `data-parallax`, `data-contar`) plus page-specific moments (pinned horizontal "Nuevas carreras" track, campus map that follows the cards, opening practice photo). Content is visible by default; motion only animates from that state.
 - Real photography and brand assets now exist at `public/assets/img/`: `logo.png` (color wordmark, transparent bg, used in the header where the background is always at least translucent-light) and `logo-negativo.png` (white wordmark, used on the dark footer — no glow/shadow trick needed, it's the real asset for dark grounds); `favicon.png` (icon mark only); `imagenhero1/2/3.png` (hero carousel); `programas-tecnicos.png` (a workshop/soldering photo used as the "Programas Técnicos" card's background, with a left-anchored navy scrim + text-shadow for legibility — keep the scrim's dark zone matched to the actual text column width, or it either washes out the photo (too dark/wide) or leaves the text illegible (too narrow/light); this was tuned back and forth once already). Areas of the site without a specific matching photo stay CSS/SVG/iconography rather than forcing a mismatched or fabricated photo.
 - All legal, contact, and address data given below is real and must be reproduced exactly — never invented, altered, or approximated.
 
@@ -61,26 +61,25 @@ A regionally-rooted, officially licensed institution (Licencia de Funcionamiento
 - Guaduas — Cra 2 No. 1-83, Calle de la Pola, Cundinamarca
 - La Dorada — Calle 9 No. 7-55, Barrio Magdalena, La Dorada, Caldas
 
-**7 Schools and programs:**
-1. Escuela de Salud — Servicios Geriátricos; Seguridad Ocupacional y Laboral; Auxiliar de Psiquiatría; Camillero Hospitalario.
-2. Escuela de Cocina y Turismo — Servicios Hoteleros y Turísticos; Cocina Nacional e Internacional; Sommelier; Inspector de Calidad de Alimentos y Bebidas.
-3. Escuela Administrativa — Auditoría y Facturación de Cuentas Médicas; Agente de Tránsito; Auxiliar Contable y Administrativo.
-4. Escuela Deporte y Cultura — Salvamento Acuático; Gestión y Promoción Artística; Servicios de Recreación y Deportes.
-5. Escuela Ciencias — Producción Agropecuaria y Zootecnia; Asistente de Veterinaria y Zootecnia; Obras Civiles y Arquitectura; Criminalística, Investigación Judicial y Ciencias Forenses; Energías Renovables; Asistente Lab. Clínico Veterinario; Electricista; Electromecánica; Mecánica y Electrónica de Motos.
-6. Escuela de Educación e Idiomas — Inglés A1-A2-B1-B2; Francés A1-A2-B1-B2; Asistente de Preescolar.
-7. Escuela de Belleza — Barbería.
+**Sedes de franquicia** (list sent by ESAT on 2026-11-10, municipality names only — no addresses, phones or photos yet; never invent them): La Dorada, La Vega, El Vino, Supatá, San Francisco, El Rosal, Anolaima, Cachipay, Albán. Shown on the site as a separate strip under the four sedes (each name opens WhatsApp to ask where it is) and as a footer line, without map pins.
+
+**8 Schools and programs** (catalog from ESAT's "Carreras técnicas" poster, 2026-11-16; the poster says every program has doble titulación):
+1. Escuela de Salud Animal y Agropecuaria — Asistente de Medicina Veterinaria; Asistente de Veterinaria y Zootecnia; Producción Agropecuaria y Zootecnia; Asistente de Laboratorio Experto en Animales.
+2. Escuela de Ingeniería y Tecnología — Electromecánica; Electricista; Mecánica de Motos; Mecánico Electrónico; Técnico en Robótica; Obras Civiles y Arquitectura; Operación y Mantenimiento de Maquinaria Pesada; Energías Alternativas y Renovables (Paneles Solares); Órtesis y Prótesis Médicas.
+3. Escuela de Salud y Bienestar — Asistente de Preescolar; Auxiliar de Psiquiatría; Camillero Hospitalario; Servicio Social y Comunitario; Podología y Estética de Pies; Salvamento Acuático; Barbería; Salud Natural y Terapias Complementarias; Instructor de Natación.
+4. Escuela de Artes y Cultura — Promoción y Gestión Artística; Titiritero; Compositor Coreográfico e Intérprete de Danzas.
+5. Escuela de Gastronomía y Turismo — Chef de Alta Cocina; Sommelier; Gastronomía y Artes Culinarias; Servicios de Recreación y Deporte; Servicios Hoteleros y Turísticos; Líneas Aéreas, Marítimas y Terrestres.
+6. Escuela Administrativa y Financiera — Auxiliar Contable y Administrativo; Auditoría y Facturación de Cuentas Médicas; Marketing y Redes Sociales; Asesor de Negocios Institucional PYME.
+7. Escuela de Seguridad y Justicia — Agente de Tránsito; Criminalística, Investigación Judicial y Ciencias Forenses; Inspector de Control de Calidad de Alimentos y Bebidas; Seguridad y Salud en el Trabajo.
+8. Escuela de Idiomas — Inglés A1-A2-B1-B2; Francés A1-A2-B1-B2.
+
+The previous catalog (7 schools, 27 programs) is gone; its URLs redirect (301) to the current program or school (`sitio.redirecciones`). Servicios Geriátricos is no longer offered. The poster also shows a Marquetalia (Caldas) campus and per-campus phone numbers; they are not on the site until the user confirms them.
 
 Plus: Cursos Obligatorios en Salud, Educación Continuada, Contacto (top-level nav items alongside the schools).
 
 **Educación Continuada categories (nav dropdown):** Salud Ocupacional; Áreas Sociales; Pedagogía; Administración y Gerencia; Edificios y Afines; Hotelería y Turismo; Salud.
 
-**6 new dual-titulación programs (with short descriptions):**
-1. Inteligencia Artificial (IA) — Desarrolla soluciones inteligentes para el mundo del mañana.
-2. Marketing y Redes Sociales — Conecta marcas, crea contenido y genera impacto digital.
-3. Podología y Estética de Pies — Cuida la salud y belleza desde la base.
-4. Enfermería Veterinaria — Brinda atención y bienestar a nuestros mejores amigos.
-5. Operación y Mantenimiento de Maquinaria Pesada — Maneja tecnología de alto impacto y construye el futuro.
-6. Servicio Social y Comunitario — Sé agente de cambio y transforma tu comunidad.
+**"Nuevas carreras técnicas" strip (home):** Técnico en Robótica, Marketing y Redes Sociales, Podología y Estética de Pies, Asistente de Medicina Veterinaria, Operación y Mantenimiento de Maquinaria Pesada, Servicio Social y Comunitario; each card links to its program page. Inteligencia Artificial (IA) and Enfermería Veterinaria were dropped: they are not on the 2026-11-16 poster.
 
 **Convenios institucionales:** Alcaldías de Villeta, Cachipay, Albán, La Vega, Supatá, Anolaima, Guaduas, La Dorada. Entidades: Fiscalía y CTI de Villeta; INPEC (Honda, Norcasia, Puerto Triunfo); FTI Bogotá; Todo en Salud a la Mano S.A.S. Plus alliances with veterinary clinics, specialized farms, obras civiles, arts centers, and universities (no specific names given for these).
 
@@ -97,7 +96,7 @@ Plus: Cursos Obligatorios en Salud, Educación Continuada, Contacto (top-level n
 1. Legal, contact, and address facts are sacred — reproduce exactly, never invent or approximate.
 2. Every page reads as employment-outcome-first: fast, practical, certified path into the job market.
 3. Institutional credibility is shown through licensing and convenios, not just asserted in copy.
-4. Content is organized consistently around the 7-school taxonomy across nav, program cards, and footer.
+4. Content is organized consistently around the 8-school taxonomy across nav, program cards, and footer.
 5. Regional, multi-sede identity stays visible as a first-class section, not buried in the footer.
 6. No stock-photo realism where no real photography exists — visuals lean on CSS/SVG/iconography/abstract 3D true to the institution rather than fabricated people or facilities.
 

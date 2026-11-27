@@ -194,9 +194,11 @@
     }
     if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
     if (drawerClose)   drawerClose.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeDrawer(); closeModal(); }
-    });
+    /* Escape: se revisa antes que los combobox (fase de captura); con una lista abierta solo se cierra la lista */
+    window.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || document.querySelector('.app-combobox.is-open')) return;
+        closeDrawer(); closeModal();
+    }, true);
 
     function fillDrawer(c) {
         set('dw-nombre',      c.grupo + ' · ' + c.programa.replace('Técnico Laboral en ', ''));
@@ -229,8 +231,8 @@
             : '<p class="cur-form-hint">Este grupo todavía no tiene días ni horas de clase. Se asignan en Horarios.</p>');
         set('dw-hora', c.sesiones.length ? c.horas_semana.toLocaleString('es-CO') + ' h de clase' : '—');
         set('dw-duracion', c.sesiones.length
-            ? '≈ ' + fmtNum(c.horas_programadas) + ' h de ' + fmtNum(c.horas_programa) + ' h del programa'
-            : fmtNum(c.horas_programa) + ' h del programa');
+            ? '≈ ' + fmtNum(c.horas_programadas) + ' h de ' + fmtNum(c.horas_programa) + ' h de la carrera'
+            : fmtNum(c.horas_programa) + ' h de la carrera');
 
         // Estudiantes
         var estBody = document.getElementById('dw-est-list');
@@ -254,6 +256,8 @@
             toggleBtn.className = 'cur-btn cur-btn-secondary';
         }
         toggleBtn.disabled = false;
+        // Un grupo finalizado no se edita: primero se reabre
+        document.getElementById('cur-drawer-edit-btn').hidden = c.estado === 'finalizado';
     }
 
     function set(id, text) { var el = document.getElementById(id); if (el) el.textContent = text || '—'; }
@@ -311,6 +315,10 @@
     var editandoId   = null;
 
     function campo(id) { return document.getElementById(id); }
+    function hoyIso() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
     function valor(id) { return (campo(id).value || '').trim(); }
 
     function openModal(id) {
@@ -385,7 +393,7 @@
         var ini = valor('cur-inp-inicio');
         campo('cur-inp-fin').value = '';
         if (!p) { finHint.textContent = ''; return; }
-        var dura = 'El programa dura ' + p.meses + (p.meses === 1 ? ' mes' : ' meses');
+        var dura = 'La carrera dura ' + p.meses + (p.meses === 1 ? ' mes' : ' meses');
         if (!ini) { finHint.textContent = dura + '.'; return; }
         var f = sumarMeses(ini, p.meses).split('-');
         campo('cur-inp-fin').value = f[2] + '/' + f[1] + '/' + f[0];
@@ -412,13 +420,22 @@
         limpiarErrores();
         if (paso === 1) {
             if (!cbEscuela.value()) return marcarError('Selecciona la escuela.', 'cur-cb-escuela');
-            if (!cbPrograma.value()) return marcarError('Selecciona el programa.', 'cur-cb-programa');
+            if (!cbPrograma.value()) return marcarError('Selecciona la carrera.', 'cur-cb-programa');
         }
         if (paso === 2) {
             if (cbEstado.value() === 'activo' && !cbDocente.value()) return marcarError('Asigna un docente para dejar el grupo activo.', 'cur-cb-docente');
             if (!cbJornada.value()) return marcarError('Selecciona la jornada.', 'cur-cb-jornada');
             if (!valor('cur-inp-inicio')) return marcarError('Indica la fecha de inicio.', 'cur-inp-inicio');
+            // Un grupo nuevo, o uno que corre su inicio, no empieza en el pasado (la misma regla de GrupoRequest)
+            var orig = editandoId ? data.find(function (x) { return x.id === editandoId; }) : null;
+            if ((!orig || valor('cur-inp-inicio') !== orig.fecha_inicio_iso) && valor('cur-inp-inicio') < hoyIso()) {
+                return marcarError('La fecha de inicio no puede ser anterior a hoy.', 'cur-inp-inicio');
+            }
             if (!cbEstado.value()) return marcarError('Selecciona el estado.', 'cur-cb-estado');
+            // Un grupo activo que ya empezó no vuelve a planificación (la misma regla de GrupoRequest)
+            if (orig && orig.estado === 'activo' && cbEstado.value() === 'planificacion' && orig.fecha_inicio_iso <= hoyIso()) {
+                return marcarError('El grupo ya empezó clases: no vuelve a planificación.', 'cur-cb-estado');
+            }
         }
         return true;
     }
@@ -541,6 +558,8 @@
         trigger.addEventListener('click', function () { panel.hidden ? abrir() : cerrar(); });
         if (searchInput) searchInput.addEventListener('input', function () { filtrar(searchInput.value); });
         document.addEventListener('click', function (e) { if (!root.contains(e.target)) cerrar(); });
+        // Escape cierra solo esta lista (el modal lo ignora mientras haya una abierta)
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { cerrar(); trigger.focus(); } });
 
         root.setOptions = function (opciones) {
             list.innerHTML = '';
@@ -586,8 +605,8 @@
 
     initCombobox(cbFiltPrg);
     var prgOpts = JSON.parse(cbFiltPrg.dataset.options || '[]');
-    cbFiltPrg.setOptions([{value:'', label:'Todos los programas'}].concat(prgOpts.map(function (v) { return {value:v, label:v}; })));
-    cbFiltPrg.setValue('', 'Todos los programas', {silent:true});
+    cbFiltPrg.setOptions([{value:'', label:'Todas las carreras'}].concat(prgOpts.map(function (v) { return {value:v, label:v}; })));
+    cbFiltPrg.setValue('', 'Todas las carreras', {silent:true});
 
     initCombobox(cbFiltEst);
     cbFiltEst.setOptions([{value:'', label:'Todos los estados'}].concat(Object.keys(ESTADO_LBL).map(function (k) { return {value:k, label:ESTADO_LBL[k]}; })));

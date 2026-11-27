@@ -31,7 +31,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                 Nuevo grupo
             </button>
         </div>
-        <p class="cur-sub">Aquí podrás registrar nuevos grupos por programa, asignarles un docente y consultar los estudiantes inscritos en cada uno.</p>
+        <p class="cur-sub">Aquí podrás registrar nuevos grupos por carrera, asignarles un docente y consultar los estudiantes inscritos en cada uno.</p>
     </div>
 
     {{-- KPIs --}}
@@ -85,7 +85,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
         <div class="app-combobox" id="cur-cb-filter-programa" data-position="absolute"
              data-options='@json($programasUnicos)'>
             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                <span data-combobox-label>Todos los programas</span>
+                <span data-combobox-label>Todas las carreras</span>
                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="app-combobox-panel" data-combobox-panel hidden>
@@ -115,7 +115,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
             <thead>
                 <tr>
                     <th>Grupo</th>
-                    <th>Programa</th>
+                    <th>Carrera</th>
                     <th>Docente</th>
                     <th>Horario</th>
                     <th>Inscritos</th>
@@ -185,9 +185,11 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                             <button class="cur-action-btn" data-action="ver" data-id="{{ $c['id'] }}" title="Ver detalle">
                                 <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
+                            @if($c['estado'] !== 'finalizado'){{-- un finalizado solo se consulta o se reabre desde su ficha --}}
                             <button class="cur-action-btn" data-action="editar" data-id="{{ $c['id'] }}" title="Editar">
                                 <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
+                            @endif
                         </div>
                     </td>
                 </tr>
@@ -244,7 +246,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
         <div class="cur-tab-panel is-active" data-panel="general">
             <div class="cur-info-grid">
                 <div class="cur-info-item" style="grid-column:1/-1;">
-                    <span class="cur-info-lbl">Programa</span>
+                    <span class="cur-info-lbl">Carrera</span>
                     <span class="cur-info-val" id="dw-programa"></span>
                 </div>
                 <div class="cur-info-item">
@@ -356,16 +358,16 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                         </div>
                     </div>
                     <div class="cur-form-group full">
-                        <label class="cur-form-lbl">Programa <span class="cur-form-req">*</span></label>
+                        <label class="cur-form-lbl">Carrera <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-programa" data-list-max-height="160">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                                <span data-combobox-label>Seleccionar programa</span>
+                                <span data-combobox-label>Seleccionar carrera</span>
                                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <div class="app-combobox-panel" data-combobox-panel hidden>
                                 <div class="app-combobox-search-wrap">
                                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar programa...">
+                                    <input type="text" class="app-combobox-search" data-combobox-search placeholder="Buscar carrera...">
                                 </div>
                                 <ul class="app-combobox-list" data-combobox-list role="listbox"></ul>
                             </div>
@@ -375,22 +377,22 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                     {{-- Grupo y código se asignan solos según el programa: no se escriben --}}
                     <div class="cur-form-group">
                         <label class="cur-form-lbl" for="cur-inp-grupo">Grupo</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-grupo" readonly tabindex="-1" placeholder="Elige el programa">
+                        <input type="text" class="cur-form-input" id="cur-inp-grupo" readonly tabindex="-1" placeholder="Elige la carrera">
                     </div>
                     <div class="cur-form-group">
                         <label class="cur-form-lbl" for="cur-inp-codigo">Código</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-codigo" readonly tabindex="-1" placeholder="Elige el programa">
+                        <input type="text" class="cur-form-input" id="cur-inp-codigo" readonly tabindex="-1" placeholder="Elige la carrera">
                     </div>
                     {{-- Modalidad y cupo son los del programa: se editan solo en Programas --}}
                     <div class="cur-form-group">
                         <label class="cur-form-lbl" for="cur-inp-modalidad">Modalidad</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-modalidad" readonly tabindex="-1" placeholder="Elige el programa">
+                        <input type="text" class="cur-form-input" id="cur-inp-modalidad" readonly tabindex="-1" placeholder="Elige la carrera">
                     </div>
                     <div class="cur-form-group">
                         <label class="cur-form-lbl" for="cur-inp-cupo">Cupo máximo</label>
-                        <input type="text" class="cur-form-input" id="cur-inp-cupo" readonly tabindex="-1" placeholder="Elige el programa">
+                        <input type="text" class="cur-form-input" id="cur-inp-cupo" readonly tabindex="-1" placeholder="Elige la carrera">
                     </div>
-                    <p class="cur-form-hint full">El grupo y el código se asignan solos según el programa. La modalidad y el cupo son los del programa; para cambiarlos, edita el programa en Programas.</p>
+                    <p class="cur-form-hint full">El grupo y el código se asignan solos según la carrera. La modalidad y el cupo son los de la carrera: los cambia el Admin de ESAT en Escuelas y carreras.</p>
                 </div>
             </div>
 
@@ -418,7 +420,7 @@ $diaCorto        = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'
                         <label class="cur-form-lbl">Jornada <span class="cur-form-req">*</span></label>
                         <div class="app-combobox" id="cur-cb-jornada">
                             <button type="button" class="app-combobox-trigger" data-combobox-trigger>
-                                <span data-combobox-label>Elige el programa primero</span>
+                                <span data-combobox-label>Elige la carrera primero</span>
                                 <svg class="app-combobox-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <div class="app-combobox-panel" data-combobox-panel hidden>

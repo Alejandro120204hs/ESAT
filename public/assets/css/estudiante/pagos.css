@@ -1,0 +1,178 @@
+/* =========================================================
+   ESAT — Panel Estudiante: Mis pagos
+   Estados de los cobros con los colores de Secretaría › Matrículas (pagado verde, pendiente ámbar, vencido rojo,
+   anulado gris). Naranja solo para elegir el plan (lo único que hace el estudiante aquí).
+   ========================================================= */
+
+.pag-wrap { display: flex; flex-direction: column; gap: 22px; }
+.pag-header { display: flex; flex-direction: column; gap: 4px; }
+.pag-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.85rem; font-weight: 900; color: var(--navy-3); line-height: 1.15; }
+.pag-sub { font-size: 0.95rem; color: var(--muted); font-weight: 500; line-height: 1.5; max-width: 72ch; }
+
+/* ── Botones ────────────────────────────────────── */
+.pag-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 16px; min-height: 38px; border-radius: var(--radius-md); border: 1.5px solid transparent;
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; white-space: nowrap; text-decoration: none;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.pag-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.pag-btn:active { transform: scale(0.97); }
+.pag-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.pag-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.pag-btn-primary { background: var(--orange); color: var(--white); box-shadow: 0 4px 14px -4px rgba(217,123,46,0.45); }
+.pag-btn-primary:hover:not(:disabled) { background: var(--orange-2); }
+.pag-btn-ghost { background: var(--white); color: var(--navy-3); border-color: var(--line); }
+.pag-btn-ghost:hover:not(:disabled) { border-color: var(--orange); color: var(--orange-2); }
+.pag-btn-sm { padding: 6px 12px; min-height: 32px; font-size: 0.8rem; }
+
+.pag-vacio { padding: 40px 20px; text-align: center; background: var(--white); border: 1.5px dashed #CBD5E1; border-radius: var(--radius-lg); }
+.pag-vacio[hidden], .pag-panel-recibos-vacio[hidden], .pag-pie[hidden] { display: none; }
+.pag-vacio-ttl { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; color: var(--navy-3); }
+.pag-vacio-sub { font-size: 0.88rem; color: var(--muted); margin-top: 4px; max-width: 56ch; margin-left: auto; margin-right: auto; line-height: 1.5; }
+
+/* ── Tarjetas ───────────────────────────────────── */
+.pag-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); min-width: 0; }
+.pag-card[hidden] { display: none; }
+.pag-card-title { font-family: "Archivo", system-ui, sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); }
+.pag-card-sub { font-size: 0.82rem; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+
+/* Elegir el plan */
+.pag-plan { padding: 20px; display: flex; flex-direction: column; gap: 16px; border-color: rgba(217,123,46,0.45); box-shadow: 0 0 0 3px rgba(217,123,46,0.08); }
+.pag-opciones { border: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; }
+.pag-op { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 16px 14px 48px; border: 1.5px solid var(--line); border-radius: 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; }
+.pag-op:hover { border-color: #AFC0D4; }
+.pag-op input { position: absolute; left: 16px; top: 18px; width: 18px; height: 18px; margin: 0; accent-color: var(--orange); cursor: pointer; }
+.pag-op:has(input:checked) { border-color: var(--orange); background: #FFF8F1; box-shadow: 0 0 0 3px rgba(217,123,46,0.12); }
+.pag-op:has(input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 2px; }
+.pag-op-nombre { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1rem; color: var(--navy-3); }
+.pag-op-valor { font-family: "Archivo", system-ui, sans-serif; font-weight: 900; font-size: 1.5rem; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.pag-op-valor small { font-family: "Public Sans", system-ui, sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.pag-op-det { font-size: 0.8rem; color: var(--muted); line-height: 1.5; font-variant-numeric: tabular-nums; }
+.pag-plan-pie { display: flex; justify-content: flex-end; }
+
+/* Avisos */
+.pag-aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: 0.86rem; line-height: 1.5; }
+.pag-aviso svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pag-aviso-neutro { background: #EEF3FA; color: var(--navy-2); }
+.pag-aviso-riesgo { background: #FEF2F2; color: #991B1B; }
+.pag-aviso-pend { background: #FDF1E6; color: #7A3A0C; }
+
+/* Estado de cuenta */
+.pag-cuenta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pag-cuenta:empty { display: none; }
+.pag-cifra { padding: 18px 20px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pag-cifra + .pag-cifra { border-left: 1px solid var(--line); }
+.pag-cifra-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.pag-cifra-val { font-family: "Archivo", system-ui, sans-serif; font-size: 1.55rem; font-weight: 900; color: var(--navy-3); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.pag-cifra-val.is-riesgo { color: var(--red); }
+.pag-cifra-val.is-bien { color: #2D7A3A; }
+.pag-cifra-sub { font-size: 0.8rem; color: var(--muted); font-weight: 600; line-height: 1.45; }
+.pag-barra { height: 7px; border-radius: 999px; background: #E6EBF2; overflow: hidden; margin: 3px 0 1px; }
+.pag-barra > span { display: block; height: 100%; border-radius: inherit; background: #2D7A3A; }
+.pag-cuenta-pie { grid-column: 1 / -1; padding: 12px 20px; border-top: 1px solid var(--line); background: #FAFBFD; border-radius: 0 0 var(--radius-lg) var(--radius-lg); font-size: 0.84rem; color: var(--muted); font-weight: 600; }
+.pag-cuenta-pie b { color: var(--navy-3); }
+
+/* ── Pestañas ───────────────────────────────────── */
+.pag-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pag-toolbar[hidden] { display: none; }
+.pag-vistas { display: inline-flex; background: #E3E9F1; border-radius: 10px; padding: 3px; gap: 2px; }
+.pag-vista-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border: none; border-radius: 8px; background: none;
+    font-family: "Archivo", system-ui, sans-serif; font-size: 0.84rem; font-weight: 700; color: var(--muted); cursor: pointer; white-space: nowrap;
+    transition: color 0.15s;
+}
+.pag-vista-btn:hover { color: var(--navy-3); }
+.pag-vista-btn.is-active { background: var(--white); color: var(--navy-3); box-shadow: 0 1px 3px rgba(10,27,51,.14); }
+.pag-vista-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.pag-vista-num { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(10,27,51,0.08); font-size: 0.74rem; font-variant-numeric: tabular-nums; text-align: center; }
+.pag-vista-num:empty { display: none; }
+.pag-panel[hidden], .pag-cuenta[hidden] { display: none; }
+
+/* ── Tabla de cobros ────────────────────────────── */
+.pag-tabla-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.pag-tabla { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.pag-tabla th {
+    padding: 11px 16px; text-align: left; background: var(--bg);
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); white-space: nowrap;
+}
+.pag-tabla td { padding: 12px 16px; border-top: 1px solid var(--line); vertical-align: middle; color: var(--text); }
+.pag-tabla .pag-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pag-concepto { font-weight: 700; color: var(--navy-3); }
+.pag-concepto-sub { display: block; font-size: 0.76rem; color: var(--muted); font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+/* La fila vencida y la próxima se distinguen con un fondo tenue del color de su estado (la etiqueta dice cuál) */
+.pag-fila.is-vencido td { background: #FEF6F6; }
+.pag-fila.is-proxima td { background: #FFFBF7; }
+.pag-tabla td.pag-falta { color: var(--muted); }
+.pag-vacio { padding: 26px 16px !important; text-align: center; color: var(--muted); }
+
+/* ── Recibos ────────────────────────────────────── */
+.pag-recibos { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.pag-recibo { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-lg); }
+.pag-recibo.is-anulado { background: #FBFCFD; }
+.pag-recibo-icono { width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0; background: #EEF2F7; color: var(--navy-2); display: flex; align-items: center; justify-content: center; }
+.pag-recibo-icono svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.pag-recibo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pag-recibo-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pag-recibo-num { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--navy-3); font-variant-numeric: tabular-nums; }
+.pag-recibo.is-anulado .pag-recibo-num { text-decoration: line-through; color: var(--muted); }
+.pag-recibo-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.45; font-variant-numeric: tabular-nums; }
+.pag-recibo-total { font-family: "Archivo", system-ui, sans-serif; font-weight: 900; font-size: 1.1rem; color: var(--navy-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pag-recibo.is-anulado .pag-recibo-total { color: var(--muted); text-decoration: line-through; }
+
+.pag-pie { font-size: 0.8rem; color: var(--muted); line-height: 1.55; max-width: 84ch; }
+
+/* ── Diálogo y aviso flotante ───────────────────── */
+.pag-dialogo { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.pag-dialogo[hidden] { display: none; }
+.pag-dialogo-fondo { position: absolute; inset: 0; background: rgba(10,27,51,0.45); }
+.pag-dialogo-caja { position: relative; width: 100%; max-width: 460px; background: var(--white); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 10px; }
+.pag-dialogo-titulo { font-family: "Archivo", system-ui, sans-serif; font-size: 1.1rem; font-weight: 900; color: var(--navy-3); }
+.pag-dialogo-txt { font-size: 0.9rem; color: var(--text); line-height: 1.55; }
+.pag-dialogo-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.pag-toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 500; max-width: 420px;
+    padding: 13px 16px; border-radius: 12px; background: var(--navy-3); color: var(--white);
+    font-size: 0.86rem; font-weight: 600; line-height: 1.45; box-shadow: var(--shadow-md);
+    opacity: 0; transform: translateY(8px); transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.pag-toast.is-visible { opacity: 1; transform: none; }
+.pag-toast.is-error { background: #7F1D1D; }
+.pag-toast[hidden] { display: none; }
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 900px) {
+    .pag-cuenta { grid-template-columns: 1fr; }
+    .pag-cifra + .pag-cifra { border-left: none; border-top: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
+    .pag-title { font-size: 1.5rem; }
+    .pag-opciones { grid-template-columns: 1fr; }
+    .pag-plan-pie .pag-btn { width: 100%; }
+    .pag-vistas { display: flex; width: 100%; }
+    .pag-vista-btn { flex: 1 1 0; justify-content: center; }
+    /* Tabla → tarjetas */
+    .pag-tabla thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .pag-tabla, .pag-tabla tbody, .pag-tabla tr, .pag-tabla td { display: block; width: 100%; }
+    .pag-tabla tr { padding: 12px 14px; border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }
+    .pag-tabla tr:first-child { border-top: none; }
+    .pag-tabla td { padding: 0; border: none; }
+    .pag-tabla td:nth-child(1) { grid-column: 1; }
+    .pag-tabla td:nth-child(5) { grid-column: 2; grid-row: 1; text-align: right; }
+    .pag-tabla td:nth-child(2), .pag-tabla td:nth-child(3), .pag-tabla td:nth-child(4) { grid-column: 1 / -1; text-align: left; font-size: 0.82rem; color: var(--muted); }
+    .pag-tabla td[data-lbl]::before { content: attr(data-lbl) ": "; font-weight: 600; }
+    .pag-fila.is-vencido { background: #FEF6F6; }
+    .pag-fila.is-proxima { background: #FFFBF7; }
+    .pag-fila.is-vencido td, .pag-fila.is-proxima td { background: none; }
+    .pag-vacio { grid-column: 1 / -1; }
+    .pag-recibo { flex-wrap: wrap; }
+    .pag-recibo-info { flex: 1 1 calc(100% - 60px); }
+    .pag-recibo-total { margin-left: 56px; }
+    .pag-recibo .pag-btn { margin-left: auto; }
+    .pag-toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pag-btn, .pag-op, .pag-toast { transition: none; }
+    .pag-btn:active { transform: none; }
+}

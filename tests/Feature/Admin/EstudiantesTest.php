@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * Panel Admin › Estudiantes: registrar y editar a la persona (sin matricularla),
- * su acudiente, su clave y su lista de documentos. Más la regla de cupos que
+ * su contacto de emergencia (obligatorio), su clave y su lista de documentos. Más la regla de cupos que
  * comparten Grupos y Matrículas (solo las matrículas activas ocupan cupo).
  */
 class EstudiantesTest extends TestCase
@@ -42,40 +42,31 @@ class EstudiantesTest extends TestCase
         $this->assertDatabaseHas('auditorias', ['accion' => 'crear', 'entidad_tipo' => 'User', 'entidad_id' => $e->id]);
     }
 
-    public function test_un_menor_de_edad_necesita_acudiente(): void
+    public function test_el_contacto_de_emergencia_es_obligatorio_para_todos(): void
     {
-        $this->registrar($this->menor())->assertUnprocessable()->assertJsonValidationErrors(['acudiente']);
+        $this->registrar(['contacto' => null])->assertUnprocessable()->assertJsonValidationErrors(['contacto.nombre', 'contacto.celular', 'contacto.parentesco']);
+        $this->registrar($this->menor() + ['contacto' => ['nombre' => '', 'celular' => '', 'parentesco' => '']])
+            ->assertUnprocessable()->assertJsonValidationErrors(['contacto.nombre', 'contacto.celular', 'contacto.parentesco']);
 
+        $this->assertDatabaseCount('contactos_emergencia', 0);
         $this->assertDatabaseMissing('users', ['numero_documento' => '1072000111']);
     }
 
-    public function test_registra_a_un_menor_con_un_acudiente_nuevo(): void
+    public function test_registra_al_estudiante_con_su_contacto_de_emergencia(): void
     {
-        $this->registrar($this->menor() + [
-            'acudiente'  => ['documento' => '52998877', 'nombres' => 'Patricia', 'apellidos' => 'Ortiz Rubio', 'telefono' => '3104452211', 'email' => 'patricia@example.com'],
-            'parentesco' => 'Madre',
-        ])->assertOk();
+        $this->registrar($this->menor() + ['contacto' => ['nombre' => '  Patricia   Ortiz Rubio ', 'celular' => '310 445 2211', 'parentesco' => 'Madre']])->assertOk();
 
-        $acudiente = User::where('numero_documento', '52998877')->first();
-        $this->assertSame(RolUsuario::Acudiente, $acudiente->role);
-        $this->assertTrue(Hash::check('52998877', $acudiente->password));
-        $this->assertSame('Madre', User::where('numero_documento', '1072000111')->first()->acudientes->first()->pivot->parentesco);
+        $c = User::where('numero_documento', '1072000111')->first()->contactoEmergencia;
+        $this->assertSame(['Patricia Ortiz Rubio', '3104452211', 'Madre'], [$c->nombre, $c->celular, $c->parentesco]);
+        $this->assertSame(1, User::where('role', 'estudiante')->count(), 'El contacto no tiene cuenta propia');
     }
 
-    public function test_vincula_un_acudiente_ya_registrado_sin_duplicarlo(): void
+    public function test_el_contacto_no_puede_tener_el_celular_del_estudiante_ni_un_parentesco_inventado(): void
     {
-        $acudiente = User::factory()->create(['role' => 'acudiente', 'sede_id' => $this->sede->id]);
-
-        $this->registrar($this->menor() + ['acudiente' => ['id' => $acudiente->id], 'parentesco' => 'Padre'])->assertOk();
-
-        $this->assertSame(1, User::where('role', 'acudiente')->count());
-        $this->assertSame($acudiente->id, User::where('numero_documento', '1072000111')->first()->acudientes->first()->id);
-    }
-
-    public function test_el_acudiente_no_puede_ser_otro_tipo_de_usuario(): void
-    {
-        $this->registrar($this->menor() + ['acudiente' => ['id' => $this->docente()->id], 'parentesco' => 'Padre'])
-            ->assertUnprocessable()->assertJsonValidationErrors(['acudiente.id']);
+        $this->registrar(['contacto' => ['nombre' => 'Rosa Patiño', 'celular' => '3157720419', 'parentesco' => 'Madre']])
+            ->assertUnprocessable()->assertJsonValidationErrors(['contacto.celular' => 'distinto']);
+        $this->registrar(['contacto' => ['nombre' => 'Rosa Patiño', 'celular' => '2104445566', 'parentesco' => 'Vecina']])
+            ->assertUnprocessable()->assertJsonValidationErrors(['contacto.celular', 'contacto.parentesco']);
     }
 
     public function test_el_documento_debe_corresponder_a_la_edad(): void
@@ -95,6 +86,37 @@ class EstudiantesTest extends TestCase
         $this->registrar()->assertOk();
 
         $this->registrar(['email' => 'otro@example.com'])->assertUnprocessable()->assertJsonValidationErrors(['numero_documento']);
+    }
+
+    /** El servidor revisa el listado de Colombia, como el panel general (antes solo lo revisaba el combobox; 27-11-2026). */
+    public function test_departamento_y_ciudad_salen_del_listado_de_colombia(): void
+    {
+        $this->registrar(['departamento_nacimiento' => 'Narnia', 'ciudad_residencia' => 'Medellín'])
+            ->assertUnprocessable()->assertJsonValidationErrors(['departamento_nacimiento', 'ciudad_residencia']);
+        $this->registrar(['lugar_nacimiento' => 'Villeta'])->assertJsonValidationErrors(['lugar_nacimiento' => 'departamento elegido']);
+        $this->assertSame(0, User::where('role', 'estudiante')->count());
+    }
+
+    /**
+     * Nacido en otro país (decidido con el usuario el 27-11-2026): solo con cédula de extranjería o PPT; país de la lista y
+     * ciudad escrita, sin departamento. Volver a Colombia quita el país.
+     */
+    public function test_un_extranjero_registra_su_pais_y_ciudad_de_nacimiento(): void
+    {
+        $fuera = ['tipo_documento' => 'PPT', 'pais_nacimiento' => 'Venezuela', 'departamento_nacimiento' => '', 'lugar_nacimiento' => 'Maracaibo'];
+
+        $this->registrar(array_merge($fuera, ['tipo_documento' => 'CC']))->assertJsonValidationErrors(['pais_nacimiento' => 'cédula de extranjería o PPT']);
+        $this->registrar(array_merge($fuera, ['pais_nacimiento' => 'Narnia']))->assertJsonValidationErrors('pais_nacimiento');
+        $this->registrar(array_merge($fuera, ['pais_nacimiento' => 'Colombia']))->assertJsonValidationErrors('pais_nacimiento');
+        $this->registrar(array_merge($fuera, ['lugar_nacimiento' => '']))->assertJsonValidationErrors('lugar_nacimiento');
+
+        $this->registrar(array_merge($fuera, ['departamento_nacimiento' => 'Tolima']))->assertOk();
+        $e = User::where('role', 'estudiante')->firstOrFail();
+        $this->assertSame(['Venezuela', 'Maracaibo', null], [$e->pais_nacimiento, $e->lugar_nacimiento, $e->departamento_nacimiento]);
+        $this->get('/admin/estudiantes')->assertOk()->assertViewHas('estudiantes', fn ($l) => $l->firstWhere('id', $e->id)['pais_nac'] === 'Venezuela');
+
+        $this->editar($e, ['tipo_documento' => 'PPT'])->assertOk();
+        $this->assertSame([null, 'Tolima', 'Honda'], [$e->fresh()->pais_nacimiento, $e->fresh()->departamento_nacimiento, $e->fresh()->lugar_nacimiento]);
     }
 
     public function test_el_lugar_de_nacimiento_es_obligatorio_y_se_guarda_aparte_de_la_residencia(): void
@@ -153,19 +175,18 @@ class EstudiantesTest extends TestCase
         $this->editar($this->docente())->assertForbidden();
     }
 
-    /* ── Acudiente, clave y documentos ── */
+    /* ── Contacto de emergencia, clave y documentos ── */
 
-    public function test_cambia_el_acudiente_y_reemplaza_al_anterior(): void
+    public function test_al_editar_cambia_su_contacto_de_emergencia(): void
     {
-        $e = $this->estudiante();
-        $viejo = User::factory()->create(['role' => 'acudiente', 'sede_id' => $this->sede->id]);
-        $e->acudientes()->attach($viejo->id, ['parentesco' => 'Padre']);
-        $nuevo = User::factory()->create(['role' => 'acudiente', 'sede_id' => $this->sede->id]);
+        $this->registrar()->assertOk();
+        $e = User::where('numero_documento', '1070123456')->first();
 
-        $this->actingAs($this->admin)->putJson("/admin/estudiantes/{$e->id}/acudiente", ['acudiente' => ['id' => $nuevo->id], 'parentesco' => 'Madre'])
-            ->assertOk();
+        $this->editar($e, ['contacto' => ['nombre' => 'Jorge Gómez', 'celular' => '3201112233', 'parentesco' => 'Padre']])->assertOk();
 
-        $this->assertSame([$nuevo->id], $e->fresh()->acudientes->pluck('id')->all());
+        $this->assertSame(['Jorge Gómez', 'Padre'], [$e->fresh()->contactoEmergencia->nombre, $e->fresh()->contactoEmergencia->parentesco]);
+        $this->assertDatabaseCount('contactos_emergencia', 1);
+        $this->editar($e, ['contacto' => null])->assertUnprocessable()->assertJsonValidationErrors(['contacto.nombre']);
     }
 
     public function test_restablece_la_clave_al_numero_de_documento(): void
@@ -183,10 +204,10 @@ class EstudiantesTest extends TestCase
         $e = $this->estudiante();
         $doc = $e->documentos()->first();
 
-        $this->actingAs($this->admin)->patchJson("/admin/estudiantes/{$e->id}/documentos/{$doc->id}")->assertOk()->assertJson(['entregado' => true]);
+        $this->actingAs($this->admin)->patchJson("/admin/estudiantes/{$e->id}/documentos/{$doc->id}", ['entregado' => true])->assertOk()->assertJson(['entregado' => true]);
         $this->assertNotNull($doc->fresh()->entregado_en);
 
-        $this->actingAs($this->admin)->patchJson("/admin/estudiantes/{$e->id}/documentos/{$doc->id}")->assertOk()->assertJson(['entregado' => false]);
+        $this->actingAs($this->admin)->patchJson("/admin/estudiantes/{$e->id}/documentos/{$doc->id}", ['entregado' => false])->assertOk()->assertJson(['entregado' => false]);
         $this->assertNull($doc->fresh()->entregado_en);
     }
 
@@ -261,12 +282,13 @@ class EstudiantesTest extends TestCase
             'direccion'               => 'Calle 4 # 6-21',
             'departamento_residencia' => 'Cundinamarca',
             'ciudad_residencia'       => 'Villeta',
+            'contacto'                => ['nombre' => 'Rosa Patiño', 'celular' => '3104445566', 'parentesco' => 'Madre'],
         ], $cambios);
     }
 
     private function registrar(array $cambios = [])
     {
-        return $this->actingAs($this->admin)->postJson('/admin/estudiantes', $this->datos(['con_acudiente' => false] + $cambios));
+        return $this->actingAs($this->admin)->postJson('/admin/estudiantes', $this->datos($cambios));
     }
 
     private function editar(User $e, array $cambios = [])

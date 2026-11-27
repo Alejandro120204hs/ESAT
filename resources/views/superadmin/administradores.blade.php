@@ -1,7 +1,10 @@
 @extends('superadmin.layout')
 
-@section('title', 'Administradores')
-@section('page-title', 'Administradores')
+{{-- Superadmin › Admin de ESAT: la cuenta del Admin (rol admin_general, una sola, sin sede). El Admin crea las
+     secretarías de cada sede desde su panel. Todo sale de la BD (AdministradorController); nada de ejemplo. --}}
+
+@section('title', 'Admin de ESAT')
+@section('page-title', 'Admin de ESAT')
 @section('active', 'administradores')
 @section('content-class', 'app-adm-content')
 
@@ -10,79 +13,79 @@
 @endpush
 
 @section('content')
-    <p class="app-page-intro">Aquí podrás crear nuevas cuentas de administrador, asignarlas a una sede y activarlas o desactivarlas.</p>
+    {{-- Lo que se guardó antes de recargar (administradores.js lo deja en sessionStorage) --}}
+    <div class="app-alert app-alert-success" data-aviso role="status" hidden></div>
+    <p class="app-page-intro">La cuenta del Admin, que maneja toda ESAT: sedes, administrativos, carreras, personas y finanzas. Los administrativos de cada sede los crea el Admin desde su panel.</p>
 
     <div class="app-panel app-list-panel">
-        <div class="app-panel-heading">
-            <div class="app-search">
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="search" placeholder="Buscar administrador..." data-table-search="administradores">
+        @if ($admin)
+            <div class="app-adm-cuenta"
+                data-id="{{ $admin->id }}"
+                data-activo="{{ $admin->activo ? '1' : '0' }}"
+                data-nombres="{{ $admin->nombres }}"
+                data-apellidos="{{ $admin->apellidos }}"
+                data-genero="{{ $admin->genero }}"
+                data-fecha_nacimiento="{{ $admin->fecha_nacimiento?->format('Y-m-d') }}"
+                data-departamento_nacimiento="{{ $admin->departamento_nacimiento }}"
+                data-ciudad_nacimiento="{{ $admin->lugar_nacimiento }}"
+                data-tipo_documento="{{ $admin->tipo_documento }}"
+                data-numero_documento="{{ $admin->numero_documento }}"
+                data-telefono="{{ $admin->telefono }}"
+                data-correo="{{ $admin->email }}"
+            >
+                <div class="app-adm-persona">
+                    <span class="app-adm-avatar{{ $admin->activo ? '' : ' is-off' }}" aria-hidden="true">{{ mb_substr($admin->nombres, 0, 1) }}{{ mb_substr($admin->apellidos, 0, 1) }}</span>
+                    <div class="app-adm-id">
+                        <h2>{{ $admin->nombres }} {{ $admin->apellidos }}</h2>
+                        <span class="app-adm-estado {{ $admin->activo ? 'is-activo' : '' }}">{{ $admin->activo ? 'Activa' : 'Inactiva: no puede ingresar' }}</span>
+                    </div>
+                </div>
+
+                <dl class="app-adm-datos">
+                    <div><dt>Documento</dt><dd>{{ $admin->tipo_documento }} {{ $admin->numero_documento }}</dd></div>
+                    <div><dt>Correo (usuario)</dt><dd>{{ $admin->email }}</dd></div>
+                    <div><dt>Celular</dt><dd>{{ $admin->telefono ?: 'Sin registrar' }}</dd></div>
+                    <div><dt>Último ingreso</dt><dd>{{ $admin->ultimo_acceso ? $admin->ultimo_acceso->format('d/m/Y g:i a') : 'Nunca ha ingresado' }}</dd></div>
+                </dl>
+
+                <div class="app-adm-acciones">
+                    <button type="button" class="app-btn-secondary" data-edit-wizard>Editar datos</button>
+                    <button type="button" class="app-btn-secondary" data-confirmar="clave">Restablecer clave</button>
+                    <button type="button" class="app-btn-secondary" data-confirmar="estado">{{ $admin->activo ? 'Desactivar cuenta' : 'Activar cuenta' }}</button>
+                </div>
             </div>
-            <button type="button" class="app-btn-primary" data-open-wizard>Nuevo administrador</button>
-        </div>
-
-        <div class="app-table-scroll app-table-scroll-tall">
-            <table class="app-table" data-table="administradores" data-per-page="15">
-                <thead>
-                    <tr>
-                        <th>Administrador</th>
-                        <th>Documento</th>
-                        <th>Sede</th>
-                        <th>Correo</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th class="app-table-actions-col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($administradores as $admin)
-                        <tr
-                            data-id="{{ $admin->id }}"
-                            data-nombres="{{ $admin->nombres }}"
-                            data-apellidos="{{ $admin->apellidos }}"
-                            data-genero="{{ $admin->genero }}"
-                            data-fecha_nacimiento="{{ $admin->fecha_nacimiento?->format('Y-m-d') }}"
-                            data-departamento_nacimiento="{{ $admin->departamento_nacimiento }}"
-                            data-ciudad_nacimiento="{{ $admin->lugar_nacimiento }}"
-                            data-tipo_documento="{{ $admin->tipo_documento }}"
-                            data-numero_documento="{{ $admin->numero_documento }}"
-                            data-telefono="{{ $admin->telefono }}"
-                            data-correo="{{ $admin->email }}"
-                            data-sede="{{ $admin->sede_id }}"
-                        >
-                            <td class="app-table-strong">{{ $admin->nombres }} {{ $admin->apellidos }}</td>
-                            <td>{{ $admin->tipo_documento }} {{ $admin->numero_documento }}</td>
-                            <td>{{ $admin->sede?->nombre ?? '—' }}</td>
-                            <td>{{ $admin->email }}</td>
-                            <td>{{ $admin->telefono }}</td>
-                            <td>
-                                <button type="button" class="app-status-toggle {{ $admin->activo ? 'is-active' : '' }}" data-status-toggle aria-pressed="{{ $admin->activo ? 'true' : 'false' }}">
-                                    <span class="app-status-toggle-dot"></span>
-                                    <span data-status-label>{{ $admin->activo ? 'Activo' : 'Inactivo' }}</span>
-                                </button>
-                            </td>
-                            <td class="app-table-actions">
-                                <button type="button" class="app-icon-btn" data-edit-wizard aria-label="Editar {{ $admin->nombres }}">
-                                    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @endforeach
-                    @if ($administradores->isEmpty())
-                        <tr><td colspan="7" class="app-table-empty-row">No hay administradores registrados todavía.</td></tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
-
-        @include('superadmin.partials.table-pagination', ['name' => 'administradores'])
+        @else
+            <div class="app-adm-vacio">
+                <h2>Todavía no hay cuenta de Admin</h2>
+                <p>Créala para que alguien maneje ESAT y cree los administrativos de cada sede.</p>
+                <button type="button" class="app-btn-primary" data-open-wizard>Crear la cuenta del Admin</button>
+            </div>
+        @endif
     </div>
 
-    {{-- ============ ASISTENTE: NUEVO / EDITAR ADMINISTRADOR ============ --}}
-    <div class="app-modal-backdrop" data-modal="modal-administrador" hidden>
-        <div class="app-modal app-modal-wizard">
+    {{-- ============ CONFIRMAR: RESTABLECER CLAVE / ACTIVAR O DESACTIVAR ============ --}}
+    <div class="app-modal-backdrop" data-modal="modal-confirmar" hidden>
+        <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="adm-confirmar-titulo">
             <div class="app-modal-header">
-                <h3 data-wizard-title data-create-title="Nuevo administrador" data-edit-title="Editar administrador">Nuevo administrador</h3>
+                <h3 id="adm-confirmar-titulo" data-confirmar-titulo></h3>
+                <button type="button" class="app-modal-close" data-close-confirmar aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <p class="app-adm-confirmar-texto" data-confirmar-texto></p>
+            <p class="app-field-error app-adm-error" data-confirmar-error role="alert"></p>
+            <div class="app-wizard-footer">
+                <button type="button" class="app-btn-secondary" data-close-confirmar>Cancelar</button>
+                <button type="button" class="app-btn-primary" data-confirmar-ok></button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ============ ASISTENTE: CREAR / EDITAR LA CUENTA DEL ADMIN ============ --}}
+    <div class="app-modal-backdrop" data-modal="modal-administrador" hidden>
+        <div class="app-modal app-modal-wizard" role="dialog" aria-modal="true" aria-labelledby="adm-wizard-titulo">
+            <div class="app-modal-header">
+                <h3 id="adm-wizard-titulo" data-wizard-title data-create-title="Crear la cuenta del Admin" data-edit-title="Editar la cuenta del Admin">Crear la cuenta del Admin</h3>
                 <button type="button" class="app-modal-close" data-close-wizard aria-label="Cerrar">
                     <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
@@ -95,15 +98,11 @@
                 </div>
                 <div class="app-wizard-step" data-wizard-step-indicator="2">
                     <span class="app-wizard-step-num">2</span>
-                    <span class="app-wizard-step-label">Identificación</span>
+                    <span class="app-wizard-step-label">Identificación y contacto</span>
                 </div>
                 <div class="app-wizard-step" data-wizard-step-indicator="3">
                     <span class="app-wizard-step-num">3</span>
-                    <span class="app-wizard-step-label">Contacto</span>
-                </div>
-                <div class="app-wizard-step" data-wizard-step-indicator="4">
-                    <span class="app-wizard-step-num">4</span>
-                    <span class="app-wizard-step-label">Sede y confirmación</span>
+                    <span class="app-wizard-step-label">Confirmación</span>
                 </div>
             </div>
 
@@ -112,17 +111,17 @@
                 <div class="app-wizard-panel" data-wizard-panel="1">
                     <div class="app-form-grid">
                         <div class="app-field app-field-wide">
-                            <label>Nombres</label>
-                            <input type="text" id="administrador-nombres" data-required placeholder="Ej. Andrea">
+                            <label for="administrador-nombres">Nombres</label>
+                            <input type="text" id="administrador-nombres" data-required maxlength="100" placeholder="Ej. Andrea">
                             <span class="app-field-error" data-field-error></span>
                         </div>
                         <div class="app-field app-field-wide">
-                            <label>Apellidos</label>
-                            <input type="text" id="administrador-apellidos" data-required placeholder="Ej. Ramírez Soto">
+                            <label for="administrador-apellidos">Apellidos</label>
+                            <input type="text" id="administrador-apellidos" data-required maxlength="100" placeholder="Ej. Ramírez Soto">
                             <span class="app-field-error" data-field-error></span>
                         </div>
                         <div class="app-field">
-                            <label>Género</label>
+                            <label for="administrador-genero">Género</label>
                             <select id="administrador-genero" data-required>
                                 <option value="" selected disabled>Selecciona</option>
                                 <option value="femenino">Femenino</option>
@@ -132,7 +131,7 @@
                             <span class="app-field-error" data-field-error></span>
                         </div>
                         <div class="app-field">
-                            <label>Fecha de nacimiento</label>
+                            <label for="administrador-fecha_nacimiento">Fecha de nacimiento</label>
                             <input type="date" id="administrador-fecha_nacimiento" data-required data-edad-input>
                             <span class="app-field-hint" data-edad-preview></span>
                             <span class="app-field-error" data-field-error></span>
@@ -176,76 +175,58 @@
                     </div>
                 </div>
 
-                {{-- Paso 2: Identificación --}}
+                {{-- Paso 2: Identificación y contacto --}}
                 <div class="app-wizard-panel" data-wizard-panel="2" hidden>
                     <div class="app-form-grid">
                         <div class="app-field">
-                            <label>Tipo de documento</label>
+                            <label for="administrador-tipo_documento">Tipo de documento</label>
                             <select id="administrador-tipo_documento" data-required>
                                 <option value="" selected disabled>Selecciona</option>
-                                <option value="CC">Cédula de ciudadanía</option>
-                                <option value="TI">Tarjeta de identidad</option>
-                                <option value="CE">Cédula de extranjería</option>
-                                <option value="PA">Pasaporte</option>
-                            </select>
-                            <span class="app-field-error" data-field-error></span>
-                        </div>
-                        <div class="app-field">
-                            <label>Número de documento</label>
-                            <input type="text" id="administrador-numero_documento" data-required placeholder="1070942496">
-                            <span class="app-field-error" data-field-error></span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Paso 3: Contacto --}}
-                <div class="app-wizard-panel" data-wizard-panel="3" hidden>
-                    <div class="app-form-grid">
-                        <div class="app-field">
-                            <label>Teléfono</label>
-                            <input type="text" id="administrador-telefono" data-required placeholder="3001234567">
-                            <span class="app-field-error" data-field-error></span>
-                        </div>
-                        <div class="app-field">
-                            <label>Correo electrónico</label>
-                            <input type="email" id="administrador-correo" data-required placeholder="nombre@esat.edu.co">
-                            <span class="app-field-error" data-field-error></span>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Paso 4: Sede y confirmación --}}
-                <div class="app-wizard-panel" data-wizard-panel="4" hidden>
-                    <div class="app-form-grid">
-                        <div class="app-field app-field-wide">
-                            <label>Sede asignada</label>
-                            <select id="administrador-sede" data-required>
-                                <option value="" selected disabled>Selecciona una sede</option>
-                                @foreach ($sedes as $sede)
-                                    <option value="{{ $sede->id }}">{{ $sede->nombre }}</option>
+                                @foreach ($tipos as $valor => $texto)
+                                    <option value="{{ $valor }}">{{ $texto }}</option>
                                 @endforeach
                             </select>
                             <span class="app-field-error" data-field-error></span>
                         </div>
+                        <div class="app-field">
+                            <label for="administrador-numero_documento">Número de documento</label>
+                            <input type="text" id="administrador-numero_documento" data-required maxlength="15" placeholder="Solo números (pasaporte: letras y números)">
+                            <span class="app-field-error" data-field-error></span>
+                        </div>
+                        <div class="app-field">
+                            <label for="administrador-telefono">Celular</label>
+                            <input type="text" id="administrador-telefono" data-required inputmode="numeric" maxlength="14" placeholder="3001234567">
+                            <span class="app-field-error" data-field-error></span>
+                        </div>
+                        <div class="app-field">
+                            <label for="administrador-correo">Correo electrónico</label>
+                            <input type="email" id="administrador-correo" data-required maxlength="255" placeholder="nombre@esat.edu.co">
+                            <span class="app-field-hint">Es su usuario para ingresar.</span>
+                            <span class="app-field-error" data-field-error></span>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="app-wizard-summary">
+                {{-- Paso 3: Confirmación --}}
+                <div class="app-wizard-panel" data-wizard-panel="3" hidden>
+                    <div class="app-wizard-summary app-wizard-summary--solo">
                         <h4>Resumen</h4>
                         <dl data-wizard-summary-list></dl>
                     </div>
 
-                    <div class="app-wizard-note">
+                    <div class="app-wizard-note" data-wizard-note-crear>
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
-                        <p>La contraseña inicial de esta cuenta será su número de documento. Podrá cambiarla luego desde su perfil.</p>
+                        <p>La contraseña inicial será su número de documento. Podrá cambiarla luego desde su perfil.</p>
                     </div>
+                    <p class="app-field-error app-adm-error" data-wizard-error role="alert"></p>
                 </div>
             </div>
 
             <div class="app-wizard-footer">
                 <button type="button" class="app-btn-secondary" data-wizard-back hidden>Atrás</button>
-                <span class="app-wizard-progress" data-wizard-progress>Paso 1 de 4</span>
+                <span class="app-wizard-progress" data-wizard-progress>Paso 1 de 3</span>
                 <button type="button" class="app-btn-primary" data-wizard-next>Siguiente</button>
-                <button type="button" class="app-btn-primary" data-wizard-finish data-create-label="Crear administrador" data-edit-label="Guardar cambios" hidden>Crear administrador</button>
+                <button type="button" class="app-btn-primary" data-wizard-finish data-create-label="Crear la cuenta" data-edit-label="Guardar cambios" hidden>Crear la cuenta</button>
             </div>
         </div>
     </div>

@@ -45,11 +45,11 @@
 .rep-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .rep-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .rep-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.rep-kpi-blue   .rep-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.rep-kpi-blue   .rep-kpi-val  { color: #1D4ED8; }
+.rep-kpi-blue   .rep-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.rep-kpi-blue   .rep-kpi-val  { color: var(--navy-3); }
 .rep-kpi-blue   .rep-kpi-val.is-rojo { color: var(--red); }
-.rep-kpi-green  .rep-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.rep-kpi-green  .rep-kpi-val  { color: #065F46; }
+.rep-kpi-green  .rep-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.rep-kpi-green  .rep-kpi-val  { color: #2D6A27; }
 .rep-kpi-orange .rep-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
 .rep-kpi-orange .rep-kpi-val  { color: var(--orange-2); }
 .rep-kpi-red    .rep-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
@@ -130,7 +130,7 @@
 .rep-comprobante { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.84rem; color: var(--navy-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rep-monto { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-3); }
 .rep-monto.is-rojo    { color: var(--red); }
-.rep-monto.is-verde   { color: #065F46; }
+.rep-monto.is-verde   { color: #2D6A27; }
 .rep-monto.is-tachado { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 
 /* Acciones */
@@ -373,9 +373,9 @@
 .rep-tarjeta-cab { display: flex; align-items: center; gap: 10px; }
 .rep-tarjeta-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .rep-tarjeta-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.rep-tarjeta-icon.g-secretaria { background: rgba(59,130,246,0.1); color: #2563EB; }
-.rep-tarjeta-icon.g-aula { background: rgba(16,185,129,0.1); color: #059669; }
-.rep-tarjeta-icon.g-admin { background: rgba(217,123,46,0.1); color: var(--orange); }
+.rep-tarjeta-icon.g-secretaria { background: #EEF2F7; color: var(--navy-2); }
+.rep-tarjeta-icon.g-aula { background: #EEF2F7; color: var(--navy-2); }
+.rep-tarjeta-icon.g-admin { background: #EEF2F7; color: var(--navy-2); }
 .rep-tarjeta strong { font-size: 0.93rem; color: var(--navy-3); }
 .rep-tarjeta p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
 .rep-tarjeta-pie { margin-top: auto; font-size: 0.74rem; font-weight: 700; color: var(--navy-2); }

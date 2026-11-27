@@ -8,16 +8,19 @@ use App\Models\Finanzas\Devolucion;
 use App\Models\Finanzas\Matricula;
 use App\Models\Finanzas\Pago;
 use App\Models\Finanzas\Recaudo;
+use App\Models\Institucional\Configuracion;
+use App\Models\Sistema\Auditoria;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Reglas de cobro de una matrícula: derecho de matrícula, plan de cuotas (mensual o por
  * periodo, lo elige el estudiante), descuentos, pagos con recibo (abonos) y el resumen
- * que muestran Matrículas, Estudiantes y Acudientes.
+ * que muestran Matrículas y Estudiantes.
  * Valor de cada cuota = precio del programa repartido - descuento + cuota del sistema (configuraciones).
  * Un pago (recaudo) es un monto libre que se aplica en orden: lo más viejo primero.
  */
@@ -65,16 +68,22 @@ class PagoService
         $vigentes = $matricula->pagos()->where('tipo', $plan)->where('estado', '!=', 'anulado')->count();
         $faltan   = $total - $vigentes;
 
-        [$base, $sistema] = $this->valoresCuota($programa, $plan);
+        $precio = $matricula->precioPrograma();
+        [$base, $sistema] = $this->valoresCuota($programa, $plan, $precio);
         $inicio = Carbon::parse($desde)->startOfMonth();
 
         for ($i = 0; $i < $faltan; $i++) {
             $numero = $vigentes + $i + 1;
-            $meses  = $plan === 'mensual' ? $i : (int) floor($i * $programa->mesesPorPeriodo());
+            // Por periodo: cada cuota vence al empezar su periodo y cobra la cuota del sistema de los meses que dura
+            if ($plan !== 'mensual') {
+                $sistema = (float) round(Programa::cuotaSistemaMensual() * $programa->mesesDelPeriodo($numero - 1));
+            }
+            $meses  = $plan === 'mensual' ? $i : $programa->inicioDelPeriodo($numero - 1) - $programa->inicioDelPeriodo($vigentes);
             $vence  = $inicio->copy()->addMonthsNoOverflow($meses)->day(Pago::DIA_VENCIMIENTO);
             // La última cuota absorbe los pesos que sobran al repartir el precio
-            $valor     = $numero === $total ? (float) $programa->precio_total - $base * ($total - 1) : $base;
+            $valor     = $numero === $total ? $precio - $base * ($total - 1) : $base;
             $descuento = $this->descuentoDe($valor, (float) $matricula->descuento_pct);
+            $cobra     = $valor - $descuento + $sistema;
 
             $matricula->pagos()->create([
                 'tipo'              => $plan,
@@ -85,8 +94,10 @@ class PagoService
                 'monto_programa'    => $valor,
                 'descuento'         => $descuento,
                 'monto_sistema'     => $sistema,
-                'monto_total'       => $valor - $descuento + $sistema,
-                'estado'            => $vence->lt(today()) ? 'vencido' : 'pendiente',
+                'monto_total'       => $cobra,
+                // Una cuota en $ 0 (beca completa sin cuota del sistema) no se debe: queda pagada sin dinero
+                'estado'            => $cobra <= 0 ? 'pagado' : ($vence->lt(today()) ? 'vencido' : 'pendiente'),
+                'fecha_pago'        => $cobra <= 0 ? today() : null,
             ]);
         }
         // Lo trasladado (cambio de programa, reintegro) se aplica en cuanto hay cuotas
@@ -95,14 +106,68 @@ class PagoService
         return max(0, $faltan);
     }
 
-    /** [valor del programa por cuota, cuota del sistema por cuota], en pesos enteros. */
-    public function valoresCuota(Programa $programa, string $plan): array
+    /**
+     * Día en que vence la primera cuota de un plan: el 10 del mes en que empiezan las clases del grupo, o del mes
+     * siguiente si empiezan después del 10. Un plan elegido tarde también cuenta desde ahí (decidido con el usuario el
+     * 24-11-2026): paga lo mismo que sus compañeros y las cuotas que ya pasaron quedan vencidas.
+     */
+    public function primeraCuota(Curso $grupo): CarbonInterface
+    {
+        $d = $grupo->fecha_inicio->copy()->startOfMonth();
+        if ($grupo->fecha_inicio->day > Pago::DIA_VENCIMIENTO) {
+            $d->addMonthNoOverflow();
+        }
+
+        return $d->day(Pago::DIA_VENCIMIENTO);
+    }
+
+    /**
+     * Elige el plan de pago de la matrícula (una sola vez: no cambia después) y genera todas sus cuotas desde la primera
+     * del grupo (primeraCuota). Lo eligen el estudiante desde su panel o, si todavía no lo eligió, la secretaría desde
+     * Matrículas. Se vuelve a revisar con la matrícula bloqueada: otra persona pudo elegirlo al mismo tiempo (M13).
+     * Devuelve cuántas cuotas creó.
+     */
+    public function elegirPlan(Matricula $matricula, string $plan, bool $porLaSecretaria = false): int
+    {
+        if (! in_array($plan, ['mensual', 'periodo'], true)) {
+            throw ValidationException::withMessages(['plan' => 'Elige el plan mensual o por periodo.']);
+        }
+
+        return DB::transaction(function () use ($matricula, $plan, $porLaSecretaria) {
+            $m = Matricula::whereKey($matricula->id)->lockForUpdate()->firstOrFail();
+            if ($m->plan_pago) {
+                throw ValidationException::withMessages(['plan' => 'El plan de pago ya se eligió y no se puede cambiar.']);
+            }
+            if ($m->estado !== 'activo') {
+                throw ValidationException::withMessages(['plan' => 'Solo se elige el plan de una matrícula activa.']);
+            }
+            $grupo = $m->curso;
+            if (! $grupo) {
+                throw ValidationException::withMessages(['plan' => 'La matrícula no tiene grupo: no se pueden calcular las cuotas.']);
+            }
+
+            $m->update(['plan_pago' => $plan]);
+            $n = $this->generarCuotas($m->fresh(), $this->primeraCuota($grupo));
+            $m->loadMissing('programa');
+            $nombre = $plan === 'mensual' ? 'mensual' : ($m->programa->tipo_periodo === 'semestre' ? 'semestral' : 'trimestral');
+            Auditoria::registrar('editar', $m, ($porLaSecretaria ? 'Eligió por el estudiante el plan de pago ' : 'Eligió su plan de pago ')
+                .$nombre.': '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').' desde el '.$this->primeraCuota($grupo)->format('d/m/Y').'.', $m->sede_id);
+
+            return $n;
+        });
+    }
+
+    /**
+     * [valor del programa por cuota, cuota del sistema por cuota], en pesos enteros. $precio: el pactado en la matrícula.
+     * Por periodo, la cuota del sistema es la de un periodo completo (el último puede ser más corto: ver generarCuotas).
+     */
+    public function valoresCuota(Programa $programa, string $plan, ?float $precio = null): array
     {
         $cuotas  = $plan === 'mensual' ? $programa->duracion_meses : $programa->duracion_periodos;
-        $meses   = $plan === 'mensual' ? 1 : $programa->mesesPorPeriodo();
+        $meses   = $plan === 'mensual' ? 1 : $programa->mesesDelPeriodo(0);
 
         return [
-            (float) floor((float) $programa->precio_total / $cuotas),
+            (float) floor(($precio ?? (float) $programa->precio_total) / $cuotas),
             (float) round(Programa::cuotaSistemaMensual() * $meses),
         ];
     }
@@ -121,13 +186,19 @@ class PagoService
     public function aplicarDescuento(Matricula $matricula, float $pct, ?string $motivo): int
     {
         return DB::transaction(function () use ($matricula, $pct, $motivo) {
+            Matricula::whereKey($matricula->id)->lockForUpdate()->first();   // no se cruza con un pago que entra a la vez
             $matricula->update(['descuento_pct' => $pct, 'descuento_motivo' => $pct > 0 ? $motivo : null]);
 
-            $cuotas = $matricula->pagos()->where('tipo', '!=', 'matricula')->whereIn('estado', Pago::POR_PAGAR)
-                ->where('abonado', 0)->get();
+            // Sin abonos: las que se deben, y las que quedaron en $ 0 por una beca completa (pagadas sin dinero)
+            $cuotas = $matricula->pagos()->where('tipo', '!=', 'matricula')->where('abonado', 0)
+                ->where(fn ($q) => $q->whereIn('estado', Pago::POR_PAGAR)->orWhere(fn ($q) => $q->where('estado', 'pagado')->where('monto_total', '<=', 0)))
+                ->get();
             foreach ($cuotas as $c) {
                 $descuento = $this->descuentoDe((float) $c->monto_programa, $pct);
-                $c->update(['descuento' => $descuento, 'monto_total' => (float) $c->monto_programa - $descuento + (float) $c->monto_sistema]);
+                $total     = (float) $c->monto_programa - $descuento + (float) $c->monto_sistema;
+                // En $ 0 no se debe (pagada sin dinero); si vuelve a valer algo, se debe otra vez según su fecha
+                $estado = $total <= 0 ? 'pagado' : ($c->fecha_vencimiento && $c->fecha_vencimiento->lt(today()) ? 'vencido' : 'pendiente');
+                $c->update(['descuento' => $descuento, 'monto_total' => $total, 'estado' => $estado, 'fecha_pago' => $estado === 'pagado' ? today() : null]);
             }
 
             return $cuotas->count();
@@ -192,26 +263,43 @@ class PagoService
     public function anularRecaudo(Recaudo $recaudo, string $motivo): void
     {
         DB::transaction(function () use ($recaudo, $motivo) {
+            // Mismo orden de bloqueo que pagar y devolver (primero la matrícula): dos anulaciones, o una anulación y una
+            // devolución a la vez, van de a una y la segunda vuelve a revisar
+            Matricula::whereKey($recaudo->matricula_id)->lockForUpdate()->first();
+            $recaudo = Recaudo::whereKey($recaudo->id)->lockForUpdate()->firstOrFail();
+            if ($error = $this->motivoNoAnulable($recaudo)) {
+                throw ValidationException::withMessages(['motivo' => $error]);
+            }
             foreach ($recaudo->cobros()->lockForUpdate()->get() as $c) {
                 $abonado = max(0, round((float) $c->abonado - (float) $c->pivot->monto, 2));
+                $retenido = (float) $c->abonado > 0 ? round((float) $c->retenido * $abonado / (float) $c->abonado) : 0;
                 $estado  = $c->estado;
                 if ($estado === 'pagado') {
                     $estado = $c->fecha_vencimiento && $c->fecha_vencimiento->lt(today()) ? 'vencido' : 'pendiente';
                 }
-                $c->update(['abonado' => $abonado, 'estado' => $estado, 'fecha_pago' => $estado === 'pagado' ? $c->fecha_pago : null]);
+                $c->update(['abonado' => $abonado, 'retenido' => $retenido, 'estado' => $estado, 'fecha_pago' => $estado === 'pagado' ? $c->fecha_pago : null]);
             }
             $recaudo->update(['anulado_en' => now(), 'anulado_por' => auth()->id(), 'motivo_anulacion' => $motivo]);
+
+            // En una aplazada o retirada vuelve a ser deuda solo lo que ya se debía al aplazarse o retirarse: las cuotas
+            // de después y el derecho que no alcanzó a causarse siguen sin cobrarse (HALLAZGOS A4)
+            $m = Matricula::find($recaudo->matricula_id);
+            if (in_array($m->estado, ['aplazado', 'retirado'], true) && $m->estado_fecha) {
+                $this->anularCuotasFuturas($m, $m->estado_fecha);
+                $m->estado === 'aplazado' ? $this->derechoEnEspera($m, $m->estado_fecha) : $this->anularDerechoSinCausar($m, $m->estado_fecha);
+            }
         });
     }
 
     /**
      * Al aplazar o retirarse: las cuotas que vencen después de $desde ya no se deben. Las atrasadas sí.
-     * Si una de ellas tenía un abono, ese dinero queda como adelantado (ver adelantado()).
+     * Las que ya estaban pagadas también se anulan y conservan su abono: ese dinero queda marcado en el cobro como
+     * adelantado (ver adelantado()), sin importar cuántos cambios de estado vengan después (HALLAZGOS A5).
      */
     public function anularCuotasFuturas(Matricula $matricula, CarbonInterface $desde): int
     {
         return $matricula->pagos()->where('tipo', '!=', 'matricula')
-            ->whereIn('estado', Pago::POR_PAGAR)
+            ->whereIn('estado', [...Pago::POR_PAGAR, 'pagado'])
             ->whereDate('fecha_vencimiento', '>', $desde->toDateString())
             ->update(['estado' => 'anulado']);
     }
@@ -219,19 +307,22 @@ class PagoService
     /* ── Dinero adelantado: devoluciones, traslados y saldo a favor ── */
 
     /**
-     * Lo pagado de más en una matrícula aplazada o retirada: cuotas pagadas que vencen después del
-     * aplazamiento/retiro y abonos que quedaron en cobros anulados. Devuelve esos cobros (lo que se puede
-     * sacar de cada uno es disponible()).
+     * Lo pagado de más en una matrícula: abonos que quedaron en cobros anulados (cuotas de después de un aplazamiento o
+     * retiro —se anulan con su abono, ver anularCuotasFuturas()— y el derecho abonado de quien se retiró antes de
+     * empezar). Devuelve esos cobros (lo que se puede sacar de cada uno es disponible()).
      */
     public function adelantado(Matricula $matricula): Collection
     {
-        $desde = $matricula->estado_fecha?->toDateString() ?? today()->toDateString();
-
-        return $matricula->pagos()->whereColumn('abonado', '>', 'reembolsado')->get()
-            ->filter(fn (Pago $p) => $p->estado === 'anulado'
-                || ($p->estado === 'pagado' && $p->esCuota() && $p->fecha_vencimiento && $p->fecha_vencimiento->toDateString() > $desde))
+        return $matricula->pagos()->where('estado', 'anulado')->whereColumn('abonado', '>', 'reembolsado')->get()
+            ->filter(fn (Pago $p) => $p->disponible() > 0)   // lo retenido no se devuelve
             ->sortBy(fn (Pago $p) => [$p->fecha_vencimiento?->toDateString() ?? '', $p->id])
             ->values();
+    }
+
+    /** Todo el dinero que tiene la matrícula: lo que sigue en sus cobros más el saldo a favor (HALLAZGOS A6). */
+    public function dineroEn(Matricula $matricula): int
+    {
+        return (int) round($matricula->pagos()->get()->sum(fn (Pago $p) => $p->disponible()) + (float) $matricula->saldo_favor);
     }
 
     public function totalAdelantado(Matricula $matricula): int
@@ -287,6 +378,19 @@ class PagoService
         return array_values(array_filter($fuentes, fn ($f) => $f[1] > 0));
     }
 
+    /** Por qué no se puede anular ese pago (null si se puede). La usan AnularPagoRequest y anularRecaudo, ya bloqueado. */
+    public function motivoNoAnulable(Recaudo $recaudo): ?string
+    {
+        return match (true) {
+            $recaudo->anulado()                                            => 'Ese pago ya está anulado.',
+            // Se graduó a paz y salvo: anular un pago la dejaría graduada con deuda
+            $recaudo->matricula->estado === 'graduado'                     => 'La matrícula está graduada: sus pagos ya no se pueden anular.',
+            // Ese dinero ya salió de aquí (se devolvió, cubrió otra deuda o pasó a otra matrícula)
+            $recaudo->cobros()->where('reembolsado', '>', 0)->exists()     => 'Parte de este pago ya se devolvió o se trasladó a otra matrícula: no se puede anular.',
+            default                                                        => null,
+        };
+    }
+
     /**
      * Registra la devolución de lo adelantado (después de cubrir lo vencido de la misma matrícula),
      * con su comprobante. Devuelve [Devolucion|null, cubierto]: null si todo se usó para cubrir deuda.
@@ -295,6 +399,11 @@ class PagoService
     {
         return DB::transaction(function () use ($matricula, $datos) {
             Matricula::whereKey($matricula->id)->lockForUpdate()->first();
+            // La Form Request lo revisó sin el bloqueo: con dos envíos a la vez, el segundo llega cuando el primero ya lo
+            // devolvió todo, y no debe dejar en la auditoría que "se usó para cubrir lo que debía" (HALLAZGOS B27)
+            if ($this->totalAdelantado($matricula) <= 0) {
+                throw ValidationException::withMessages(['motivo' => 'Esta matrícula no tiene dinero adelantado para devolver.']);
+            }
             $reparto = $this->repartoAdelantado($matricula);
             $fuentes = $this->liberarAdelantado($matricula);
             $valor   = round(array_sum(array_column($fuentes, 1)), 2);
@@ -406,10 +515,23 @@ class PagoService
             ->update(['fecha_vencimiento' => null, 'mes' => null, 'anio' => null, 'estado' => 'pendiente']);
     }
 
-    /** Al retirarse sin haber empezado: el derecho que no había vencido (y sin abonos) ya no se debe. */
+    /**
+     * Al retirarse sin haber empezado: el derecho que no había vencido ya no se debe. De lo que alcanzó a pagar (parcial o
+     * completo), se le devuelve el porcentaje de Configuración (`devolucion_derecho_pct`, 50 % por defecto) y el resto
+     * queda retenido por la institución (`pagos.retenido`); lo devolvible queda como adelantado (HALLAZGOS A9).
+     */
     public function anularDerechoSinCausar(Matricula $matricula, CarbonInterface $desde): int
     {
-        return $this->derechoSinCausar($matricula, $desde)->where('abonado', 0)->update(['estado' => 'anulado']);
+        $retiene = (100 - Configuracion::devolucionDerechoPct()) / 100;
+        $cobros = $matricula->pagos()->where('tipo', 'matricula')->whereIn('estado', [...Pago::POR_PAGAR, 'pagado'])
+            ->where(fn ($q) => $q->whereNull('fecha_vencimiento')->orWhereDate('fecha_vencimiento', '>', $desde->toDateString()))
+            ->get();
+        foreach ($cobros as $c) {
+            $pagado = max(0, (float) $c->abonado - (float) $c->reembolsado);
+            $c->update(['estado' => 'anulado', 'retenido' => round($pagado * $retiene)]);
+        }
+
+        return $cobros->count();
     }
 
     /** Al reintegrarse: el derecho en espera vence cuando empiezan las clases del grupo al que vuelve. */
@@ -438,16 +560,55 @@ class PagoService
                       'anio' => $grupo->fecha_inicio->year, 'estado' => 'pendiente']);
     }
 
-    /** Lo mismo para todas las matrículas activas de un grupo al que le cambiaron la fecha de inicio. */
+    /**
+     * Lo mismo para todas las matrículas activas de un grupo al que le cambiaron la fecha de inicio: el derecho y las
+     * cuotas del plan vencen según el nuevo inicio de clases.
+     */
     public function reprogramarDerechosDelGrupo(Curso $grupo): void
     {
-        $grupo->matriculas()->where('estado', 'activo')->with('curso')->get()
-            ->each(fn (Matricula $m) => $this->reprogramarDerecho($m));
+        $grupo->matriculas()->where('estado', 'activo')->with(['curso.programa', 'programa'])->get()
+            ->each(function (Matricula $m) {
+                $this->reprogramarDerecho($m);
+                $this->reprogramarCuotas($m);
+            });
     }
 
     /**
-     * Derecho de matrícula vencido sin pagar completo en una matrícula vigente: el estudiante no
-     * puede ingresar a la plataforma hasta pagarlo (antes de que empiecen sus clases sí puede).
+     * El grupo de la matrícula empieza en otra fecha (pasó a otro grupo, o se corrió el inicio del suyo): las cuotas que
+     * todavía debe vuelven a contar desde la primera cuota del grupo (primeraCuota), como si lo hubiera elegido ahí. Las
+     * pagadas conservan su fecha. Solo si el plan nunca se interrumpió (sin cuotas anuladas): después de un aplazamiento
+     * las cuotas cuentan desde el reintegro y no se mueven con el grupo. Devuelve cuántas cambiaron de fecha.
+     */
+    public function reprogramarCuotas(Matricula $matricula): int
+    {
+        $plan  = $matricula->plan_pago;
+        $grupo = $matricula->curso;
+        if (! $plan || ! $grupo || $matricula->estado !== 'activo'
+            || $matricula->pagos()->where('tipo', $plan)->where('estado', 'anulado')->exists()) {
+            return 0;
+        }
+        $programa = $matricula->programa;
+        $inicio   = Carbon::parse($this->primeraCuota($grupo))->startOfMonth();
+        $cambiadas = 0;
+        foreach ($matricula->pagos()->where('tipo', $plan)->whereIn('estado', Pago::POR_PAGAR)->get() as $c) {
+            $meses = $plan === 'mensual' ? $c->numero_cuota - 1 : $programa->inicioDelPeriodo($c->numero_cuota - 1);
+            $vence = $inicio->copy()->addMonthsNoOverflow($meses)->day(Pago::DIA_VENCIMIENTO);
+            if ($c->fecha_vencimiento && $c->fecha_vencimiento->isSameDay($vence)) {
+                continue;
+            }
+            $c->update([
+                'fecha_vencimiento' => $vence->toDateString(), 'mes' => $vence->month, 'anio' => $vence->year,
+                'estado' => $vence->lt(today()) ? 'vencido' : 'pendiente',
+            ]);
+            $cambiadas++;
+        }
+
+        return $cambiadas;
+    }
+
+    /**
+     * Derecho de matrícula vencido sin pagar completo en una matrícula vigente. Ya no bloquea el ingreso del
+     * estudiante (lo pidió el cliente, 24-11-2026): es una deuda más, y sin paz y salvo no se gradúa.
      */
     public function derechoVencido(User $estudiante): ?Pago
     {
@@ -477,15 +638,12 @@ class PagoService
         $finMes  = today()->endOfMonth();
         $vencido = $debe->filter(fn (Pago $p) => $p->estadoActual() === 'vencido');
         $delMes  = $debe->filter(fn (Pago $p) => $p->fecha_vencimiento && $p->fecha_vencimiento->lte($finMes));
-        $programa = $matricula->programa;
         $restante = fn (Collection $c) => (int) round($c->sum(fn (Pago $p) => $p->restante()));
 
         return [
             'plan_pago'      => $matricula->plan_pago,
             'pago'           => $vencido->isNotEmpty() ? 'vencido' : ($delMes->isNotEmpty() ? 'pendiente' : 'al_dia'),
-            'cuotas_total'   => $matricula->plan_pago
-                ? ($cuotas->count() ?: ($matricula->plan_pago === 'mensual' ? $programa->duracion_meses : $programa->duracion_periodos))
-                : null,
+            'cuotas_total'   => $matricula->totalCuotas($matricula->pagos),
             'cuotas_pagadas' => $cuotas->where('estado', 'pagado')->count(),
             'saldo'          => $restante($delMes),
             'saldo_vencido'  => $restante($vencido),

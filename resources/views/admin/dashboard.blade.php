@@ -12,8 +12,8 @@
 @endpush
 
 @php
-    $nombreAdmin = auth()->user()->nombres ?: 'Administrador';
-    $sedeName = auth()->user()->sede?->nombre ?? 'sede';
+    $nombreAdmin = auth()->user()->nombres ?: 'Administrativo';
+    $sedeName = auth()->user()->sedeTrabajo()?->nombre ?? 'sede';
 @endphp
 
 @section('content')
@@ -26,8 +26,8 @@
             Hola, <span>{{ $nombreAdmin }}.</span>
         </div>
         <div class="dash-welcome-desc">
-            Panel de gestión de la sede <strong style="color:rgba(255,255,255,0.85);">{{ $sedeName }}</strong>.
-            Aquí tienes un resumen de lo que está pasando hoy con tus estudiantes, programas y pagos.
+            Panel de gestión de la sede <strong>{{ $sedeName }}</strong>.
+            Aquí tienes un resumen de lo que está pasando hoy con tus estudiantes, carreras y pagos.
         </div>
     </div>
     <div class="dash-welcome-badge">
@@ -213,7 +213,7 @@
     {{-- Programas: ocupación --}}
     <div class="dash-card">
         <div class="dash-card-head">
-            <div class="dash-card-title">Programas</div>
+            <div class="dash-card-title">Carreras</div>
             <div class="dash-card-subtitle" style="font-size:0.76rem;">Ocupación de cupos de los grupos vigentes</div>
         </div>
         <div class="dash-card-body">
@@ -284,12 +284,12 @@
                 <div class="dash-quick-label">Registrar pago</div>
                 <div class="dash-quick-sub">Matrículas y cuotas</div>
             </a>
-            <a href="{{ route('admin.programas') }}#nuevo" class="dash-quick-item">
+            <a href="{{ route('admin.programas') }}" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-green">
                     <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
                 </div>
-                <div class="dash-quick-label">Crear programa</div>
-                <div class="dash-quick-sub">Carrera, duración y valor</div>
+                <div class="dash-quick-label">Escuelas y carreras</div>
+                <div class="dash-quick-sub">Los que ofrece la sede</div>
             </a>
             <a href="{{ route('admin.reportes') }}" class="dash-quick-item">
                 <div class="dash-quick-icon dash-quick-icon-purple">

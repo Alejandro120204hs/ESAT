@@ -12,7 +12,7 @@
 }
 .prf-hero-bg {
     position: absolute; inset: 0;
-    background: linear-gradient(130deg, var(--navy-3) 0%, var(--navy-2) 55%, #1a4a80 100%);
+    background: linear-gradient(130deg, var(--navy-3) 0%, var(--navy-2) 55%, var(--navy-2) 100%);
 }
 .prf-hero-mark {
     position: absolute; z-index: 0;
@@ -89,7 +89,7 @@
     display: flex; align-items: center; justify-content: center;
 }
 .prf-card-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.prf-card-icon-blue   { background: #EEF4FF; color: var(--navy-2); }
+.prf-card-icon-blue   { background: #EEF2F7; color: var(--navy-2); }
 .prf-card-icon-orange { background: #FBE9D8; color: var(--orange-2); }
 .prf-card-title { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1rem; color: var(--navy-3); }
 .prf-card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
@@ -129,7 +129,7 @@
 /* Tip de seguridad */
 .prf-tip {
     display: flex; align-items: flex-start; gap: 8px;
-    background: #F0F6FF; border: 1px solid #D1E4FF; border-radius: 8px;
+    background: #EEF2F7; border: 1px solid rgba(16, 40, 74, 0.12); border-radius: 8px;
     padding: 10px 13px; font-size: 0.8rem; color: var(--navy-2); line-height: 1.5;
 }
 .prf-tip svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: var(--navy-2); stroke-width: 1.8; stroke-linecap: round; }

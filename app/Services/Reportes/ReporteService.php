@@ -32,9 +32,10 @@ class ReporteService
     public function datosSede(int $sedeId): array
     {
         $sede = Sede::findOrFail($sedeId);
-        $cursos = Curso::where('sede_id', $sedeId)->with(['programa.modulos', 'docentes', 'sesiones'])->orderBy('id')->get();
+        $cursos = Curso::where('sede_id', $sedeId)->with(['programa.modulos', 'docentes', 'sesiones', 'historialSesiones'])->orderBy('id')->get();
         $matriculas = Matricula::where('sede_id', $sedeId)->where('estado', '!=', 'anulado')
-            ->with(['estudiante.acudientes'])->orderBy('id')->get();
+            ->with(['estudiante.contactoEmergencia', 'grupos'])->orderBy('id')->get();
+        $porId = $cursos->keyBy('id');
 
         $grupos = $cursos->map(fn (Curso $c) => $this->grupo($c))->values();
 
@@ -51,8 +52,10 @@ class ReporteService
                 'fecha'        => $m->fecha_inicio?->toDateString(),
                 'estado_fecha' => $m->estado_fecha?->toDateString(),
                 'motivo'       => $m->estado_motivo,
+                // Sus pasos por grupos (historial): en qué grupo contaba cada día
+                'pasos'        => $this->pasos($m, $porId),
             ])->values(),
-            'asistencia'  => $this->asistencias($grupos, $matriculas),
+            'asistencia'  => $this->asistencias($grupos, $matriculas, $porId),
             'notas'       => Calificacion::whereIn('matricula_id', $matriculas->pluck('id'))->orderBy('id')->get()->map(fn (Calificacion $k) => [
                 'matricula_id' => $k->matricula_id,
                 'modulo_id'    => $k->programa_modulo_id,
@@ -80,7 +83,7 @@ class ReporteService
             'jornada'     => $c->jornada,
             'estado'      => $c->estado,
             'inicio'      => $c->fecha_inicio?->toDateString(),
-            'fin'         => Curso::finPara($c->fecha_inicio, $c->programa)->toDateString(),
+            'fin'         => $c->fin()->toDateString(),
             'horario'     => $tieneHorario ? $this->horario($c) : '',
             'docente'     => $docente ? trim($docente->nombres.' '.$docente->apellidos) : null,
             'fechas'      => $tieneHorario ? $this->asistencia->fechasDictadas($c) : [],
@@ -105,8 +108,6 @@ class ReporteService
 
     private function estudiante(User $e): array
     {
-        $a = $e->acudientes->first();
-
         return [
             'id'         => $e->id,
             'tipo_doc'   => $e->tipo_documento,
@@ -117,7 +118,7 @@ class ReporteService
             'nacimiento' => $e->fecha_nacimiento?->toDateString(),
             'municipio'  => $e->ciudad_residencia,
             'celular'    => $this->digitos($e->telefono),
-            'acudiente'  => $a ? ['nombre' => trim($a->nombres.' '.$a->apellidos), 'parentesco' => $a->pivot->parentesco, 'celular' => $this->digitos($a->telefono)] : null,
+            'contacto'   => $e->contactoEmergencia?->paraVista(),
         ];
     }
 
@@ -125,7 +126,21 @@ class ReporteService
      * Un código por clase del grupo de cada matrícula (P, T, A, E o - sin registrar), alineado con grupos[].fechas,
      * con el motivo de cada excusa. También de los grupos finalizados.
      */
-    private function asistencias(Collection $grupos, Collection $matriculas): Collection
+    /** [{grupo_id, desde, hasta}]: las fechas en que contaba en cada grupo (Matricula::ventanasEn). */
+    private function pasos(Matricula $m, Collection $cursos): array
+    {
+        $out = [];
+        foreach ($m->periodos()->pluck('curso_id')->unique() as $id) {
+            $c = $cursos->get($id);
+            foreach ($c ? $m->ventanasEn($c) : [] as $v) {
+                $out[] = ['grupo_id' => $id] + $v;
+            }
+        }
+
+        return $out;
+    }
+
+    private function asistencias(Collection $grupos, Collection $matriculas, Collection $cursos): Collection
     {
         $regs = DB::table('asistencias')->whereIn('curso_id', $grupos->pluck('id'))
             ->get(['curso_id', 'estudiante_id', 'fecha', 'estado', 'motivo'])
@@ -134,9 +149,15 @@ class ReporteService
         $out = collect();
         foreach ($grupos as $g) {
             $idx = array_flip($g['fechas']);
-            foreach ($matriculas->where('curso_id', $g['id']) as $m) {
-                $rs = $regs->get($g['id'].'-'.$m->estudiante_id);
-                if (! $rs) {
+            $curso = $cursos->get($g['id']);
+            // Las matrículas que pasaron por el grupo (también las que se cambiaron a otro), solo en sus fechas allí
+            foreach ($matriculas as $m) {
+                $ventanas = $m->ventanasEn($curso);
+                if (! $ventanas) {
+                    continue;
+                }
+                $rs = $regs->get($g['id'].'-'.$m->estudiante_id)?->filter(fn ($r) => Matricula::enVentanas($ventanas, substr((string) $r->fecha, 0, 10)));
+                if (! $rs || $rs->isEmpty()) {
                     continue;
                 }
                 $cod = str_repeat('-', count($g['fechas']));
@@ -158,7 +179,7 @@ class ReporteService
         return $out->values();
     }
 
-    /** Cobros vigentes (sin los anulados) con cada pago que recibieron y su fecha (recaudos sin anular). */
+    /** Cobros vigentes (sin los anulados) con lo pagado y su fecha: recibos sin anular y lo cubierto con saldo a favor (Pago::pagosFechados). */
     private function cobros(Collection $matriculas): Collection
     {
         return Pago::whereIn('matricula_id', $matriculas->pluck('id'))->where('estado', '!=', 'anulado')->whereNotNull('fecha_vencimiento')
@@ -168,7 +189,7 @@ class ReporteService
                 'concepto'     => $p->tipo === 'matricula' ? 'Derecho de matrícula' : 'Cuota '.$p->numero_cuota,
                 'vence'        => $p->fecha_vencimiento->toDateString(),
                 'valor'        => (int) round((float) $p->monto_total),
-                'pagos'        => $p->recaudos->map(fn ($r) => [$r->fecha_pago->toDateString(), (int) round((float) $r->pivot->monto)])->values()->all(),
+                'pagos'        => array_map(fn ($x) => [$x[0], (int) round($x[1])], $p->pagosFechados()),
             ])->values();
     }
 

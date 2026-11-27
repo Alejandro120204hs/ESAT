@@ -19,10 +19,11 @@ class CarteraService
 {
     public function datosSede(int $sedeId): array
     {
+        // También las anuladas: no deben nada ni salen en Por cobrar, pero sus recibos (anulados) siguen en Pagos
+        // recibidos para que el consecutivo RC no tenga huecos sin explicación (HALLAZGOS B26)
         $matriculas = Matricula::where('sede_id', $sedeId)
-            ->where('estado', '!=', 'anulado')
             ->with([
-                'programa.escuela', 'curso', 'estudiante.acudientes',
+                'programa.escuela', 'curso', 'estudiante.contactoEmergencia',
                 'pagos' => fn ($q) => $q->where('estado', '!=', 'anulado'),
                 'recaudos' => fn ($q) => $q->with(['cobros', 'registradoPor', 'anuladoPor']),
                 'devoluciones.registradoPor',
@@ -43,7 +44,6 @@ class CarteraService
     private function matricula(Matricula $m): array
     {
         $e = $m->estudiante;
-        $a = $e->acudientes->first();
         $total = $this->totalCuotas($m);
 
         return [
@@ -59,11 +59,7 @@ class CarteraService
             'documento'    => $e->numero_documento,
             'telefono'     => $this->digitos($e->telefono),
             'menor'        => $e->fecha_nacimiento !== null && $e->fecha_nacimiento->age < 18,
-            'acudiente'    => $a ? [
-                'nombre'     => trim($a->nombres.' '.$a->apellidos),
-                'parentesco' => $a->pivot->parentesco,
-                'telefono'   => $this->digitos($a->telefono),
-            ] : null,
+            'contacto'     => $e->contactoEmergencia?->paraVista(),
             'programa_id'  => $m->programa_id,
             'programa'     => $m->programa->nombre,
             'sigla'        => mb_strtolower($m->programa->escuela?->sigla ?? ''),
@@ -89,6 +85,9 @@ class CarteraService
             'recibo'       => $r->recibo,
             'matricula_id' => $m->id,
             'fecha'        => $r->fecha_pago->toDateString(),
+            // La caja cuenta cada pago el día en que se registró (y cada anulación el día en que se hizo): un periodo
+            // ya cerrado no cambia por lo que se haga después (HALLAZGOS M25)
+            'registrado_en' => $r->created_at->toDateString(),
             'valor'        => (int) round((float) $r->valor),
             'metodo'       => $r->metodo_pago,
             'referencia'   => $r->referencia,
@@ -112,6 +111,7 @@ class CarteraService
             'comprobante'  => $d->comprobante,
             'matricula_id' => $m->id,
             'fecha'        => $d->fecha->toDateString(),
+            'registrado_en' => $d->created_at->toDateString(),
             'valor'        => (int) round((float) $d->valor),
             'metodo'       => $d->metodo_pago,
             'referencia'   => $d->referencia,
@@ -122,7 +122,7 @@ class CarteraService
 
     private function totalCuotas(Matricula $m): ?int
     {
-        return $m->plan_pago === 'mensual' ? $m->programa->duracion_meses : ($m->plan_pago ? $m->programa->duracion_periodos : null);
+        return $m->totalCuotas();
     }
 
     /** Mismo texto que Matrículas y el recibo. */
@@ -133,7 +133,7 @@ class CarteraService
 
     private function nombre(?User $u): string
     {
-        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Administrador') : 'Administrador';
+        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Administrativo') : 'Administrativo';
     }
 
     private function digitos(?string $tel): string

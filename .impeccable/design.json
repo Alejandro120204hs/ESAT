@@ -1,0 +1,535 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-09T15:00:00-05:00",
+  "title": "Design System: ESAT · Sitio público",
+  "extensions": {
+    "scope": "Solo el sitio público (layouts/app, partials, welcome, paginas/*, public/assets/{css,js}/sitio). La plataforma interna (admin, superadmin, docente, login) es otro mundo visual y queda fuera.",
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Azul Marino ESAT",
+        "tonalRamp": [
+          "#050E1A",
+          "#0A1B33",
+          "#10284A",
+          "#173B67",
+          "#3A5C88",
+          "#7F97B6",
+          "#C9D5E4",
+          "#F2F5FA"
+        ]
+      },
+      "navy-2": {
+        "role": "primary",
+        "displayName": "Azul Noche",
+        "tonalRamp": [
+          "#0A1B33",
+          "#10284A",
+          "#173B67",
+          "#2A5085",
+          "#4C70A0",
+          "#87A0C2",
+          "#C6D3E5",
+          "#EEF2F7"
+        ]
+      },
+      "navy-3": {
+        "role": "primary",
+        "displayName": "Azul Profundo",
+        "tonalRamp": [
+          "#040B15",
+          "#081527",
+          "#0A1B33",
+          "#10284A",
+          "#2B4466",
+          "#6A7F9C",
+          "#B8C4D4",
+          "#EEF2F7"
+        ]
+      },
+      "navy-4": {
+        "role": "primary",
+        "displayName": "Azul Abismo",
+        "tonalRamp": [
+          "#03080F",
+          "#081527",
+          "#0E2240",
+          "#1B355C",
+          "#3E5679",
+          "#7A8CA6",
+          "#BCC6D4",
+          "#EEF2F7"
+        ]
+      },
+      "orange": {
+        "role": "secondary",
+        "displayName": "Naranja Avance",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ],
+        "purpose": "Solo marcas sin texto: línea de progreso, espina, foco, subrayado."
+      },
+      "orange-2": {
+        "role": "secondary",
+        "displayName": "Naranja Hundido",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      },
+      "orange-ink": {
+        "role": "secondary",
+        "displayName": "Naranja Tinta",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      },
+      "orange-tint": {
+        "role": "secondary",
+        "displayName": "Naranja Velo",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      },
+      "green": {
+        "role": "tertiary",
+        "displayName": "Verde WhatsApp",
+        "tonalRamp": [
+          "#14260F",
+          "#22401D",
+          "#325C2D",
+          "#40763A",
+          "#5E9558",
+          "#8FD08A",
+          "#C4E3BF",
+          "#E7F0E4"
+        ]
+      },
+      "green-2": {
+        "role": "tertiary",
+        "displayName": "Verde Hundido",
+        "tonalRamp": [
+          "#14260F",
+          "#22401D",
+          "#325C2D",
+          "#40763A",
+          "#5E9558",
+          "#8FD08A",
+          "#C4E3BF",
+          "#E7F0E4"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Blanco"
+      },
+      "bg-soft": {
+        "role": "neutral",
+        "displayName": "Azul Niebla"
+      },
+      "blue-tint-1": {
+        "role": "neutral",
+        "displayName": "Azul Bruma"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Tinta"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Gris Pizarra"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Línea"
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Línea Firme"
+      },
+      "orange-cta": {
+        "role": "secondary",
+        "displayName": "Naranja Botón",
+        "purpose": "Fondo de botones; texto blanco a 4.65:1.",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      },
+      "orange-cta-2": {
+        "role": "secondary",
+        "displayName": "Naranja Botón Hundido",
+        "purpose": "Hover de botones.",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      },
+      "orange-claro": {
+        "role": "secondary",
+        "displayName": "Naranja Claro",
+        "purpose": "Palabra resaltada sobre azul.",
+        "tonalRamp": [
+          "#4A2509",
+          "#7A3F14",
+          "#A4531A",
+          "#BE661F",
+          "#D97B2E",
+          "#F7A766",
+          "#F8CFA9",
+          "#FBE9D8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Solo el h1 de la portada, blanco sobre el marco de foto."
+      },
+      "headline": {
+        "displayName": "Titular de sección",
+        "purpose": "h2 de cada sección, azul marino, balanceado."
+      },
+      "title": {
+        "displayName": "Título",
+        "purpose": "h3 de tarjetas, escuelas, competencias y sedes."
+      },
+      "figure": {
+        "displayName": "Cifra",
+        "purpose": "Números contados de la barra de cifras (Archivo 900, tabulares)."
+      },
+      "lead": {
+        "displayName": "Entrada",
+        "purpose": "Párrafo de apoyo bajo el titular, en gris pizarra."
+      },
+      "body": {
+        "displayName": "Texto",
+        "purpose": "Texto corrido, 52–60ch."
+      },
+      "label": {
+        "displayName": "Etiqueta de acción",
+        "purpose": "Botones, enlaces con flecha y navegación (Archivo 600–700)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-md",
+        "value": "0 10px 28px -10px rgba(10, 27, 51, 0.22), 0 2px 6px rgba(10, 27, 51, 0.06)",
+        "purpose": "Hover de tarjetas, sede activa, mapa de sedes, hover del botón azul."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 28px 64px -20px rgba(10, 27, 51, 0.34), 0 6px 16px rgba(10, 27, 51, 0.08)",
+        "purpose": "Objetos montados: barra de cifras, megamenú, desplegable, sello sobre la foto."
+      },
+      {
+        "name": "glow-accent",
+        "value": "0 8px 20px -8px rgba(184, 90, 30, 0.6)",
+        "purpose": "Resplandor bajo el CTA naranja."
+      },
+      {
+        "name": "glow-whatsapp",
+        "value": "0 14px 30px -8px rgba(37, 79, 33, 0.6)",
+        "purpose": "Botón flotante de WhatsApp."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Transiciones CSS de estado, menús y hover."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Movimientos de ida y vuelta."
+      },
+      {
+        "name": "revelar",
+        "value": "GSAP expo.out, 0.9–1.4 s; subir 32px, escalonar 0.08 s, mascara inset round 32px, lado 40px",
+        "purpose": "Entradas al aparecer (data-revelar)."
+      },
+      {
+        "name": "contar",
+        "value": "GSAP expo.out, 1.8 s",
+        "purpose": "Cifras que suben (data-contar)."
+      },
+      {
+        "name": "scroll",
+        "value": "Lenis lerp 0.11",
+        "purpose": "Scroll suave; desactivado con prefers-reduced-motion."
+      },
+      {
+        "name": "reducido",
+        "value": "animaciones cortadas; transition-property: color, background-color, border-color, box-shadow, opacity a 0.2s",
+        "purpose": "Con prefers-reduced-motion: sin desplazamientos, pero con respuesta de estado."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "nav-apretada",
+        "value": "1240px"
+      },
+      {
+        "name": "menu-movil",
+        "value": "1100px"
+      },
+      {
+        "name": "encabezado-dividido",
+        "value": "1000px"
+      },
+      {
+        "name": "apilar",
+        "value": "900px"
+      },
+      {
+        "name": "sin-barra-servicio",
+        "value": "760px"
+      },
+      {
+        "name": "celular",
+        "value": "600px"
+      },
+      {
+        "name": "celular-estrecho",
+        "value": "420px"
+      }
+    ],
+    "performance": [
+      "Cabecera blanca sólida, sin backdrop-filter (se repintaba en cada cuadro de scroll).",
+      "Nada que se mueva lleva mask-image; la cinta de municipios usa dos degradados fijos ::before/::after y will-change: transform en sus pistas.",
+      "Leaflet no va en el layout: motor.js lo carga bajo demanda (ESAT.cargarMapa, precarga en tiempo libre, inicio a una pantalla de distancia).",
+      "Bucles de gsap.ticker sin lecturas de layout por cuadro: medidas en caché, quickSetter, pausa fuera de pantalla.",
+      "La foto de la portada del inicio se precarga con fetchpriority=high."
+    ],
+    "contrastRule": "Texto sobre foto: ≥4.5:1 (≥3:1 grande) contra el píxel más claro del percentil 90 detrás de él.",
+    "typeFloor": "0.875rem (14px) para todo texto pequeño informativo."
+  },
+  "components": [
+    {
+      "name": "CTA naranja",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Acción principal en píldora: Ver programas, Inscribirme.",
+      "html": "<a class=\"ds-btn ds-btn-accent\" href=\"#\">Ver programas <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></a>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 9px; min-height: 48px; padding: 0 24px; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; border-radius: 999px; border: 1.5px solid transparent; text-decoration: none; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), background-color 0.25s, box-shadow 0.3s; } .ds-btn svg { transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); } .ds-btn:hover { transform: translateY(-2px); } .ds-btn:hover svg { transform: translateX(3px); } .ds-btn:active { transform: scale(0.98); } .ds-btn:focus-visible { outline: 2.5px solid #D97B2E; outline-offset: 3px; } .ds-btn-accent { background: #B85A1E; color: #fff; box-shadow: 0 8px 20px -8px rgba(184,90,30,0.6); } .ds-btn-accent:hover { background: #9C4A16; box-shadow: 0 14px 28px -10px rgba(156,74,22,0.6); }"
+    },
+    {
+      "name": "Botón WhatsApp",
+      "kind": "button",
+      "refersTo": "button-whatsapp",
+      "description": "Único uso del verde: abre WhatsApp.",
+      "html": "<a class=\"ds-btn-wa\" href=\"#\">Escribir por WhatsApp</a>",
+      "css": ".ds-btn-wa { display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; border-radius: 999px; background: #40763A; color: #fff; text-decoration: none; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), background-color 0.25s, box-shadow 0.3s; } .ds-btn-wa:hover { background: #325C2D; transform: translateY(-2px); box-shadow: 0 12px 26px -10px rgba(64,118,58,0.6); } .ds-btn-wa:focus-visible { outline: 2.5px solid #D97B2E; outline-offset: 3px; }"
+    },
+    {
+      "name": "Botón contorno",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Acción terciaria sobre fondo claro.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">Ver la escuela</a>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; border-radius: 999px; border: 1.5px solid rgba(16,40,74,0.24); color: #10284A; text-decoration: none; transition: border-color 0.25s, background-color 0.25s, transform 0.4s cubic-bezier(0.16,1,0.3,1); } .ds-btn-outline:hover { border-color: #10284A; background: rgba(16,40,74,0.04); transform: translateY(-2px); } .ds-btn-outline:focus-visible { outline: 2.5px solid #D97B2E; outline-offset: 3px; }"
+    },
+    {
+      "name": "Enlace de navegación",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Píldora azul con subrayado naranja que crece desde la izquierda.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">Inicio</a><a href=\"#\">Sedes</a><a href=\"#\">Convenios</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 2px; } .ds-nav a { position: relative; display: inline-flex; align-items: center; height: 42px; padding: 0 14px; border-radius: 999px; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 600; font-size: 0.93rem; color: #10284A; text-decoration: none; transition: background-color 0.2s; } .ds-nav a::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 6px; height: 2px; border-radius: 2px; background: #D97B2E; transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); } .ds-nav a:hover { background: #F2F5FA; } .ds-nav a:hover::after, .ds-nav a[aria-current='page']::after { transform: scaleX(1); } .ds-nav a:focus-visible { outline: 2.5px solid #D97B2E; outline-offset: 3px; }"
+    },
+    {
+      "name": "Chip de clave",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Dato corto del programa en azul sobre azul niebla.",
+      "html": "<ul class=\"ds-chips\"><li>Presencial</li><li>12 meses</li><li>Técnico laboral</li></ul>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; } .ds-chips li { padding: 6px 12px; border-radius: 999px; background: #F2F5FA; font-family: 'Public Sans', system-ui, sans-serif; font-size: 0.84rem; font-weight: 600; color: #10284A; }"
+    },
+    {
+      "name": "Panel de escuela",
+      "kind": "card",
+      "refersTo": "card-escuela",
+      "description": "Panel sin borde en azul niebla; blanco con sombra en hover.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-foto\"></div><div class=\"ds-card-cuerpo\"><span class=\"ds-tesela\"><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></span><h3>Escuela de Salud</h3></div></article>",
+      "css": ".ds-card { width: 280px; background: #F2F5FA; border-radius: 24px; overflow: hidden; transition: box-shadow 0.45s, background-color 0.3s, transform 0.55s cubic-bezier(0.16,1,0.3,1); } .ds-card:hover { background: #fff; box-shadow: 0 10px 28px -10px rgba(10,27,51,0.22), 0 2px 6px rgba(10,27,51,0.06); transform: translateY(-4px); } .ds-card-foto { aspect-ratio: 16/10; background: #0A1B33; } .ds-card-cuerpo { display: flex; align-items: center; gap: 12px; padding: 32px 32px 24px; } .ds-tesela { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; background: #fff; color: #10284A; } .ds-card h3 { margin: 0; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.015em; color: #10284A; }"
+    },
+    {
+      "name": "Barra de cifras",
+      "kind": "custom",
+      "refersTo": "banda-cifras",
+      "description": "Banda azul con cifras contadas, montada sobre el borde de la portada.",
+      "html": "<dl class=\"ds-cifras\"><div><dt>escuelas</dt><dd>7</dd></div><div><dt>sedes con dirección</dt><dd>4</dd></div><div><dt>programas técnicos</dt><dd>27</dd></div></dl>",
+      "css": ".ds-cifras { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 24px 16px; background: #10284A; color: #fff; border-radius: 24px; box-shadow: 0 28px 64px -20px rgba(10,27,51,0.34), 0 6px 16px rgba(10,27,51,0.08); } .ds-cifras > div { display: flex; flex-direction: column-reverse; gap: 4px; padding: 4px 24px; } .ds-cifras > div + div { border-left: 1px solid rgba(255,255,255,0.14); } .ds-cifras dd { margin: 0; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 900; font-size: 3rem; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; } .ds-cifras dt { font-family: 'Public Sans', system-ui, sans-serif; font-size: 0.92rem; font-weight: 600; color: rgba(255,255,255,0.74); }"
+    },
+    {
+      "name": "Campo de correo",
+      "kind": "input",
+      "description": "Píldora blanca que contiene el botón; foco con borde y halo naranja.",
+      "html": "<form class=\"ds-campo\"><input type=\"email\" placeholder=\"Tu correo\" aria-label=\"Correo\"><button type=\"button\">Suscribirme</button></form>",
+      "css": ".ds-campo { display: flex; align-items: center; gap: 6px; width: 380px; padding: 5px; background: #fff; border: 1.5px solid rgba(16,40,74,0.24); border-radius: 999px; transition: border-color 0.2s, box-shadow 0.2s; } .ds-campo:focus-within { border-color: #D97B2E; box-shadow: 0 0 0 4px rgba(217,123,46,0.18); } .ds-campo input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 14px; font: 400 1rem 'Public Sans', system-ui, sans-serif; color: #1A1F2B; background: transparent; caret-color: #D97B2E; } .ds-campo button { min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #B85A1E; color: #fff; font: 700 0.95rem Archivo, 'Public Sans', system-ui, sans-serif; cursor: pointer; } .ds-campo button:hover { background: #9C4A16; }"
+    },
+    {
+      "name": "Encabezado dividido",
+      "kind": "custom",
+      "description": "Titular a la izquierda (máx. 18ch) y entrada abajo a la derecha; se apila por debajo de 1000px.",
+      "html": "<div class=\"ds-head\"><h2>Siete escuelas, un <span>oficio</span> para cada quien</h2><p>Programas técnicos laborales certificados, agrupados por escuela.</p></div>",
+      "css": ".ds-head { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,0.8fr); align-items: end; gap: 24px 96px; width: 900px; } .ds-head h2 { margin: 0; max-width: 18ch; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 800; font-size: 2.6rem; line-height: 1.08; letter-spacing: -0.025em; color: #10284A; } .ds-head h2 span { color: #A4531A; } .ds-head p { margin: 0; padding-bottom: 6px; font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.15rem; line-height: 1.55; color: #59626F; }"
+    },
+    {
+      "name": "Tarjeta de carrera (partida)",
+      "kind": "card",
+      "refersTo": "card-carrera",
+      "description": "Foto 3:2 limpia arriba, cuerpo en navy-2 abajo, tesela de ícono montada sobre el borde, enlace alineado al fondo.",
+      "html": "<article class=\"ds-carrera\"><div class=\"ds-carrera-foto\"></div><div class=\"ds-carrera-cuerpo\"><span class=\"ds-carrera-icono\"><svg viewBox=\"0 0 24 24\" width=\"23\" height=\"23\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"7\"/></svg></span><h3>Inteligencia Artificial</h3><p>Desarrolla soluciones inteligentes para el mundo del mañana.</p><a href=\"#\">Ver programa</a></div></article>",
+      "css": ".ds-carrera { width: 320px; display: flex; flex-direction: column; border-radius: 24px; overflow: hidden; background: #173B67; transition: transform 0.55s cubic-bezier(0.16,1,0.3,1), box-shadow 0.45s; } .ds-carrera:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -24px rgba(3,10,22,0.8); } .ds-carrera-foto { aspect-ratio: 3/2; background: #0A1B33; } .ds-carrera-cuerpo { flex: 1; display: flex; flex-direction: column; padding: 32px 32px 28px; } .ds-carrera-icono { position: relative; width: 46px; height: 46px; display: grid; place-items: center; margin: -55px 0 16px; border-radius: 14px; background: #fff; color: #10284A; box-shadow: 0 8px 18px -8px rgba(3,10,22,0.6); } .ds-carrera h3 { margin: 0; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 800; font-size: 1.3rem; line-height: 1.2; letter-spacing: -0.015em; color: #fff; } .ds-carrera p { margin: 12px 0 0; font-family: 'Public Sans', system-ui, sans-serif; font-size: 1rem; line-height: 1.55; color: rgba(255,255,255,0.82); } .ds-carrera a { display: inline-flex; align-items: center; min-height: 44px; margin-top: auto; padding-top: 16px; font-family: Archivo, 'Public Sans', system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.5); text-decoration-thickness: 2px; text-underline-offset: 6px; } .ds-carrera a:hover { text-decoration-color: #fff; } .ds-carrera a:focus-visible { outline: 2.5px solid #D97B2E; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La institución verificable",
+    "overview": "El sitio presenta a ESAT como algo que se puede comprobar: licencia, siete escuelas, cuatro sedes con dirección y convenios con nombre. La forma lo acompaña con bloques limpios sobre blanco, franjas azul claro (#F2F5FA) que marcan el ritmo y bandas azul marino de lado a lado para los momentos de peso (cifras, nuevas carreras, cierre y pie). Las fotos de ESAT van siempre dentro de marcos redondeados grandes, nunca a sangre completa con texto centrado encima. Las cifras salen de los datos reales y suben al hacer scroll.\n\nEl color tiene una gramática estricta: el naranja es acción y avance (CTA en píldora, la palabra resaltada, la línea de progreso, la espina que se llena), el verde es solo WhatsApp y todo lo demás (íconos, categorías, estados activos) es azul. La densidad es media-baja: secciones con aire vertical generoso (88–160 px), una escala de espaciado de base 4 px, pocas cajas (listas con filetes y columnas abiertas en lugar de tarjetas con borde) y cada sección con su propia forma (lista con encabezado fijo, mosaico de fotos, pista horizontal, mapa con tarjetas) para no repetir la misma tarjeta en toda la página.\n\nEl movimiento es de intensidad media: Lenis da el scroll suave y GSAP ScrollTrigger las entradas `expo.out`, el parallax dentro de los marcos, los contadores y la pista horizontal fijada. El contenido es visible por defecto: el movimiento solo anima desde ese estado, y con `prefers-reduced-motion` todo queda quieto y visible.",
+    "keyCharacteristics": [
+      "Blanco de base, franjas `bg-soft` alternadas y bandas `navy` a todo el ancho.",
+      "Fotos en marcos de 24–32 px de radio, con velo azul solo del lado del texto.",
+      "Naranja = acción y avance (botones en `orange-cta` para que el texto blanco pase AA); verde = WhatsApp; azul = todo lo demás.",
+      "Encabezados de sección divididos: titular a la izquierda, entrada abajo a la derecha.",
+      "Archivo 800 en titulares con tracking negativo; Public Sans en el texto.",
+      "Botones en píldora; íconos en teselas de esquina suave, siempre en azul.",
+      "Movimiento medio, ligado al scroll, que nunca oculta contenido sin JS."
+    ],
+    "rules": [
+      {
+        "name": "La Regla de la Gramática de Color",
+        "body": "Naranja = acción y avance. Verde = WhatsApp. Azul = íconos, categorías y estados activos. Si un elemento no es un CTA ni marca progreso, no es naranja; si no abre WhatsApp, no es verde.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Tinta Naranja",
+        "body": "El naranja de la marca (`orange`) nunca lleva ni es texto: queda para líneas, nodos y anillos. Texto blanco sobre naranja va en `orange-cta`; naranja como texto sobre blanco es `orange-ink`; sobre azul, `orange-claro`.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de las Bandas Enteras",
+        "body": "El azul marino no se usa en recuadros sueltos dentro de una sección clara para \"dar contraste\": ocupa bandas de lado a lado o tarjetas que son el ancla de su sección (barra de cifras, convenio de alcaldías, tarjeta del asesor de escuelas).",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla del Piso de 14 px",
+        "body": "El texto pequeño informativo nunca baja de 14 px (0.875rem): conteo de programas de cada escuela, encabezados de columna y base del pie, migas de pan (0.9rem), barra de servicio (0.85rem) y etiqueta de la barra fija de inscripción (0.85rem).",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla de la Palabra Resaltada",
+        "body": "Un titular puede tener una sola palabra o frase en naranja (`.resalte`), la que nombra la acción o lo que se gana. Nunca dos, nunca el titular entero.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla del Titular Sin Antetítulo",
+        "body": "Los titulares de sección van solos con su párrafo de apoyo: sin etiquetas pequeñas en mayúsculas encima.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla de la Portada en Celular",
+        "body": "A ≤600 px, en el inicio y en las subpáginas, la foto va arriba, en el flujo y entera (16:10 en el inicio, 16:9 en subpáginas), sin velo ni parallax; el titular y los CTA van debajo, sobre azul. En subpáginas solo queda el CTA de inscripción (el secundario se oculta); si aun así queda debajo del borde, la barra fija de inscripción aparece desde que carga la página.",
+        "section": "layout"
+      },
+      {
+        "name": "La Regla de la Pantalla Baja",
+        "body": "Una pantalla de 1920×1080 con Windows al 125 % es un viewport de unos 1536×704: el diseño se revisa también a 1536×704 y 1366×650. Nada que ocupe 100svh centra su contenido sin protección: la pista fijada de \"Nuevas carreras\" usa justify-content: safe center, deja el alto de la cabecera como relleno superior y mide en vh su titular, sus fotos y sus márgenes. Solo se fija a ≥1100 px de ancho y ≥620 px de alto. Los rellenos verticales de las portadas también van en vh.",
+        "section": "layout"
+      },
+      {
+        "name": "La Regla de un Solo WhatsApp Flotante",
+        "body": "A ≤1100 px el botón flotante de WhatsApp se oculta, porque la cabecera ya lleva su botón de WhatsApp siempre visible.",
+        "section": "layout"
+      },
+      {
+        "name": "La Regla de la Sombra Teñida",
+        "body": "Toda sombra es del azul de la marca (o del color del propio botón) y difusa, con desplazamiento negativo de expansión. Nada de sombras sólidas desplazadas.",
+        "section": "elevation"
+      },
+      {
+        "name": "La Regla del Velo del Lado del Texto",
+        "body": "Sobre una foto, el velo azul (`navy-4` en degradado) cubre solo la zona del texto (izquierda o abajo) y deja libre el resto de la foto.",
+        "section": "elevation"
+      },
+      {
+        "name": "La Regla del Contraste Medido",
+        "body": "El texto sobre una foto debe dar ≥4.5:1 (≥3:1 si es grande) contra el píxel más claro del percentil 90 que tiene detrás. Si no lo da, se espesa el velo o el texto sale de la foto (como en la tarjeta partida).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** usar `orange-cta` como fondo de todo botón con texto blanco y `orange` solo para marcas sin texto (progreso, espina, barra de la pista, subrayado, foco).",
+      "**Do** usar `orange-ink` cuando el naranja es texto sobre blanco y `orange-claro` cuando es texto sobre azul.",
+      "**Do** preferir filetes y columnas abiertas a tarjetas con borde; una caja tiene que ganarse su lugar.",
+      "**Do** medir el texto sobre fotos: ≥4.5:1 (≥3:1 grande) contra el percentil 90 más claro de lo que tiene detrás.",
+      "**Do** mantener todo texto informativo en 14 px (0.875rem) o más.",
+      "**Do** cargar Leaflet bajo demanda (`ESAT.cargarMapa`: precarga en tiempo libre e inicio cuando el mapa está a una pantalla de distancia), nunca en el layout.",
+      "**Do** precargar la foto de la portada del inicio con `fetchpriority=\"high\"`.",
+      "**Do** en los bucles de `gsap.ticker`, guardar las medidas en caché, escribir con `quickSetter` y pausar fuera de pantalla.",
+      "**Do** dar a todo control táctil al menos 40–44 px de alto (pasos de la portada, enlaces y chips de áreas, filas de programas).",
+      "**Do** reservar `green`/`green-2` para lo que abre WhatsApp.",
+      "**Do** poner las fotos en marcos de 24–32 px con fondo `navy-3` y velo solo del lado del texto.",
+      "**Do** mostrar un campo azul liso cuando no hay foto para un programa.",
+      "**Do** apilar la portada en celular: foto arriba en el flujo, titular y CTA debajo sobre azul.",
+      "**Do** dejar el contenido visible sin JS y con movimiento reducido; el movimiento solo anima desde ese estado. Con movimiento reducido se cortan animaciones y desplazamientos, pero los cambios de color, fondo, borde, sombra y opacidad siguen (0.2 s) como respuesta de estado.",
+      "**Do** sacar cada cifra y cada dato legal, de sede o de convenio de `config/sitio.php` / `config/contenido.php`; nunca inventarlos."
+    ],
+    "donts": [
+      "**Don't** hacer un hero oscuro a pantalla completa con texto centrado.",
+      "**Don't** usar verde para éxito, categorías o decoración: es el color de WhatsApp.",
+      "**Don't** pintar categorías, etiquetas o íconos en naranja; van en azul sobre `bg-soft`.",
+      "**Don't** poner antetítulos o etiquetas en mayúsculas sobre los titulares de sección.",
+      "**Don't** poner texto blanco sobre el naranja de la marca `#D97B2E` (3.08:1, no pasa AA).",
+      "**Don't** usar sombras negras, duras o desplazadas sin difuminado.",
+      "**Don't** poner `backdrop-filter` en la cabecera ni en nada fijo que se repinte en cada cuadro de scroll: la cabecera es blanca sólida.",
+      "**Don't** poner `mask-image` en algo que se mueve; la cinta de municipios desvanece sus bordes con dos degradados fijos (`::before`/`::after`) y sus pistas llevan `will-change: transform`.",
+      "**Don't** leer el layout (medidas, `getBoundingClientRect`) en cada cuadro de un bucle de `gsap.ticker`.",
+      "**Don't** poner insignias en cada tarjeta de carrera ni texto encima de su foto.",
+      "**Don't** mostrar avisos de \"foto pendiente\" ni fotos de banco que no sean de ESAT.",
+      "**Don't** mostrar el WhatsApp flotante a ≤1100 px, donde la cabecera ya lo tiene.",
+      "**Don't** abrir el megamenú o el desplegable con hover: solo con clic.",
+      "**Don't** llevar estos tokens a la plataforma interna (paneles): es otro mundo visual."
+    ]
+  }
+}

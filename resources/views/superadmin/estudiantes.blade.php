@@ -38,14 +38,14 @@
             $historial = [];
             foreach ($meses as $i => $mes) {
                 if ($estadoPago === 'al_dia') {
-                    $historial[] = ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026'];
+                    $historial[] = ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026'];
                 } elseif ($estadoPago === 'pendiente') {
                     $historial[] = $i < 2
-                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026']
+                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026']
                         : ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pendiente', 'fecha_pago' => null];
                 } else {
                     $historial[] = $i < 1
-                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . strtolower(substr($mes, 0, 3)) . ' 2026']
+                        ? ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Pagado', 'fecha_pago' => '5 ' . mb_strtolower(mb_substr($mes, 0, 3)) . ' 2026']
                         : ['mes' => $mes, 'monto' => $cuota, 'estado' => 'Vencido', 'fecha_pago' => null];
                 }
             }
@@ -99,7 +99,7 @@
         $ESTADO_PAGO_TEXTO = ['al_dia' => 'Al día', 'pendiente' => 'Pendiente', 'vencido' => 'Vencido'];
     @endphp
 
-    <p class="app-page-intro">Aquí puedes ver cuántos estudiantes hay matriculados y cómo van con sus pagos. Esta pantalla es solo de consulta — crear o editar estudiantes es trabajo del administrador de cada sede.</p>
+    <p class="app-page-intro">Aquí puedes ver cuántos estudiantes hay matriculados y cómo van con sus pagos. Esta pantalla es solo de consulta — crear o editar estudiantes es trabajo del administrativo de cada sede.</p>
 
     <div class="app-stat-row">
         <div class="app-stat-tile">
@@ -134,7 +134,7 @@
                     @endforeach
                 </select>
                 <select class="app-select" data-filter-programa data-table-target="estudiantes">
-                    <option value="todos">Todos los programas</option>
+                    <option value="todos">Todas las carreras</option>
                     @foreach ($programasList as $programa)
                         <option value="{{ $programa }}">{{ $programa }}</option>
                     @endforeach
@@ -155,7 +155,7 @@
                         <th>Estudiante</th>
                         <th>Documento</th>
                         <th>Sede</th>
-                        <th>Programa</th>
+                        <th>Carrera</th>
                         <th>Matrícula</th>
                         <th>Pago</th>
                         <th>Debe</th>
@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <script type="application/json" id="app-estudiantes-data">{!! json_encode($estudiantes) !!}</script>
+    <script type="application/json" id="app-estudiantes-data">@json($estudiantes)</script>
 @endsection
 
 @push('scripts')

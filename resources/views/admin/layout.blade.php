@@ -4,7 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Panel') — ESAT Admin</title>
+    @if (auth()->user()->isAdminGeneral())
+    {{-- El Admin puede tener pestañas en sedes distintas: cada fetch dice de qué sede es la pestaña y el servidor
+         lo rechaza si en otra pestaña ya entró a otra sede (EnsureSedeDeTrabajo). Va antes de cualquier script. --}}
+    <script>
+        (function (sede, fetchOriginal) {
+            window.fetch = function (recurso, opciones) {
+                var url = new URL(recurso instanceof Request ? recurso.url : recurso, location.href);
+                if (url.origin !== location.origin) return fetchOriginal(recurso, opciones);
+                opciones = Object.assign({}, opciones);
+                var h = new Headers(opciones.headers || (recurso instanceof Request ? recurso.headers : undefined));
+                h.set('X-Sede-Trabajo', sede);
+                opciones.headers = h;
+                return fetchOriginal(recurso, opciones);
+            };
+        })(@json((string) auth()->user()->sedeTrabajoId()), window.fetch.bind(window));
+    </script>
+    @endif
+    <title>@yield('title', 'Panel') — ESAT Administrativo</title>
 
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">
 
@@ -66,6 +83,18 @@
     <div class="app-main">
         {{-- Topbar --}}
         @include('admin.partials.topbar')
+
+        {{-- El Admin de ESAT está trabajando dentro de una sede ("Entrar a la sede") --}}
+        @if (auth()->user()->isAdminGeneral())
+        <div class="app-franja-sede" role="status">
+            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+            <span>Estás trabajando en la sede <strong>{{ auth()->user()->sedeTrabajo()?->nombre }}</strong> como Admin. Todo queda en la auditoría de la sede con tu nombre.</span>
+            <form method="POST" action="{{ route('general.sedes.salir') }}">
+                @csrf
+                <button type="submit" class="app-franja-sede-btn">Volver al panel general</button>
+            </form>
+        </div>
+        @endif
 
         {{-- Contenido --}}
         <main class="app-content @yield('content-class')">

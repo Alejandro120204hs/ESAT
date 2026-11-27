@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Volcados de la BD local: datos personales, hashes y sesiones (no subir)
+/database/*.sql

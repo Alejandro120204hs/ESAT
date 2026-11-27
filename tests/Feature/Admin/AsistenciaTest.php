@@ -27,6 +27,8 @@ class AsistenciaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Sus fechas fijas incluyen festivos (12-oct, 2-nov): las reglas de festivos se prueban en FestivosTest
+        config(['academico.festivos' => false]);
         // Miércoles 14 de octubre, 9 de la mañana
         Carbon::setTestNow('2026-10-14 09:00:00');
         $this->prepararSede();

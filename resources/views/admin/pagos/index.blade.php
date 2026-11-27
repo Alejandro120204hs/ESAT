@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/admin/pagos.css') }}?v={{ filemtime(public_path('assets/css/admin/pagos.css')) }}">
 @endpush
 
-@php $sede = auth()->user()->sede; @endphp
+@php $sede = auth()->user()->sedeTrabajo(); @endphp
 
 @section('content')
 <div class="pag-wrap adm-anim">
@@ -66,7 +66,7 @@
         <button type="button" class="pag-vista-btn is-active" data-vista="cobrar" role="tab" aria-selected="true">Por cobrar <span class="pag-vista-num" id="pag-n-cobrar"></span></button>
         <button type="button" class="pag-vista-btn" data-vista="recibidos" role="tab" aria-selected="false">Pagos recibidos <span class="pag-vista-num" id="pag-n-recibidos"></span></button>
         <button type="button" class="pag-vista-btn" data-vista="caja" role="tab" aria-selected="false">Resumen de caja</button>
-        <button type="button" class="pag-vista-btn" data-vista="programas" role="tab" aria-selected="false">Por programa</button>
+        <button type="button" class="pag-vista-btn" data-vista="programas" role="tab" aria-selected="false">Por carrera</button>
         <button type="button" class="pag-vista-btn" data-vista="devoluciones" role="tab" aria-selected="false">Devoluciones <span class="pag-vista-num" id="pag-n-devoluciones"></span></button>
     </div>
 
@@ -77,7 +77,7 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="search" id="pag-c-search" placeholder="Buscar por nombre, documento o código..." autocomplete="off" aria-label="Buscar estudiante">
             </div>
-            @foreach(['programa' => 'Todos los programas', 'situacion' => 'Todas las situaciones', 'orden' => 'Más vencido primero'] as $k => $lbl)
+            @foreach(['programa' => 'Todas las carreras', 'situacion' => 'Todas las situaciones', 'orden' => 'Más vencido primero'] as $k => $lbl)
             <div class="app-combobox" id="pag-c-cb-{{ $k }}" data-position="absolute">
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
                     <span data-combobox-label>{{ $lbl }}</span>
@@ -95,7 +95,7 @@
         </div>
         <div class="pag-table-wrap">
             <table class="pag-table">
-                <thead><tr><th>Estudiante</th><th>Programa y grupo</th><th class="num">Vencido</th><th class="num">Este mes</th><th class="num">Por pagar</th><th>Situación</th><th></th></tr></thead>
+                <thead><tr><th>Estudiante</th><th>Carrera y grupo</th><th class="num">Vencido</th><th class="num">Este mes</th><th class="num">Por pagar</th><th>Situación</th><th></th></tr></thead>
                 <tbody id="pag-c-body"></tbody>
             </table>
             <div class="pag-empty" id="pag-c-empty" hidden>
@@ -166,10 +166,10 @@
 
     {{-- ═══════════ Por programa ═══════════ --}}
     <section class="pag-vista" data-panel="programas" hidden>
-        <p class="pag-ayuda">Lo que ha pagado y lo que debe cada programa, con los estudiantes matriculados hoy (activos y aplazados). Haz clic en un programa para ver quién debe.</p>
+        <p class="pag-ayuda">Lo que ha pagado y lo que debe cada carrera, con los estudiantes matriculados hoy (activos y aplazados). Haz clic en una carrera para ver quién debe.</p>
         <div class="pag-table-wrap">
             <table class="pag-table">
-                <thead><tr><th>Programa</th><th class="num">Estudiantes</th><th class="num">Pagado</th><th class="num">Por cobrar</th><th class="num">Vencido</th><th>Recaudado</th><th></th></tr></thead>
+                <thead><tr><th>Carrera</th><th class="num">Estudiantes</th><th class="num">Pagado</th><th class="num">Por cobrar</th><th class="num">Vencido</th><th>Recaudado</th><th></th></tr></thead>
                 <tbody id="pag-p-body"></tbody>
                 <tfoot id="pag-p-foot"></tfoot>
             </table>
@@ -260,8 +260,9 @@
                 <div class="pag-hoja-marca">
                     <img src="{{ asset('assets/img/logo.png') }}" alt="ESAT">
                     <div>
-                        <strong>Escuela Nacional de Educación ESAT</strong>
-                        <span>NIT 900820764-1 · Lic. Funcionamiento 5850</span>
+                        @php $inst = \App\Models\Institucional\Configuracion::institucion(); @endphp{{-- Admin › Configuración --}}
+                        <strong>{{ $inst['nombre'] }}</strong>
+                        <span>NIT {{ $inst['nit'] }} · Lic. Funcionamiento {{ $inst['licencia'] }}</span>
                         @if($sede)
                             <span>Sede {{ $sede->nombre }}@if($sede->ciudad) · {{ $sede->ciudad }}@endif</span>
                         @endif

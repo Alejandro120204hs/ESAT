@@ -58,6 +58,10 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
+            // Cada petición que escribe es una transacción (TransaccionEscritura): con READ COMMITTED, lo que se vuelve a
+            // revisar después de un lockForUpdate ve lo último confirmado y no una foto del inicio de la petición
+            // (dos pagos, matrículas o anulaciones a la vez). Ver M13 en HALLAZGOS.md.
+            'isolation_level' => 'READ COMMITTED',
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
@@ -78,6 +82,10 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
+            // Cada petición que escribe es una transacción (TransaccionEscritura): con READ COMMITTED, lo que se vuelve a
+            // revisar después de un lockForUpdate ve lo último confirmado y no una foto del inicio de la petición
+            // (dos pagos, matrículas o anulaciones a la vez). Ver M13 en HALLAZGOS.md.
+            'isolation_level' => 'READ COMMITTED',
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),

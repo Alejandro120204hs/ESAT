@@ -66,7 +66,7 @@ class InicioService
 
         // Grupos dictando clases hoy y los que están por empezar
         $cursos = Curso::where('sede_id', $sedeId)->with('programa')->get();
-        $enCurso = $cursos->filter(fn (Curso $c) => $c->estado === 'activo' && $c->fecha_inicio?->lte($hoy) && Curso::finPara($c->fecha_inicio, $c->programa)->gt($hoy));
+        $enCurso = $cursos->filter(fn (Curso $c) => $c->estado === 'activo' && $c->fecha_inicio?->lte($hoy) && $c->fin()->gt($hoy));
         $porIniciar = $cursos->filter(fn (Curso $c) => $c->estado === 'planificacion' || ($c->estado === 'activo' && $c->fecha_inicio?->gt($hoy)))->count();
 
         // Estudiantes con algún cobro vencido hoy y al cierre del mes anterior
@@ -83,7 +83,7 @@ class InicioService
                 'foot' => 'Recaudado en '.$hoy->locale('es')->translatedFormat('F').' · '.$finAnterior->locale('es')->translatedFormat('F').' cerró en $ '.number_format($ingresosAntes, 0, ',', '.'),
                 'icon' => 'money', 'color' => 'green', 'title' => 'Frente al mes anterior completo'],
             ['label' => 'Grupos en clases', 'value' => $enCurso->count(), 'delta' => '+'.$porIniciar, 'dir' => 'up',
-                'foot' => 'En '.$enCurso->pluck('programa_id')->unique()->count().' programas · '.$porIniciar.' por iniciar', 'icon' => 'book', 'color' => 'orange',
+                'foot' => 'En '.$enCurso->pluck('programa_id')->unique()->count().' carreras · '.$porIniciar.' por iniciar', 'icon' => 'book', 'color' => 'orange',
                 'title' => 'Grupos por iniciar'],
             ['label' => 'Estudiantes en mora', 'value' => $mora['estudiantes'], 'delta' => $signo($mora['estudiantes'] - $moraAntes['estudiantes']),
                 'dir' => $mora['estudiantes'] <= $moraAntes['estudiantes'] ? 'down' : 'up', 'tono' => $mora['estudiantes'] <= $moraAntes['estudiantes'] ? 'up' : 'down',
@@ -92,8 +92,11 @@ class InicioService
         ];
     }
 
-    /** Cuántos estudiantes tenían un cobro vencido con saldo a la fecha, y cuánto (pagos recibidos hasta ese día). */
-    private function mora(Collection $matriculas, CarbonInterface $d): array
+    /**
+     * Cuántos estudiantes tenían un cobro vencido con saldo a la fecha, y cuánto (lo pagado hasta ese día con
+     * Pago::pagosFechados, que también cuenta lo cubierto con saldo a favor).
+     */
+    public function mora(Collection $matriculas, CarbonInterface $d): array
     {
         $cobros = Pago::whereIn('matricula_id', $matriculas->pluck('id'))->where('estado', '!=', 'anulado')
             ->whereNotNull('fecha_vencimiento')->where('fecha_vencimiento', '<', $d->toDateString())
@@ -104,7 +107,7 @@ class InicioService
             if (! $m || ! $m->fecha_inicio || $m->fecha_inicio->gt($d)) {
                 continue;
             }
-            $pagado = $p->recaudos->filter(fn ($r) => $r->fecha_pago->lte($d))->sum(fn ($r) => (float) $r->pivot->monto);
+            $pagado = collect($p->pagosFechados())->filter(fn ($x) => $x[0] <= $d->toDateString())->sum(1);
             $saldo = (float) $p->monto_total - $pagado;
             if ($saldo > 0.5) {
                 $porMat[$m->estudiante_id] = ($porMat[$m->estudiante_id] ?? 0) + $saldo;
@@ -148,7 +151,8 @@ class InicioService
     {
         $usuarios = User::where('sede_id', $sedeId)->pluck('id');
 
-        return Auditoria::whereIn('user_id', $usuarios)->with('usuario')->latest('created_at')->latest('id')->limit(6)->get()
+        /* Lo que hicieron los usuarios de la sede, más lo que hizo el Admin de ESAT dentro de ella */
+        return Auditoria::where(fn ($q) => $q->whereIn('user_id', $usuarios)->orWhere('sede_id', $sedeId))->with('usuario')->latest('created_at')->latest('id')->limit(6)->get()
             ->map(function (Auditoria $a) {
                 $u = $a->usuario;
                 $ini = mb_strtoupper(mb_substr($u->nombres ?? '', 0, 1).mb_substr($u->apellidos ?? '', 0, 1));
@@ -156,7 +160,7 @@ class InicioService
                 return [
                     'dot'   => ['crear' => 'green', 'activar' => 'green', 'editar' => 'blue', 'desactivar' => 'red', 'eliminar' => 'red'][$a->accion] ?? 'orange',
                     'ini'   => $ini ?: 'A',
-                    'quien' => trim(($u->nombres ?? '').' '.($u->apellidos ?? '')) ?: 'Administración',
+                    'quien' => trim(($u->nombres ?? '').' '.($u->apellidos ?? '')) ?: 'Administrativo',
                     'texto' => $a->descripcion,
                     'time'  => $this->mayuscula(Carbon::parse($a->created_at)->locale('es')->diffForHumans()),
                     'fecha' => Carbon::parse($a->created_at)->locale('es')->translatedFormat('j \d\e F \d\e Y, g:i a'),
@@ -219,6 +223,14 @@ class InicioService
         $tareas = [];
         $asis = $this->asistencia->resumenSede($sedeId, $hoy)['resumen'];
         $cal = $this->calificaciones->resumenSede($sedeId, $hoy)['resumen'];
+
+        // Grupos que siguen en planificación aunque su fecha de inicio ya pasó: el estado se cambia a mano, y mientras tanto
+        // no cuentan como en clases (auditoría 26-11-2026)
+        $atrasados = Curso::where('sede_id', $sedeId)->where('estado', 'planificacion')->whereDate('fecha_inicio', '<', $hoy->toDateString())->count();
+        if ($atrasados) {
+            $tareas[] = ['titulo' => $atrasados === 1 ? '1 grupo ya debía empezar' : "{$atrasados} grupos ya debían empezar",
+                'meta' => 'Siguen en planificación: actívalos o cambia su fecha de inicio', 'tag' => 'Grupos', 'color' => 'orange', 'url' => route('admin.cursos')];
+        }
 
         $reportes = ForoReporte::where('estado', 'pendiente')
             ->whereHas('mensaje', fn ($q) => $q->whereNull('oculto_en')->whereHas('tema', fn ($t) => $t->where('sede_id', $sedeId)))

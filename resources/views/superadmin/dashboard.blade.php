@@ -30,28 +30,28 @@
         $maxIngreso = max(array_column($ingresosPorMes, 'valor'));
 
         $alertas = [
-            'La sede <strong>La Dorada</strong> no tiene administrador asignado.',
+            'La sede <strong>La Dorada</strong> no tiene administrativo asignado.',
             '<strong>3 pagos</strong> llevan más de 30 días vencidos.',
-            'El programa <strong>Sommelier</strong> no tiene periodos académicos configurados.',
+            'La carrera <strong>Sommelier</strong> no tiene periodos académicos configurados.',
             'La cuota del sistema no se ha actualizado en <strong>6 meses</strong>.',
-            '<strong>2 administradores</strong> no han iniciado sesión en 30 días.',
+            '<strong>2 administrativos</strong> no han iniciado sesión en 30 días.',
             'La sede <strong>Sasaima</strong> superó su capacidad de estudiantes.',
             'Hay <strong>5 matrículas</strong> pendientes de aprobación.',
-            'El programa <strong>Barbería</strong> no tiene docente asignado.',
-            'La sede <strong>Bogotá</strong> no tiene programas activos.',
+            'La carrera <strong>Barbería</strong> no tiene docente asignado.',
+            'La sede <strong>Bogotá</strong> no tiene carreras activas.',
             '<strong>1 pago</strong> con método de pago inválido.',
             'La escuela de <strong>Ciencias</strong> no tiene coordinador asignado.',
-            'Hay <strong>2 cuentas</strong> de administrador inactivas hace más de 90 días.',
+            'Hay <strong>2 cuentas</strong> de administrativo inactivas hace más de 90 días.',
         ];
 
         $actividades = [
             ['quien' => 'María Pérez', 'accion' => 'creó la sede Guaduas', 'cuando' => 'Hace 2 horas'],
-            ['quien' => 'Carlos Gómez', 'accion' => 'actualizó el programa Barbería', 'cuando' => 'Hace 5 horas'],
-            ['quien' => 'Diego Hernandez', 'accion' => 'registró un nuevo administrador', 'cuando' => 'Ayer'],
+            ['quien' => 'Carlos Gómez', 'accion' => 'actualizó la carrera Barbería', 'cuando' => 'Hace 5 horas'],
+            ['quien' => 'Diego Hernandez', 'accion' => 'registró un nuevo administrativo', 'cuando' => 'Ayer'],
             ['quien' => 'Diego Hernandez', 'accion' => 'modificó la cuota del sistema a $2.000', 'cuando' => 'Hace 2 días'],
-            ['quien' => 'María Pérez', 'accion' => 'eliminó un programa inactivo', 'cuando' => 'Hace 3 días'],
-            ['quien' => 'Carlos Gómez', 'accion' => 'creó el programa Sommelier', 'cuando' => 'Hace 4 días'],
-            ['quien' => 'Diego Hernandez', 'accion' => 'asignó un docente al programa Barbería', 'cuando' => 'Hace 5 días'],
+            ['quien' => 'María Pérez', 'accion' => 'eliminó una carrera inactiva', 'cuando' => 'Hace 3 días'],
+            ['quien' => 'Carlos Gómez', 'accion' => 'creó la carrera Sommelier', 'cuando' => 'Hace 4 días'],
+            ['quien' => 'Diego Hernandez', 'accion' => 'asignó un docente a la carrera Barbería', 'cuando' => 'Hace 5 días'],
             ['quien' => 'María Pérez', 'accion' => 'actualizó los datos de la sede Bogotá', 'cuando' => 'Hace 6 días'],
             ['quien' => 'Carlos Gómez', 'accion' => 'aprobó 3 matrículas nuevas', 'cuando' => 'Hace 1 semana'],
             ['quien' => 'Diego Hernandez', 'accion' => 'creó la sede La Dorada', 'cuando' => 'Hace 2 semanas'],
@@ -169,8 +169,8 @@
     <div class="app-mini-stats">
         <span><strong>4</strong> sedes</span>
         <span><strong>7</strong> escuelas</span>
-        <span><strong>24</strong> programas</span>
-        <span><strong>3</strong> administradores</span>
+        <span><strong>24</strong> carreras</span>
+        <span><strong>3</strong> administrativos</span>
     </div>
 @endsection
 

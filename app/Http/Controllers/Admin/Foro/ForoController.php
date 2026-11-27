@@ -42,7 +42,7 @@ class ForoController extends Controller
     public function responder(RespuestaRequest $request, ForoTema $tema): JsonResponse
     {
         $t = $this->foro->responder($tema, $request->input('texto'), $request->file('adjunto'));
-        Auditoria::registrar('editar', $t, "Respondió como administración en el tema «{$t->titulo}»: «".Str::limit($request->input('texto'), 80).'».');
+        Auditoria::registrar('editar', $t, "Respondió como administrativo en el tema «{$t->titulo}»: «".Str::limit($request->input('texto'), 80).'».');
 
         return $this->respuesta($t, 'Se publicó tu respuesta.');
     }
@@ -116,7 +116,7 @@ class ForoController extends Controller
 
     private function sedeId(): int
     {
-        $sedeId = auth()->user()->sede_id;
+        $sedeId = auth()->user()->sedeTrabajoId();
         abort_if(! $sedeId, 403, 'Tu usuario no tiene una sede asignada.');
 
         return (int) $sedeId;

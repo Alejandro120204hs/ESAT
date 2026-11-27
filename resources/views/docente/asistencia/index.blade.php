@@ -1,9 +1,8 @@
 {{--
-    Docente · Tomar asistencia — PANTALLA SOLO FRONTEND (maqueta, sin backend todavía).
-    - Los datos salen de public/assets/js/docente/datos-ejemplo.js (window.DOC_DATOS): programas, escuelas y
-      jornadas son reales; grupos, estudiantes, clases y asistencias son FICTICIOS.
-    - Guardar va a window.DOC_API.guardarAsistencia (sessionStorage de esta pestaña) hasta que exista el backend
-      (mismas reglas de AsistenciaService: solo clases dictadas o la de hoy, grupo vigente, excusa con motivo).
+    Docente · Tomar asistencia (Docente/Asistencia/AsistenciaController).
+    - Datos reales de los grupos del docente (PanelDocenteService::datos → window.DOC_SERVIDOR; datos.js).
+    - Guardar: DOC_API.guardarAsistencia → POST docente.asistencia.guardar (AsistenciaRequest: grupo suyo y sin
+      terminar, día de clase del horario y no futuro, toda la lista marcada, excusa con motivo).
     - Enlace directo: /docente/asistencia?grupo=ID&fecha=AAAA-MM-DD (ambos opcionales; lo usa el Inicio).
 --}}
 @extends('docente.layout')
@@ -55,7 +54,6 @@
                     <input type="checkbox" id="tas-solo-sin" role="switch">
                     <span class="tas-switch-track" aria-hidden="true"></span>
                     <span class="tas-switch-txt">Solo sin registrar</span>
-                    <span class="tas-switch-num" id="tas-solo-num"></span>
                 </label>
             </div>
 
@@ -69,6 +67,8 @@
                 <span><i class="tas-ley tas-ley-sin"></i>Sin registrar</span>
                 <span><i class="tas-ley tas-ley-hoy"></i>Hoy</span>
                 <span><i class="tas-ley tas-ley-fut"></i>Futura</span>
+                <span><i class="tas-ley tas-ley-festivo"></i>Festivo</span>
+                <span><i class="tas-ley tas-ley-sinclase"></i>No hubo clase</span>
             </div>
         </section>
 
@@ -93,6 +93,12 @@
                         Todos presentes
                     </button>
                     <span class="tas-tools-hint" id="tas-todos-hint"></span>
+                    <span class="tas-claves" aria-hidden="true">
+                        <span><i class="tas-celda tas-c-P">P</i>presente</span>
+                        <span><i class="tas-celda tas-c-T">T</i>tarde</span>
+                        <span><i class="tas-celda tas-c-A">A</i>ausente</span>
+                        <span><i class="tas-celda tas-c-E">E</i>excusa</span>
+                    </span>
                 </div>
 
                 <div class="tas-confirmar" id="tas-confirmar" hidden>
@@ -148,6 +154,6 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/docente/datos-ejemplo.js') }}?v={{ filemtime(public_path('assets/js/docente/datos-ejemplo.js')) }}"></script>
+@include('docente.partials.datos')
 <script src="{{ asset('assets/js/docente/asistencia.js') }}?v={{ filemtime(public_path('assets/js/docente/asistencia.js')) }}"></script>
 @endpush

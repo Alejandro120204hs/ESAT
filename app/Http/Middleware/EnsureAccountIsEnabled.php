@@ -2,9 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\RolUsuario;
 use App\Models\User;
-use App\Services\Finanzas\PagoService;
+use App\Services\Sistema\BloqueoService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,9 +12,10 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureAccountIsEnabled
 {
     /**
-     * Revisa en cada petición lo mismo que el login: una cuenta desactivada, o un estudiante
-     * con el derecho de matrícula vencido sin pagar, no sigue adentro aunque ya tuviera la
-     * sesión abierta o la cookie de "Recordarme". Cierra la sesión y vuelve al login con el motivo.
+     * Revisa en cada petición lo mismo que el login: una cuenta desactivada o bloqueada no sigue adentro aunque ya
+     * tuviera la sesión abierta o la cookie de "Recordarme". Cierra la sesión y vuelve al login con el motivo.
+     * El derecho de matrícula vencido ya no bloquea (lo pidió el cliente, 24-11-2026): el estudiante entra igual, la
+     * deuda se acumula y no se gradúa sin estar a paz y salvo.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -40,12 +40,11 @@ class EnsureAccountIsEnabled
         if (! $user->activo) {
             return 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.';
         }
-
-        // El derecho de matrícula se paga antes de empezar clases: vencido sin pagar, no se ingresa
-        if ($user->role === RolUsuario::Estudiante && ($derecho = app(PagoService::class)->derechoVencido($user))) {
-            return 'Tu acceso está bloqueado porque el derecho de matrícula venció el '
-                .$derecho->fecha_vencimiento->format('d/m/Y').' sin pagarse. Págalo en la sede de ESAT para volver a ingresar.';
+        // Bloqueada por intentos fallidos o inactividad (Admin › Configuración): no entra hasta que la desbloqueen
+        if (app(BloqueoService::class)->bloqueada($user)) {
+            return BloqueoService::mensaje($user);
         }
+
 
         return null;
     }

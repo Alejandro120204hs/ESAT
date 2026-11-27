@@ -13,7 +13,7 @@ class OcultarMensajeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->route('mensaje')->tema->sede_id === (int) $this->user()->sede_id;
+        return $this->route('mensaje')->tema->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     public function rules(): array

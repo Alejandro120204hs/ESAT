@@ -11,7 +11,7 @@ class CambioGrupoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->route('matricula')->sede_id === (int) $this->user()->sede_id;
+        return $this->route('matricula')->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     public function rules(): array
@@ -32,11 +32,11 @@ class CambioGrupoRequest extends FormRequest
             }
             $g = $this->grupo();
             if (! $g || $g->programa_id !== $m->programa_id || $g->sede_id !== $m->sede_id) {
-                $v->errors()->add('curso_id', 'El grupo debe ser del mismo programa y de tu sede.');
+                $v->errors()->add('curso_id', 'El grupo debe ser de la misma carrera y de tu sede.');
             } elseif ($g->id === $m->curso_id) {
                 $v->errors()->add('curso_id', 'Ya está en ese grupo.');
-            } elseif ($g->estado === 'finalizado') {
-                $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya finalizó.");
+            } elseif ($g->cerrado()) {
+                $v->errors()->add('curso_id', $g->motivoCerrado());
             } elseif ($g->cuposLibres() <= 0) {
                 $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya no tiene cupos libres.");
             }

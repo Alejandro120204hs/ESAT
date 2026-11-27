@@ -13,7 +13,7 @@ class RespuestaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->route('tema')->sede_id === (int) $this->user()->sede_id;
+        return $this->route('tema')->sede_id === (int) $this->user()->sedeTrabajoId();
     }
 
     protected function prepareForValidation(): void

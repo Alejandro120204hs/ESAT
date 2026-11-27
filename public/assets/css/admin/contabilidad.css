@@ -45,13 +45,13 @@
 .con-kpi-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .con-kpi-val { font-family: "Archivo", system-ui; font-size: 1.45rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .con-kpi-lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 3px; }
-.con-kpi-blue   .con-kpi-icon { background: rgba(59,130,246,0.1); color: #2563EB; }
-.con-kpi-blue   .con-kpi-val  { color: #1D4ED8; }
+.con-kpi-blue   .con-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.con-kpi-blue   .con-kpi-val  { color: var(--navy-3); }
 .con-kpi-blue   .con-kpi-val.is-rojo { color: var(--red); }
-.con-kpi-green  .con-kpi-icon { background: rgba(16,185,129,0.1); color: #059669; }
-.con-kpi-green  .con-kpi-val  { color: #065F46; }
-.con-kpi-orange .con-kpi-icon { background: rgba(217,123,46,0.1); color: var(--orange); }
-.con-kpi-orange .con-kpi-val  { color: var(--orange-2); }
+.con-kpi-green  .con-kpi-icon { background: #E6F4E4; color: #2D6A27; }
+.con-kpi-green  .con-kpi-val  { color: #2D6A27; }
+.con-kpi-orange .con-kpi-icon { background: #EEF2F7; color: var(--navy-2); }
+.con-kpi-orange .con-kpi-val  { color: var(--navy-3); }
 .con-kpi-red    .con-kpi-icon { background: rgba(185,28,28,0.08); color: var(--red); }
 .con-kpi-red    .con-kpi-val  { color: var(--red); }
 
@@ -128,7 +128,7 @@
 .con-comprobante { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.84rem; color: var(--navy-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .con-monto { font-family: "Archivo", system-ui; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--navy-3); }
 .con-monto.is-rojo    { color: var(--red); }
-.con-monto.is-verde   { color: #065F46; }
+.con-monto.is-verde   { color: #2D6A27; }
 .con-monto.is-tachado { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 
 /* Acciones */
@@ -218,7 +218,7 @@
 .con-dato-val { font-family: "Archivo", system-ui; font-size: 1.05rem; font-weight: 800; color: var(--navy-3); font-variant-numeric: tabular-nums; }
 .con-dato-val small { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
 .con-dato-val.is-rojo { color: var(--red); }
-.con-dato-val.is-verde { color: #065F46; }
+.con-dato-val.is-verde { color: #2D6A27; }
 .con-dato-txt { font-size: 0.84rem; font-weight: 600; color: var(--navy-3); white-space: pre-line; overflow-wrap: anywhere; }
 
 /* Gráfica: ingresos contra egresos de 6 meses (barras como el Inicio) */
@@ -251,7 +251,7 @@
 }
 .con-chart-mes { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-align: center; text-transform: capitalize; }
 .con-chart-col.is-actual .con-chart-mes { color: var(--navy-3); }
-.con-chart-saldo { font-size: 0.7rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: #065F46; white-space: nowrap; }
+.con-chart-saldo { font-size: 0.7rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; color: #2D6A27; white-space: nowrap; }
 .con-chart-saldo.is-rojo { color: var(--red); }
 
 /* ── Cajón lateral ──────────────────────────────────── */
