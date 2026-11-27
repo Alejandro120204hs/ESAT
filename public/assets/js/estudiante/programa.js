@@ -97,7 +97,10 @@
             } else if (e === 'habilito') {
                 txt = '<p class="mpr-mod-txt">Lo perdiste con ' + esc(nota(m.n)) + ' y lo aprobaste en la habilitación el ' + esc(fechaCorta(m.fechaHab)) + '.</p>';
             } else if (e === 'no_cursado') {
-                txt = '<p class="mpr-mod-txt">Terminó antes de tu matrícula en este grupo.</p>';
+                // No coincide con las fechas en que estuvo en el grupo (llegó después, o estaba aplazado o retirado)
+                txt = '<p class="mpr-mod-txt">' + (m.fin && m.fin < D.hoy
+                    ? 'Pasó cuando no estabas en este grupo: antes de que llegaras o mientras tu matrícula no estaba activa.'
+                    : 'No lo cursas mientras tu matrícula no esté activa.') + '</p>';
             } else if (e === 'reprobado') {
                 txt = '<p class="mpr-mod-txt">No aprobaste la habilitación. El administrativo te dirá cómo repetir el módulo.</p>';
             }
@@ -257,7 +260,7 @@
     });
 
     /* ── Boletín imprimible ───────────────────── */
-    var ESTADO_DOC = { aprobado: 'Aprobado', habilito: 'Aprobado (habilitación)', por_habilitar: 'Por habilitar', reprobado: 'Reprobado', sin_nota: 'Sin nota', en_curso: 'En curso', por_iniciar: 'Por iniciar' };
+    var ESTADO_DOC = { aprobado: 'Aprobado', habilito: 'Aprobado (habilitación)', por_habilitar: 'Por habilitar', reprobado: 'Reprobado', sin_nota: 'Sin nota', en_curso: 'En curso', por_iniciar: 'Por iniciar', no_cursado: 'No cursado' };
     $('mpr-imprimir').addEventListener('click', function () {
         var E = D.estudiante, A = D.asistencia, e = window.EST_DOC.esc;
         var filas = D.modulos.map(function (m) {

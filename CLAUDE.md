@@ -195,6 +195,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   `ValidationException`; la Form Request sola no basta. Una matrícula vigente por estudiante también la exige la BD
   (`matriculas.vigente_de`, columna calculada: no se escribe; al insertar por SQL, nombrar las columnas). Códigos y
   consecutivos nuevos: `Configuracion::bloquear()`. Un choque de índice único responde 409 (`bootstrap/app.php`).
+  Las escrituras del estudiante en el Aula bloquean su fila de `users` y su matrícula (en ese orden) y leen la evaluación o
+  la actividad con bloqueo **compartido** (todo el grupo responde a la vez); la hora de llegada se toma antes de esperar
+  bloqueos y el archivo se guarda antes de la transacción (auditoría del panel Estudiante, ES16).
 - Los datos de prueba se insertan **directo en la BD** (no seeders), sin
   marcarlos como ficticios.
 - Datos propios de un rol van en una tabla de perfil 1 a 1 con `users`
@@ -238,6 +241,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   dos usan `PagoService::elegirPlan` (matrícula bloqueada; solo activa, con grupo y sin plan; elegido, no cambia), que
   genera las cuotas **desde el inicio de clases** (`primeraCuota`: el día 10 del mes en que empieza el grupo, o del
   siguiente si empieza después del 10; las que ya pasaron quedan vencidas) y lo registra en la auditoría de la matrícula.
+  Si se aplazó y volvió, el plan cobra **lo mismo que si lo hubiera elegido desde el principio**
+  (`PagoService::tramosDeCuotas`: las cuotas que vencían hasta el aplazamiento y las que faltan desde el reintegro con
+  `primeraCuotaDesde`, la misma del reintegro; `fechasCuotas` da esas fechas para el aviso de vencidas, ES11).
 - **Matrículas** (`Admin/Matriculas/MatriculaController` + `PagoController`, `Academico/MatriculaService`,
   `Finanzas/PagoService`): la matrícula **guarda su grupo** (`matriculas.curso_id`; `curso_estudiante`
   sigue siendo la lista del grupo y se mantiene sincronizada). Una matrícula **vigente** (activa o
@@ -421,7 +427,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cierra la sesión abierta (y con ella la cookie "Recordarme") y vuelve al login
   con el motivo; a un `fetch` le responde 401. La regla vive en un solo lugar,
   `EnsureAccountIsEnabled::motivo()`, y `LoginRequest` usa la misma: si se agrega otra razón para
-  bloquear el acceso, va ahí. `User::$attributes` pone `activo = true` también en memoria; en
+  bloquear el acceso, va ahí. El bloqueo **por intentos fallidos** solo frena los ingresos nuevos: una sesión ya abierta
+  (o la cookie "Recordarme") sigue (`motivo($user, enSesion: true)` en cada petición), para que nadie saque a otra
+  persona escribiendo mal su clave (ES4). `User::$attributes` pone `activo = true` también en memoria; en
   pruebas, un modelo que otra petición cambió hay que `refresh()`-arlo antes de `update()`.
   `pagos:vencer` está programado en `routes/console.php`, pero nada ejecuta el scheduler.
 - `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
@@ -458,7 +466,9 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (sus clases de todos los grupos) y Reportes (`pasos` de cada matrícula). Las matrículas de un grupo, también las que ya
   se cambiaron: `Curso::matriculasEnGrupo()` (cargar `matriculas` y `matriculasDelHistorial` con `grupos`). Quien se cambió
   aparece en el grupo viejo como **"trasladado"** ("Cambió de grupo", solo consulta); su docente viejo solo califica los
-  módulos que terminó antes de irse (`NotasRequest`). Pruebas en `tests/Feature/Admin/HistorialGruposMatriculaTest.php`.
+  módulos que terminó antes de irse (`NotasRequest`). Un módulo sin nota que no se cruza con ninguna ventana es
+  **`no_cursado`** (`Matricula::cruzaVentanas`, la regla de `cursoAqui` del docente) en el panel del estudiante y en
+  Calificaciones: no es pendiente del docente (ES10). Pruebas en `tests/Feature/Admin/HistorialGruposMatriculaTest.php`.
 - **Festivos y "No hubo clase"** (decidido con el usuario el 27-11-2026): `App\Support\Festivos` calcula los festivos de
   Colombia (ley Emiliani, Pascua por Meeus); `config('academico.festivos')` los apaga (las pruebas de fechas fijas lo hacen).
   El docente marca "No hubo clase" con motivo (`POST docente/asistencia/{curso}/sin-clase` y `/con-clase` para deshacer,
@@ -524,12 +534,14 @@ sus comunicados, foro y perfil en `tests/Feature/Docente/ComunicacionDocenteTest
 el Aula en Notas y lo que imprime en `tests/Feature/Docente/AulaMaterialTest.php`.
 Panel Estudiante: acceso por rol, redirección y su perfil en `tests/Feature/Estudiante/PanelEstudianteTest.php`; lo
 que ve y lo que guarda (plan de pago —también el que elige la Secretaría—, comunicados leídos, foro, evaluaciones,
-entregas y lo que crea y califica el docente en su Aula virtual) en `tests/Feature/Estudiante/BackendEstudianteTest.php`.
+entregas y lo que crea y califica el docente en su Aula virtual) en `tests/Feature/Estudiante/BackendEstudianteTest.php`;
+la auditoría del panel (HALLAZGOS §11: correctas en la gracia, reabrir, sesión, otras deudas, aplazado, plan tras reintegro,
+grupo anterior, archivos, límites, foro) en `tests/Feature/Estudiante/AuditoriaEstudianteTest.php`.
 Sitio público (una página por programa y escuela, rutas de siempre, cierre del footer):
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (casi todas las 372 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 405 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
 
 ## Páginas de error
@@ -781,12 +793,17 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     límite** (`evaluaciones.duracion_minutos`, `Evaluacion::DURACIONES` o sin límite). Con tiempo, el estudiante ve las
     preguntas al pulsar Comenzar (`POST estudiante/aula/evaluaciones/{id}/iniciar`, tabla `evaluacion_intentos`: abrirla
     otra vez no reinicia el reloj); su tiempo termina en `Evaluacion::terminaPara` (nunca después del cierre), el reloj usa
-    los segundos que da el servidor (`intento.restante`), lo marcado se guarda en `sessionStorage` y al llegar a cero se
-    envía solo: lo que falte queda con `respuestas_estudiante.opcion_id` null y cuenta como malo (60 s de gracia,
-    `GRACIA_SEGUNDOS`). Quien la comenzó y no envió a tiempo queda sin responder. Una evaluación **ya comenzada o
-    respondida se corrige** (textos, cierre —se puede conservar uno vencido— y la respuesta correcta, que recalcula
-    `es_correcta` de quienes ya respondieron) pero no se agregan ni quitan preguntas u opciones, no cambia el tiempo y no se
-    elimina. Pruebas en `tests/Feature/Docente/EvaluacionesTest.php`.
+    los segundos que da el servidor (`intento.restante`), lo marcado se guarda en `localStorage` (clave
+    `aul-marcas-{estudiante}-{evaluación}`, una marca por pregunta: dos pestañas se juntan; se borra al terminar, al abrir
+    el Aula si ya no sirve y al cerrar sesión) y al llegar a cero se envía solo: lo que falte queda con
+    `respuestas_estudiante.opcion_id` null y cuenta como malo (60 s de gracia, `GRACIA_SEGUNDOS`; un envío que falla por
+    red, sesión o servidor se reintenta cada 5 s dentro de la gracia y conserva las marcas; agotada, queda sin responder).
+    Quien la comenzó y no envió a tiempo queda sin responder (salir de la página con el tiempo corriendo pregunta antes).
+    Las correctas le llegan al estudiante solo **pasada la gracia** (`Evaluacion::correctasVisibles`, ES1). Una evaluación
+    **ya comenzada o respondida se corrige** (textos, cierre —se puede conservar uno vencido— y la respuesta correcta, que
+    recalcula `es_correcta` de quienes ya respondieron) pero no se agregan ni quitan preguntas u opciones, no cambia el
+    tiempo y no se elimina. Una que **ya cerró no cambia su cierre** (`Evaluacion::NO_REABRIR`, en la Form Request y en el
+    servicio, ES2): para dar más tiempo se publica otra. Pruebas en `tests/Feature/Docente/EvaluacionesTest.php`.
   - **Comunicados** (`comunicados/index`, `com-`, `Docente/Comunicados/ComunicadoController` +
     `Comunicacion/ComunicadoDocenteService`, decidido con el usuario el 24-11-2026): pestaña Recibidos (lo que la
     secretaría o el Admin manda a toda la sede o a los docentes; lista + lector del Estudiante, abrir lo marca leído) y Mis
@@ -850,7 +867,11 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
   vigente y cuenta activa); foro de su sede sin lo oculto. Cada vista lo pasa con `@include('estudiante.partials.datos')`
   (`window.EST_SERVIDOR`: datos, institución de Admin › Configuración, sede, logo y rutas) y
   `public/assets/js/estudiante/datos.js` arma `EST_DATOS` y `EST_API` (`fetch` con CSRF; 401/419 recarga, 422 muestra el
-  primer error). Toda escritura responde `{ok, mensaje, datos}` y `datos.js` reemplaza `EST_DATOS` sin recargar.
+  primer error; 409/429/500 con mensaje propio). Toda escritura responde `{ok, mensaje, datos}` y `datos.js` reemplaza
+  `EST_DATOS` sin recargar. El foro (lo más pesado) solo se arma en su pantalla y sus escrituras (`datos(..., conForo:
+  true)`; en las demás `foro` es null, ES15). Las escrituras tienen **límite de frecuencia** por estudiante
+  (`AppServiceProvider::limitarEscrituras`: `throttle:estudiante` 60/min; `throttle:estudiante-publicar` —temas,
+  respuestas y reportes del foro, entregas— 10/min y 100/día; ES14).
 - Pantallas (cada una con su Blade/CSS/JS y su prefijo):
   - **Inicio** (`dashboard`, `ini-`): saludo con resumen, clase de hoy, tu avance (promedio, módulos aprobados,
     asistencia), pendientes con enlace (por responder y entregar, por habilitar, pagos, comunicados sin leer) y el horario
@@ -864,13 +885,19 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
     mínimo 1,0) y las correctas solo viajan **después del cierre**; una actividad recibe y **cambia su archivo hasta la fecha
     límite** o hasta que el docente la califique (PDF, Word, JPG o PNG, ≤ 10 MB, disco privado `aula/{sede}/actividad-{id}`;
     el archivo viejo se borra después de guardar); ninguna calcula la nota del módulo (la sigue poniendo el docente en
-    Notas). Solo responde o entrega quien tiene la matrícula **activa** en el grupo. `?id=evaluacion-ID` o
+    Notas). Solo responde o entrega quien tiene la matrícula **activa** en el grupo. El Aula es la de su grupo y la de
+    los grupos de su historial (`AulaService::paraMatricula`): cada ítem trae `participa` (puede responder o entregar),
+    `grupo` (grupo anterior) y `leToco` (estuvo abierto mientras estaba en el grupo); lo demás es **Solo consulta**, no
+    cuenta como pendiente ni como "no respondida", y `aulaMotivo` dice por qué (aplazado, retirado, graduado; ES9, ES12).
+    Archivos: el anterior se borra cuando la petición confirma y el nuevo si se deshace (`borrarAlConfirmar`, ES13).
+    `?id=evaluacion-ID` o
     `?id=actividad-ID` (evaluaciones y actividades son tablas distintas y repiten números), `?modulo=ID`. Pestaña
     **Material** (27-11-2026) con lo que sube el docente, y la guía de cada actividad en su cajón.
   - **Mis pagos** (`pagos/index`, `pag-`): solo consulta (se paga en la sede): elegir el plan una vez (`POST
     estudiante/pagos/plan`, `PagoService::elegirPlan`, con aviso de las cuotas que ya vencieron y confirmación), estado de
     cuenta (a pagar este mes, próxima cuota, pagado), cobros y recibos imprimibles con la hoja del recibo de la secretaría.
-    Constancia y paz y salvo: en la secretaría.
+    Lo que debe en **otras matrículas** (una retirada que quedó debiendo) sale aparte (`pagos.otras`, aviso en Mis pagos y
+    pendiente en el Inicio, ES5). Constancia y paz y salvo: en la secretaría.
   - **Comunicados** (`comunicados/index`, `com-`): lista + lector; se marca leído al abrir
     (`comunicado_lecturas`, `insertOrIgnore`: la primera lectura no cambia); adjunto por `estudiante.comunicados.adjunto`.
     Uno que no le corresponde responde 404. `?id=ID`.

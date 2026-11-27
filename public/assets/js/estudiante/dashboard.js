@@ -105,15 +105,20 @@
     /* ── Pendientes ───────────────────────────── */
     function pendientes() {
         var tareas = [], hab = [], pagos = [], leer = [];
-        D.evaluaciones.forEach(function (e) { if (!e.respuesta && !e.cerrada) tareas.push(e); });
-        D.actividades.forEach(function (a) { if (!a.entrega && !a.cerrada) tareas.push(a); });
+        // Solo lo que puede hacer: matrícula activa en su grupo actual y sin el tiempo vencido (ES9)
+        D.evaluaciones.forEach(function (e) { if (e.participa && !e.respuesta && !e.cerrada && !(e.intento && e.intento.expirada)) tareas.push(e); });
+        D.actividades.forEach(function (a) { if (a.participa && !a.entrega && !a.cerrada) tareas.push(a); });
         tareas.sort(function (a, b) { return a.cierra < b.cierra ? -1 : 1; });
-        D.modulos.forEach(function (m) { if (m.estadoNota === 'por_habilitar') hab.push(m); });
+        // La habilitación es después de que el módulo termina (como para su docente)
+        D.modulos.forEach(function (m) { if (m.estadoNota === 'por_habilitar' && m.estado === 'terminado') hab.push(m); });
 
         var P = D.pagos, R = P ? P.resumen : null;
         if (P && P.puedeElegir) pagos.push({ tipo: 'plan' });
         if (R && R.vencido > 0) pagos.push({ tipo: 'vencido' });
         else if (P && P.plan && R.proxima && diasEntre(D.hoy, R.proxima.vence) <= 7) pagos.push({ tipo: 'pronto' });
+        // Lo vencido de otra matrícula (una retirada que quedó debiendo) también se cobra (ES5)
+        var otras = P && P.otras ? P.otras.filter(function (o) { return o.vencido > 0; }) : [];
+        if (otras.length) pagos.push({ tipo: 'otra', otras: otras });
 
         D.comunicados.forEach(function (c) { if (!c.leido) leer.push(c); });
         return { tareas: tareas, hab: hab, pagos: pagos, leer: leer, total: tareas.length + hab.length + pagos.length + leer.length };
@@ -248,6 +253,12 @@
                 return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-pend" aria-hidden="true">' + ICON.plata + '</span>',
                     'Elige tu plan de pago', 'Mensual o ' + D.pagos.opciones.periodo.nombre.toLowerCase() + '. Sin plan no se generan tus cuotas');
             }
+            if (x.tipo === 'otra') {
+                var debe = x.otras.reduce(function (s, o) { return s + o.vencido; }, 0);
+                return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
+                    'Tienes ' + plata(debe) + ' vencido en ' + (x.otras.length === 1 ? 'tu otra matrícula' : 'tus otras matrículas'),
+                    x.otras.map(function (o) { return o.programa; }).join(', ') + ' · se paga en la sede');
+            }
             var venc = D.pagos.cobros.filter(function (c) { return c.estado === 'vencido'; });
             if (x.tipo === 'vencido') {
                 return itemHtml(URL.pagos, '<span class="ini-ficha ini-ficha-riesgo" aria-hidden="true">' + ICON.plata + '</span>',
@@ -294,6 +305,17 @@
         var ses = M.horario.map(function (h) { return { h: h, d: h.diaIso - 1, ini: minutos(h.ini), fin: minutos(h.fin) }; })
             .filter(function (s) { return s.d >= 0 && s.d <= 5; });
         var grid = $('ini-sem'), lista = $('ini-sem-lista');
+        // Un grupo sin horario todavía (se publica aparte en Horarios): sin esta guarda el rango de horas no termina (ES3)
+        var vacio = !ses.length;
+        $('ini-sem-empty').hidden = !vacio;
+        grid.hidden = vacio;
+        lista.hidden = vacio;
+        if (vacio) {
+            $('ini-horario-sub').textContent = G.jornada + ' · ' + G.nombre + ' (' + G.codigo + ')';
+            grid.innerHTML = '';
+            lista.innerHTML = '';
+            return;
+        }
         var horas = ses.reduce(function (s, x) { return s + x.fin - x.ini; }, 0);
         $('ini-horario-sub').textContent = plural(ses.length, 'clase', 'clases') + ' a la semana · ' + duracion(horas) + ' · ' + G.jornada + ' · ' + G.nombre + ' (' + G.codigo + ')';
 

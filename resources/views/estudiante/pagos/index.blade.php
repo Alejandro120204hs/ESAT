@@ -40,6 +40,9 @@
         </div>
     </section>
 
+    {{-- Lo que debe en otras matrículas (también se cobra y sin eso no hay paz y salvo) --}}
+    <div class="pag-aviso pag-aviso-riesgo app-anim app-anim-d1" id="pag-otras" hidden></div>
+
     {{-- Estado de cuenta --}}
     <section class="pag-card pag-cuenta app-anim app-anim-d1" id="pag-cuenta" aria-label="Estado de cuenta"></section>
 

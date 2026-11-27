@@ -72,6 +72,13 @@ class EvaluacionRequest extends AulaRequest
             if ($v->errors()->isNotEmpty()) {
                 return;
             }
+            // Una evaluación que ya cerró no se reabre: sus estudiantes ya pudieron ver las correctas (ES2)
+            $actual = $this->route('evaluacion');
+            if ($actual instanceof Evaluacion && $actual->cerrada() && ! $this->mismoCierre()) {
+                $v->errors()->add('cierra', Evaluacion::NO_REABRIR);
+
+                return;
+            }
             foreach ($this->input('preguntas') as $i => $p) {
                 $correctas = count(array_filter($p['opciones'], fn ($o) => $o['correcta']));
                 if ($correctas !== 1) {

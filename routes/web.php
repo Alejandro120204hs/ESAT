@@ -321,24 +321,25 @@ Route::middleware(['auth', 'role:estudiante', 'transaccion'])->prefix('estudiant
     Route::get('programa', [EstudianteProgramaController::class, 'index'])->name('programa');
 
     Route::get('aula', [EstudianteAulaController::class, 'index'])->name('aula');
-    Route::post('aula/evaluaciones/{evaluacion}/iniciar', [EstudianteAulaController::class, 'iniciar'])->whereNumber('evaluacion')->name('aula.iniciar');
-    Route::post('aula/evaluaciones/{evaluacion}/respuestas', [EstudianteAulaController::class, 'responder'])->whereNumber('evaluacion')->name('aula.responder');
-    Route::post('aula/actividades/{actividad}/entrega', [EstudianteAulaController::class, 'entregar'])->whereNumber('actividad')->name('aula.entregar');
+    // Escrituras con límite de frecuencia por estudiante (AppServiceProvider::limitarEscrituras, ES14)
+    Route::post('aula/evaluaciones/{evaluacion}/iniciar', [EstudianteAulaController::class, 'iniciar'])->whereNumber('evaluacion')->middleware('throttle:estudiante')->name('aula.iniciar');
+    Route::post('aula/evaluaciones/{evaluacion}/respuestas', [EstudianteAulaController::class, 'responder'])->whereNumber('evaluacion')->middleware('throttle:estudiante')->name('aula.responder');
+    Route::post('aula/actividades/{actividad}/entrega', [EstudianteAulaController::class, 'entregar'])->whereNumber('actividad')->middleware('throttle:estudiante-publicar')->name('aula.entregar');
     Route::get('aula/entregas/{entrega}/archivo', [EstudianteAulaController::class, 'archivo'])->whereNumber('entrega')->name('aula.archivo');
     Route::get('aula/actividades/{actividad}/guia', [EstudianteAulaController::class, 'guia'])->whereNumber('actividad')->name('aula.guia');
     Route::get('aula/materiales/{material}/archivo', [EstudianteAulaController::class, 'material'])->whereNumber('material')->name('aula.material');
 
     Route::get('pagos', [EstudiantePagoController::class, 'index'])->name('pagos');
-    Route::post('pagos/plan', [EstudiantePagoController::class, 'plan'])->name('pagos.plan');
+    Route::post('pagos/plan', [EstudiantePagoController::class, 'plan'])->middleware('throttle:estudiante')->name('pagos.plan');
 
     Route::get('comunicados', [EstudianteComunicadoController::class, 'index'])->name('comunicados');
-    Route::post('comunicados/{comunicado}/leido', [EstudianteComunicadoController::class, 'leido'])->whereNumber('comunicado')->name('comunicados.leido');
+    Route::post('comunicados/{comunicado}/leido', [EstudianteComunicadoController::class, 'leido'])->whereNumber('comunicado')->middleware('throttle:estudiante')->name('comunicados.leido');
     Route::get('comunicados/{comunicado}/adjunto', [EstudianteComunicadoController::class, 'adjunto'])->whereNumber('comunicado')->name('comunicados.adjunto');
 
     Route::get('foro', [EstudianteForoController::class, 'index'])->name('foro');
-    Route::post('foro/temas', [EstudianteForoController::class, 'tema'])->name('foro.tema');
-    Route::post('foro/temas/{tema}/mensajes', [EstudianteForoController::class, 'responder'])->whereNumber('tema')->name('foro.responder');
-    Route::post('foro/mensajes/{mensaje}/reportes', [EstudianteForoController::class, 'reportar'])->whereNumber('mensaje')->name('foro.reportar');
+    Route::post('foro/temas', [EstudianteForoController::class, 'tema'])->middleware('throttle:estudiante-publicar')->name('foro.tema');
+    Route::post('foro/temas/{tema}/mensajes', [EstudianteForoController::class, 'responder'])->whereNumber('tema')->middleware('throttle:estudiante-publicar')->name('foro.responder');
+    Route::post('foro/mensajes/{mensaje}/reportes', [EstudianteForoController::class, 'reportar'])->whereNumber('mensaje')->middleware('throttle:estudiante-publicar')->name('foro.reportar');
     Route::get('foro/mensajes/{mensaje}/adjunto', [EstudianteForoController::class, 'adjunto'])->whereNumber('mensaje')->name('foro.adjunto');
 });
 

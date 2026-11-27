@@ -55,9 +55,10 @@ class PagoService
     /**
      * Crea las cuotas que le faltan al plan de pago (todas al elegir el plan; las restantes
      * al reintegrarse), con el descuento de la matrícula. La primera vence el día 10 del mes de $desde.
+     * Con $hasta solo crea las que vencen hasta ese día (un tramo antes de un aplazamiento, ver tramosDeCuotas).
      * Devuelve cuántas creó. Sin plan elegido no hay cuotas.
      */
-    public function generarCuotas(Matricula $matricula, CarbonInterface $desde): int
+    public function generarCuotas(Matricula $matricula, CarbonInterface $desde, ?string $hasta = null): int
     {
         $plan = $matricula->plan_pago;
         if (! $plan) {
@@ -72,6 +73,7 @@ class PagoService
         [$base, $sistema] = $this->valoresCuota($programa, $plan, $precio);
         $inicio = Carbon::parse($desde)->startOfMonth();
 
+        $creadas = 0;
         for ($i = 0; $i < $faltan; $i++) {
             $numero = $vigentes + $i + 1;
             // Por periodo: cada cuota vence al empezar su periodo y cobra la cuota del sistema de los meses que dura
@@ -80,6 +82,9 @@ class PagoService
             }
             $meses  = $plan === 'mensual' ? $i : $programa->inicioDelPeriodo($numero - 1) - $programa->inicioDelPeriodo($vigentes);
             $vence  = $inicio->copy()->addMonthsNoOverflow($meses)->day(Pago::DIA_VENCIMIENTO);
+            if ($hasta !== null && $vence->toDateString() > $hasta) {
+                break;
+            }
             // La última cuota absorbe los pesos que sobran al repartir el precio
             $valor     = $numero === $total ? $precio - $base * ($total - 1) : $base;
             $descuento = $this->descuentoDe($valor, (float) $matricula->descuento_pct);
@@ -99,11 +104,12 @@ class PagoService
                 'estado'            => $cobra <= 0 ? 'pagado' : ($vence->lt(today()) ? 'vencido' : 'pendiente'),
                 'fecha_pago'        => $cobra <= 0 ? today() : null,
             ]);
+            $creadas++;
         }
         // Lo trasladado (cambio de programa, reintegro) se aplica en cuanto hay cuotas
         $this->aplicarSaldoFavor($matricula->fresh());
 
-        return max(0, $faltan);
+        return $creadas;
     }
 
     /**
@@ -122,10 +128,81 @@ class PagoService
     }
 
     /**
+     * Primera cuota de quien vuelve a clases el $fecha (reintegro): la que vence el día 10 a partir de esa fecha, y nunca
+     * antes de que empiecen las clases de $grupo. La usan el reintegro (MatriculaService) y elegirPlan.
+     */
+    public function primeraCuotaDesde(CarbonInterface|string $fecha, Curso $grupo): CarbonInterface
+    {
+        $desde = Carbon::parse($fecha)->startOfDay();
+        if ($desde->day > Pago::DIA_VENCIMIENTO) {
+            $desde->addMonthNoOverflow();
+        }
+        $primera = $this->primeraCuota($grupo);
+
+        return $primera->gt($desde) ? Carbon::parse($primera) : $desde;
+    }
+
+    /**
+     * Tramos en que se cobran las cuotas de un plan elegido ahora: lo mismo que habría pasado con el plan elegido desde el
+     * principio (ES11). Sin aplazamientos, un tramo desde primeraCuota del grupo. Si se aplazó y volvió, el primer tramo
+     * cobra las cuotas que vencían hasta el aplazamiento (las demás se habrían anulado, anularCuotasFuturas) y cada
+     * reintegro cobra las que faltan desde primeraCuotaDesde, como el reintegro. Cada tramo: ['desde' => fecha, 'hasta' =>
+     * último día incluido o null]. Lee el historial de grupos de la matrícula: un aplazamiento deja un hueco entre pasos.
+     */
+    public function tramosDeCuotas(Matricula $m): array
+    {
+        $pasos = $m->grupos()->with('curso')->orderBy('desde')->orderBy('id')->get();
+        if ($pasos->isEmpty()) {
+            return [['desde' => $this->primeraCuota($m->curso), 'hasta' => null]];
+        }
+        $tramos = [];
+        foreach ($pasos as $i => $p) {
+            $previo = $i > 0 ? $pasos[$i - 1] : null;
+            if (! $previo || ($previo->hasta && $previo->hasta->lt($p->desde))) {
+                $tramos[] = ['inicio' => $p->desde, 'reintegro' => (bool) $previo, 'curso' => $p->curso, 'hasta' => null];
+            }
+            $k = count($tramos) - 1;
+            // Un cambio de grupo antes del primer aplazamiento: las cuotas siguen al grupo nuevo (reprogramarCuotas)
+            if (! $tramos[$k]['reintegro']) {
+                $tramos[$k]['curso'] = $p->curso;
+            }
+            $tramos[$k]['hasta'] = $p->hasta?->toDateString();
+        }
+        $tramos[count($tramos) - 1]['hasta'] = null;
+
+        return array_map(fn (array $t) => [
+            'desde' => $t['reintegro'] ? $this->primeraCuotaDesde($t['inicio'], $t['curso']) : $this->primeraCuota($t['curso']),
+            'hasta' => $t['hasta'],
+        ], $tramos);
+    }
+
+    /** Fechas de vencimiento de las cuotas que crearía elegir ahora el $plan (las mismas cuentas de generarCuotas). */
+    public function fechasCuotas(Matricula $m, string $plan): array
+    {
+        $programa = $m->programa;
+        $total = $plan === 'mensual' ? (int) $programa->duracion_meses : (int) $programa->duracion_periodos;
+        $fechas = [];
+        foreach ($this->tramosDeCuotas($m) as $t) {
+            $inicio = Carbon::parse($t['desde'])->startOfMonth();
+            $base = count($fechas);
+            for ($k = $base; $k < $total; $k++) {
+                $meses = $plan === 'mensual' ? $k - $base : $programa->inicioDelPeriodo($k) - $programa->inicioDelPeriodo($base);
+                $vence = $inicio->copy()->addMonthsNoOverflow($meses)->day(Pago::DIA_VENCIMIENTO);
+                if ($t['hasta'] !== null && $vence->toDateString() > $t['hasta']) {
+                    break;
+                }
+                $fechas[] = $vence;
+            }
+        }
+
+        return $fechas;
+    }
+
+    /**
      * Elige el plan de pago de la matrícula (una sola vez: no cambia después) y genera todas sus cuotas desde la primera
-     * del grupo (primeraCuota). Lo eligen el estudiante desde su panel o, si todavía no lo eligió, la secretaría desde
-     * Matrículas. Se vuelve a revisar con la matrícula bloqueada: otra persona pudo elegirlo al mismo tiempo (M13).
-     * Devuelve cuántas cuotas creó.
+     * del grupo (primeraCuota), o por tramos si se aplazó y volvió (tramosDeCuotas). Lo eligen el estudiante desde su
+     * panel o, si todavía no lo eligió, la secretaría desde Matrículas. Se vuelve a revisar con la matrícula bloqueada:
+     * otra persona pudo elegirlo al mismo tiempo (M13). Devuelve cuántas cuotas creó.
      */
     public function elegirPlan(Matricula $matricula, string $plan, bool $porLaSecretaria = false): int
     {
@@ -134,6 +211,8 @@ class PagoService
         }
 
         return DB::transaction(function () use ($matricula, $plan, $porLaSecretaria) {
+            // Orden de M13: el estudiante antes que su matrícula
+            User::whereKey($matricula->estudiante_id)->lockForUpdate()->first();
             $m = Matricula::whereKey($matricula->id)->lockForUpdate()->firstOrFail();
             if ($m->plan_pago) {
                 throw ValidationException::withMessages(['plan' => 'El plan de pago ya se eligió y no se puede cambiar.']);
@@ -147,11 +226,15 @@ class PagoService
             }
 
             $m->update(['plan_pago' => $plan]);
-            $n = $this->generarCuotas($m->fresh(), $this->primeraCuota($grupo));
+            $tramos = $this->tramosDeCuotas($m);
+            $n = 0;
+            foreach ($tramos as $t) {
+                $n += $this->generarCuotas($m->fresh(), $t['desde'], $t['hasta']);
+            }
             $m->loadMissing('programa');
             $nombre = $plan === 'mensual' ? 'mensual' : ($m->programa->tipo_periodo === 'semestre' ? 'semestral' : 'trimestral');
             Auditoria::registrar('editar', $m, ($porLaSecretaria ? 'Eligió por el estudiante el plan de pago ' : 'Eligió su plan de pago ')
-                .$nombre.': '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').' desde el '.$this->primeraCuota($grupo)->format('d/m/Y').'.', $m->sede_id);
+                .$nombre.': '.$n.' '.($n === 1 ? 'cuota' : 'cuotas').' desde el '.Carbon::parse($tramos[0]['desde'])->format('d/m/Y').'.', $m->sede_id);
 
             return $n;
         });

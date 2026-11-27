@@ -54,6 +54,7 @@
 
 /* Avisos */
 .pag-aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: 0.86rem; line-height: 1.5; }
+.pag-aviso[hidden] { display: none; }
 .pag-aviso svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pag-aviso-neutro { background: #EEF3FA; color: var(--navy-2); }
 .pag-aviso-riesgo { background: #FEF2F2; color: #991B1B; }

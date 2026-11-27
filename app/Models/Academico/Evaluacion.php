@@ -46,10 +46,22 @@ class Evaluacion extends Model
         return $this->belongsTo(ProgramaModulo::class, 'programa_modulo_id');
     }
 
-    /** Ya pasó la fecha límite: no recibe respuestas y se pueden ver las correctas. */
+    /**
+     * Ya pasó la fecha límite: no recibe respuestas (salvo la gracia del envío automático de quien estaba dentro de su
+     * tiempo) y su cierre ya no se cambia (las correctas pudieron verse).
+     */
     public function cerrada(): bool
     {
         return $this->fecha_limite->lte(now());
+    }
+
+    /**
+     * Las respuestas correctas se pueden mostrar: ya cerró y pasó la gracia, así que nadie puede enviar todavía con ellas
+     * a la vista (auditoría del panel Estudiante, ES1). La usan el servidor y el texto de aula.js (verCorrectas).
+     */
+    public function correctasVisibles(?DateTimeInterface $ahora = null): bool
+    {
+        return Carbon::instance($ahora ?? now())->gt($this->fecha_limite->copy()->addSeconds(self::GRACIA_SEGUNDOS));
     }
 
     /** Nota de una evaluación de selección múltiple: 5,0 × aciertos ÷ preguntas, con un decimal y mínimo 1,0 (24-11-2026). */
@@ -65,6 +77,9 @@ class Evaluacion extends Model
 
     /** Minutos que puede escoger el docente (null = sin límite). */
     public const DURACIONES = [10, 15, 20, 30, 45, 60, 90, 120];
+
+    /** Por qué no se cambia el cierre de una evaluación que ya cerró (lo dicen la Form Request y el servicio). */
+    public const NO_REABRIR = 'Esta evaluación ya cerró y sus estudiantes pueden ver las respuestas correctas: su cierre no se cambia. Para dar más tiempo publica una nueva.';
 
     /** Segundos de más que se aceptan al enviar cuando se acabó el tiempo (lo que tarda en llegar el envío automático). */
     public const GRACIA_SEGUNDOS = 60;

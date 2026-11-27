@@ -209,6 +209,21 @@ class Matricula extends Model
         return $out;
     }
 
+    /**
+     * ¿Un módulo que corrió de $ini a $fin pasó (al menos en parte) mientras estaba en el grupo? Si no, no lo cursó allí
+     * y su docente no puede calificarlo: la misma regla de `cursoAqui` (docente/datos.js) y NotasRequest (ES10).
+     */
+    public static function cruzaVentanas(array $ventanas, string $ini, string $fin): bool
+    {
+        foreach ($ventanas as $v) {
+            if ($v['desde'] <= $fin && (! $v['hasta'] || $ini < $v['hasta'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** ¿Ese día contaba en ese grupo? */
     public static function enVentanas(array $ventanas, string $fecha): bool
     {

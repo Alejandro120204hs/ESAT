@@ -940,7 +940,7 @@
                     (progP.meses_ultimo && progP.meses_ultimo !== progP.meses_periodo ? ' (la última cubre ' + progP.meses_ultimo + (progP.meses_ultimo === 1 ? ' mes)' : ' meses)') : '')]
             ];
             accionTtl.textContent = 'Elegir el plan de pago';
-            accionSub.textContent = 'Lo normal es que ' + primerNombre(m) + ' lo elija desde su panel. Elígelo aquí solo si ya lo acordaron: después no se puede cambiar. Las cuotas cuentan desde el inicio de clases del grupo, así que las que ya pasaron quedan vencidas.';
+            accionSub.textContent = 'Lo normal es que ' + primerNombre(m) + ' lo elija desde su panel. Elígelo aquí solo si ya lo acordaron: después no se puede cambiar. Las cuotas cuentan desde el inicio de clases (o, si se aplazó y volvió, como si lo hubiera elegido desde el principio), así que las que ya pasaron quedan vencidas.';
             accionCuerpo.innerHTML = '<div class="mat-opciones" role="radiogroup" aria-label="Plan de pago">' + opcPlan.map(function (o) {
                 return '<label class="mat-opc"><input type="radio" name="acc-plan" value="' + o[0] + '"><span class="mat-opc-main">' +
                     '<span class="mat-opc-top"><strong>' + esc(o[1]) + '</strong></span><span class="mat-opc-desc">' + esc(o[2]) + '. Antes de descuentos y con la cuota del sistema.</span></span></label>';

@@ -21,7 +21,7 @@ class EnsureAccountIsEnabled
     {
         $user = $request->user();
 
-        if ($user && ($motivo = self::motivo($user))) {
+        if ($user && ($motivo = self::motivo($user, enSesion: true))) {
             Auth::guard('web')->logout(); // también cambia el remember_token: la cookie deja de servir
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -34,17 +34,20 @@ class EnsureAccountIsEnabled
         return $next($request);
     }
 
-    /** Por qué esta cuenta no puede estar adentro (null = sí puede). Lo usan el login y cada petición. */
-    public static function motivo(User $user): ?string
+    /**
+     * Por qué esta cuenta no puede estar adentro (null = sí puede). Lo usan el login y cada petición ($enSesion).
+     * El bloqueo por intentos fallidos solo frena los ingresos nuevos: si cortara la sesión abierta, cualquiera que sepa
+     * el correo de otra persona la sacaría con cinco claves malas, incluso en plena evaluación (auditoría, ES4).
+     */
+    public static function motivo(User $user, bool $enSesion = false): ?string
     {
         if (! $user->activo) {
             return 'Tu cuenta está desactivada. Comunícate con la sede de ESAT para activarla.';
         }
         // Bloqueada por intentos fallidos o inactividad (Admin › Configuración): no entra hasta que la desbloqueen
-        if (app(BloqueoService::class)->bloqueada($user)) {
+        if (app(BloqueoService::class)->bloqueada($user) && ! ($enSesion && $user->motivo_bloqueo === 'intentos_fallidos')) {
             return BloqueoService::mensaje($user);
         }
-
 
         return null;
     }

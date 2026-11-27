@@ -113,6 +113,7 @@
 }
 .aul-empty[hidden] { display: none; }
 .aul-empty-icono { width: 48px; height: 48px; margin-bottom: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #E6F4E4; color: #2D6A27; }
+.aul-empty-icono.is-neutro { background: #EAF0F8; color: var(--navy-2); }
 .aul-empty-icono svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .aul-empty-ttl { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1rem; color: var(--navy-3); }
 .aul-empty-sub { font-size: 0.88rem; color: var(--muted); max-width: 52ch; line-height: 1.5; }

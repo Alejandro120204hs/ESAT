@@ -469,7 +469,9 @@
         }) : [preguntaVacia()];
         var cuerpo = '<div class="dau-campo"><label for="dau-f-titulo">Título</label><input class="dau-input" id="dau-f-titulo" maxlength="150" value="' + esc(ev ? ev.titulo : '') + '" placeholder="Ej.: Quiz de señales de tránsito"></div>' +
             '<div class="dau-fila"><div class="dau-campo"><label for="dau-f-modulo">Módulo</label><select class="dau-input" id="dau-f-modulo">' + opcionesModulo(g, ev && ev.moduloId) + '</select></div>' +
-                '<div class="dau-campo"><label for="dau-f-cierra">Cierra</label><input class="dau-input" id="dau-f-cierra" type="datetime-local" value="' + esc(ev ? aLocal(ev.cierra) : enUnaSemana()) + '"></div></div>' +
+                // Una evaluación que ya cerró no se reabre: sus estudiantes ya pudieron ver las correctas
+                '<div class="dau-campo"><label for="dau-f-cierra">Cierra</label><input class="dau-input" id="dau-f-cierra" type="datetime-local" value="' + esc(ev ? aLocal(ev.cierra) : enUnaSemana()) + '"' +
+                    (ev && ev.cerrada ? ' disabled aria-describedby="dau-f-cierra-ayuda"><span class="dau-ayuda" id="dau-f-cierra-ayuda">Ya cerró: para dar más tiempo publica una nueva.</span>' : '>') + '</div></div>' +
             '<div class="dau-campo"><label for="dau-f-duracion">Tiempo para responder</label><select class="dau-input" id="dau-f-duracion"' + (bloqueada ? ' disabled' : '') + '>' +
                 '<option value="">Sin límite (hasta el cierre)</option>' + DURACIONES.map(function (m) {
                     return '<option value="' + m + '"' + (ev && ev.duracion === m ? ' selected' : '') + '>' + (m < 60 ? m + ' minutos' : (m === 60 ? '1 hora' : (m / 60).toString().replace('.', ',') + ' horas')) + '</option>';
@@ -477,7 +479,7 @@
                 '<span class="dau-ayuda">' + (bloqueada ? 'Alguien ya la comenzó: el tiempo no se cambia.' : 'Con tiempo, cada estudiante ve las preguntas al comenzarla y se envía sola cuando se acaba.') + '</span></div>' +
             '<div class="dau-campo"><label for="dau-f-desc">Descripción <span class="dau-ayuda">(opcional)</span></label><textarea class="dau-input" id="dau-f-desc" maxlength="1000" rows="2" placeholder="Qué evalúa y cómo se responde">' + esc(ev ? ev.descripcion : '') + '</textarea></div>' +
             (bloqueada
-                ? '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Ya la comenzaron o la respondieron: puedes <b>corregir los textos, el cierre y la respuesta correcta</b>. Si cambias la correcta se recalculan las notas de quienes ya respondieron. No se pueden agregar ni quitar preguntas u opciones.</p></div>'
+                ? '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Ya la comenzaron o la respondieron: puedes <b>corregir los textos, el cierre (mientras no haya cerrado) y la respuesta correcta</b>. Si cambias la correcta se recalculan las notas de quienes ya respondieron. No se pueden agregar ni quitar preguntas u opciones.</p></div>'
                 : '<div class="dau-aviso dau-aviso-neutro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><p>Cada estudiante la responde una sola vez; la nota sale sola (5,0 × aciertos ÷ preguntas) y ve las respuestas correctas después del cierre. Después podrás corregir los textos y la respuesta correcta.</p></div>') +
             '<div><p class="dau-seccion-titulo">Preguntas</p><ol class="dau-pregs" id="dau-pregs"></ol></div>' +
             (bloqueada ? '' : '<button type="button" class="dau-btn dau-btn-ghost dau-btn-sm" id="dau-f-mas">' + ICON.mas + 'Agregar pregunta</button>') +

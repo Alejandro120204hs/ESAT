@@ -55,7 +55,8 @@ class ForoTema extends Model
 
     public function primerMensaje(): ?ForoMensaje
     {
-        return $this->mensajes()->first();
+        // Con los mensajes ya cargados (foro del panel) no se consulta otra vez por cada tema (auditoría, ES15)
+        return $this->relationLoaded('mensajes') ? $this->mensajes->sortBy('id')->first() : $this->mensajes()->first();
     }
 
     public function cerrado(): bool

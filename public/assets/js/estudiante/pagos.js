@@ -96,6 +96,19 @@
             });
     });
 
+    /* ── Lo que debe en otras matrículas (ES5) ── */
+    var ESTADO_OTRA = { activo: 'activa', aplazado: 'aplazada', retirado: 'retirada', graduado: 'graduada' };
+    function pintarOtras() {
+        var otras = D.pagos.otras || [], el = $('pag-otras');
+        el.hidden = !otras.length;
+        if (!otras.length) { el.innerHTML = ''; return; }
+        var total = otras.reduce(function (s, o) { return s + o.porPagar; }, 0);
+        el.innerHTML = ICON.alerta + '<p>Además debes <b>' + esc(plata(total)) + '</b> de ' + (otras.length === 1 ? 'tu otra matrícula' : 'tus otras matrículas') + ': ' +
+            otras.map(function (o) {
+                return esc(o.programa + ' (' + (ESTADO_OTRA[o.estado] || o.estado) + ')' + (o.vencido > 0 ? ', ' + plata(o.vencido) + ' ya vencido' : ''));
+            }).join('; ') + '. Se paga en la administración de tu sede y sin eso no recibes el paz y salvo.</p>';
+    }
+
     /* ── Estado de cuenta ─────────────────────── */
     function pintarCuenta() {
         var P = D.pagos, R = P.resumen, cont = $('pag-cuenta');
@@ -103,7 +116,7 @@
         var venc = P.cobros.filter(function (c) { return c.estado === 'vencido'; });
         var subPagar = R.vencido > 0
             ? (venc.length === 1 ? venc[0].concepto + ': venció el ' + fechaSinAnio(venc[0].vence) : plural(venc.length, 'cobro vencido', 'cobros vencidos'))
-            : (R.aPagar > 0 ? 'Vence este mes' : 'Estás al día');
+            : (R.aPagar > 0 ? 'Vence este mes' : ((P.otras || []).length ? 'Al día en esta matrícula' : 'Estás al día'));
         var total = R.pagado + R.porPagar, pct = total ? Math.round(R.pagado * 100 / total) : 0;
         var px = R.proxima;
         cont.innerHTML =
@@ -263,6 +276,7 @@
 
     function render() {
         pintarPlan();
+        pintarOtras();
         pintarCuenta();
         pintarCobros();
         pintarRecibos();

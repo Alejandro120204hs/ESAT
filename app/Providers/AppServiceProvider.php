@@ -7,10 +7,13 @@ use App\Models\User;
 use App\Services\Sistema\BloqueoService;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\MigrationStarted;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -33,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->protegerMigraciones();
         $this->registrarIngresoRecordado();
+        $this->limitarEscrituras();
 
         // Un usuario ya logueado que visita /login (middleware 'guest')
         // cae en su propio panel según el rol, no en el dashboard
@@ -85,6 +89,22 @@ class AppServiceProvider extends ServiceProvider
                 $bloqueos->ingresoCorrecto($evento->user);
             }
         });
+    }
+
+    /**
+     * Cuántas escrituras puede hacer cada estudiante (auditoría del panel Estudiante, ES14). 'estudiante': todo lo que
+     * guarda (abrir comunicados, comenzar y responder, el plan). 'estudiante-publicar': lo que sube archivos o lo ven
+     * otros (temas, respuestas y reportes del foro, entregas), para que un bucle no llene el disco ni el foro de la sede.
+     * Al pasarse responde 429 y el panel dice "Vas muy rápido" (datos.js).
+     */
+    private function limitarEscrituras(): void
+    {
+        $quien = fn (Request $r) => (string) ($r->user()?->id ?? $r->ip());
+        RateLimiter::for('estudiante', fn (Request $r) => Limit::perMinute(60)->by('est:'.$quien($r)));
+        RateLimiter::for('estudiante-publicar', fn (Request $r) => [
+            Limit::perMinute(10)->by('pub-min:'.$quien($r)),
+            Limit::perDay(100)->by('pub-dia:'.$quien($r)),
+        ]);
     }
 
     /**

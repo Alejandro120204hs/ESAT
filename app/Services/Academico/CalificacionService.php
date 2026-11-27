@@ -189,9 +189,9 @@ class CalificacionService
     {
         $e = $m->estudiante;
         $porModulo = $m->calificaciones->keyBy('programa_modulo_id');
-        // Desde que llegó a este grupo (historial de grupos): lo que terminó aquí antes no lo cursó en este grupo
-        $ventanas = $m->ventanasEn($curso);
-        $desde = $ventanas ? $ventanas[0]['desde'] : $m->fecha_inicio->toDateString();
+        // Cuándo estuvo en este grupo (historial de grupos, hasta que se aplazó o retiró): un módulo sin nota que no pasó en
+        // esas fechas no lo cursó aquí y no es pendiente de su docente (la regla de NotasRequest y docente/datos.js, ES10)
+        $ventanas = $m->ventanasEn($curso) ?: [['desde' => $m->fecha_inicio->toDateString(), 'hasta' => null]];
 
         $notas = []; $estados = []; $finales = [];
         $aprob = 0; $porHab = 0; $reprob = 0;
@@ -206,7 +206,8 @@ class CalificacionService
                 $reprob += $estado === 'reprobado' ? 1 : 0;
             } else {
                 $notas[] = null;
-                $estado = $mod['estado'] !== 'terminado' ? $mod['estado'] : ($mod['fin'] < $desde ? 'no_cursado' : 'sin_nota');
+                $estado = ! Matricula::cruzaVentanas($ventanas, $mod['ini'], $mod['fin']) ? 'no_cursado'
+                    : ($mod['estado'] !== 'terminado' ? $mod['estado'] : 'sin_nota');
             }
             $estados[] = $estado;
         }

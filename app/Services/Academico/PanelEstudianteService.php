@@ -35,6 +35,13 @@ class PanelEstudianteService
 
     private const DIA_ISO = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
 
+    /** Por qué no responde ni entrega en el Aula (solo con la matrícula activa, AulaService::matriculaActivaEn). */
+    private const AULA_SIN_MATRICULA_ACTIVA = [
+        'aplazado' => 'Tu matrícula está aplazada: puedes consultar tu Aula, pero no responder ni entregar hasta que te reintegres.',
+        'retirado' => 'Te retiraste de la carrera: puedes consultar tu Aula, pero ya no responder ni entregar.',
+        'graduado' => 'Ya te graduaste: tu Aula queda para consulta.',
+    ];
+
     private const ROL = ['admin' => 'Administrativo', 'admin_general' => 'Admin', 'docente' => 'Docente', 'superadmin' => 'Administrativo'];
 
     public function __construct(
@@ -60,7 +67,11 @@ class PanelEstudianteService
         return $this->estudiantes->matriculaVigente($estudiante);
     }
 
-    public function datos(User $estudiante, ?CarbonInterface $ahora = null): array
+    /**
+     * Todo lo que leen las pantallas del panel. El foro de la sede (lo más pesado y crece sin límite) solo se arma para la
+     * pantalla del foro y sus escrituras ($conForo); las demás no lo usan (auditoría, ES15).
+     */
+    public function datos(User $estudiante, ?CarbonInterface $ahora = null, bool $conForo = false): array
     {
         $ahora ??= now();
         $estudiante->loadMissing('sede');
@@ -81,11 +92,13 @@ class PanelEstudianteService
         $a['situacion'] = AsistenciaService::situacion($a['pct']);
 
         $conNota = collect($modulos)->whereNotNull('nota');
-        $aula = $m && $curso && $m->estado !== 'anulado' ? $this->aula->paraEstudiante($estudiante, $curso, $ahora) : ['evaluaciones' => [], 'actividades' => [], 'materiales' => []];
+        // El Aula de su grupo y la de los grupos por los que pasó; solo con la matrícula activa responde y entrega (ES9, ES12)
+        $aula = $m ? $this->aula->paraMatricula($estudiante, $m, $ahora) : ['evaluaciones' => [], 'actividades' => [], 'materiales' => []];
 
         return [
             'hoy'          => $ahora->toDateString(),
             'estudiante'   => [
+                'id'        => $estudiante->id,
                 'nombres'   => $estudiante->nombres,
                 'apellidos' => $estudiante->apellidos,
                 'sede'      => $estudiante->sede?->nombre,
@@ -101,9 +114,10 @@ class PanelEstudianteService
             'evaluaciones' => $aula['evaluaciones'],
             'actividades'  => $aula['actividades'],
             'materiales'   => $aula['materiales'],
-            'pagos'        => $m ? $this->pagosDe($m, $curso) : null,
+            'aulaMotivo'   => $m && $m->estado !== 'activo' ? (self::AULA_SIN_MATRICULA_ACTIVA[$m->estado] ?? null) : null,
+            'pagos'        => $m ? $this->pagosDe($m, $curso, $estudiante) : null,
             'comunicados'  => $this->comunicados($estudiante, $m),
-            'foro'         => $this->foro->panel($estudiante, 'estudiante.foro.adjunto'),
+            'foro'         => $conForo ? $this->foro->panel($estudiante, 'estudiante.foro.adjunto') : null,
             // Abrir temas, responder y reportar: solo con matrícula vigente (los Form Requests del foro lo exigen)
             'participaForo' => ExigeMatriculaVigente::participa($estudiante),
         ];
@@ -147,19 +161,21 @@ class PanelEstudianteService
     {
         $notas = $m->calificaciones->keyBy('programa_modulo_id');
         $fechas = $curso ? collect($this->calificaciones->fechasModulos($curso, $ahora))->keyBy('id') : collect();
-        // Desde que llegó a su grupo (historial de grupos): lo que terminó allí antes y no tiene nota no lo cursó en él
+        // Cuándo estuvo en su grupo (historial de grupos, hasta que se aplazó o retiró): un módulo sin nota que no pasó en
+        // esas fechas no lo cursó allí, igual que para su docente (ES10)
+        // Sin ninguna ventana en el grupo (por ejemplo, se aplazó antes de que empezara) no cursó nada en él; sin grupo, los
+        // módulos no tienen fechas y no se comparan
         $ventanas = $curso ? $m->ventanasEn($curso) : [];
-        $desde = $ventanas ? $ventanas[0]['desde'] : $m->fecha_inicio->toDateString();
 
-        return $m->programa->modulos->values()->map(function ($mod, int $i) use ($notas, $fechas, $desde) {
+        return $m->programa->modulos->values()->map(function ($mod, int $i) use ($notas, $fechas, $ventanas) {
             $f = $fechas->get($mod->id);
             /** @var Calificacion|null $c */
             $c = $notas->get($mod->id);
             $estado = $f['estado'] ?? 'por_iniciar';
             $n = $c?->nota !== null ? round((float) $c->nota, 1) : null;
             $h = $c?->habilitacion !== null ? round((float) $c->habilitacion, 1) : null;
-            $estadoNota = $n !== null ? $c->estado()
-                : ($estado === 'terminado' ? ($f && $f['fin'] < $desde ? 'no_cursado' : 'sin_nota') : $estado);
+            $cruza = ! $f || Matricula::cruzaVentanas($ventanas, $f['ini'], $f['fin']);
+            $estadoNota = $n !== null ? $c->estado() : (! $cruza ? 'no_cursado' : ($estado === 'terminado' ? 'sin_nota' : $estado));
 
             return [
                 'id'         => $mod->id,
@@ -236,7 +252,7 @@ class PanelEstudianteService
 
     /* ── Pagos ─────────────────────────────────────────────────────────── */
 
-    private function pagosDe(Matricula $m, ?Curso $curso): array
+    private function pagosDe(Matricula $m, ?Curso $curso, User $estudiante): array
     {
         $programa = $m->programa;
         $resumen = $this->pagos->resumen($m);
@@ -274,11 +290,12 @@ class PanelEstudianteService
             'cuotaSistema'  => (int) round(Programa::cuotaSistemaMensual()),
             'descuentoPct'  => (float) $m->descuento_pct,
             'opciones'      => $curso ? $this->opcionesPlan($m, $curso) : null,
-            'vencidasSiElige' => $curso ? [
+            'vencidasSiElige' => $curso && ! $m->plan_pago && $m->estado === 'activo' ? [
                 'mensual' => $this->cuotasVencidasSiElige($m, $curso, 'mensual'),
                 'periodo' => $this->cuotasVencidasSiElige($m, $curso, 'periodo'),
             ] : ['mensual' => 0, 'periodo' => 0],
             'cobros'        => $cobros->all(),
+            'otras'         => $this->otrasDeudas($estudiante, $m),
             'recibos'       => $m->recaudos->sortByDesc(fn (Recaudo $r) => [$r->fecha_pago->timestamp, $r->id])->values()
                 ->map(fn (Recaudo $r) => [
                     'numero'     => $r->recibo,
@@ -301,6 +318,21 @@ class PanelEstudianteService
                 'proxima'  => $proxima,
             ],
         ];
+    }
+
+    /**
+     * Lo que debe en sus otras matrículas (por ejemplo una retirada que quedó debiendo): la cartera de un estudiante suma
+     * todas sus matrículas, la administración se lo cobra y sin eso no hay paz y salvo (auditoría, ES5).
+     */
+    private function otrasDeudas(User $estudiante, Matricula $m): array
+    {
+        return $estudiante->matriculas->where('id', '!=', $m->id)->where('estado', '!=', 'anulado')
+            ->map(function (Matricula $o) {
+                $r = $this->pagos->resumen($o);
+
+                return ['programa' => $o->programa->nombre, 'estado' => $o->estado, 'vencido' => $r['saldo_vencido'], 'porPagar' => $r['por_pagar']];
+            })
+            ->filter(fn (array $o) => $o['porPagar'] > 0)->values()->all();
     }
 
     /** Lo que costaría cada plan (las cuotas las genera PagoService::generarCuotas con estos mismos valores). */
@@ -333,18 +365,8 @@ class PanelEstudianteService
     /** Cuántas cuotas quedarían vencidas de una vez si elige ese plan hoy (cuentan desde el inicio de clases). */
     private function cuotasVencidasSiElige(Matricula $m, Curso $curso, string $plan): int
     {
-        $programa = $m->programa;
-        $primera = $this->pagos->primeraCuota($curso);
-        $cuotas = $plan === 'mensual' ? (int) $programa->duracion_meses : (int) $programa->duracion_periodos;
-        $n = 0;
-        for ($i = 0; $i < $cuotas; $i++) {
-            $meses = $plan === 'mensual' ? $i : $programa->inicioDelPeriodo($i);
-            if ($primera->copy()->addMonthsNoOverflow($meses)->lt(today())) {
-                $n++;
-            }
-        }
-
-        return $n;
+        // Las mismas fechas que crearía elegirPlan (también después de un reintegro, ES11)
+        return count(array_filter($this->pagos->fechasCuotas($m, $plan), fn ($f) => $f->lt(today())));
     }
 
     /* ── Comunicados y foro ─────────────────────────────────────────────── */

@@ -95,7 +95,11 @@
         return fetch(url, { method: 'POST', headers: headers, body: esForm ? cuerpo : JSON.stringify(cuerpo || {}), credentials: 'same-origin' })
             .then(function (r) {
                 // Sesión vencida o cuenta desactivada: el login dice el motivo
-                if (r.status === 401 || r.status === 419) { window.location.reload(); return { ok: false, mensaje: 'Tu sesión terminó. Vuelve a ingresar.' }; }
+                if (r.status === 401 || r.status === 419) {
+                    window.EST_RECARGANDO = true;
+                    window.location.reload();
+                    return { ok: false, mensaje: 'Tu sesión terminó. Vuelve a ingresar.', status: r.status };
+                }
                 return r.json().catch(function () { return {}; }).then(function (j) {
                     if (r.ok && j.ok) {
                         if (j.datos) poner(j.datos);
@@ -106,12 +110,16 @@
                     var mensaje = k ? errores[k][0]
                         : (r.status === 403 ? (j.message && j.message !== 'This action is unauthorized.' ? j.message : 'No tienes permiso para hacer esto.')
                         : r.status === 404 ? 'Ya no existe. Recarga la página.'
+                        : r.status === 409 ? (j.message || 'Alguien acaba de guardar lo mismo. Recarga la página.')
                         : r.status === 413 ? 'El archivo pesa demasiado.'
+                        : r.status === 429 ? 'Vas muy rápido: espera un momento y vuelve a intentarlo.'
+                        : r.status >= 500 ? 'Algo falló en el servidor. Intenta de nuevo en un momento.'
                         : 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.');
-                    return { ok: false, mensaje: mensaje };
+                    // status: 422 = el servidor lo rechazó; 0 = no hubo respuesta (sin conexión)
+                    return { ok: false, mensaje: mensaje, status: r.status };
                 });
             })
-            .catch(function () { return { ok: false, mensaje: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' }; });
+            .catch(function () { return { ok: false, mensaje: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.', status: 0 }; });
     }
     function form(campos) {
         var f = new FormData();

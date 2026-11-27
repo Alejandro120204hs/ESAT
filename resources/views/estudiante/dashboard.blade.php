@@ -81,6 +81,13 @@
         </div>
         <div class="ini-sem" id="ini-sem"></div>
         <div class="ini-sem-lista" id="ini-sem-lista"></div>
+        <div class="ini-empty" id="ini-sem-empty" hidden>
+            <div class="ini-empty-icono ini-empty-calma" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <p class="ini-empty-titulo">Tu grupo todavía no tiene horario</p>
+            <p class="ini-empty-txt">Cuando la administración de tu sede lo publique, tus clases de la semana aparecerán aquí.</p>
+        </div>
     </section>
 </div>
 @endsection

@@ -27,7 +27,7 @@ class ForoController extends Controller
 
     public function index(): View
     {
-        return view('estudiante.foro.index', ['datos' => $this->panel->datos(auth()->user())]);
+        return view('estudiante.foro.index', ['datos' => $this->panel->datos(auth()->user(), conForo: true)]);
     }
 
     public function tema(TemaRequest $request): JsonResponse
@@ -64,6 +64,6 @@ class ForoController extends Controller
 
     private function respuesta(string $mensaje, array $extra = []): JsonResponse
     {
-        return response()->json(['ok' => true, 'mensaje' => $mensaje, 'datos' => $this->panel->datos(User::findOrFail(auth()->id()))] + $extra);
+        return response()->json(['ok' => true, 'mensaje' => $mensaje, 'datos' => $this->panel->datos(User::findOrFail(auth()->id()), conForo: true)] + $extra);
     }
 }

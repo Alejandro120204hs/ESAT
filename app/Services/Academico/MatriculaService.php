@@ -150,15 +150,7 @@ class MatriculaService
                 $this->pagos->recuperarAdelantado($matricula->fresh());
                 // La siguiente cuota vence el día 10: si ya pasó este mes, empieza el próximo; y nunca antes de que empiecen
                 // las clases del grupo al que vuelve
-                $desde = Carbon::parse($fecha);
-                if ($desde->day > Pago::DIA_VENCIMIENTO) {
-                    $desde->addMonthNoOverflow();
-                }
-                $primera = $this->pagos->primeraCuota($matricula->fresh()->curso);
-                if ($primera->gt($desde)) {
-                    $desde = Carbon::parse($primera);
-                }
-                $this->pagos->generarCuotas($matricula->fresh(), $desde);
+                $this->pagos->generarCuotas($matricula->fresh(), $this->pagos->primeraCuotaDesde($fecha, $matricula->fresh()->curso));
             }
         });
     }
