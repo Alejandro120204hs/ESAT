@@ -31,7 +31,7 @@
                             mio, mensajes[{id, autor{nombre, rol (e|d|a|x), yo}, fecha, texto, adjunto|null, reportado}]}]}
      EST_DATOS.reglas      {APRUEBA, MINIMO, estadoNota, notaFinal, porcentaje, situacion, notaEvaluacion}
      EST_DATOS.limites     {archivo (10 MB), adjunto (5 MB)}
-     EST_API.elegirPlan(plan) · responderEvaluacion(id, {preguntaId: opcionId}) · entregarActividad(id, File)
+     EST_API.elegirPlan(plan) · iniciarEvaluacion(id) · responderEvaluacion(id, {preguntaId: opcionId}) · entregarActividad(id, File)
      EST_API.marcarLeido(id) · abrirTema({categoria, titulo, texto, adjunto: File|null})
      EST_API.responderTema(id, {texto, adjunto: File|null}) · reportar(mensajeId, motivo)
        → Promise {ok, mensaje[, tema]}
@@ -68,6 +68,9 @@
         D.clases = D.clases || [];
         D.evaluaciones = D.evaluaciones || [];
         D.actividades = D.actividades || [];
+        D.materiales = D.materiales || [];
+        // Evaluación con tiempo: cuándo se acaba según el reloj del servidor (restante en segundos), no el del computador
+        D.evaluaciones.forEach(function (ev) { if (ev.intento && ev.intento.restante != null) ev.intento.finEn = Date.now() + ev.intento.restante * 1000; });
         D.comunicados = D.comunicados || [];
         D.foro = D.foro || { categorias: [], claves: {}, temas: [] };
         D.asistencia = D.asistencia || { P: 0, T: 0, A: 0, E: 0, sinRegistrar: 0, pct: null, situacion: 'sin_datos' };
@@ -119,6 +122,7 @@
     window.EST_API = {
         elegirPlan: function (plan) { return enviar(RUTAS.plan, { plan: plan }); },
         responderEvaluacion: function (id, marcadas) { return enviar(ruta('responder', id), { respuestas: marcadas }); },
+        iniciarEvaluacion: function (id) { return enviar(ruta('iniciar', id), {}); },
         entregarActividad: function (id, archivo) { return enviar(ruta('entregar', id), form({ archivo: archivo })); },
         marcarLeido: function (id) { return enviar(ruta('leido', id), {}); },
         abrirTema: function (t) {

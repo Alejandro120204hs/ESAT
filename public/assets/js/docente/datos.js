@@ -18,10 +18,13 @@
                                 estudiantes[...], activos, graduados, pct, bajoMinimo,
                                 modulosSinNota[{modulo, faltan}], porHabilitar }
        estudiante:            { id, matriculaId, nombres, apellidos, tipoDoc, documento, edad, menor, telefono,
-                                acudiente|null, matricula{codigo, fecha, estado, estadoFecha},
-                                desde, hasta, asistencia{P, T, A, E, pct, situacion},
+                                contacto{nombre, celular, parentesco}|null, matricula{codigo, fecha, estado, estadoFecha},
+                                desde, hasta, ventanas[{desde, hasta}], asistencia{P, T, A, E, pct, situacion},
+                                (estado "trasladado" = se cambió a otro grupo: su paso por este queda de consulta)
                                 notas{moduloId: {n, h, estado}}, promedio }
-       clase.estado:          registrada · sin_registrar · hoy (todavía no termina) · futura
+       clase.estado:          registrada · sin_registrar · hoy (todavía no termina) · futura · festivo (sin asistencia
+                              tomada: no cuenta) · sin_clase (el docente marcó "No hubo clase"); clase.festivo = su nombre,
+                              clase.motivo = por qué no hubo clase (27-11-2026, Curso::claseEn)
        nota.estado:           aprobado · habilito · por_habilitar · reprobado · sin_nota · no_cursado · por_iniciar
      DOC_DATOS.planilla(grupo, fecha)  estudiantes que deben aparecer en la lista de esa clase
      DOC_DATOS.registros(grupoId, fecha)  { estudianteId: {estado, motivo} } o null
@@ -29,6 +32,7 @@
      DOC_DATOS.APRUEBA (3.0) · MINIMO (80) · ESTADOS_ASISTENCIA
      DOC_API.guardarAsistencia(grupoId, fecha, {estId: {estado, motivo}})  → Promise {ok, mensaje}
      DOC_API.guardarNotas(grupoId, moduloId, {estId: {n, h}})               → Promise {ok, mensaje}
+     DOC_API.marcarSinClase(grupoId, fecha, motivo) · quitarSinClase(grupoId, fecha) → Promise {ok, mensaje}
    ========================================================= */
 (function () {
     'use strict';
@@ -48,6 +52,7 @@
     function minAhora() { var a = new Date(); return a.getHours() * 60 + a.getMinutes(); }
 
     var hoyStr = S.hoy || ymd(new Date());
+    var FESTIVOS = S.festivos || {};   // {fecha: nombre} de Colombia (App\Support\Festivos)
 
     /* ── Lo registrado: asistencia por grupo y fecha, notas por grupo y módulo ── */
     var base = { registros: S.registros || {}, notas: S.notas || {} };
@@ -85,17 +90,34 @@
 
     function registrosDe(gid, fecha) { return (base.registros[gid] && base.registros[gid][fecha]) || null; }
     function notasDe(gid, mid) { return (base.notas[gid] && base.notas[gid][mid]) || {}; }
-    function enVentana(e, fecha) { return fecha >= e.desde && !(e.hasta && fecha >= e.hasta); }
+    // El módulo pasó (al menos en parte) mientras estaba en el grupo
+    function cursoAqui(e, m) {
+        var v = e.ventanas || [{ desde: e.desde, hasta: e.hasta }];
+        return v.some(function (x) { return x.desde <= m.fin && (!x.hasta || m.ini < x.hasta); });
+    }
+    // Le toca al docente de este grupo ponerle la nota: activo, o se cambió de grupo después de terminar el módulo aquí
+    function pendienteAqui(e, m) {
+        return e.matricula.estado === 'activo' || (e.matricula.estado === 'trasladado' && e.hasta && m.fin < e.hasta);
+    }
+    // ¿Ese día contaba en el grupo? ventanas = sus pasos por el grupo (Matricula::ventanasEn): un cambio de grupo o un
+    // aplazamiento dejan huecos, y nadie va en la lista de una clase de antes de llegar
+    function enVentana(e, fecha) {
+        var v = e.ventanas || [{ desde: e.desde, hasta: e.hasta }];
+        return v.some(function (x) { return fecha >= x.desde && !(x.hasta && fecha >= x.hasta); });
+    }
 
     /* ── Lo que se deriva (se recalcula después de cada guardado) ── */
     function calcular() {
         grupos.forEach(function (g) {
-            var hechas = g._clases.filter(dictada);
+            var sinClase = g.sinClase || {};
+            // Un festivo sin asistencia y un día marcado "No hubo clase" no cuentan como clase (Curso::claseEn)
+            var hechas = g._clases.filter(function (c) { return dictada(c) && !sinClase[c.fecha] && (!FESTIVOS[c.fecha] || registrosDe(g.id, c.fecha)); });
             g.moduloActual = g.modulos.filter(function (m) { return m.estado === 'en_curso'; })[0] || null;
             g.clases = g._clases.map(function (c) {
                 var reg = registrosDe(g.id, c.fecha);
-                var estado = reg ? 'registrada' : dictada(c) ? 'sin_registrar' : c.fecha === hoyStr ? 'hoy' : 'futura';
-                return { fecha: c.fecha, dia: c.dia, ini: c.ini, fin: c.fin, estado: estado };
+                var estado = sinClase[c.fecha] ? 'sin_clase' : reg ? 'registrada' : FESTIVOS[c.fecha] ? 'festivo'
+                    : dictada(c) ? 'sin_registrar' : c.fecha === hoyStr ? 'hoy' : 'futura';
+                return { fecha: c.fecha, dia: c.dia, ini: c.ini, fin: c.fin, estado: estado, festivo: FESTIVOS[c.fecha] || null, motivo: sinClase[c.fecha] || null };
             });
             g.sinRegistrar = g.soloConsulta ? [] : g.clases.filter(function (c) { return c.estado === 'sin_registrar'; }).map(function (c) { return c.fecha; });
 
@@ -118,9 +140,10 @@
                     var x = notasDe(g.id, m.id)[e.id];
                     var tiene = x && x.n !== null && x.n !== undefined;
                     var estado;
-                    // Terminó antes de su matrícula: no lo cursó en este grupo (CalificacionService)
-                    if (m.fin < e.matricula.fecha) estado = 'no_cursado';
-                    else if (tiene) estado = estadoNota(x.n, x.h);
+                    // Con nota (también la que le pusieron en otro grupo: la nota sigue a la matrícula); sin nota, el módulo
+                    // que no pasó mientras estaba en este grupo no lo cursó aquí (historial de grupos, NotasRequest)
+                    if (tiene) estado = estadoNota(x.n, x.h);
+                    else if (!cursoAqui(e, m)) estado = 'no_cursado';
                     else estado = m.estado === 'por_iniciar' ? 'por_iniciar' : 'sin_nota';
                     e.notas[m.id] = { n: tiene ? x.n : null, h: tiene ? x.h : null, estado: estado };
                     if (tiene) finales.push(notaFinal(x.n, x.h));
@@ -141,7 +164,7 @@
 
             // Módulos ya terminados en los que a algún estudiante activo le falta la nota
             g.modulosSinNota = g.soloConsulta ? [] : g.modulos.filter(function (m) { return m.estado === 'terminado'; }).map(function (m) {
-                var faltan = g.estudiantes.filter(function (e) { return e.matricula.estado === 'activo' && e.notas[m.id].estado === 'sin_nota'; }).length;
+                var faltan = g.estudiantes.filter(function (e) { return pendienteAqui(e, m) && e.notas[m.id].estado === 'sin_nota'; }).length;
                 return { modulo: m, faltan: faltan };
             }).filter(function (x) { return x.faltan > 0; });
         });
@@ -204,6 +227,24 @@
                 });
                 base.registros[grupoId] = base.registros[grupoId] || {};
                 base.registros[grupoId][fecha] = limpio;
+                calcular();
+                return r;
+            });
+        },
+
+        /* "No hubo clase" ese día (con el motivo) y deshacerlo */
+        marcarSinClase: function (grupoId, fecha, motivo) {
+            return enviar(ruta(S.rutas.sinClase, { GRUPO: grupoId }), { fecha: fecha, motivo: motivo }).then(function (r) {
+                var g = grupos.filter(function (x) { return x.id === grupoId; })[0];
+                if (g) { g.sinClase = g.sinClase || {}; g.sinClase[fecha] = String(motivo).trim(); }
+                calcular();
+                return r;
+            });
+        },
+        quitarSinClase: function (grupoId, fecha) {
+            return enviar(ruta(S.rutas.conClase, { GRUPO: grupoId }), { fecha: fecha }).then(function (r) {
+                var g = grupos.filter(function (x) { return x.id === grupoId; })[0];
+                if (g && g.sinClase) delete g.sinClase[fecha];
                 calcular();
                 return r;
             });

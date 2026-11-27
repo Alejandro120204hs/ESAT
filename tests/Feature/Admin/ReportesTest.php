@@ -52,7 +52,7 @@ class ReportesTest extends TestCase
         $e = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'numero_documento' => $documento,
             'fecha_nacimiento' => '1998-05-10', 'genero' => 'femenino', 'ciudad_residencia' => 'Villeta']);
         $e->documentos()->createMany(array_map(fn ($d) => ['documento' => $d, 'entregado_en' => now()], EstudianteDocumento::REQUERIDOS));
-        $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $grupo->id])->assertOk();
+        $this->alIniciar($grupo, fn () => $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $grupo->id])->assertOk());
         $m = $e->matriculas()->latest('id')->first();
         $m->update(['plan_pago' => 'mensual']);
         app(PagoService::class)->generarCuotas($m, $grupo->fecha_inicio);
@@ -104,9 +104,11 @@ class ReportesTest extends TestCase
         $d = $this->datos();
         $this->assertSame(['matricula_id' => $m->id, 'modulo_id' => $modulo->id, 'nota' => 2.5, 'fecha' => '2026-10-05', 'hab' => 3.4, 'fecha_hab' => '2026-10-15'], $d['notas'][0]);
 
-        $cuota1 = collect($d['cobros'])->firstWhere('concepto', 'Cuota 1');
-        $this->assertSame('2026-09-10', $cuota1['vence']);
-        $this->assertSame([['2026-09-20', 150000]], $cuota1['pagos'], 'El pago con su fecha: así se sabe cuánto se debía al cierre de cada mes');
+        // Lo más viejo es el derecho: vence el día en que empezó el grupo (y en que se matriculó)
+        $derecho = collect($d['cobros'])->firstWhere('concepto', 'Derecho de matrícula');
+        $this->assertSame($this->grupo->fecha_inicio->toDateString(), $derecho['vence']);
+        $this->assertSame([['2026-09-20', 150000]], $derecho['pagos'], 'El pago con su fecha: así se sabe cuánto se debía al cierre de cada mes');
+        $this->assertSame([], collect($d['cobros'])->firstWhere('concepto', 'Cuota 1')['pagos']);
     }
 
     public function test_un_recibo_anulado_no_cuenta_como_pago(): void

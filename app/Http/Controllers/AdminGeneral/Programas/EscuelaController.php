@@ -41,7 +41,7 @@ class EscuelaController extends Controller
         $programas = $escuela->programas()->count();
         $docentes = DocentePerfil::where('escuela_id', $escuela->id)->count();
         if ($programas || $docentes) {
-            return response()->json(['message' => "No se puede eliminar {$escuela->nombre}: tiene {$programas} programa(s) y {$docentes} docente(s). Pásalos a otra escuela primero."], 422);
+            return response()->json(['message' => "No se puede eliminar {$escuela->nombre}: tiene {$programas} carrera(s) y {$docentes} docente(s). Pásalos a otra escuela primero."], 422);
         }
         Auditoria::registrar('eliminar', $escuela, "Eliminó la escuela {$escuela->nombre}.");
         $escuela->delete();

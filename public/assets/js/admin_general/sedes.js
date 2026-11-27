@@ -173,7 +173,7 @@
             ['blue', 'sedes', num(D.sedes.length), D.sedes.length === 1 ? 'Sede' : 'Sedes'],
             ['green', 'estudiantes', num(est), 'Estudiantes activos'],
             ['orange', 'persona', num(Object.keys(deptos).length), Object.keys(deptos).length === 1 ? 'Departamento' : 'Departamentos'],
-            [sinSec ? 'red' : 'green', 'alerta', num(sinSec), sinSec === 1 ? 'Sede sin secretaría' : 'Sedes sin secretaría']
+            [sinSec ? 'red' : 'green', 'alerta', num(sinSec), sinSec === 1 ? 'Sede sin administrativo' : 'Sedes sin administrativo']
         ];
         $('sed-kpis').innerHTML = k.map(function (x) {
             return '<div class="sed-kpi sed-kpi-' + x[0] + '"><div class="sed-kpi-icon">' + ICON[x[1]] + '</div><div><div class="sed-kpi-val">' + x[2] + '</div><div class="sed-kpi-lbl">' + x[3] + '</div></div></div>';
@@ -195,7 +195,7 @@
         $('sed-empty').hidden = filtradas.length > 0;
         $('sed-body').innerHTML = filtradas.slice(desde, desde + POR_PAGINA).map(function (s) {
             var act = activasDe(s);
-            var sec = !act.length ? '<span class="app-status-tag app-status-danger">Sin secretaría</span>'
+            var sec = !act.length ? '<span class="app-status-tag app-status-danger">Sin administrativo</span>'
                 : '<div class="sed-strong">' + esc(nombreSec(act[0])) + (act.length > 1 ? ' <span class="sed-muted" style="display:inline">+' + (act.length - 1) + '</span>' : '') + '</div>' +
                   '<div class="sed-muted">' + esc(act[0].email) + '</div>';
             return '<tr class="sed-row" tabindex="0" data-id="' + s.id + '">' +
@@ -245,13 +245,13 @@
                 : !x.ultimo_acceso ? '<span class="app-status-tag app-status-warn">Nunca ha ingresado</span>'
                 : '<span class="app-status-tag app-status-active">Activa · entró ' + esc(hace(x.ultimo_acceso)) + '</span>';
             return '<li><div><div class="sed-strong">' + esc(nombreSec(x)) + '</div><div class="sed-muted">' + esc(x.email) + '</div></div>' + estado + '</li>';
-        }).join('') + '<li style="border:none;padding:4px 0;justify-content:flex-end"><a class="sed-link" href="/general/secretarias?sede=' + s.id + '">Gestionar secretarías</a></li>'
-            : '<li class="sed-list-empty">La sede no tiene cuentas de secretaría. <a class="sed-link" href="/general/secretarias?nueva=' + s.id + '">Crear una</a></li>';
+        }).join('') + '<li style="border:none;padding:4px 0;justify-content:flex-end"><a class="sed-link" href="/general/secretarias?sede=' + s.id + '">Gestionar administrativos</a></li>'
+            : '<li class="sed-list-empty">La sede no tiene cuentas de administrativo. <a class="sed-link" href="/general/secretarias?nueva=' + s.id + '">Crear una</a></li>';
         var progs = (s.programas || []).map(function (pid) { return D.programas.find(function (p) { return p.id === pid; }); }).filter(Boolean);
         $('sed-dw-programas').innerHTML = progs.length ? progs.map(function (p) {
             var n = (s.por_programa || {})[p.id] || 0;
             return '<li><span>' + esc(p.nombre) + '</span><span class="sed-muted">' + n + (n === 1 ? ' estudiante' : ' estudiantes') + '</span></li>';
-        }).join('') : '<li class="sed-list-empty">La sede todavía no ofrece programas del catálogo. <a class="sed-link" href="/general/programas">Asígnalos en Programas</a></li>';
+        }).join('') : '<li class="sed-list-empty">La sede todavía no ofrece carreras del catálogo. <a class="sed-link" href="/general/programas">Asígnalas en Escuelas y carreras</a></li>';
         tab('datos');
         drawer.classList.add('is-open'); drawer.setAttribute('aria-hidden', 'false');
         drawer.querySelector('.sed-close').focus();

@@ -38,7 +38,7 @@ class CalificacionService
         $fin = $curso->fin();
         $clases = [];
         for ($d = $curso->fecha_inicio->copy()->startOfDay(); $d->lt($fin); $d->addDay()) {
-            if ($curso->sesionEn($d)) {
+            if ($curso->claseEn($d)) {
                 $clases[] = $d->copy();
             }
         }
@@ -98,7 +98,7 @@ class CalificacionService
             ->whereHas('programa.modulos')
             ->with([
                 'programa.escuela', 'programa.modulos', 'sesiones', 'historialSesiones', 'docentes',
-                'matriculas' => fn ($q) => $q->whereIn('estado', ['activo', 'graduado'])->with(['estudiante', 'calificaciones']),
+                'matriculas' => fn ($q) => $q->whereIn('estado', ['activo', 'graduado'])->with(['estudiante', 'calificaciones', 'grupos']),
             ])
             ->get()
             ->sortBy(fn (Curso $c) => [$c->programa->nombre, $c->nombre])
@@ -189,7 +189,9 @@ class CalificacionService
     {
         $e = $m->estudiante;
         $porModulo = $m->calificaciones->keyBy('programa_modulo_id');
-        $desde = $m->fecha_inicio->toDateString();
+        // Desde que llegó a este grupo (historial de grupos): lo que terminó aquí antes no lo cursó en este grupo
+        $ventanas = $m->ventanasEn($curso);
+        $desde = $ventanas ? $ventanas[0]['desde'] : $m->fecha_inicio->toDateString();
 
         $notas = []; $estados = []; $finales = [];
         $aprob = 0; $porHab = 0; $reprob = 0;

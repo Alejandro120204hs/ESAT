@@ -66,7 +66,10 @@ class ComunicadoController extends Controller
     {
         abort_unless($comunicado->sede_id === $this->sedeId(), 403);
         abort_unless($comunicado->estado === 'borrador', 422, 'Solo se eliminan los borradores.');
+        abort_unless($comunicado->esDelAdmin(), 403, 'Los comunicados de los docentes no se eliminan desde aquí.');
         abort_if($comunicado->autor?->isAdminGeneral() && ! auth()->user()->isAdminGeneral(), 403, 'Este borrador es del Admin de ESAT.');
+        // Un envío del panel general se elimina allá, entero (aquí quedaría borrado solo en esta sede)
+        abort_if((bool) $comunicado->lote, 422, 'Este borrador se envió desde el panel general: elimínalo allá para que salga de todas sus sedes.');
 
         Auditoria::registrar('eliminar', $comunicado, "Eliminó el borrador «{$comunicado->titulo}».");
         $this->comunicados->eliminar($comunicado);

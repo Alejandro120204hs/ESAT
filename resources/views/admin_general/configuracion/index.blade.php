@@ -80,7 +80,7 @@
             <div class="cfg-card-icon cfg-card-icon-green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
             <div>
                 <h2 class="cfg-card-title">Cuota del sistema</h2>
-                <p class="cfg-card-sub">Es igual para todos los programas y todas las sedes. Se suma a cada cuota de cada estudiante y no tiene descuento por beca o convenio.</p>
+                <p class="cfg-card-sub">Es igual para todas las carreras y todas las sedes. Se suma a cada cuota de cada estudiante y no tiene descuento por beca o convenio.</p>
             </div>
         </div>
         <div class="cfg-card-body">
@@ -146,7 +146,7 @@
             <div class="cfg-card-icon cfg-card-icon-blue"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
             <div>
                 <h2 class="cfg-card-title">Acceso a la plataforma</h2>
-                <p class="cfg-card-sub">Aplica a todas las cuentas de todas las sedes (secretarías, docentes, estudiantes y acudientes).</p>
+                <p class="cfg-card-sub">Aplica a todas las cuentas de todas las sedes (administrativos, docentes y estudiantes).</p>
             </div>
         </div>
         <div class="cfg-card-body">

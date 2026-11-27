@@ -18,11 +18,11 @@ use Illuminate\Support\Facades\Storage;
  * administración (abrir temas, responder, fijar, cerrar, ocultar, restaurar, descartar reportes). Las cuentas
  * (KPI, pestañas, filtros) se hacen en foro.js con estos datos.
  *
- * Cada persona va con una clave corta: e (estudiante), d (docente), a (acudiente), x (administración) + su id.
+ * Cada persona va con una clave corta: e (estudiante), d (docente), x (administración) + su id.
  */
 class ForoService
 {
-    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'acudiente' => 'a', 'admin' => 'x', 'admin_general' => 'x', 'superadmin' => 'x'];
+    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'admin' => 'x', 'admin_general' => 'x', 'superadmin' => 'x'];
 
     public function datosSede(int $sedeId): array
     {
@@ -37,6 +37,52 @@ class ForoService
         ];
     }
 
+    /**
+     * El foro de su sede como lo ve quien participa desde su panel (estudiante o docente): sin lo que ocultó la
+     * secretaría (un tema cuyo primer mensaje está oculto no se ve) y con lo que esa persona ya reportó.
+     * $rutaAdjunto: la ruta de su panel que descarga el adjunto de un mensaje.
+     */
+    public function panel(User $u, string $rutaAdjunto): array
+    {
+        $temas = $u->sede_id ? ForoTema::where('sede_id', $u->sede_id)
+            ->with(['mensajes.autor', 'mensajes.reportes' => fn ($q) => $q->where('user_id', $u->id)])
+            ->orderBy('id')->get() : collect();
+
+        return [
+            'categorias' => array_values(ForoTema::CATEGORIAS),
+            'claves'     => array_flip(ForoTema::CATEGORIAS),
+            'temas'      => $temas->reject(fn (ForoTema $t) => $t->oculto())->map(function (ForoTema $t) use ($u, $rutaAdjunto) {
+                $mensajes = $t->mensajes->sortBy('id')->reject(fn (ForoMensaje $m) => $m->oculto())->values()
+                    ->map(fn (ForoMensaje $m) => [
+                        'id'        => $m->id,
+                        'autor'     => [
+                            'nombre' => $m->autor ? (trim($m->autor->nombres.' '.$m->autor->apellidos) ?: 'Administración de la sede') : 'Administración de la sede',
+                            'rol'    => self::LETRA[$m->autor?->role->value ?? 'admin'] ?? 'x',
+                            'yo'     => $m->autor_id === $u->id,
+                        ],
+                        'fecha'     => $m->created_at->format('Y-m-d H:i'),
+                        'texto'     => $m->texto,
+                        'adjunto'   => $m->adjunto_ruta ? ['nombre' => $m->adjunto_nombre, 'tamano' => (int) $m->adjunto_peso, 'url' => route($rutaAdjunto, $m)] : null,
+                        'reportado' => $m->reportes->isNotEmpty(),
+                    ]);
+                if ($mensajes->isEmpty()) {
+                    return null;
+                }
+
+                return [
+                    'id'        => $t->id,
+                    'categoria' => ForoTema::CATEGORIAS[$t->categoria] ?? $t->categoria,
+                    'titulo'    => $t->titulo,
+                    'fijado'    => (bool) $t->fijado,
+                    'cerrado'   => $t->cerrado(),
+                    'mensajes'  => $mensajes->all(),
+                    'ultimo'    => $mensajes->last()['fecha'],
+                    'mio'       => $mensajes->first()['autor']['yo'],
+                ];
+            })->filter()->values()->all(),
+        ];
+    }
+
     private function temasDe(int $sedeId): Collection
     {
         return ForoTema::where('sede_id', $sedeId)
@@ -47,7 +93,7 @@ class ForoService
     /** Nombre y detalle de cada persona que aparece en el foro: {'e26': [nombre, 'Programa · Grupo'], …}. */
     public function personas(Collection $ids): array
     {
-        $usuarios = User::whereIn('id', $ids)->with(['docentePerfil.escuela', 'estudiantesACargo'])->get();
+        $usuarios = User::whereIn('id', $ids)->with(['docentePerfil.escuela'])->get();
         $matriculas = Matricula::whereIn('estudiante_id', $usuarios->where('role', RolUsuario::Estudiante)->pluck('id'))
             ->where('estado', '!=', 'anulado')->with(['programa', 'curso'])->orderBy('id')->get()
             ->groupBy('estudiante_id')
@@ -58,9 +104,8 @@ class ForoService
                 RolUsuario::Estudiante => ($m = $matriculas->get($u->id))
                     ? str_replace('Técnico Laboral en ', '', $m->programa->nombre).($m->curso ? ' · '.$m->curso->nombre : '') : 'Estudiante',
                 RolUsuario::Docente   => $u->docentePerfil?->escuela?->nombre ?? 'Docente',
-                RolUsuario::Acudiente => $this->deQuien($u),
                 RolUsuario::AdminGeneral => 'Admin de ESAT',
-                default               => 'Secretaría',
+                default               => 'Administrativo',
             };
 
             return [$this->clave($u) => [$this->nombre($u), $detalle]];
@@ -185,16 +230,6 @@ class ForoService
         ] : []));
     }
 
-    private function deQuien(User $acudiente): string
-    {
-        $hijos = $acudiente->estudiantesACargo;
-        if ($hijos->isEmpty()) {
-            return 'Acudiente';
-        }
-
-        return $hijos->first()->pivot->parentesco.' de '.$hijos->map(fn (User $e) => explode(' ', $e->nombres)[0])->join(', ', ' y ');
-    }
-
     private function clave(?User $u): string
     {
         return $u ? (self::LETRA[$u->role->value] ?? 'x').$u->id : 'x0';
@@ -202,6 +237,6 @@ class ForoService
 
     private function nombre(User $u): string
     {
-        return trim($u->nombres.' '.$u->apellidos) ?: 'Secretaría';
+        return trim($u->nombres.' '.$u->apellidos) ?: 'Administrativo';
     }
 }

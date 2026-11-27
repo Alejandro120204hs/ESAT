@@ -13,7 +13,7 @@ use App\Services\Finanzas\PagoService;
 
 /**
  * Personas de todas las sedes para el panel del Admin: estudiantes (con su matrícula, pagos y rendimiento solo para
- * consultar), acudientes y docentes. La forma es la que leen las pantallas de admin_general (window.GEN_DATOS).
+ * consultar, con su contacto de emergencia) y docentes. La forma es la que leen las pantallas de admin_general (window.GEN_DATOS).
  */
 class PersonasService
 {
@@ -23,7 +23,7 @@ class PersonasService
     public function estudiantes(?int $sedeId = null): array
     {
         $lista = User::where('role', RolUsuario::Estudiante)->when($sedeId, fn ($q) => $q->where('sede_id', $sedeId))
-            ->with(['acudientes', 'asistencias', 'cursosComoEstudiante',
+            ->with(['contactoEmergencia', 'asistencias', 'cursosComoEstudiante',
                 'matriculas' => fn ($q) => $q->with(['programa', 'pagos.recaudos', 'recaudos', 'curso'])])
             ->orderBy('nombres')->orderBy('apellidos')->get();
 
@@ -34,26 +34,29 @@ class PersonasService
         $estudiantes = $lista->map(function (User $e) use ($promedios) {
             $m = $this->estudiantes->matriculaVigente($e);
             $grupo = $this->estudiantes->grupoDeMatricula($e, $m);
-            $a = $e->acudientes->first();
             $base = $this->persona($e) + [
                 'edad'                    => $e->fecha_nacimiento?->age,
                 'departamento_nacimiento' => (string) $e->departamento_nacimiento,
                 'lugar_nacimiento'        => (string) $e->lugar_nacimiento,
+                'pais_nacimiento'         => (string) $e->pais_nacimiento,
                 'direccion'               => (string) $e->direccion,
                 'departamento'            => (string) $e->departamento_residencia,
                 'ciudad'                  => (string) $e->ciudad_residencia,
                 'activo'                  => (bool) $e->activo,
-                'acudiente_id'            => $a?->id,
-                'parentesco'              => $a?->pivot->parentesco,
-                'acudiente'               => $a ? ['id' => $a->id, 'nombre' => trim($a->nombres.' '.$a->apellidos), 'parentesco' => $a->pivot->parentesco, 'telefono' => $a->telefono] : null,
+                'contacto'                => $e->contactoEmergencia?->paraVista(),
             ];
             if (! $m) {
                 return $base + ['estado' => 'sin_matricula', 'programa' => null, 'programa_id' => null, 'grupo' => null, 'pago' => 'sin_matricula',
                     'saldo_vencido' => 0, 'por_pagar_mes' => 0, 'cuotas_vencidas' => []];
             }
             $r = $this->pagos->resumen($m);
-            $vencidas = $m->pagos->filter(fn (Pago $p) => $p->porPagar() && $p->estadoActual() === 'vencido')->sortBy('fecha_vencimiento')
+            // Lo vencido cuenta de todas sus matrículas (también una vieja, retirada o graduada, que quedó debiendo), como en
+            // Pagos de la secretaría y el Inicio: la cartera no puede depender de cuál matrícula se muestra
+            $vencidas = $e->matriculas->where('estado', '!=', 'anulado')
+                ->flatMap(fn ($mat) => $mat->pagos->filter(fn (Pago $p) => $p->porPagar() && $p->estadoActual() === 'vencido'))
+                ->sortBy('fecha_vencimiento')
                 ->map(fn (Pago $p) => ['valor' => (int) round($p->restante()), 'vence' => $p->fecha_vencimiento?->toDateString()])->values();
+            $saldoVencido = (int) $vencidas->sum('valor');
 
             return $base + [
                 'estado'          => $m->estado,
@@ -66,11 +69,11 @@ class PersonasService
                 'fecha_matricula' => $m->fecha_inicio?->toDateString(),
                 'plan'            => $m->plan_pago,
                 // Sin plan elegido no hay cuotas: el estudiante debe elegirlo desde su panel
-                'pago'            => $m->plan_pago ? $r['pago'] : ($r['pago'] === 'vencido' ? 'vencido' : 'sin_plan'),
-                'saldo_vencido'   => $r['saldo_vencido'],
+                'pago'            => $saldoVencido > 0 ? 'vencido' : ($m->plan_pago ? $r['pago'] : 'sin_plan'),
+                'saldo_vencido'   => $saldoVencido,
                 'por_pagar_mes'   => $r['saldo'],
                 'cuotas_vencidas' => $vencidas->all(),
-                'asistencia'      => $this->estudiantes->porcentajeAsistencia($e, $grupo),
+                'asistencia'      => $this->estudiantes->porcentajeAsistencia($e, $grupo, $m),
                 'promedio'        => $promedios->get($m->id),
             ];
         })->values()->all();
@@ -108,20 +111,6 @@ class PersonasService
     {
         return $u ? ['nombre' => trim($u->nombres.' '.$u->apellidos), 'rol' => $u->role === RolUsuario::AdminGeneral ? 'admin' : 'secretaria']
             : ['nombre' => 'Sin registro', 'rol' => 'secretaria'];
-    }
-
-    public function acudientes(): array
-    {
-        return User::where('role', RolUsuario::Acudiente)->orderBy('nombres')->orderBy('apellidos')->get()
-            ->map(fn (User $a) => $this->persona($a) + [
-                'profesion'    => (string) $a->profesion,
-                'direccion'    => (string) $a->direccion,
-                'departamento' => (string) $a->departamento_residencia,
-                'ciudad'       => (string) $a->ciudad_residencia,
-                'activo'       => (bool) $a->activo,
-                'ultimo_acceso'=> $a->ultimo_acceso?->toIso8601String(),
-                'creada'       => $a->created_at?->toIso8601String(),
-            ])->all();
     }
 
     /** @return array{0: array, 1: array} docentes y grupos (con su docente) */

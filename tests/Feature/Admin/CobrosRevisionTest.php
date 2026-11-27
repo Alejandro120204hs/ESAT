@@ -53,7 +53,7 @@ class CobrosRevisionTest extends TestCase
         $grupo ??= $this->grupo;
         $e = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'fecha_nacimiento' => '1998-05-10']);
         $e->documentos()->createMany(array_map(fn ($d) => ['documento' => $d, 'entregado_en' => now()], EstudianteDocumento::REQUERIDOS));
-        $m = app(MatriculaService::class)->matricular($e, $grupo, null);
+        $m = $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular($e, $grupo, null));
         if ($plan) {
             $m->update(['plan_pago' => $plan]);
             $this->pagos->generarCuotas($m->fresh(), $grupo->fecha_inicio);

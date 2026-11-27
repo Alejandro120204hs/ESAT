@@ -1,0 +1,87 @@
+/* ESAT — Docente: documentos imprimibles (lista de clase y planilla de notas), copiado del panel Estudiante.
+   La misma hoja de los documentos de la secretaría (encabezado con los datos legales de ESAT, datos en dos columnas,
+   tabla y firmas). documento.js arma la hoja en .doc-imp, al final del <body>, y al imprimir solo sale ella. */
+.doc-imp { display: none; }
+
+.doc-imp {
+    --navy:   #10284A;
+    --navy-3: #0A1B33;
+    --muted:  #5B6472;
+    --line:   rgba(16, 40, 74, 0.14);
+    --bg:     #F4F6F9;
+    --rojo:   #991B1B;
+    color: var(--navy-3);
+    font-family: "Public Sans", system-ui, sans-serif; font-size: 14px; line-height: 1.45;
+}
+
+.doc-imp .rc-hoja { position: relative; overflow: hidden; background: #FFFFFF; }
+
+.doc-imp .rc-cabecera {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+    padding-bottom: 20px; border-bottom: 2px solid var(--navy);
+}
+.doc-imp .rc-marca { display: flex; gap: 14px; align-items: center; }
+.doc-imp .rc-marca img { width: 64px; height: auto; }
+.doc-imp .rc-marca div { display: flex; flex-direction: column; gap: 2px; }
+.doc-imp .rc-marca strong { font: 800 1.05rem "Archivo", system-ui, sans-serif; color: var(--navy); }
+.doc-imp .rc-marca span { font-size: 0.8rem; color: var(--muted); }
+
+.doc-imp .rc-numero { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.doc-imp .rc-numero span { font-size: 0.78rem; color: var(--muted); }
+.doc-imp .rc-numero span:first-child { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.doc-imp .rc-numero strong { font: 800 1.35rem "Archivo", system-ui, sans-serif; color: var(--navy); font-variant-numeric: tabular-nums; }
+
+.doc-imp .rc-datos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; margin-top: 20px; }
+.doc-imp .rc-datos div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.doc-imp .rc-datos span { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.doc-imp .rc-datos strong { font-weight: 600; overflow-wrap: anywhere; }
+.doc-imp .rc-full { grid-column: 1 / -1; }
+
+.doc-imp .rc-tabla { width: 100%; margin-top: 22px; border-collapse: collapse; }
+.doc-imp .rc-tabla th {
+    padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--navy-3);
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.doc-imp .rc-tabla td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.doc-imp .rc-tabla tfoot td { border-bottom: 0; padding-top: 14px; font: 800 1rem "Archivo", system-ui, sans-serif; color: var(--navy); }
+.doc-imp .rc-num, .doc-imp .rc-tabla .rc-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.doc-imp .rc-texto { margin-top: 26px; font-size: 0.95rem; line-height: 1.75; }
+.doc-imp .rc-texto p { margin: 0 0 12px; text-align: justify; }
+.doc-imp .rc-texto-titulo {
+    text-align: center !important; font: 800 0.95rem "Archivo", system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--navy);
+}
+.doc-imp .rc-nota { margin-top: 18px; font-size: 0.78rem; color: var(--muted); }
+
+.doc-imp .rc-pie { margin-top: 44px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+.doc-imp .rc-firma { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--muted); }
+.doc-imp .rc-firma span { display: block; width: 240px; border-top: 1px solid var(--navy-3); }
+.doc-imp .rc-pie p { margin: 0; font-size: 0.78rem; color: var(--muted); }
+
+/* Recibo anulado: sello cruzado sobre la hoja */
+.doc-imp .rc-sello {
+    position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+    padding: 6px 28px; border: 4px solid rgba(153, 27, 27, 0.35); border-radius: 10px;
+    font: 900 3.4rem "Archivo", system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(153, 27, 27, 0.28);
+}
+
+@media print {
+    @page { size: letter; margin: 14mm; }
+    body.app-page { background: #FFFFFF; min-height: 0; }
+    body.app-page > *:not(.doc-imp) { display: none !important; }
+    .doc-imp { display: block; }
+}
+
+/* Recibo: aviso de anulado y datos del pago (los de admin/documento.css) */
+.doc-imp .rc-aviso { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: #FDF5F5; border: 1px solid #F3CACA; color: var(--rojo); display: flex; flex-direction: column; gap: 2px; }
+.doc-imp .rc-datos-pago { padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* Lista de clase y planilla de notas */
+.doc-imp .rc-tabla.is-compacta th, .doc-imp .rc-tabla.is-compacta td { padding: 7px 6px; font-size: 0.82rem; }
+.doc-imp .rc-firma-celda { width: 11%; border-left: 1px solid var(--line); }
+.doc-imp .rc-tabla th.rc-firma-celda { text-align: center; }
+.doc-imp .rc-centro { text-align: center; font-variant-numeric: tabular-nums; }
+.doc-imp .rc-baja { color: var(--rojo); font-weight: 700; }
+.doc-imp .rc-modulos { margin-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 24px; font-size: 0.78rem; color: var(--muted); }

@@ -36,7 +36,7 @@ class SecretariaController extends Controller
             'activo'   => true,
         ]);
         $sede = Sede::find($datos['sede_id']);
-        Auditoria::registrar('crear', $cuenta, "Creó la cuenta de secretaría de {$cuenta->name} en la sede {$sede->nombre}.", $sede->id);
+        Auditoria::registrar('crear', $cuenta, "Creó la cuenta de administrativo de {$cuenta->name} en la sede {$sede->nombre}.", $sede->id);
 
         return response()->json(['mensaje' => "Se creó la cuenta de {$cuenta->name}. Su clave inicial es su número de documento."], 201);
     }
@@ -51,7 +51,7 @@ class SecretariaController extends Controller
         $cambioSede = $secretaria->isDirty('sede_id');
         $secretaria->save();
         $sede = Sede::find($secretaria->sede_id);
-        Auditoria::registrar('editar', $secretaria, "Editó la cuenta de secretaría de {$secretaria->name}".($cambioSede ? " y la pasó a la sede {$sede->nombre}." : '.'), $sede->id);
+        Auditoria::registrar('editar', $secretaria, "Editó la cuenta de administrativo de {$secretaria->name}".($cambioSede ? " y la pasó a la sede {$sede->nombre}." : '.'), $sede->id);
 
         return response()->json(['mensaje' => "Se guardaron los cambios de {$secretaria->name}."]);
     }
@@ -63,7 +63,7 @@ class SecretariaController extends Controller
         $secretaria->update(['activo' => ! $secretaria->activo]);
         $accion = $secretaria->activo ? 'activar' : 'desactivar';
         $sede = $secretaria->sede;
-        Auditoria::registrar($accion, $secretaria, ($secretaria->activo ? 'Activó' : 'Desactivó')." la cuenta de secretaría de {$secretaria->name} (sede {$sede?->nombre}).", $secretaria->sede_id);
+        Auditoria::registrar($accion, $secretaria, ($secretaria->activo ? 'Activó' : 'Desactivó')." la cuenta de administrativo de {$secretaria->name} (sede {$sede?->nombre}).", $secretaria->sede_id);
 
         return response()->json(['mensaje' => ($secretaria->activo ? 'Se activó' : 'Se desactivó')." la cuenta de {$secretaria->name}."]);
     }
@@ -73,7 +73,7 @@ class SecretariaController extends Controller
     {
         $this->asegurarSecretaria($secretaria);
         $sesiones->restablecerClave($secretaria);
-        Auditoria::registrar('editar', $secretaria, "Restableció la clave de la secretaría {$secretaria->name}.", $secretaria->sede_id);
+        Auditoria::registrar('editar', $secretaria, "Restableció la clave del administrativo {$secretaria->name}.", $secretaria->sede_id);
 
         return response()->json(['mensaje' => "La clave de {$secretaria->name} volvió a ser su número de documento."]);
     }

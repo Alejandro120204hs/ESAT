@@ -1,7 +1,7 @@
 # ESAT · Plataforma académica y financiera
 
 Sitio público y plataforma por roles de la **Escuela Nacional de Educación ESAT** (Lic. de Funcionamiento 5850,
-NIT 900820764-1): Admin de toda ESAT, Secretaría de cada sede, Docente, Estudiante y Acudiente.
+NIT 900820764-1): Admin de toda ESAT, Secretaría de cada sede, Docente y Estudiante (cada estudiante con un contacto de emergencia, sin cuenta).
 
 Laravel 12 (Blade) · PHP 8.2+ · MySQL / MariaDB. Toda la interfaz está en español.
 

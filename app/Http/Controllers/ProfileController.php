@@ -33,6 +33,10 @@ class ProfileController extends Controller
             return view('estudiante.perfil', ['user' => $user]);
         }
 
+        if ($user->isDocente()) {
+            return view('docente.perfil', ['user' => $user->load(['sede', 'docentePerfil.escuela'])]);
+        }
+
         return view('profile.edit', ['user' => $user]);
     }
 

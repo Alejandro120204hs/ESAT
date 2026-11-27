@@ -259,3 +259,15 @@ a.aul-archivo-nombre:focus-visible { outline: 2px solid var(--orange); outline-o
     .aul-card, .aul-drawer-panel, .aul-drawer-overlay, .aul-toast, .aul-btn, .aul-op { transition: none; }
     .aul-card:hover, .aul-btn:active { transform: none; }
 }
+
+/* Material de clase (27-11-2026): tarjetas sin cajón, con sus archivos y enlaces */
+.aul-mat { cursor: default; }
+.aul-mat:hover { transform: none; }
+.aul-mat-fecha { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+.aul-mat-archivos { display: flex; flex-direction: column; gap: 8px; }
+.aul-archivo-icono svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.aul-mat, .aul-mat:hover { padding-bottom: 18px; box-shadow: 0 1px 2px rgba(10,27,51,.05); border-color: #DCE3EC; }
+
+/* Reloj de la evaluación con tiempo límite (27-11-2026) */
+.aul-reloj { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--navy-3); font-variant-numeric: tabular-nums; padding: 6px 10px; border-radius: 8px; background: #EEF2F7; }
+.aul-reloj.is-poco { color: var(--red, #B91C1C); background: #FDECEC; }

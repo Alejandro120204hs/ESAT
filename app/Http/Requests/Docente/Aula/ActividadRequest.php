@@ -4,11 +4,14 @@ namespace App\Http\Requests\Docente\Aula;
 
 use App\Models\Academico\Actividad;
 use App\Models\Academico\Curso;
+use App\Services\Academico\AulaService;
 use Illuminate\Validation\Rule;
 
 /**
  * Crear o editar una actividad: título, instrucciones, un módulo de la malla del grupo y la fecha y hora límite de
  * entrega. Al crearla, o al cambiar la fecha, debe quedar en el futuro (editar el texto de una que ya cerró sí se puede).
+ * Puede llevar un archivo de apoyo (la guía: PDF, Word, PowerPoint, Excel o imagen, máx. 10 MB); `quitar_adjunto` lo
+ * quita. Llega como FormData (el PUT, como POST con _method).
  */
 class ActividadRequest extends AulaRequest
 {
@@ -29,6 +32,7 @@ class ActividadRequest extends AulaRequest
             'titulo'        => $this->texto('titulo'),
             'instrucciones' => $this->texto('instrucciones'),
             'cierra'        => $this->fechaHora($this->input('cierra')),
+            'quitar_adjunto' => $this->boolean('quitar_adjunto'),
         ]);
     }
 
@@ -43,6 +47,8 @@ class ActividadRequest extends AulaRequest
             'instrucciones' => ['required', 'string', 'min:10', 'max:3000'],
             'modulo_id'     => ['required', 'integer', Rule::in($modulos)],
             'cierra'        => array_merge(['required', 'date_format:Y-m-d H:i'], $mismaFecha ? [] : ['after:now']),
+            'adjunto'       => ['nullable', 'file', 'mimes:'.implode(',', AulaService::EXTENSIONES_DOCENTE), 'max:'.AulaService::MAX_ARCHIVO_KB],
+            'quitar_adjunto' => ['boolean'],
         ];
     }
 
@@ -60,6 +66,10 @@ class ActividadRequest extends AulaRequest
             'cierra.required'        => 'Elige la fecha y la hora límite de entrega.',
             'cierra.date_format'     => 'Elige la fecha y la hora límite de entrega.',
             'cierra.after'           => 'La fecha límite debe quedar después de ahora.',
+            'adjunto.file'           => 'No se pudo subir el archivo. Intenta de nuevo.',
+            'adjunto.uploaded'       => 'No se pudo subir el archivo: debe pesar máximo 10 MB.',
+            'adjunto.mimes'          => 'El archivo debe ser PDF, Word, PowerPoint, Excel, JPG o PNG.',
+            'adjunto.max'            => 'El archivo debe pesar máximo 10 MB.',
         ];
     }
 }

@@ -243,7 +243,7 @@
                     return r;
                 }
                 var filas = sedes().map(function (s) {
-                    var m = D.estudiantes.filter(function (e) { return e.sede_id === s.id && e.estado === 'activo' && e.pago === 'vencido'; });
+                    var m = D.estudiantes.filter(function (e) { return e.sede_id === s.id && e.saldo_vencido > 0; });
                     var r = edades(m);
                     return [s.nombre, m.length].concat(r).concat([sum(r)]);
                 });

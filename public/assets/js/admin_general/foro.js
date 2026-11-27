@@ -158,7 +158,7 @@
 
     /* ── Datos ──────────────────────────────────── */
     var CATEGORIAS = D.categorias;
-    var ROL = { estudiante: 'Estudiante', docente: 'Docente', acudiente: 'Acudiente', secretaria: 'Secretaría', admin: 'Admin' };
+    var ROL = { estudiante: 'Estudiante', docente: 'Docente', secretaria: 'Administrativo', admin: 'Admin' };
     function sede(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
     function tema(id) { return D.foro.find(function (t) { return t.id === +id; }); }
     function primero(t) { return t.mensajes[0]; }

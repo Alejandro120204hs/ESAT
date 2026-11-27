@@ -369,7 +369,6 @@
 .for-rol i { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; flex-shrink: 0; }
 .for-rol i.r-e { background: var(--navy-2); }
 .for-rol i.r-d { background: var(--orange); }
-.for-rol i.r-a { background: #2D7A3A; }
 .for-rol i.r-x { background: #475569; }
 
 /* Datos en línea (mismo formato que Pagos) */
@@ -401,7 +400,6 @@
 }
 .for-av.r-e { background: var(--navy-2); }
 .for-av.r-d { background: var(--orange); }
-.for-av.r-a { background: #2D7A3A; }
 .for-av.r-x { background: #475569; }
 .for-msg-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .for-msg-quien { min-width: 0; }

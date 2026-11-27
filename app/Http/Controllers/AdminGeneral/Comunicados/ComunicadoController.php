@@ -79,7 +79,7 @@ class ComunicadoController extends Controller
 
     private function descripcion(Comunicado $c, string $accion, array $sedes): string
     {
-        $para = ['sede' => 'todos', 'estudiantes' => 'los estudiantes', 'docentes' => 'los docentes', 'acudientes' => 'los acudientes'][$c->destino] ?? 'su grupo';
+        $para = ['sede' => 'todos', 'estudiantes' => 'los estudiantes', 'docentes' => 'los docentes'][$c->destino] ?? 'su grupo';
         $donde = count($sedes) === Sede::count() && count($sedes) > 1 ? 'todas las sedes' : Sede::whereIn('id', $sedes)->orderBy('nombre')->pluck('nombre')->join(', ', ' y ');
         $como = match ($accion) {
             'borrador'  => 'como borrador',

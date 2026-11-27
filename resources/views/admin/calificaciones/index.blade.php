@@ -43,7 +43,7 @@ $sede = auth()->user()->sedeTrabajo();
     <div class="cal-header">
         <div>
             <h2 class="cal-title">Calificaciones</h2>
-            <p class="cal-sub">Consulta las notas que ponen los docentes en cada módulo del programa. Escala de 1,0 a 5,0: se aprueba con 3,0 y quien pierde un módulo tiene una habilitación. Para graduarse hay que tener todos los módulos aprobados.</p>
+            <p class="cal-sub">Consulta las notas que ponen los docentes en cada módulo de la carrera. Escala de 1,0 a 5,0: se aprueba con 3,0 y quien pierde un módulo tiene una habilitación. Para graduarse hay que tener todos los módulos aprobados.</p>
         </div>
     </div>
 
@@ -102,7 +102,7 @@ $sede = auth()->user()->sedeTrabajo();
         <div class="cal-filters">
             <div class="cal-search-box">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="search" id="cal-g-search" placeholder="Buscar por programa, grupo o docente..." autocomplete="off" aria-label="Buscar grupo">
+                <input type="search" id="cal-g-search" placeholder="Buscar por carrera, grupo o docente..." autocomplete="off" aria-label="Buscar grupo">
             </div>
             <div class="app-combobox" id="cal-g-cb-jornada" data-position="absolute" data-options='@json($jornadas)'>
                 <button type="button" class="app-combobox-trigger" data-combobox-trigger>
@@ -269,7 +269,7 @@ $sede = auth()->user()->sedeTrabajo();
                 <thead>
                     <tr>
                         <th>Estudiante</th>
-                        <th>Programa y grupo</th>
+                        <th>Carrera y grupo</th>
                         <th>Módulos aprobados</th>
                         <th>Promedio</th>
                         <th>Situación</th>

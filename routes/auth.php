@@ -11,7 +11,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 // No hay registro público: el Superadmin crea las cuentas de Admin, y
-// los Admin crean las de docentes, estudiantes y acudientes.
+// los Admin crean las de docentes y estudiantes.
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

@@ -39,7 +39,7 @@ class CambioProgramaRequest extends FormRequest
             }
             $m = $this->route('matricula');
             if (! in_array($m->estado, Matricula::VIGENTES, true)) {
-                $v->errors()->add('curso_id', 'Solo una matrícula activa o aplazada puede cambiar de programa.');
+                $v->errors()->add('curso_id', 'Solo una matrícula activa o aplazada puede cambiar de carrera.');
                 return;
             }
             $g = $this->grupo();
@@ -48,14 +48,14 @@ class CambioProgramaRequest extends FormRequest
                 return;
             }
             if ($g->programa_id === $m->programa_id) {
-                $v->errors()->add('curso_id', 'Ese grupo es del mismo programa: usa «Cambiar de grupo».');
+                $v->errors()->add('curso_id', 'Ese grupo es de la misma carrera: usa «Cambiar de grupo».');
                 return;
             }
             $programa = $g->programa;
             if ($programa->estado !== 'activo' || ! $programa->sedes()->whereKey($m->sede_id)->exists()) {
-                $v->errors()->add('curso_id', "El programa {$programa->nombre} no está activo en tu sede.");
-            } elseif ($g->estado === 'finalizado') {
-                $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya finalizó.");
+                $v->errors()->add('curso_id', "La carrera {$programa->nombre} no está activa en tu sede.");
+            } elseif ($g->cerrado()) {
+                $v->errors()->add('curso_id', $g->motivoCerrado());
             } elseif ($g->cuposLibres() <= 0) {
                 $v->errors()->add('curso_id', "El {$g->nombre} ({$g->codigo}) ya no tiene cupos libres.");
             }
@@ -70,8 +70,8 @@ class CambioProgramaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'curso_id.required' => 'Selecciona el grupo del programa nuevo.',
-            'motivo.required'   => 'Escribe por qué cambia de programa.',
+            'curso_id.required' => 'Selecciona el grupo de la carrera nueva.',
+            'motivo.required'   => 'Escribe por qué cambia de carrera.',
             'motivo.min'        => 'Describe el motivo con un poco más de detalle.',
         ];
     }

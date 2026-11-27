@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Services\Inicio\InicioService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Estructura de ESAT para el panel del Admin: sedes con sus cifras, secretarías, escuelas y programas.
@@ -92,8 +91,7 @@ class EstructuraService
     /** Catálogo de programas con su malla, precio (igual en todas las sedes) y en qué sedes se ofrece. */
     public function programas(): array
     {
-        $conNotas = DB::table('calificaciones')->join('programa_modulos', 'programa_modulos.id', '=', 'calificaciones.programa_modulo_id')
-            ->distinct()->pluck('programa_modulos.programa_id')->flip();
+        $conNotas = collect(Programa::mallaEnUso())->flip();   // notas o Aula virtual en sus módulos
 
         return Programa::with(['modulos', 'sedes:id'])->orderBy('nombre')->get()
             ->map(fn (Programa $p) => [

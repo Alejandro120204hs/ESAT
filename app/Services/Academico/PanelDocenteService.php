@@ -4,12 +4,14 @@ namespace App\Services\Academico;
 
 use App\Models\Academico\Asistencia;
 use App\Models\Academico\Calificacion;
+use App\Models\Academico\ClaseSuspendida;
 use App\Models\Academico\Curso;
 use App\Models\Academico\CursoSesion;
 use App\Models\Academico\ProgramaModulo;
 use App\Models\Finanzas\Matricula;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
+use App\Support\Festivos;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -44,7 +46,8 @@ class PanelDocenteService
             ->whereHas('sesiones')
             ->with([
                 'programa.escuela', 'programa.modulos', 'sesiones', 'historialSesiones',
-                'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with('estudiante.acudientes'),
+                'matriculas' => fn ($q) => $q->where('estado', '!=', 'anulado')->with(['estudiante.contactoEmergencia', 'grupos']),
+                'matriculasDelHistorial' => fn ($q) => $q->where('estado', '!=', 'anulado')->with(['estudiante.contactoEmergencia', 'grupos']),
             ])
             ->get()
             ->sortBy(fn (Curso $c) => [$c->estado === 'finalizado' ? 1 : 0, $c->programa->nombre, $c->nombre])
@@ -87,28 +90,36 @@ class PanelDocenteService
             'grupos'    => $grupos,
             'registros' => (object) $registros,
             'notas'     => (object) $notas,
+            // Lo calificado en el Aula virtual por estudiante y módulo: Notas lo muestra como referencia (27-11-2026)
+            'aula'      => (object) app(AulaService::class)->notasPorModulo($cursos),
+            // Festivos de Colombia en las fechas de sus grupos: no son clase salvo que tome asistencia (Curso::claseEn)
+            'festivos'  => (object) ($cursos->isEmpty() ? [] : Festivos::entre(
+                $cursos->min(fn (Curso $c) => $c->fecha_inicio->toDateString()),
+                $cursos->max(fn (Curso $c) => $c->fin()->toDateString()),
+            )),
         ];
     }
 
     /**
-     * Estudiantes del grupo: una fila por estudiante con su matrícula en el grupo (la más reciente si volvió).
-     * desde = cuando empezó a contar (su matrícula o el inicio del grupo); hasta = cuando se aplazó, retiró o
-     * graduó. Quien salió antes de empezar no aparece (como en Admin › Asistencia).
+     * Estudiantes del grupo: una fila por estudiante con su matrícula en el grupo (la más reciente si volvió), también
+     * quien ya se cambió a otro grupo (estado "trasladado": su historial aquí se conserva, solo de consulta). ventanas =
+     * las fechas en que cuenta en este grupo (Matricula::ventanasEn: desde que entró hasta que salió, se aplazó, retiró o
+     * graduó); desde y hasta son la primera y la última. Quien salió antes de empezar no aparece.
      */
     public function estudiantes(Curso $curso): Collection
     {
-        $inicio = $curso->fecha_inicio->toDateString();
-
-        return $curso->matriculas->sortByDesc('id')->unique('estudiante_id')
-            ->map(function (Matricula $m) use ($inicio) {
+        return $curso->matriculasEnGrupo()->sortByDesc('id')->unique('estudiante_id')
+            ->map(function (Matricula $m) use ($curso) {
                 $e = $m->estudiante;
-                $desde = max($m->fecha_inicio->toDateString(), $inicio);
-                $hasta = $m->estado !== 'activo' ? $m->estado_fecha?->toDateString() : null;
-                if ($hasta && $hasta <= $desde) {
+                $ventanas = $m->ventanasEn($curso);
+                if (! $ventanas) {
                     return null;
                 }
+                $desde = $ventanas[0]['desde'];
+                $hasta = end($ventanas)['hasta'];
+                // Se cambió a otro grupo y sigue activa allá: aquí cuenta como que salió (consulta)
+                $trasladado = $m->curso_id !== $curso->id && in_array($m->estado, Matricula::VIGENTES, true);
                 $edad = $e->fecha_nacimiento?->age;
-                $acudiente = $e->acudientes->first();
 
                 return [
                     'id'          => $e->id,
@@ -120,19 +131,16 @@ class PanelDocenteService
                     'edad'        => $edad,
                     'menor'       => $edad !== null && $edad < 18,
                     'telefono'    => preg_replace('/\D/', '', (string) $e->telefono),
-                    'acudiente'   => $acudiente ? [
-                        'nombre'     => trim($acudiente->nombres.' '.$acudiente->apellidos),
-                        'parentesco' => $acudiente->pivot->parentesco,
-                        'telefono'   => preg_replace('/\D/', '', (string) $acudiente->telefono),
-                    ] : null,
+                    'contacto'    => $e->contactoEmergencia?->paraVista(),
                     'matricula'   => [
                         'codigo'      => $m->codigo,
                         'fecha'       => $m->fecha_inicio->toDateString(),
-                        'estado'      => $m->estado,
+                        'estado'      => $trasladado ? 'trasladado' : $m->estado,
                         'estadoFecha' => $hasta,
                     ],
                     'desde'       => $desde,
                     'hasta'       => $hasta,
+                    'ventanas'    => $ventanas,
                 ];
             })
             ->filter()
@@ -140,11 +148,11 @@ class PanelDocenteService
             ->values();
     }
 
-    /** Estudiantes que van en la lista de esa clase (vigentes ese día). */
+    /** Estudiantes que van en la lista de esa clase (los que contaban en el grupo ese día). */
     public function planilla(Curso $curso, string $fecha): Collection
     {
         return $this->estudiantes($curso)
-            ->filter(fn (array $e) => $fecha >= $e['desde'] && ! ($e['hasta'] && $fecha >= $e['hasta']))
+            ->filter(fn (array $e) => Matricula::enVentanas($e['ventanas'], $fecha))
             ->values();
     }
 
@@ -154,7 +162,8 @@ class PanelDocenteService
         $d = Carbon::parse($fecha)->startOfDay();
         $fin = $curso->fin();
 
-        return $d->gte($curso->fecha_inicio->copy()->startOfDay()) && $d->lt($fin) && $curso->sesionEn($d) !== null;
+        return $d->gte($curso->fecha_inicio->copy()->startOfDay()) && $d->lt($fin) && $curso->sesionEn($d) !== null
+            && ! isset($curso->sinClase()[$d->toDateString()]);
     }
 
     /** El módulo de la malla del grupo con sus fechas y estado (terminado · en_curso · por_iniciar), o null. */
@@ -196,6 +205,28 @@ class PanelDocenteService
         });
 
         return ($corrige ? 'Corregiste' : 'Guardaste').' la asistencia del '.$this->fechaTexto($fecha).'.';
+    }
+
+    /** Marca "No hubo clase" ese día (validado por SinClaseRequest) y lo deja en la auditoría. */
+    public function marcarSinClase(User $docente, Curso $curso, string $fecha, string $motivo): string
+    {
+        ClaseSuspendida::updateOrCreate(['curso_id' => $curso->id, 'fecha' => $fecha], ['motivo' => $motivo, 'registrado_por' => $docente->id]);
+        Auditoria::registrar('editar', $curso, sprintf('Marcó que no hubo clase en %s · %s el %s: %s.',
+            $curso->programa->nombre, $curso->nombre, $this->fechaTexto($fecha), $motivo));
+
+        return 'Listo: el '.$this->fechaTexto($fecha).' no cuenta como clase.';
+    }
+
+    /** Deshace el "No hubo clase": vuelve a ser una clase del horario (por registrar). */
+    public function quitarSinClase(Curso $curso, string $fecha): string
+    {
+        $borradas = ClaseSuspendida::where('curso_id', $curso->id)->whereDate('fecha', $fecha)->delete();
+        if ($borradas) {
+            Auditoria::registrar('editar', $curso, sprintf('Deshizo el "no hubo clase" de %s · %s del %s.',
+                $curso->programa->nombre, $curso->nombre, $this->fechaTexto($fecha)));
+        }
+
+        return 'El '.$this->fechaTexto($fecha).' vuelve a ser clase: toma la asistencia.';
     }
 
     /**
@@ -287,6 +318,8 @@ class PanelDocenteService
                 ->map(fn (array $m) => array_intersect_key($m, array_flip(['id', 'nombre', 'horas', 'ini', 'fin', 'estado'])))
                 ->values(),
             'estudiantes'  => $estudiantes,
+            // Días marcados "No hubo clase": {fecha: motivo}
+            'sinClase'     => (object) $curso->sinClase(),
         ];
     }
 

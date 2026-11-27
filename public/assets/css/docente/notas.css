@@ -397,3 +397,11 @@
     .not-dialogo-caja { animation: none; }
     .not-toast, .not-grupo, .not-mod, .not-fila, .not-input, .not-btn { transition: none; }
 }
+
+/* Referencia del Aula virtual bajo el nombre del estudiante (27-11-2026) */
+.not-aula { margin-top: 3px; font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: help; }
+.not-aula b { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Imprimir planilla (27-11-2026) */
+.not-completa-barra { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.not-completa-barra .not-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

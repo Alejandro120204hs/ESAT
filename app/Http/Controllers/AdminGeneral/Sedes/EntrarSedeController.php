@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 class EntrarSedeController extends Controller
 {
     /** Pantallas de la secretaría a las que se puede llegar directo al entrar. */
-    private const DESTINOS = ['dashboard', 'matriculas', 'estudiantes', 'acudientes', 'docentes', 'cursos', 'horarios', 'pagos', 'asistencia', 'calificaciones'];
+    private const DESTINOS = ['dashboard', 'matriculas', 'estudiantes', 'docentes', 'cursos', 'horarios', 'pagos', 'asistencia', 'calificaciones'];
 
     public function entrar(Request $request, Sede $sede): RedirectResponse
     {

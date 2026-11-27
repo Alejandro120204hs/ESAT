@@ -17,7 +17,7 @@
     <div class="com-header">
         <div>
             <h1 class="com-title">Comunicados</h1>
-            <p class="com-sub">Avisos para toda la comunidad de ESAT o para algunas sedes. Aquí también ves lo que publican las secretarías y los docentes, y puedes archivar lo que no corresponda.</p>
+            <p class="com-sub">Avisos para toda la comunidad de ESAT o para algunas sedes. Aquí también ves lo que publican los administrativos y los docentes, y puedes archivar lo que no corresponda.</p>
         </div>
         <button type="button" class="com-btn com-btn-primary" id="com-nuevo">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -124,7 +124,6 @@
                         <label class="com-opcion"><input type="radio" name="destino" value="todos" checked><span>Todos</span></label>
                         <label class="com-opcion"><input type="radio" name="destino" value="estudiantes"><span>Estudiantes</span></label>
                         <label class="com-opcion"><input type="radio" name="destino" value="docentes"><span>Docentes</span></label>
-                        <label class="com-opcion"><input type="radio" name="destino" value="acudientes"><span>Acudientes</span></label>
                     </fieldset>
                     <p class="com-alcance" id="com-alcance"></p>
                     <p class="com-bloqueado" id="com-bloqueado" hidden>Ya está publicado: no se pueden cambiar las sedes ni los destinatarios.</p>

@@ -22,7 +22,7 @@
     ];
     var MOTIVOS_RAPIDOS = ['Cita médica', 'Incapacidad médica', 'Calamidad doméstica'];
     // Solo quienes salieron del grupo antes de terminar (en un grupo finalizado todos los demás son graduados)
-    var SALIDA = { aplazado: 'Aplazado', retirado: 'Retirado' };
+    var SALIDA = { aplazado: 'Aplazado', retirado: 'Retirado', trasladado: 'Cambió de grupo' };
     var reducirMov = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var ICON = {
@@ -226,7 +226,9 @@
     }
 
     /* ═══════════ Clases ═══════════ */
-    var ESTADO_CLASE = { registrada: 'registrada', sin_registrar: 'sin registrar', hoy: 'hoy, todavía no termina', futura: 'futura, todavía no se puede registrar' };
+    var ESTADO_CLASE = { registrada: 'registrada', sin_registrar: 'sin registrar', hoy: 'hoy, todavía no termina', futura: 'futura, todavía no se puede registrar',
+        festivo: 'festivo, no cuenta como clase', sin_clase: 'no hubo clase' };
+    var MOTIVOS_SIN_CLASE = ['Paro o protesta', 'Calamidad del docente', 'Suspendida por la sede', 'Clima o vías cerradas'];
 
     function renderClases() {
         var g = st.g, sin = pendientes(g);
@@ -290,7 +292,8 @@
         var porDia = {};
         g.clases.forEach(function (c) { if (c.fecha.slice(0, 7) === st.mes) porDia[c.fecha] = c; });
         var delMes = Object.keys(porDia).map(function (k) { return porDia[k]; });
-        var resumen = plural(delMes.length, 'clase', 'clases');
+        // Los festivos sin asistencia y los días sin clase no cuentan como clase
+        var resumen = plural(delMes.filter(function (c) { return c.estado !== 'festivo' && c.estado !== 'sin_clase'; }).length, 'clase', 'clases');
 
         var primero = new Date(y, m, 1), dias = new Date(y, m + 1, 0).getDate();
         var desfase = (primero.getDay() + 6) % 7; // lunes primero
@@ -301,10 +304,10 @@
             var c = porDia[iso];
             var hoy = iso === D.hoy;
             if (!c) { celdas += '<span class="tas-dia" aria-hidden="true">' + dd + '</span>'; continue; }
-            var cls = 'tas-dia' + ({ registrada: ' is-reg', sin_registrar: ' is-sin', hoy: ' is-pend', futura: ' is-fut' }[c.estado] || '') + (hoy ? ' is-hoy' : '');
+            var cls = 'tas-dia' + ({ registrada: ' is-reg', sin_registrar: ' is-sin', hoy: ' is-pend', futura: ' is-fut', festivo: ' is-festivo', sin_clase: ' is-sinclase' }[c.estado] || '') + (hoy ? ' is-hoy' : '');
             var sel = iso === st.fecha;
             if (sel) cls += ' is-sel';
-            var etiqueta = fechaLarga(iso) + ', ' + horas(c) + ': ' + (hoy && c.estado !== 'hoy' ? 'hoy, ' : '') + ESTADO_CLASE[c.estado];
+            var etiqueta = fechaLarga(iso) + ', ' + horas(c) + ': ' + (hoy && c.estado !== 'hoy' ? 'hoy, ' : '') + ESTADO_CLASE[c.estado] + (c.festivo ? ' (' + c.festivo + ')' : '');
             if (c.estado === 'futura') {
                 celdas += '<button type="button" class="' + cls + '" disabled aria-label="' + esc(etiqueta) + '" title="' + esc(mayus(fechaCorta(iso)) + ': todavía no llega') + '">' + dd + '</button>';
             } else {
@@ -337,6 +340,42 @@
         el.nota.hidden = false;
     }
 
+    /* "No hubo clase": un enlace en el aviso y un formulario corto con el motivo (se guarda con DOC_API.marcarSinClase) */
+    function botonSinClase(c) {
+        return ' <button type="button" class="tas-link" data-sinclase="' + c.fecha + '">No hubo clase</button>' + formSinClase(c.fecha);
+    }
+    function formSinClase(fecha) {
+        return '<span class="tas-sinclase" id="tas-sc-' + fecha + '" hidden>' +
+            '<label class="tas-motivo-lbl" for="tas-sc-m-' + fecha + '">¿Por qué no hubo clase? <em>obligatorio</em></label>' +
+            '<input type="text" class="tas-input" id="tas-sc-m-' + fecha + '" maxlength="200" autocomplete="off" placeholder="Ej.: paro de transporte">' +
+            '<span class="tas-chips">' + MOTIVOS_SIN_CLASE.map(function (m) { return '<button type="button" class="tas-chip" data-sc-chip="' + esc(m) + '">' + esc(m) + '</button>'; }).join('') + '</span>' +
+            '<span class="tas-sinclase-acciones"><button type="button" class="tas-btn tas-btn-ghost tas-btn-sm" data-sc-cancelar>Cancelar</button>' +
+            '<button type="button" class="tas-btn tas-btn-primary tas-btn-sm" data-sc-guardar="' + fecha + '">Guardar: no hubo clase</button></span>' +
+            '<span class="tas-sinclase-error" role="alert"></span></span>';
+    }
+    function alSinClase(e) {
+        var t = e.target;
+        var abrir = t.closest('[data-sinclase]');
+        if (abrir) { var f = $('tas-sc-' + abrir.dataset.sinclase); f.hidden = false; abrir.hidden = true; $('tas-sc-m-' + abrir.dataset.sinclase).focus(); return; }
+        var chip = t.closest('[data-sc-chip]');
+        if (chip) { var inp = chip.closest('.tas-sinclase').querySelector('input'); inp.value = chip.dataset.scChip; inp.focus(); return; }
+        if (t.closest('[data-sc-cancelar]')) { renderPlanilla(); return; }
+        var g = t.closest('[data-sc-guardar]');
+        if (g) {
+            var fecha = g.dataset.scGuardar, caja = g.closest('.tas-sinclase'), motivo = caja.querySelector('input').value.trim(), err = caja.querySelector('.tas-sinclase-error');
+            if (motivo.length < 3) { err.textContent = 'Escribe por qué no hubo clase.'; caja.querySelector('input').focus(); return; }
+            g.disabled = true;
+            API.marcarSinClase(st.g.id, fecha, motivo).then(function (r) { toast(r.mensaje); refrescar(); }, function (x) { g.disabled = false; err.textContent = x.message; });
+            return;
+        }
+        var con = t.closest('[data-conclase]');
+        if (con) {
+            con.disabled = true;
+            API.quitarSinClase(st.g.id, con.dataset.conclase).then(function (r) { toast(r.mensaje); refrescar(); }, function (x) { con.disabled = false; toast(x.message); });
+        }
+    }
+    function refrescar() { renderGrupos(); renderResumen(); renderClases(); cargarBorrador(); renderPlanilla(); }
+
     function renderPlanilla() {
         var g = st.g, c = clase(), md = modo();
         limpiarError();
@@ -357,13 +396,35 @@
         el.sub.innerHTML = esc(horas(c)) + (mod ? ' · Módulo ' + mod.n + ' de ' + g.modulos.length + ': <b>' + esc(mod.m.nombre) + '</b>' : '');
         el.estado.innerHTML = chipEstado(c);
 
+        // Marcado "No hubo clase": no cuenta como clase; se puede deshacer mientras el grupo esté vigente
+        if (c.estado === 'sin_clase') {
+            el.nota.hidden = true;
+            el.cuerpo.hidden = true;
+            el.barra.hidden = true;
+            el.vacio.innerHTML = ICON.cal + '<p><b>No hubo clase.</b> ' + esc(c.motivo || '') + '<br>Este día no cuenta en la asistencia ni en los pendientes.</p>' +
+                (md === 'consulta' ? '' : '<button type="button" class="tas-btn tas-btn-ghost tas-btn-sm" data-conclase="' + c.fecha + '">Sí hubo clase: tomar la asistencia</button>');
+            el.vacio.hidden = false;
+            return;
+        }
+        // Festivo que todavía no llega: no hay nada que registrar
+        if (c.estado === 'festivo' && c.fecha > D.hoy) {
+            el.nota.hidden = true;
+            el.cuerpo.hidden = true;
+            el.barra.hidden = true;
+            el.vacio.innerHTML = ICON.cal + '<p>Es festivo (<b>' + esc(c.festivo) + '</b>): no cuenta como clase. Si das clase ese día, toma la asistencia y contará.</p>';
+            el.vacio.hidden = false;
+            return;
+        }
+
         if (md === 'futura') {
             el.nota.hidden = true;
             el.cuerpo.hidden = true;
             el.barra.hidden = true;
             var def = claseDefecto(g);
             el.vacio.innerHTML = ICON.cal + '<p>Esta clase es el ' + esc(fechaLarga(c.fecha)) + ': todavía no se puede registrar.</p>' +
-                (def && def !== c.fecha ? '<button type="button" class="tas-btn tas-btn-ghost tas-btn-sm" data-fecha="' + def + '" data-ir="1">Ir a ' + esc(def === D.hoy ? 'la clase de hoy' : 'la clase del ' + fechaCorta(def)) + '</button>' : '');
+                (def && def !== c.fecha ? '<button type="button" class="tas-btn tas-btn-ghost tas-btn-sm" data-fecha="' + def + '" data-ir="1">Ir a ' + esc(def === D.hoy ? 'la clase de hoy' : 'la clase del ' + fechaCorta(def)) + '</button>' : '') +
+                // Si ya sabe que ese día no habrá clase, lo marca desde ya
+                '<button type="button" class="tas-link" data-sinclase="' + c.fecha + '">No habrá clase ese día</button>' + formSinClase(c.fecha);
             el.vacio.hidden = false;
             return;
         }
@@ -373,11 +434,13 @@
         if (md === 'consulta') {
             nota('lock', ICON.candado, '<b>Grupo finalizado: solo consulta.</b> Su asistencia ya no se puede cambiar.');
         } else if (c.estado === 'registrada') {
-            nota('ok', ICON.check, '<b>Registrada</b> — puedes corregirla mientras el grupo esté vigente.');
+            nota('ok', ICON.check, '<b>Registrada</b> — puedes corregirla mientras el grupo esté vigente.' + (c.festivo ? ' Es festivo (' + esc(c.festivo) + '), pero como tomaste asistencia cuenta como clase.' : ''));
+        } else if (c.estado === 'festivo') {
+            nota('', ICON.cal, 'Es festivo (<b>' + esc(c.festivo) + '</b>): no cuenta como clase y no queda pendiente. Si diste clase, toma la asistencia y contará.');
         } else if (c.estado === 'hoy') {
-            nota('', ICON.reloj, 'La clase de hoy termina a las ' + esc(c.fin) + '. Puedes ir marcando desde ya y corregir antes de que termine.');
+            nota('', ICON.reloj, 'La clase de hoy termina a las ' + esc(c.fin) + '. Puedes ir marcando desde ya y corregir antes de que termine.' + botonSinClase(c));
         } else {
-            nota('pend', ICON.alerta, 'Esta clase ya se dictó y no tiene asistencia. Márcala para ponerte al día.');
+            nota('pend', ICON.alerta, 'Esta clase ya se dictó y no tiene asistencia. Márcala para ponerte al día.' + botonSinClase(c));
         }
 
         if (!est.length) {
@@ -692,6 +755,8 @@
     el.listaSin.addEventListener('click', alElegirClase);
     el.pend.addEventListener('click', alElegirClase);
     el.vacio.addEventListener('click', alElegirClase);
+    el.vacio.addEventListener('click', alSinClase);
+    el.nota.addEventListener('click', alSinClase);
 
     el.soloSin.addEventListener('change', function () {
         st.soloSin = el.soloSin.checked;

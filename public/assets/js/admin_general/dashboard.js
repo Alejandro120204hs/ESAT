@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function lugar(s) { return s.ciudad === s.nombre ? s.departamento : s.ciudad + ', ' + s.departamento; }
     function secretariaCelda(s) {
         var ss = secretariasDe(s);
-        if (!ss.length) return '<span class="gen-badge gen-badge-mal">' + ICON.persona + 'Sin secretaría</span>';
+        if (!ss.length) return '<span class="gen-badge gen-badge-mal">' + ICON.persona + 'Sin administrativo</span>';
         var x = ss[0], otras = ss.length > 1 ? ' <span class="gen-sub" style="display:inline">+' + (ss.length - 1) + '</span>' : '';
         var sub = !x.ultimo_acceso ? '<div class="gen-sub gen-sub-warn">Nunca ha ingresado</div>'
             : diasDesde(x.ultimo_acceso) >= 30 ? '<div class="gen-sub gen-sub-warn">No entra hace ' + diasDesde(x.ultimo_acceso) + ' días</div>'
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var est = suma(t, function (s) { return s.estudiantes; });
         var moraEst = suma(t, function (s) { return s.mora.estudiantes; });
         document.getElementById('gen-comp-foot').innerHTML = '<tr>' +
-            '<td>Total ESAT</td><td>' + t.filter(function (s) { return secretariasDe(s).length; }).length + ' de ' + t.length + ' sedes con secretaría</td>' +
+            '<td>Total ESAT</td><td>' + t.filter(function (s) { return secretariasDe(s).length; }).length + ' de ' + t.length + ' sedes con administrativo</td>' +
             '<td class="gen-num">' + num(est) + '</td>' +
             '<td class="gen-num">' + plata(suma(t, function (s) { return s.ingresos[5]; })) + '</td>' +
             '<td class="gen-num">' + plata(suma(t, function (s) { return s.mora.valor; })) + '<div class="gen-sub">' + moraEst + ' en mora · ' + (est ? Math.round(moraEst / est * 100) : 0) + ' %</div></td>' +
@@ -307,13 +307,16 @@ document.addEventListener('DOMContentLoaded', function () {
         visibles().forEach(function (s) {
             var ss = secretariasDe(s);
             if (!ss.length) {
-                r.push({ nivel: 'critica', icon: 'persona', sede: s, titulo: s.nombre + ' no tiene secretaría',
-                    meta: 'Las matrículas y los pagos de la sede los tienes que registrar tú entrando a la sede. Crea o activa una cuenta de secretaría.' });
+                r.push({ nivel: 'critica', icon: 'persona', sede: s, titulo: s.nombre + ' no tiene administrativo',
+                    meta: 'Las matrículas y los pagos de la sede los tienes que registrar tú entrando a la sede. Crea o activa una cuenta de administrativo.' });
             }
             ss.forEach(function (x) {
                 if (x.ultimo_acceso && diasDesde(x.ultimo_acceso) >= 30) {
                     r.push({ nivel: 'aviso', icon: 'reloj', sede: s, titulo: nombreSec(x) + ' no entra hace ' + diasDesde(x.ultimo_acceso) + ' días',
-                        meta: 'Secretaría de ' + s.nombre + '. Si ya no trabaja en la sede, desactiva su cuenta.' });
+                        meta: 'Administrativo de ' + s.nombre + '. Si ya no trabaja en la sede, desactiva su cuenta.' });
+                } else if (!x.ultimo_acceso && x.creada && diasDesde(x.creada) >= 30) {
+                    r.push({ nivel: 'aviso', icon: 'reloj', sede: s, titulo: nombreSec(x) + ' nunca ha entrado',
+                        meta: 'Su cuenta de administrativo de ' + s.nombre + ' se creó hace ' + diasDesde(x.creada) + ' días. Confírmale su usuario y su clave, o desactívala si no la va a usar.' });
                 }
             });
             var pctMora = s.estudiantes ? Math.round(s.mora.estudiantes / s.estudiantes * 100) : 0;
@@ -322,7 +325,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     meta: s.mora.estudiantes + ' estudiantes deben ' + plata(s.mora.valor) + ' vencidos.' });
             }
             var pct = s.cupos ? Math.round(s.ocupados / s.cupos * 100) : 0;
-            if (pct < 50) {
+            // Sin grupos vigentes no hay cupos que llenar: no es una alerta
+            if (s.cupos && pct < 50) {
                 r.push({ nivel: 'aviso', icon: 'cupos', sede: s, titulo: s.nombre + ' tiene ocupado el ' + pct + ' % de sus cupos',
                     meta: num(s.ocupados) + ' de ' + num(s.cupos) + ' cupos en los grupos vigentes.' });
             } else if (pct >= 95) {
@@ -414,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
         dot.className = 'gen-modal-dot ' + colorDe(s);
         dot.textContent = iniciales(a.quien);
         document.getElementById('gen-act-modal-titulo').textContent = a.quien;
-        document.getElementById('gen-act-modal-sede').textContent = ({ admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente' }[a.rol] || 'Secretaría') + ' · ' + (s ? 'Sede ' + s.nombre : 'Todas las sedes');
+        document.getElementById('gen-act-modal-sede').textContent = ({ admin: 'Admin', secretaria: 'Administrativo', docente: 'Docente' }[a.rol] || 'Administrativo') + ' · ' + (s ? 'Sede ' + s.nombre : 'Todas las sedes');
         document.getElementById('gen-act-modal-text').textContent = a.texto;
         document.getElementById('gen-act-modal-time').textContent = fechaLarga(a.fecha) + ' · ' + hace(a.fecha);
         abrir('gen-act-modal');
@@ -436,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
         entrarSede = sedePorId(id);
         document.getElementById('gen-entrar-titulo').textContent = 'Entrar a ' + entrarSede.nombre;
         document.getElementById('gen-entrar-sub').textContent = entrarSede.ciudad + ' · ' +
-            (secretariasDe(entrarSede).length ? 'Secretaría: ' + nombreSec(secretariasDe(entrarSede)[0]) : 'Sin secretaría');
+            (secretariasDe(entrarSede).length ? 'Administrativo: ' + nombreSec(secretariasDe(entrarSede)[0]) : 'Sin administrativo');
         abrir('gen-entrar-modal');
     }
     document.getElementById('gen-entrar-ok').addEventListener('click', function () {

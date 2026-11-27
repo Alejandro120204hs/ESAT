@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class ComunicacionService
 {
     /** Destino en pantalla ⇄ destino guardado: "todos" es toda la sede. */
-    public const DESTINOS = ['todos' => 'sede', 'estudiantes' => 'estudiantes', 'docentes' => 'docentes', 'acudientes' => 'acudientes'];
+    public const DESTINOS = ['todos' => 'sede', 'estudiantes' => 'estudiantes', 'docentes' => 'docentes'];
 
     public function __construct(private ComunicadoService $comunicados) {}
 
@@ -27,7 +27,7 @@ class ComunicacionService
         return Sede::pluck('id')->mapWithKeys(function ($id) {
             $p = $this->comunicados->personas($id);
 
-            return [$id => ['estudiantes' => count($p['estudiantes']), 'docentes' => count($p['docentes']), 'acudientes' => count($p['acudientes']),
+            return [$id => ['estudiantes' => count($p['estudiantes']), 'docentes' => count($p['docentes']),
                 'grupos' => collect($p['estudiantes'])->countBy('grupo_id')->all()]];
         })->all();
     }
@@ -37,7 +37,9 @@ class ComunicacionService
         $alcance = $this->alcance();
         $total = Sede::count();
 
-        return Comunicado::with(['autor', 'curso.programa', 'lectores:id'])->orderByDesc('id')->get()
+        return Comunicado::with(['autor', 'curso.programa', 'lectores:id'])
+            ->where(fn ($q) => $q->where('destino', '!=', 'grupo')->orWhere('estado', '!=', 'borrador'))   // el borrador de un docente es solo suyo
+            ->orderByDesc('id')->get()
             ->groupBy(fn (Comunicado $c) => $c->lote ?: 'c'.$c->id)
             ->map(function (Collection $filas) use ($alcance, $total) {
                 // Si una secretaría archivó su copia, el envío sigue vivo en las demás: manda la primera sin archivar
@@ -52,7 +54,9 @@ class ComunicacionService
                     'id'             => $c->id,
                     'sedes'          => count($sedes) > 1 && count($sedes) === $total ? 'todas' : $sedes,
                     'destino'        => $destino,
-                    'grupo'          => $c->curso ? str_replace('Técnico Laboral en ', '', $c->curso->programa->nombre).' · '.$c->curso->nombre : null,
+                    // Un docente puede enviarlo a varios grupos (una fila por grupo con el mismo lote)
+                    'grupo'          => $c->curso ? $filas->filter(fn (Comunicado $f) => $f->curso)->sortBy('id')
+                        ->map(fn (Comunicado $f) => str_replace('Técnico Laboral en ', '', $f->curso->programa->nombre).' · '.$f->curso->nombre)->join(', ') : null,
                     'titulo'         => $c->titulo,
                     'mensaje'        => (string) $c->mensaje,
                     'autor'          => $this->autor($c),
@@ -144,7 +148,7 @@ class ComunicacionService
         }
 
         return match ($c->destino) {
-            'sede'  => $a['estudiantes'] + $a['docentes'] + $a['acudientes'],
+            'sede'  => $a['estudiantes'] + $a['docentes'],
             'grupo' => $a['grupos'][$c->curso_id] ?? 0,
             default => $a[$c->destino] ?? 0,
         };

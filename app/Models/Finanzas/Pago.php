@@ -115,6 +115,25 @@ class Pago extends Model
     }
 
     /**
+     * Lo pagado a este cobro con su fecha, [AAAA-MM-DD, monto], para saber cuánto debía en una fecha pasada (Inicio y
+     * Reportes). Son los recibos sin anular más lo que se cubrió sin recibo: el saldo a favor de un reintegro o de un cambio
+     * de programa, que se aplica al crear el cobro. Así lo pagado hoy es disponible() y lo vencido cuadra con restante().
+     */
+    public function pagosFechados(): array
+    {
+        $lista = $this->recaudos->whereNull('anulado_en')
+            ->map(fn (Recaudo $r) => [$r->fecha_pago->toDateString(), round((float) $r->pivot->monto, 2)])->values()->all();
+        $sinRecibo = round($this->disponible() - array_sum(array_column($lista, 1)), 2);
+        if (abs($sinRecibo) >= 0.5) {
+            // Lo que sobra (saldo a favor) cuenta desde que se creó el cobro; lo que falta (devuelto), desde su último cambio
+            $fecha = $sinRecibo > 0 ? $this->created_at : $this->updated_at;
+            $lista[] = [($fecha ?? now())->toDateString(), $sinRecibo];
+        }
+
+        return $lista;
+    }
+
+    /**
      * Siguiente recibo del año: RC-2026-00001… (un recibo por cada pago que recibe la sede).
      * El consecutivo vive en configuraciones ('ultimo_recibo_AAAA') y nunca retrocede: un recibo
      * anulado no se vuelve a entregar. Llamar dentro de una transacción (bloquea el contador).

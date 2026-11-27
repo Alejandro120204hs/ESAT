@@ -157,7 +157,7 @@
     function ejemplo() {
         var v = cobros.leer().cuota;
         $('cfg-ejemplo').innerHTML = v === '' ? 'Escribe el valor.' :
-            'Ejemplo: si la cuota de un programa es de <strong>' + esc(plata(250000)) + '</strong>, el estudiante paga <strong>' + esc(plata(250000 + v)) + '</strong> al mes. ' +
+            'Ejemplo: si la cuota de una carrera es de <strong>' + esc(plata(250000)) + '</strong>, el estudiante paga <strong>' + esc(plata(250000 + v)) + '</strong> al mes. ' +
             'Con los ' + num(D.activos) + ' estudiantes activos de hoy, son unos <strong>' + esc(plata(v * D.activos)) + '</strong> al mes para el sistema.';
     }
     $('cfg-cuota').addEventListener('input', function () { var d = digitos(this.value); this.value = d ? num(+d) : ''; ejemplo(); });
@@ -225,7 +225,7 @@
     $('cfg-bloq-body').addEventListener('click', function (e) {
         var btn = e.target.closest('[data-desbloquear]'); if (!btn) return;
         var b = C().bloqueadas.find(function (x) { return x.id === +btn.dataset.desbloquear; }), s = sedePorId(b.sede_id);
-        confirmar('¿Desbloquear la cuenta de ' + b.nombre + '?', 'Podrá entrar otra vez con su correo y su clave. Si no recuerda la clave, la secretaría de la sede puede restablecerla.', [], 'Desbloquear', function () {
+        confirmar('¿Desbloquear la cuenta de ' + b.nombre + '?', 'Podrá entrar otra vez con su correo y su clave. Si no recuerda la clave, el administrativo de la sede puede restablecerla.', [], 'Desbloquear', function () {
             return enviar('PATCH', '/general/configuracion/bloqueadas/' + b.id);
         });
     });

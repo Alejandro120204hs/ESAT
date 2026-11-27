@@ -345,3 +345,28 @@ select.dau-input { appearance: auto; }
 .dau-error { font-size: 0.84rem; color: var(--red); font-weight: 600; }
 .dau-error:empty { display: none; }
 .dau-resumen b { color: #9A4A12; }
+
+/* Material de clase y archivo de apoyo de una actividad (27-11-2026) */
+.dau-material { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.dau-material[hidden] { display: none; }
+.dau-mat-cab { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.dau-mat-ttl { font-family: "Archivo", system-ui, sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--navy-3); }
+.dau-mat-vacio { padding: 22px 20px; text-align: center; font-size: 0.88rem; color: var(--muted); line-height: 1.5; background: var(--white); border: 1.5px dashed #CBD5E1; border-radius: var(--radius-lg); }
+.dau-mat-vacio[hidden] { display: none; }
+.dau-mat-fecha { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+.dau-mat-archivos { display: flex; flex-direction: column; gap: 8px; }
+.dau-mat .dau-card-pie { justify-content: flex-end; }
+a.dau-archivo { text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+a.dau-archivo:hover, a.dau-archivo:focus-visible { border-color: var(--orange); background: #FFF8F2; outline: none; }
+.dau-archivo-icono svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dau-guia { margin-top: 10px; }
+.dau-actual { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+.dau-quitar-arch { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.dau-quitar-arch input { width: 16px; height: 16px; accent-color: var(--red); }
+.dau-subir-fila { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dau-file-oculto { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.dau-file-oculto:focus-visible + .dau-btn { box-shadow: 0 0 0 3px rgba(217,123,46,.35); }
+.dau-elegido { font-size: 0.82rem; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.dau-mat:not(:has(.dau-card-pie)) { padding-bottom: 18px; }
+.dau-campo .dau-subir-fila label.dau-btn, .dau-campo label.dau-quitar-arch { text-transform: none; letter-spacing: normal; font-size: 0.8rem; }
+.dau-campo label.dau-quitar-arch { color: var(--muted); font-weight: 600; }

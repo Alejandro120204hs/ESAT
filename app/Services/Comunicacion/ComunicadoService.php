@@ -19,11 +19,12 @@ use Illuminate\Support\Facades\Storage;
  * Las cuentas (porcentajes, pestañas, filtros) se hacen en comunicados.js con estos datos.
  *
  * Destinatarios: estudiantes = con matrícula vigente (activa o aplazada) en la sede y cuenta activa;
- * docentes y acudientes = cuentas activas de la sede; grupo = estudiantes con matrícula vigente en ese grupo.
+ * docentes = cuentas activas de la sede; grupo = estudiantes con matrícula vigente en ese grupo. El WhatsApp de un
+ * estudiante menor va a su contacto de emergencia.
  */
 class ComunicadoService
 {
-    private const LETRA = ['estudiante' => 'e', 'docente' => 'd', 'acudiente' => 'a'];
+    private const LETRA = ['estudiante' => 'e', 'docente' => 'd'];
 
     public function datosSede(int $sedeId): array
     {
@@ -31,6 +32,7 @@ class ComunicadoService
             'personas'    => $this->personas($sedeId),
             'grupos'      => $this->grupos($sedeId),
             'comunicados' => Comunicado::where('sede_id', $sedeId)
+                ->where(fn ($q) => $q->where('destino', '!=', 'grupo')->orWhere('estado', '!=', 'borrador'))   // el borrador de un docente es solo suyo
                 ->with(['autor', 'archivadoPor', 'lectores'])
                 ->orderByDesc('id')->get()
                 ->map(fn (Comunicado $c) => $this->comunicado($c))->values(),
@@ -42,16 +44,12 @@ class ComunicadoService
     {
         $matriculas = Matricula::where('sede_id', $sedeId)->whereIn('estado', ['activo', 'aplazado'])
             ->whereHas('estudiante', fn ($q) => $q->where('activo', true))
-            ->with(['estudiante.acudientes', 'curso', 'programa'])
+            ->with(['estudiante.contactoEmergencia', 'curso', 'programa'])
             ->get()->sortBy(fn (Matricula $m) => $m->estudiante->nombres.' '.$m->estudiante->apellidos);
-
-        $acudientes = User::where('role', RolUsuario::Acudiente)->where('sede_id', $sedeId)->where('activo', true)
-            ->with('estudiantesACargo')->orderBy('nombres')->get();
 
         return [
             'estudiantes' => $matriculas->map(function (Matricula $m) {
                 $e = $m->estudiante;
-                $a = $e->acudientes->first();
 
                 return [
                     'id'        => $e->id,
@@ -61,7 +59,7 @@ class ComunicadoService
                     'menor'     => $e->fecha_nacimiento !== null && $e->fecha_nacimiento->age < 18,
                     'grupo_id'  => $m->curso_id,
                     'detalle'   => $this->corto($m->programa->nombre).($m->curso ? ' · '.$m->curso->nombre : ''),
-                    'acudiente' => $a ? ['nombre' => $this->nombre($a), 'celular' => $this->digitos($a->telefono), 'parentesco' => $a->pivot->parentesco] : null,
+                    'contacto'  => $e->contactoEmergencia?->paraVista(),
                 ];
             })->values(),
             'docentes'    => User::where('role', RolUsuario::Docente)->where('sede_id', $sedeId)->where('activo', true)
@@ -72,17 +70,6 @@ class ComunicadoService
                     'celular' => $this->digitos($d->telefono),
                     'detalle' => $d->docentePerfil?->escuela?->nombre ?? 'Sin escuela',
                 ])->values(),
-            'acudientes'  => $acudientes->map(function (User $a) {
-                $p = $a->estudiantesACargo->first();
-                $hijos = $a->estudiantesACargo->map(fn (User $e) => explode(' ', $e->nombres)[0])->join(', ', ' y ');
-
-                return [
-                    'id'      => $a->id,
-                    'nombre'  => $this->nombre($a),
-                    'celular' => $this->digitos($a->telefono),
-                    'detalle' => ($p?->pivot->parentesco ?? 'Acudiente').' de '.($hijos ?: 'un estudiante'),
-                ];
-            })->values(),
         ];
     }
 
@@ -115,6 +102,10 @@ class ComunicadoService
                 'id'     => $autor->id,
                 'nombre' => $this->nombre($autor),
             ],
+            // Lo envió el Admin desde el panel general (se edita y elimina allá, entero) o es del Admin y quien mira es la
+            // secretaría: aquí solo se archiva
+            // (un docente también usa lote cuando publica a varios grupos: esos son "del docente", no del general)
+            'solo_general'  => ($c->lote !== null && $c->esDelAdmin()) || ($autor->isAdminGeneral() && ! auth()->user()?->isAdminGeneral()),
             'estado'        => $c->estado,
             'publicado_en'  => $c->publicado_en?->format('Y-m-d H:i'),
             'visible_hasta' => $c->visible_hasta?->toDateString(),
@@ -216,7 +207,7 @@ class ComunicadoService
 
     private function nombre(?User $u): string
     {
-        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Secretaría') : 'Secretaría';
+        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Administrativo') : 'Administrativo';
     }
 
     private function corto(string $programa): string

@@ -30,11 +30,11 @@ class PlanRequest extends FormRequest
         return [function (Validator $v) {
             $m = $this->matricula();
             if (! $m || $m->estado !== 'activo') {
-                $v->errors()->add('plan', 'Solo se elige el plan con una matrícula activa. Si crees que es un error, habla con la secretaría de tu sede.');
+                $v->errors()->add('plan', 'Solo se elige el plan con una matrícula activa. Si crees que es un error, habla con el administrativo de tu sede.');
             } elseif ($m->plan_pago) {
-                $v->errors()->add('plan', 'Ya elegiste tu plan de pago y no se puede cambiar. Si necesitas ayuda, habla con la secretaría de tu sede.');
+                $v->errors()->add('plan', 'Ya elegiste tu plan de pago y no se puede cambiar. Si necesitas ayuda, habla con el administrativo de tu sede.');
             } elseif (! $m->curso_id) {
-                $v->errors()->add('plan', 'Tu matrícula todavía no tiene grupo. La secretaría te ayudará a elegir el plan.');
+                $v->errors()->add('plan', 'Tu matrícula todavía no tiene grupo. El administrativo te ayudará a elegir el plan.');
             }
         }];
     }

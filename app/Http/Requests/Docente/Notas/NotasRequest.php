@@ -88,9 +88,14 @@ class NotasRequest extends FormRequest
                 }
                 $nombre = $e['nombres'];
                 [$n, $h] = [$x['n'], $x['h']];
+                // Cursó el módulo en este grupo: el módulo pasó (al menos en parte) mientras contaba aquí (historial de grupos)
+                $curso = collect($e['ventanas'])->contains(fn ($w) => $w['desde'] <= $m['fin'] && (! $w['hasta'] || $m['ini'] < $w['hasta']));
+                // Quien se cambió de grupo: aquí solo se califican los módulos que terminó antes de irse
+                $terminoAqui = $e['matricula']['estado'] === 'trasladado' && $e['hasta'] && $m['fin'] < $e['hasta'];
                 $error = match (true) {
-                    $e['matricula']['estado'] !== 'activo'      => "La matrícula de {$nombre} no está activa: sus notas solo se consultan.",
-                    $m['fin'] < $e['matricula']['fecha']        => "{$nombre} no cursó este módulo en el grupo.",
+                    $e['matricula']['estado'] === 'trasladado' && ! $terminoAqui => "{$nombre} se cambió de grupo: aquí solo se califican los módulos que terminó antes de irse.",
+                    ! in_array($e['matricula']['estado'], ['activo', 'trasladado'], true) => "La matrícula de {$nombre} no está activa: sus notas solo se consultan.",
+                    ! $curso                                    => "{$nombre} no cursó este módulo en el grupo.",
                     $n === false                                 => "La nota de {$nombre} debe ir de 1.0 a 5.0, con un decimal.",
                     $h === false                                 => "La habilitación de {$nombre} debe ir de 1.0 a 5.0, con un decimal.",
                     $h !== null && $m['estado'] !== 'terminado' => 'La habilitación se presenta cuando el módulo termina.',

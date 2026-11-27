@@ -40,14 +40,12 @@ class SesionesYClavesTest extends TestCase
 
     public function test_restablecer_la_clave_desde_la_secretaria_cierra_las_sesiones(): void
     {
-        foreach (['estudiante' => 'estudiantes', 'acudiente' => 'acudientes'] as $rol => $ruta) {
-            $u = User::factory()->create(['role' => $rol, 'sede_id' => $this->sede->id, 'remember_token' => 'token-viejo', 'numero_documento' => '10'.random_int(10000000, 99999999)]);
+        $u = User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id, 'remember_token' => 'token-viejo', 'numero_documento' => '10'.random_int(10000000, 99999999)]);
 
-            $this->actingAs($this->admin)->patchJson("/admin/{$ruta}/{$u->id}/clave")->assertOk();
+        $this->actingAs($this->admin)->patchJson("/admin/estudiantes/{$u->id}/clave")->assertOk();
 
-            $this->assertNotSame('token-viejo', $u->fresh()->remember_token, "La cookie \"Recordarme\" del {$rol} deja de servir");
-            $this->assertTrue(password_verify($u->numero_documento, $u->fresh()->password));
-        }
+        $this->assertNotSame('token-viejo', $u->fresh()->remember_token, 'La cookie "Recordarme" del estudiante deja de servir');
+        $this->assertTrue(password_verify($u->numero_documento, $u->fresh()->password));
     }
 
     public function test_entrar_con_recordarme_guarda_el_ultimo_acceso(): void

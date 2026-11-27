@@ -120,7 +120,7 @@ class GrupoController extends Controller
                 'estado'       => $request->input('estado'),
             ]);
             $curso->docentes()->sync($request->filled('docente_id') ? [$request->integer('docente_id')] : []);
-            // Si se corrió el inicio, el derecho de matrícula de sus estudiantes vence el nuevo día
+            // Si se corrió el inicio, el derecho de matrícula y las cuotas de sus estudiantes vencen según el nuevo día
             if ($curso->wasChanged('fecha_inicio')) {
                 app(PagoService::class)->reprogramarDerechosDelGrupo($curso);
             }
@@ -188,7 +188,7 @@ class GrupoController extends Controller
 
         $programa = $curso->programa;
         if (! in_array($curso->jornada, $programa->jornadas ?? [], true)) {
-            return 'El programa ya no se ofrece en jornada '.mb_strtolower($curso->jornada).': cambia la jornada del grupo antes de activarlo.';
+            return 'La carrera ya no se ofrece en jornada '.mb_strtolower($curso->jornada).': cambia la jornada del grupo antes de activarlo.';
         }
 
         $sesiones = $curso->sesiones->map(fn ($s) => ['dia' => $s->dia, 'hora_inicio' => $s->inicio(), 'hora_fin' => $s->fin()])->all();

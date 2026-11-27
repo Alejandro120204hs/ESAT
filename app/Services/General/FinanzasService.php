@@ -21,7 +21,7 @@ class FinanzasService
     {
         [$estudiantes, $recibos] = $this->personas->estudiantes();
         $desde = now()->subYear()->startOfMonth()->toDateString();
-        $campos = ['id', 'sede_id', 'nombres', 'apellidos', 'tipo_documento', 'numero_documento', 'telefono', 'email', 'edad', 'genero', 'acudiente',
+        $campos = ['id', 'sede_id', 'nombres', 'apellidos', 'tipo_documento', 'numero_documento', 'telefono', 'email', 'edad', 'genero', 'contacto',
             'programa_id', 'programa', 'grupo', 'estado', 'estado_fecha', 'estado_motivo', 'fecha_matricula', 'pago', 'saldo_vencido', 'por_pagar_mes', 'cuotas_vencidas'];
 
         return [

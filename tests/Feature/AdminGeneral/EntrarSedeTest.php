@@ -78,7 +78,8 @@ class EntrarSedeTest extends TestCase
             'departamento_nacimiento' => 'Tolima', 'lugar_nacimiento' => 'Honda', 'genero' => 'femenino',
             'tipo_documento' => 'CC', 'numero_documento' => '1070123456', 'telefono' => '3157720419',
             'email' => 'laura.gomez@example.com', 'direccion' => 'Calle 4 # 6-21',
-            'departamento_residencia' => 'Cundinamarca', 'ciudad_residencia' => 'Villeta', 'con_acudiente' => false,
+            'departamento_residencia' => 'Cundinamarca', 'ciudad_residencia' => 'Villeta',
+            'contacto' => ['nombre' => 'Rosa Patiño', 'celular' => '3104445566', 'parentesco' => 'Madre'],
         ])->assertOk();
 
         $e = User::where('numero_documento', '1070123456')->firstOrFail();
@@ -108,7 +109,7 @@ class EntrarSedeTest extends TestCase
 
     public function test_otros_roles_no_entran(): void
     {
-        foreach (['estudiante', 'docente', 'acudiente', 'superadmin'] as $rol) {
+        foreach (['estudiante', 'docente', 'superadmin'] as $rol) {
             $u = User::factory()->create(['role' => $rol]);
             $this->actingAs($u)->post('/general/sedes/'.$this->sede->id.'/entrar')->assertForbidden();
             $this->actingAs($u)->get('/admin')->assertForbidden();

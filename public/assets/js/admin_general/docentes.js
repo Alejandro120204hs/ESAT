@@ -270,7 +270,7 @@
         $('dcn-dw-grupos').innerHTML = gs.length ? '<ul class="dcn-list">' + gs.map(function (g) {
             var p = programa(g.programa_id), e = { en_clases: ['En clases', 'active'], por_iniciar: ['Por iniciar', 'warn'], finalizado: ['Finalizado', 'muted'] }[g.estado];
             return '<li><div><div class="dcn-strong">' + esc(p.nombre.replace('Técnico Laboral en ', '') + ' · ' + g.nombre) + '</div><div class="dcn-muted">' + esc(sede(g.sede_id).nombre + ' · ' + g.jornada + ' · ' + fechaLarga(g.inicio) + ' a ' + fechaLarga(g.fin)) + '</div></div>' + tag(e) + '</li>';
-        }).join('') + '</ul><p class="dcn-hint dcn-hint-grupos">Los grupos y horarios se asignan en la sede (Grupos y Horarios de la secretaría).</p>' : '<p class="dcn-muted">No tiene grupos asignados.</p>';
+        }).join('') + '</ul><p class="dcn-hint dcn-hint-grupos">Los grupos y horarios se asignan en la sede (Grupos y Horarios del administrativo).</p>' : '<p class="dcn-muted">No tiene grupos asignados.</p>';
         $('dcn-dw-estado').textContent = d.estado === 'inactivo' ? 'Activar' : 'Desactivar';
         tab(pestana || 'datos');
         drawer.classList.add('is-open'); drawer.setAttribute('aria-hidden', 'false');

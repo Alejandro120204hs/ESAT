@@ -52,7 +52,7 @@
             return '<label class="pag-op"><input type="radio" name="pag-plan" value="' + k + '"' + (elegido === k ? ' checked' : '') + '>' +
                 '<span class="pag-op-nombre">' + esc(o.nombre) + '</span>' +
                 '<span class="pag-op-valor">' + esc(plata(o.cuota)) + ' <small>' + esc(cada) + '</small></span>' +
-                '<span class="pag-op-det">' + esc(plural(o.cuotas, 'cuota', 'cuotas') + ', el día 10. Programa ' + plata(o.valorPrograma) + ' + ' + sistema + '.') + '</span>' +
+                '<span class="pag-op-det">' + esc(plural(o.cuotas, 'cuota', 'cuotas') + ', el día 10. Carrera ' + plata(o.valorPrograma) + ' + ' + sistema + '.') + '</span>' +
             '</label>';
         }).join('');
         pintarAvisoPlan();
@@ -122,7 +122,7 @@
     }
 
     /* ── Cobros ───────────────────────────────── */
-    function desglose(c) { return c ? 'programa ' + plata(c.valorPrograma) + ' + cuota del sistema ' + plata(c.sistema) : ''; }
+    function desglose(c) { return c ? 'carrera ' + plata(c.valorPrograma) + ' + cuota del sistema ' + plata(c.sistema) : ''; }
     function primeraCuota() { return D.pagos.cobros.filter(function (c) { return c.tipo !== 'matricula'; })[0] || null; }
     function pintarCobros() {
         var P = D.pagos, R = P.resumen, base = desglose(primeraCuota());
@@ -156,7 +156,7 @@
                     '<div class="pag-recibo-top"><span class="pag-recibo-num">' + esc(r.numero) + '</span>' +
                         (r.anulado ? '<span class="app-status-tag app-status-muted">Anulado</span>' : '') + '</div>' +
                     '<span class="pag-recibo-sub">' + esc(fechaCorta(r.fecha) + ' · ' + r.medio + (r.referencia ? ' (ref. ' + r.referencia + ')' : '') + ' · ' + conceptos) + '</span>' +
-                    (r.anulado ? '<span class="pag-recibo-sub">' + esc('La secretaría lo anuló: ' + r.motivo + ' No cuenta como pago.') + '</span>' : '') +
+                    (r.anulado ? '<span class="pag-recibo-sub">' + esc('El administrativo lo anuló: ' + r.motivo + ' No cuenta como pago.') + '</span>' : '') +
                 '</div>' +
                 '<span class="pag-recibo-total">' + esc(plata(r.total)) + '</span>' +
                 '<button type="button" class="pag-btn pag-btn-ghost pag-btn-sm" data-recibo="' + i + '" aria-label="' + esc('Imprimir el recibo ' + r.numero) + '">' + ICON.imprimir + 'Imprimir</button>' +
@@ -190,7 +190,7 @@
                 '<section class="rc-datos rc-datos-pago">' +
                     '<div><span>Medio de pago</span><strong>' + e(r.medio) + '</strong></div>' +
                     '<div><span>Referencia</span><strong>' + e(r.referencia || '—') + '</strong></div>' +
-                    '<div><span>Recibió</span><strong>Secretaría de la sede</strong></div>' +
+                    '<div><span>Recibió</span><strong>Administración de la sede</strong></div>' +
                 '</section>' +
                 '<p class="rc-nota">Copia del recibo impresa desde el panel del estudiante.</p>'
         });

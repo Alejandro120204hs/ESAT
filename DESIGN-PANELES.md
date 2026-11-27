@@ -1,6 +1,6 @@
 # Diseño de los paneles internos de ESAT
 
-Sistema visual de **todos los paneles por rol** (Docente, Secretaría, Admin, Estudiante —24-11-2026— y el que falta: Acudiente).
+Sistema visual de **todos los paneles por rol** (Docente, Secretaría, Admin y Estudiante —24-11-2026—; no hay panel de acudiente).
 `DESIGN.md` es solo del **sitio público** (franjas azules, fotos, cifras grandes): no se usa en los paneles.
 
 Modo: **Operate**. Quien entra a un panel viene a hacer algo (tomar asistencia, cobrar, revisar), no a mirar. Se
@@ -92,7 +92,7 @@ y el que primero se rehízo con estas reglas (9-11-2026). La Secretaría y el Ad
 - **Avisos** en línea: fondo tenue del color de su significado (naranja pendiente, rojo riesgo, neutro informativo).
 - **Toasts** con `role="status"` y errores con `role="alert"`.
 - **Combobox de Colombia**: copiar el de un panel Admin con `alScroll` (CLAUDE.md).
-- Del panel Estudiante (copiar de ahí para el de Acudiente):
+- Del panel Estudiante (también los usa el Docente en Comunicados y Foro):
   - **Lista + lector** (Estudiante › Comunicados): lista a la izquierda, lectura a la derecha; a ≤ 900 px, uno a la vez
     con "Volver". Lo que falta leer lleva un punto naranja; quien lo envía es neutro.
   - **Documento imprimible en la misma página** (`estudiante/documento.css/js`, `EST_DOC.imprimir`): la hoja de los

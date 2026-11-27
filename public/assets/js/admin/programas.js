@@ -113,7 +113,7 @@
             if (i >= start && i < end) row.classList.remove('is-hidden');
         });
 
-        countBdg.textContent = total + ' programa' + (total !== 1 ? 's' : '');
+        countBdg.textContent = total + ' carrera' + (total !== 1 ? 's' : '');
         emptyEl.style.display = total === 0 ? 'block' : 'none';
 
         if (!paginationEl) return;
@@ -220,8 +220,7 @@
         set('dw-valor-mensual',  fmt(cuota) + ' / mes');
         set('dw-periodos',       p.periodos + ' ' + (p.tipo_periodo === 'semestre' ? (p.periodos === 1 ? 'semestre' : 'semestres') : (p.periodos === 1 ? 'trimestre' : 'trimestres')));
         html('dw-badges',        badge(p.estado) + ' <span class="prg-esc-tag prg-esc-' + escClass(p) + '">' + esc(p.escuela) + '</span>');
-        set('dw-doc-res',    p.resolucion || 'Sin registrar');
-        set('dw-est-txt',    p.estudiantes === 1 ? '1 estudiante matriculado en este programa' : p.estudiantes + ' estudiantes matriculados en este programa');
+        set('dw-est-txt',    p.estudiantes === 1 ? '1 estudiante matriculado en esta carrera' : p.estudiantes + ' estudiantes matriculados en esta carrera');
 
         // Módulos
         var tbody = document.getElementById('dw-modulos-body');
@@ -235,7 +234,7 @@
                     + '<td class="prg-mod-horas">' + m.horas + ' h</td>'
                     + '<td class="prg-mod-docente">' + esc(m.docente) + '</td>'
                     + '</tr>';
-            }).join('') : '<tr><td colspan="4" class="prg-mod-docente">Este programa todavía no tiene módulos registrados.</td></tr>';
+            }).join('') : '<tr><td colspan="4" class="prg-mod-docente">Esta carrera todavía no tiene módulos registrados.</td></tr>';
             set('dw-horas-total', Number(totalH).toLocaleString('es-CO') + ' h totales');
         }
 
@@ -243,7 +242,7 @@
         var gruposGrid = document.getElementById('dw-grupos-grid');
         if (gruposGrid) {
             gruposGrid.innerHTML = !p.grupos.length
-                ? '<div class="prg-placeholder"><p>Este programa todavía no tiene grupos en tu sede</p><span>Los grupos se crean en el módulo Grupos</span></div>'
+                ? '<div class="prg-placeholder"><p>Esta carrera todavía no tiene grupos en tu sede</p><span>Los grupos se crean en el módulo Grupos</span></div>'
                 : p.grupos.map(function (g) {
                 var pct = Math.round((g.inscritos / g.cupo) * 100);
                 return '<div class="prg-grupo-card">'

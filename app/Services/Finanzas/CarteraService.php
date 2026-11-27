@@ -23,7 +23,7 @@ class CarteraService
         // recibidos para que el consecutivo RC no tenga huecos sin explicación (HALLAZGOS B26)
         $matriculas = Matricula::where('sede_id', $sedeId)
             ->with([
-                'programa.escuela', 'curso', 'estudiante.acudientes',
+                'programa.escuela', 'curso', 'estudiante.contactoEmergencia',
                 'pagos' => fn ($q) => $q->where('estado', '!=', 'anulado'),
                 'recaudos' => fn ($q) => $q->with(['cobros', 'registradoPor', 'anuladoPor']),
                 'devoluciones.registradoPor',
@@ -44,7 +44,6 @@ class CarteraService
     private function matricula(Matricula $m): array
     {
         $e = $m->estudiante;
-        $a = $e->acudientes->first();
         $total = $this->totalCuotas($m);
 
         return [
@@ -60,11 +59,7 @@ class CarteraService
             'documento'    => $e->numero_documento,
             'telefono'     => $this->digitos($e->telefono),
             'menor'        => $e->fecha_nacimiento !== null && $e->fecha_nacimiento->age < 18,
-            'acudiente'    => $a ? [
-                'nombre'     => trim($a->nombres.' '.$a->apellidos),
-                'parentesco' => $a->pivot->parentesco,
-                'telefono'   => $this->digitos($a->telefono),
-            ] : null,
+            'contacto'     => $e->contactoEmergencia?->paraVista(),
             'programa_id'  => $m->programa_id,
             'programa'     => $m->programa->nombre,
             'sigla'        => mb_strtolower($m->programa->escuela?->sigla ?? ''),
@@ -138,7 +133,7 @@ class CarteraService
 
     private function nombre(?User $u): string
     {
-        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Secretaría') : 'Secretaría';
+        return $u ? (trim($u->nombres.' '.$u->apellidos) ?: 'Administrativo') : 'Administrativo';
     }
 
     private function digitos(?string $tel): string

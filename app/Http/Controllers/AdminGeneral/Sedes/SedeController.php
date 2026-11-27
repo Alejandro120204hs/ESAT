@@ -35,7 +35,7 @@ class SedeController extends Controller
         $sede = Sede::create($request->validated());
         Auditoria::registrar('crear', $sede, "Creó la sede {$sede->nombre} ({$sede->ciudad}, {$sede->departamento}).", $sede->id);
 
-        return response()->json(['mensaje' => "Se creó la sede {$sede->nombre}. Ahora asígnale una secretaría.", 'id' => $sede->id], 201);
+        return response()->json(['mensaje' => "Se creó la sede {$sede->nombre}. Ahora asígnale un administrativo.", 'id' => $sede->id], 201);
     }
 
     public function update(SedeRequest $request, Sede $sede): JsonResponse

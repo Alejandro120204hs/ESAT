@@ -21,7 +21,7 @@
         })(@json((string) auth()->user()->sedeTrabajoId()), window.fetch.bind(window));
     </script>
     @endif
-    <title>@yield('title', 'Panel') — ESAT Secretaría</title>
+    <title>@yield('title', 'Panel') — ESAT Administrativo</title>
 
     <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">
 

@@ -15,7 +15,7 @@
 
     <header class="com-header">
         <h2 class="com-title">Comunicados</h2>
-        <p class="com-sub">Los avisos que te envían la secretaría de tu sede, el Admin de ESAT y tu docente.</p>
+        <p class="com-sub">Los avisos que te envían el administrativo de tu sede, el Admin de ESAT y tu docente.</p>
     </header>
 
     <div class="com-toolbar app-anim app-anim-d1">

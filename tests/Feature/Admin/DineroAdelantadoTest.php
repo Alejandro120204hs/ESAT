@@ -8,6 +8,8 @@ use App\Models\Institucional\Configuracion;
 use App\Models\User;
 use App\Services\Academico\MatriculaService;
 use App\Services\Finanzas\PagoService;
+use App\Services\Inicio\InicioService;
+use App\Services\Reportes\ReporteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -38,7 +40,7 @@ class DineroAdelantadoTest extends TestCase
     private function matricula(string $inicioGrupo = '2026-09-07'): Matricula
     {
         $grupo = $this->grupo($this->programa(['Mañana'], 1600, 10), 'Mañana', null, 'activo', $inicioGrupo);
-        $m = $this->matriculas->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        $m = $this->alIniciar($grupo, fn () => $this->matriculas->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
         $m->update(['plan_pago' => 'mensual']);
         $this->pagos->generarCuotas($m->fresh(), $grupo->fecha_inicio);
 
@@ -231,5 +233,27 @@ class DineroAdelantadoTest extends TestCase
         $this->patchJson("/admin/matriculas/{$nueva->id}/estado", ['estado' => 'anulado', 'fecha' => today()->toDateString(), 'motivo' => 'Se hizo por error'])
             ->assertJsonValidationErrors('estado');
         $this->assertSame('activo', $nueva->fresh()->estado);
+    }
+
+    /** Lo cubierto con saldo a favor al reintegrarse está pagado: ni el Inicio ni Reportes lo muestran en mora (auditoría 26-11-2026). */
+    public function test_lo_cubierto_con_saldo_a_favor_no_sale_en_mora(): void
+    {
+        $m = $this->matricula();
+        $this->pagarHasta($m, '2027-02-10');                                    // hasta febrero
+        Carbon::setTestNow('2026-11-20 10:00');
+        $this->matriculas->cambiarEstado($m->fresh(), 'aplazado', today(), 'Viaje familiar');
+        Carbon::setTestNow('2026-12-01 10:00');
+        $this->matriculas->cambiarEstado($m->fresh(), 'activo', today(), 'Vuelve', $m->curso);
+
+        Carbon::setTestNow('2027-01-15 10:00');                                 // dic y ene ya vencieron, pagados con su saldo
+        $m = Matricula::with(['pagos', 'recaudos', 'programa'])->find($m->id);
+        $this->assertSame(0, $this->pagos->resumen($m)['saldo_vencido']);
+        $this->assertSame(['estudiantes' => 0, 'valor' => 0], app(InicioService::class)->mora(collect([$m]), now()));
+
+        // Reportes reconstruye el saldo con los pagos fechados: los cobros de después del reintegro quedan cubiertos
+        $cobros = collect(app(ReporteService::class)->datosSede($this->sede->id)['cobros'])
+            ->filter(fn ($c) => $c['matricula_id'] === $m->id && $c['vence'] <= today()->toDateString());
+        $this->assertGreaterThanOrEqual(6, $cobros->count());                   // derecho, sep–nov, dic y ene
+        $this->assertTrue($cobros->every(fn ($c) => collect($c['pagos'])->sum(1) >= $c['valor']), 'Todo lo vencido está pagado');
     }
 }

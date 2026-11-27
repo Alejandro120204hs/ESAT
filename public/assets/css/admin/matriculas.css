@@ -1,4 +1,4 @@
-/* ESAT — Admin: Matrículas (misma estructura visual que Docentes, Estudiantes y Acudientes) */
+/* ESAT — Admin: Matrículas (misma estructura visual que Docentes y Estudiantes) */
 
 .mat-wrap { display: flex; flex-direction: column; gap: 22px; }
 

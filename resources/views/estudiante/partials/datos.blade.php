@@ -10,6 +10,7 @@
         'rutas'       => [
             'plan'      => route('estudiante.pagos.plan'),
             'responder' => route('estudiante.aula.responder', ['evaluacion' => '__ID__']),
+            'iniciar'   => route('estudiante.aula.iniciar', ['evaluacion' => '__ID__']),
             'entregar'  => route('estudiante.aula.entregar', ['actividad' => '__ID__']),
             'leido'     => route('estudiante.comunicados.leido', ['comunicado' => '__ID__']),
             'tema'      => route('estudiante.foro.tema'),

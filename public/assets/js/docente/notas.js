@@ -29,7 +29,7 @@
         por_iniciar:   ['app-status-muted', 'Por iniciar'],
         invalida:      ['app-status-danger', 'Revisar nota']
     };
-    var MATRICULA = { aplazado: 'Aplazado', retirado: 'Retirado', graduado: 'Graduado' };
+    var MATRICULA = { aplazado: 'Aplazado', retirado: 'Retirado', trasladado: 'Cambió de grupo', graduado: 'Graduado' };
     var ESTADO_MOD = { terminado: 'Terminado', en_curso: 'En curso', por_iniciar: 'Por iniciar' };
 
     var ICON = {
@@ -67,7 +67,7 @@
         return diaMes(a) + ' – ' + diaMes(b) + (ya !== ANIO_HOY ? ' ' + ya : '');
     }
     /* Aplazados y retirados: lo que no tienen no es tarea pendiente del docente */
-    function seFue(e) { return e.matricula.estado === 'aplazado' || e.matricula.estado === 'retirado'; }
+    function seFue(e) { return e.matricula.estado === 'aplazado' || e.matricula.estado === 'retirado' || e.matricula.estado === 'trasladado'; }
     function promedio(lista) {
         if (!lista.length) return null;
         return Math.round(lista.reduce(function (s, v) { return s + v; }, 0) / lista.length * 10) / 10;
@@ -339,7 +339,8 @@
                 e: e,
                 orig: { n: x.n, h: x.h },
                 noCursado: x.estado === 'no_cursado',
-                editable: editableGrupo && e.matricula.estado === 'activo' && x.estado !== 'no_cursado'
+                // Quien se cambió de grupo: aquí solo se califica el módulo que terminó antes de irse
+                editable: editableGrupo && x.estado !== 'no_cursado' && (e.matricula.estado === 'activo' || (e.matricula.estado === 'trasladado' && e.hasta && m.fin < e.hasta))
             };
             if (!separado && hayActivos && e.matricula.estado !== 'activo' && editableGrupo) {
                 separado = true;
@@ -364,6 +365,7 @@
         var pie = [];
         if (noCursados) pie.push(plural(noCursados, 'estudiante se matriculó', 'estudiantes se matricularon') + ' cuando el módulo ya había terminado: aparece' + (noCursados === 1 ? '' : 'n') + ' como No cursado.');
         if (editableGrupo && st.filas.some(function (f) { return f.e.matricula.estado !== 'activo'; })) pie.push('Las matrículas aplazadas, retiradas o graduadas solo se consultan y no cuentan en el resumen.');
+        if (st.filas.some(function (f) { return f.tr && f.tr.querySelector('.not-aula'); })) pie.push('«En el Aula» es el promedio de lo calificado en el Aula virtual de este módulo: es solo una referencia, la nota del módulo la pones tú.');
         if (editableGrupo) pie.push('Enter o las flechas ↑ ↓ pasan al siguiente estudiante.');
         elPie.textContent = pie.join(' ');
 
@@ -374,6 +376,17 @@
         }
         actualizarResumen();
         actualizarCambios();
+    }
+
+    /* Lo calificado en el Aula virtual de este módulo (evaluaciones y actividades): solo una referencia para poner la nota */
+    function aulaDe(e) {
+        var A = (window.DOC_SERVIDOR || {}).aula || {};
+        var lista = ((A[st.g.id] || {})[e.id] || {})[st.m.id] || [];
+        if (!lista.length) return '';
+        var prom = Math.round(lista.reduce(function (s, x) { return s + x.nota; }, 0) / lista.length * 10) / 10;
+        var detalle = lista.map(function (x) { return (x.tipo === 'evaluacion' ? 'Evaluación' : 'Actividad') + ' «' + x.titulo + '»: ' + fmt(x.nota); }).join(' · ');
+        return '<div class="not-aula" title="' + esc(detalle) + '">En el Aula: <b class="not-tono-' + tono(prom) + '">' + esc(fmt(prom)) + '</b> · ' +
+            esc(plural(lista.length, 'trabajo calificado', 'trabajos calificados')) + '<span class="sr-solo"> (' + esc(detalle) + ')</span></div>';
     }
 
     function filaHtml(f) {
@@ -405,7 +418,7 @@
                 '<div class="not-avatar" aria-hidden="true">' + esc(iniciales(e.nombres, e.apellidos)) + '</div>' +
                 '<div class="not-min0"><div class="not-person-name">' + esc(e.nombres + ' ' + e.apellidos) +
                     '<span class="not-sucio" title="Cambios sin guardar"></span></div>' +
-                '<div class="not-person-sub">' + esc(e.tipoDoc + ' ' + e.documento) + '</div>' + chips + '</div>' +
+                '<div class="not-person-sub">' + esc(e.tipoDoc + ' ' + e.documento) + '</div>' + (f.noCursado ? '' : aulaDe(e)) + chips + '</div>' +
             '</div></td>' +
             '<td data-label="Nota">' + celdaN + '</td>' +
             '<td data-label="Habilitación">' + celdaH + '</td>' +
@@ -755,6 +768,49 @@
             '<td class="not-mz-prom not-tono-' + tono(promGrupo) + '">' + fmt(promGrupo) + '</td></tr></tfoot></table>';
         wrap.innerHTML = html;
     }
+    /* Planilla de notas imprimible (documento.js): lo guardado, estudiantes × módulos con su promedio y la firma del docente */
+    function imprimirPlanilla() {
+        var g = st.g, S = window.DOC_SERVIDOR || {};
+        if (!g || !window.DOC_DOC) return;
+        var personas = ordenados(g);
+        var dato = function (k, v, full) { return '<div' + (full ? ' class="rc-full"' : '') + '><span>' + esc(k) + '</span><strong>' + esc(v || '—') + '</strong></div>'; };
+        var porModulo = g.modulos.map(function () { return []; }), todas = [];
+        var filas = personas.map(function (e, i) {
+            var inactiva = e.matricula.estado !== 'activo' && !(g.soloConsulta && e.matricula.estado === 'graduado');
+            var celdas = g.modulos.map(function (m, k) {
+                var x = e.notas[m.id];
+                if (x.n == null) return '<td class="rc-centro">' + (x.estado === 'no_cursado' ? 'NC' : '') + '</td>';
+                var fin = D.notaFinal(x.n, x.h);
+                if (cuenta(e)) { porModulo[k].push(fin); todas.push(fin); }
+                return '<td class="rc-centro' + (fin < D.APRUEBA ? ' rc-baja' : '') + '">' + fmt(fin) + (x.h != null ? '<sup>H</sup>' : '') + '</td>';
+            }).join('');
+            return '<tr><td class="rc-centro">' + (i + 1) + '</td><td>' + esc(e.apellidos + ', ' + e.nombres) +
+                (inactiva ? ' <small>(' + esc((MATRICULA[e.matricula.estado] || e.matricula.estado).toLowerCase()) + ')</small>' : '') + '</td>' +
+                celdas + '<td class="rc-centro"><strong>' + fmt(e.promedio) + '</strong></td></tr>';
+        }).join('');
+        var pie = '<tr><td></td><td>Promedio del módulo</td>' + porModulo.map(function (l) { return '<td class="rc-centro">' + fmt(promedio(l)) + '</td>'; }).join('') +
+            '<td class="rc-centro">' + fmt(promedio(todas)) + '</td></tr>';
+        DOC_DOC.imprimir({
+            titulo: 'Planilla de notas',
+            numero: g.codigo,
+            extra: 'Con corte al ' + fechaCorta(D.hoy),
+            contenido:
+                '<section class="rc-datos">' +
+                    dato('Carrera', g.programa, true) +
+                    dato('Grupo', g.nombre + ' · ' + g.codigo) + dato('Jornada', g.jornada) +
+                    dato('Docente', S.docente) + dato('Escala', '1,0 a 5,0 · aprueba con ' + fmt(D.APRUEBA)) +
+                '</section>' +
+                '<table class="rc-tabla is-compacta"><thead><tr><th class="rc-centro">#</th><th>Estudiante</th>' +
+                    g.modulos.map(function (m, k) { return '<th class="rc-centro">M' + (k + 1) + '</th>'; }).join('') + '<th class="rc-centro">Prom.</th></tr></thead>' +
+                    '<tbody>' + (filas || '<tr><td colspan="' + (3 + g.modulos.length) + '">El grupo no tiene estudiantes.</td></tr>') + '</tbody>' +
+                    '<tfoot>' + pie + '</tfoot></table>' +
+                '<div class="rc-modulos">' + g.modulos.map(function (m, k) { return '<span><b>M' + (k + 1) + '</b> ' + esc(m.nombre) + '</span>'; }).join('') + '</div>' +
+                '<p class="rc-nota">Nota final de cada módulo (con la habilitación si la tuvo, marcada con H). NC: no cursó el módulo en el grupo. En blanco: sin nota todavía. Las notas en rojo están por debajo de ' + fmt(D.APRUEBA) + '.</p>' +
+                '<footer class="rc-pie"><div class="rc-firma"><span></span>Firma del docente · ' + esc(S.docente || '') + '</div></footer>'
+        });
+    }
+    $('not-imprimir').addEventListener('click', imprimirPlanilla);
+
     $('not-matriz-wrap').addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-abrir-modulo]');
         if (!b || b.disabled) return;

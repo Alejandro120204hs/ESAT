@@ -427,3 +427,19 @@ button.tas-dia:focus-visible { outline: 2px solid var(--orange); outline-offset:
     .tas-dialogo-box { animation: none; }
     .tas-dia.is-sel { transform: none; }
 }
+
+/* Festivos y "No hubo clase" (27-11-2026): no cuentan como clase; tonos neutros (no son pendiente ni riesgo) */
+.tas-dia.is-festivo { background: #EEF2F7; color: var(--navy-2); font-weight: 700; }
+.tas-dia.is-festivo:hover, .tas-dia.is-sinclase:hover { box-shadow: inset 0 0 0 1.5px #94A3B8; }
+.tas-dia.is-sinclase { background: #F1F5F9; color: #94A3B8; text-decoration: line-through; }
+.tas-ley-festivo { background: #EEF2F7; box-shadow: inset 0 0 0 1px #C2CAD6; }
+.tas-ley-sinclase { background: #F1F5F9; box-shadow: inset 0 0 0 1px #CBD5E1; }
+.tas-link { border: 0; background: none; padding: 0; margin-left: 4px; font: inherit; font-weight: 700; color: var(--navy-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.tas-link:hover, .tas-link:focus-visible { color: var(--orange-2, #B45309); outline: none; }
+.tas-link[hidden] { display: none; }
+.tas-vacio .tas-link { display: block; margin: 12px auto 0; }
+.tas-sinclase { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--white); color: var(--navy-3); text-align: left; }
+.tas-sinclase[hidden] { display: none; }
+.tas-sinclase-acciones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.tas-sinclase-error { font-size: 0.8rem; font-weight: 600; color: var(--red, #B91C1C); }
+.tas-sinclase-error:empty { display: none; }

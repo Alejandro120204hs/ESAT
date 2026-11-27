@@ -34,7 +34,7 @@ class Auditoria extends Model
         return static::create([
             'user_id'      => auth()->id(),
             // La sede de lo que se cambió cuando el Admin actúa desde el panel general; si no, la de quien actúa
-            'sede_id'      => $sedeId ?? auth()->user()?->sedeTrabajoId(),   // la sede de la secretaría o la que eligió el Admin
+            'sede_id'      => $sedeId ?? auth()->user()?->sedeTrabajoId(),   // la sede del administrativo o la que eligió el Admin
             'accion'       => $accion,
             'entidad_tipo' => class_basename($entidad),
             'entidad_id'   => $entidad->getKey(),

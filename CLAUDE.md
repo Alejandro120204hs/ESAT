@@ -67,10 +67,23 @@ con IDs (C1, A3, M2…) para referenciarlos en commits y PR.
 
 ## Roles y acceso
 
-Enum `App\Enums\RolUsuario`: `superadmin | admin | estudiante | docente | acudiente`.
-**El rol `admin` es la Secretaría de cada sede** (lo pidió el cliente): en pantalla siempre se llama
-"Secretaría" (Superadmin › Secretarías, firmas "Secretaría de la sede", el foro y los comunicados
-"como secretaría"); por dentro (enum, rutas, carpetas, código) sigue siendo `admin`. Hace todo lo del panel.
+Enum `App\Enums\RolUsuario`: `superadmin | admin | admin_general | estudiante | docente`. **No hay rol acudiente** (quitado el
+25-11-2026, lo pidió el usuario): cada estudiante tiene un **contacto de emergencia** (ver Estudiantes).
+**El rol `admin` es el Administrativo de cada sede** (antes "Secretaría"; renombrado el 25-11-2026, lo pidió el usuario):
+en pantalla siempre se llama "Administrativo" (Admin › Administrativos, el rol bajo el nombre, el foro y los comunicados
+"como administrativo"); el lugar o la oficina es "la administración de la sede" ("pídelo en la administración de tu sede",
+firmas y remitente "Administración de la sede"). "Secretaría de Educación" (la entidad del gobierno, en Reportes) no cambia.
+Por dentro (enum, rutas `/general/secretarias`, carpetas, variables y comentarios del código) sigue siendo `admin` /
+`secretaria`: en este archivo "secretaría" quiere decir ese rol. Lo ya registrado en la auditoría conserva "secretaría".
+Hace todo lo del panel.
+**"Programa" en pantalla se llama "Carrera"** (decidido con el usuario el 25-11-2026; la escuela sigue siendo
+"Escuela"): menú, títulos, tablas, filtros, mensajes de validación y textos de la auditoría dicen carrera; por dentro
+(modelo `Programa`, tablas, rutas `/programas`, variables y claves JSON) sigue siendo `programa`. Los **documentos impresos**
+siguen diciendo "programa" (término oficial de la formación técnica laboral): constancia, paz y salvo, recibo
+(`documento-estudiante`), certificado de notas, boletín del estudiante y Reportes. Al agregar texto, escribir "carrera".
+"Módulo" es solo de la malla (no usarlo para la escuela). La pantalla del catálogo se llama **"Escuelas y carreras"** (menú del Admin y de
+la secretaría): pestaña **Escuelas primero** (se crean antes que sus carreras) y luego Carreras; abre en Escuelas y, tras
+guardar, vuelve a la pestaña en la que estaba (`sessionStorage`). Lo registrado antes en la auditoría queda con "programa".
 **El rol `admin_general` es el Admin de toda ESAT** (en pantalla "Admin"; una sola cuenta, sin sede). El
 **Superadmin es el creador del sistema** (el desarrollador). Decidido con el usuario: el Admin ve todo ESAT
 consolidado con filtro por sede, **también actúa** en las sedes ("Entrar a la sede": las mismas pantallas de la
@@ -80,9 +93,8 @@ queda crear la cuenta del Admin y lo técnico. Panel en construcción (ver "Pane
 Cada rol tiene **su propia carpeta** de vistas/CSS/JS
 (`resources/views/{rol}/`, `public/assets/css/{rol}/`, `public/assets/js/{rol}/`).
 Redirección post-login por rol vía `User::panelUrl()`. Superadmin, admin, docente y estudiante
-tienen panel (ver "Panel Docente" y "Panel Estudiante"); el acudiente
-cae por ahora en el `/dashboard` de Breeze ("You're logged in!"). Docente y acudiente usan el `/profile` de Breeze;
-el estudiante, el suyo (`estudiante/perfil`, desde `ProfileController@edit`). **Nadie elimina su propia
+tienen panel (ver "Panel Docente" y "Panel Estudiante"). La secretaría, el Admin, el superadmin,
+el estudiante y el docente tienen su propio perfil (`estudiante/perfil` y `docente/perfil`, desde `ProfileController@edit`; ninguno de los dos cambia su nombre). **Nadie elimina su propia
 cuenta** (no hay `DELETE /profile`: borraría en cascada matrículas, pagos y recibos).
 El teléfono, también el de `/profile`, se guarda solo con dígitos y debe ser un celular
 (`^3\d{9}$`).
@@ -127,7 +139,7 @@ contraseña en los formularios de alta, se genera sola.
 
 ## Diseño de los paneles (regla general)
 
-**Todo panel por rol, también los que faltan (Estudiante y Acudiente), sigue `DESIGN-PANELES.md`.** `DESIGN.md` es solo
+**Todo panel por rol sigue `DESIGN-PANELES.md`.** `DESIGN.md` es solo
 del sitio público y no se usa en los paneles (los avisos `design-system-*` del detector comparan con él: no aplican aquí).
 - **Partir del panel Docente**, que es la referencia viva: copiar `docente/layout.blade.php` + `partials/{sidebar,topbar}`,
   `layout.css` y `layout.js` a la carpeta del rol, y copiar los componentes de una pantalla parecida (tabla con filtros,
@@ -203,13 +215,18 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   (tope de horas del programa, cruces de docente) viven en
   `App\Services\Academico\HorarioService` para que Grupos y Horarios usen las mismas.
 - Backend real hecho: Superadmin (Sedes, Administradores), Admin
-  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Acudientes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio),
+  (Programas y Escuelas, Docentes, Grupos, Horarios, Estudiantes, Matrículas, Asistencia, Calificaciones, Pagos, Contabilidad, Comunicados, Foro, Reportes, Inicio),
   Docente (Inicio, Mis grupos, Asistencia, Notas, Aula virtual) y Estudiante (todas sus pantallas).
-  Del panel Admin solo siguen siendo maqueta las pestañas Documentos de Programas y Docentes.
+  Las pestañas Documentos de Programas y Docentes (que eran maqueta) se quitaron el 26-11-2026: se construyen cuando ESAT
+  diga qué documentos pide de cada carrera y de cada docente.
 - **Estudiantes ≠ Matrículas.** Estudiantes (`Admin/Estudiantes/EstudianteController` +
   `EstudianteService`) solo registra/edita a la **persona**: cuenta (rol estudiante,
-  **correo obligatorio** = usuario, clave = documento), acudiente (rol acudiente,
-  `acudiente_estudiante` con parentesco; obligatorio si es menor), lista de documentos
+  **correo obligatorio** = usuario, clave = documento), **contacto de emergencia** (decidido con el usuario el
+  25-11-2026: tabla `contactos_emergencia`, uno por estudiante, `ContactoEmergencia` con nombre, celular `^3\d{9}$` distinto
+  al del estudiante y parentesco de `ContactoEmergencia::PARENTESCOS`; **obligatorio para todos**, al registrar y al editar,
+  paso 3 del asistente, `Admin/Estudiantes/ValidaContacto`, `EstudianteService::guardarContacto`; no tiene cuenta ni panel;
+  **sin él no se matricula**, `MatriculaRequest`; los WhatsApp de cobros y comunicados de un **menor** van a su contacto),
+  lista de documentos
   (`estudiante_documentos`, del estudiante, `EstudianteDocumento::REQUERIDOS`) y restablecer
   clave. **No matricula.** Matrículas = programa + grupo (`curso_estudiante`),
   cambio de grupo, estado de la matrícula (activo/aplazado/retirado/graduado con fecha y
@@ -221,12 +238,6 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   dos usan `PagoService::elegirPlan` (matrícula bloqueada; solo activa, con grupo y sin plan; elegido, no cambia), que
   genera las cuotas **desde el inicio de clases** (`primeraCuota`: el día 10 del mes en que empieza el grupo, o del
   siguiente si empieza después del 10; las que ya pasaron quedan vencidas) y lo registra en la auditoría de la matrícula.
-- **Acudientes** (`Admin/Acudientes/AcudienteController` + `AcudienteService`): cuenta rol
-  acudiente (**correo obligatorio** = usuario, clave = documento, ocupación en `users.profesion`),
-  residencia con el combobox de Colombia, estudiantes a cargo en `acudiente_estudiante`.
-  **Un solo acudiente por estudiante** (vincular reemplaza al anterior) y **ningún menor de edad
-  queda sin acudiente** (no se desvincula ni se quita al editar; se cambia vinculándole otro).
-  Estado de cuenta: `activo=0` → inactiva; `ultimo_acceso` null → "nunca ha ingresado".
 - **Matrículas** (`Admin/Matriculas/MatriculaController` + `PagoController`, `Academico/MatriculaService`,
   `Finanzas/PagoService`): la matrícula **guarda su grupo** (`matriculas.curso_id`; `curso_estudiante`
   sigue siendo la lista del grupo y se mantiene sincronizada). Una matrícula **vigente** (activa o
@@ -240,8 +251,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
 - **Pagos**: cada fila de `pagos` es un cobro (`matricula` = derecho de matrícula, o cuota
   `mensual`/`periodo` con `numero_cuota` y `fecha_vencimiento` el día `Pago::DIA_VENCIMIENTO`=10).
   Lo que se paga se registra en recaudos (ver abajo). `vencido` lo calcula `Pago::estadoActual()` por
-  fecha y lo guarda el comando diario `pagos:vencer`. El resumen de pagos (Matrículas, Estudiantes y
-  Acudientes) sale solo de `PagoService::resumen()`. El historial de una matrícula es la auditoría
+  fecha y lo guarda el comando diario `pagos:vencer`. El resumen de pagos (Matrículas y Estudiantes)
+  sale solo de `PagoService::resumen()`. El historial de una matrícula es la auditoría
   con `entidad_tipo = 'Matricula'` (registrar ahí también los pagos).
   Plan **por periodo**: cada periodo dura lo de su tipo (trimestre 3, semestre 6) y el último lo que quede
   (`Programa::mesesDelPeriodo`; 10 meses por trimestre = 3+3+3+1); la cuota vence al empezar su periodo y cobra la cuota
@@ -259,7 +270,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     en las que se generen después. 0 lo quita.
   - **Anular matrícula** (estado `anulado`, por `TRANSICIONES`, con motivo): solo si no tiene recaudos
     vigentes ni dinero (`PagoService::dineroEn`: tampoco saldo trasladado de otra matrícula, A6); anula sus cobros, sale de la lista del grupo, no cuenta en trayectoria ni en la
-    matrícula que muestran Estudiantes/Acudientes; queda en Finalizadas. El estudiante vuelve a
+    matrícula que muestra Estudiantes; queda en Finalizadas. El estudiante vuelve a
     "Por matricular".
   - **Derecho de matrícula**: vence al iniciar clases del grupo (`vencimientoDerecho`). **No bloquea el ingreso**
     (decidido el 24-11-2026, lo pidió el cliente; antes no lo dejaba entrar): sin pagarlo entra igual, la deuda se
@@ -291,15 +302,18 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
     El saldo a favor se aplica solo, en orden, cuando hay cobros (`aplicarSaldoFavor`, también al generar
     cuotas). `pagos.reembolsado` = lo que salió de ese cobro; lo que realmente queda pagado es
     `Pago::disponible()` (abonado − reembolsado − retenido). Un recaudo con dinero ya devuelto/trasladado no se anula.
+    Lo cubierto con saldo a favor **no tiene recibo**: lo que se debía en una fecha pasada (mora del Inicio, Reportes) se
+    calcula con `Pago::pagosFechados()` (recibos sin anular + lo cubierto sin recibo), nunca sumando solo los recaudos. La
+    cartera de un estudiante suma lo vencido de **todas** sus matrículas (también una retirada que quedó debiendo).
   - **Documentos imprimibles** (`DocumentoController`, plantilla `admin/matriculas/documento.blade.php` +
     `documento.css/js`): recibo, comprobante de devolución, constancia de matrícula (solo vigente) y paz y
-    salvo (nada por pagar en ninguna de sus matrículas y ninguna vigente sin plan).
+    salvo (nada por pagar en ninguna de sus matrículas, **de cualquier sede**, y ninguna vigente sin plan).
 - **Asistencia** (`Admin/Asistencia/AsistenciaController` + `Academico/AsistenciaService`): el Admin **solo
   consulta**; la asistencia la toma el **docente** (panel Docente) y es **informativa: no bloquea
   nada** (ni grados ni matrículas; 80 % es solo referencia). Clases = días del horario entre el inicio del grupo
   y su fin (la de hoy cuenta cuando termina). Clase **sin registrar** = clase dictada sin ningún registro del
   grupo; no cuenta en el %. % = (presente + tarde) / (presente + tarde + ausente): la excusa no cuenta como falla
-  (`AsistenciaService::porcentaje`, la misma regla en las fichas de Estudiantes/Acudientes/Matrículas). De cada
+  (`AsistenciaService::porcentaje`, la misma regla en las fichas de Estudiantes y Matrículas). De cada
   estudiante cuentan las clases desde su matrícula hasta que se aplazó/retiró. `asistencias.motivo` (excusa) y
   `registrado_por` (docente). Pruebas en `tests/Feature/Admin/AsistenciaTest.php`.
 - **Calificaciones** (`Admin/Calificaciones/CalificacionController` + `Academico/CalificacionService`, modelo
@@ -313,7 +327,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   todos los módulos aprobados** (`pendientesParaGraduar`, en `EstadoRequest` y aviso en Matrículas). Certificado de
   notas imprimible dentro de la misma página. Pruebas en `tests/Feature/Admin/CalificacionesTest.php`.
 - **Pagos (Finanzas)** (`Admin/Pagos/CarteraController` + `Finanzas/CarteraService`, vista `admin/pagos/index.blade.php`
-  + `pagos.css/js`): pestañas Por cobrar (vencido, este mes, por pagar, WhatsApp de recordatorio —al acudiente si es
+  + `pagos.css/js`): pestañas Por cobrar (vencido, este mes, por pagar, WhatsApp de recordatorio —a su contacto de emergencia si es
   menor—), Pagos recibidos (recibos: ver/imprimir/anular), **Resumen de caja por rango de fechas** (no por día: los
   pagos llegan por mes/periodo; por medio de pago, quién registró, días con pagos; imprimible; cada pago cuenta el día en que
   **se registró** —`registrado_en`— y cada anulación el día en que se hizo, así un periodo impreso no cambia, M25), Por programa y
@@ -337,21 +351,21 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
 - **Comunicados (Comunicación)** (`Admin/Comunicados/ComunicadoController`, `Comunicacion/ComunicadoService`, modelo
   `Comunicacion/Comunicado`, tablas `comunicados` + `comunicado_lecturas`, vista `admin/comunicados/index.blade.php` +
   `comunicados.css/js`). Decidido con el usuario: el admin publica a toda la sede o a un rol (`DESTINOS_ADMIN`); el
-  **docente** publica a sus grupos (`destino = grupo` + `curso_id`) desde su panel —todavía no existe esa función— y el
-  admin solo los ve y los **archiva** (con motivo). Estados borrador / programado / publicado / archivado; un programado
+  **docente** publica a sus grupos (`destino = grupo` + `curso_id`) desde su panel (Docente › Comunicados, a uno o varios grupos: una fila por grupo con el mismo `lote`; `solo_general`
+  solo marca los lotes del Admin) y el admin solo los ve y los **archiva** (con motivo); el borrador de un docente no le sale a
+  nadie más (ni a la secretaría ni al Admin) y la secretaría no lo elimina. Estados borrador / programado / publicado / archivado; un programado
   sale solo cuando llega `publicado_en` (`estadoActual()`, sin tareas). Los destinatarios se calculan al leer (estudiantes
-  con matrícula vigente y cuenta activa, docentes y acudientes activos, o los estudiantes del grupo). `ComunicadoRequest`:
+  con matrícula vigente y cuenta activa, docentes activos, o los estudiantes del grupo; ya no hay destino "acudientes"). `ComunicadoRequest`:
   un borrador solo pide destinatarios y título; programar exige fecha y hora futuras; un publicado no cambia de
   destinatarios ni vuelve a borrador; los de docentes y los archivados no se editan. Adjunto PDF/JPG/PNG ≤ 5 MB en el disco
   privado (`storage/app/private/comunicados/{sede}`), se descarga por `admin.comunicados.adjunto` solo desde la misma sede;
   se borra al quitarlo o al eliminar el borrador. El PUT llega como POST con `_method` (FormData). Solo se eliminan
-  borradores. Lectura: `comunicado_lecturas.leido_en` (el panel Estudiante lo marca al abrir; faltan los paneles de
-  Acudiente y Docente) y WhatsApp a quien no lo ha leído (al acudiente si es menor). En la BD (sede 7): 18
+  borradores. Lectura: `comunicado_lecturas.leido_en` (los paneles Estudiante y Docente lo marcan al abrir) y WhatsApp a quien no lo ha leído (a su contacto de emergencia si es menor). En la BD (sede 7): 18
   comunicados y 240 lecturas simuladas (el usuario lo eligió); quien leyó tiene `ultimo_acceso` posterior y los estudiantes
   con derecho vencido no leen. Pruebas en `tests/Feature/Admin/ComunicadosTest.php`.
 - **Foro (Comunicación)** (`Admin/Foro/ForoController`, `Comunicacion/ForoService`, modelos `Comunicacion/{ForoTema,
   ForoMensaje,ForoReporte}`, tablas `foro_temas` + `foro_mensajes` + `foro_reportes`, vista `admin/foro/index.blade.php` +
-  `foro.css/js`). Decidido con el usuario: **un solo foro general por sede**; participan estudiantes, docentes, acudientes y
+  `foro.css/js`). Decidido con el usuario: **un solo foro general por sede**; participan estudiantes, docentes y
   administración; todos abren temas (`ForoTema::CATEGORIAS`: Dudas académicas, Prácticas y salidas, Trámites y pagos, Vida en
   la sede) y responden; un adjunto por mensaje (PDF/JPG/PNG ≤ 5 MB, disco privado `foro/{sede}`, se descarga por
   `admin.foro.adjunto`). El primer mensaje (menor id) abre el tema: ocultarlo oculta el tema. Moderación **después, con
@@ -360,7 +374,7 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   motivo (`OcultarMensajeRequest`), restaura y descarta reportes; todo en la auditoría. En `foro.js` cada persona va con una
   clave `e|d|a|x` + id (`ForoService::personas`). En la BD (sede 7): 16 temas, 43 mensajes, 6 reportes y 4 adjuntos reales;
   cada persona es de la sede, activa, el estudiante con matrícula vigente y sin derecho vencido, y su `ultimo_acceso` es
-  posterior a lo que escribió. El panel Estudiante ya lee, publica y reporta; faltan Docente y Acudiente. Pruebas en
+  posterior a lo que escribió. Los paneles Estudiante y Docente leen, publican y reportan (`ForoService::panel`). Pruebas en
   `tests/Feature/Admin/ForoTest.php`.
 - **Reportes** (`Admin/Reportes/ReporteController` + `Reportes/ReporteService`, vista `admin/reportes/index.blade.php` +
   `reportes.css/js`; solo consulta, sin tablas propias). Son los **documentos formales que la sede entrega** y no repiten
@@ -384,11 +398,12 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   cobros vencidos con los pagos hasta esa fecha—; la flecha sigue el signo y el color el tono: menos mora es verde),
   matrículas nuevas de los últimos 6 meses, actividad reciente (auditoría de los usuarios de la sede, siempre escapada; el
   modal pinta texto, nunca HTML), mejores promedios (`notaFinal`, matrículas vigentes con 2+ notas), ocupación de cupos por
-  programa (`estudiantesActivos`) y pendientes de hoy con enlace (reportes del foro, cobros que vencen en 7 días, clases sin
+  programa (`estudiantesActivos`) y pendientes de hoy con enlace (grupos en planificación cuya fecha de inicio ya pasó,
+  reportes del foro, cobros que vencen en 7 días, clases sin
   asistencia y módulos sin nota de los resúmenes de Asistencia/Calificaciones, habilitaciones, comunicado programado).
   Accesos rápidos a Estudiantes, Pagos, Programas y Reportes. Las barras entran con `transform` (no animan alto/ancho).
   Pruebas en `tests/Feature/Admin/InicioTest.php`.
-- **Exportar a Excel**: Matrículas, Docentes, Estudiantes, Acudientes, Asistencia, Calificaciones y Pagos
+- **Exportar a Excel**: Matrículas, Docentes, Estudiantes, Asistencia, Calificaciones y Pagos
   tienen un botón "Exportar" que
   descarga **lo que se ve con los filtros** como CSV (`;`, BOM UTF-8 para las tildes) armado en el
   navegador (`exportar()` + `celdaCsv()` en el JS de cada página; neutraliza celdas que empiezan con
@@ -410,7 +425,57 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   pruebas, un modelo que otra petición cambió hay que `refresh()`-arlo antes de `update()`.
   `pagos:vencer` está programado en `routes/console.php`, pero nada ejecuta el scheduler.
 - `EstudianteService::matriculaVigente()` / `grupoDeMatricula()`: matrícula y grupo que se
-  muestran de un estudiante (los usan Estudiantes y Acudientes; no duplicar en controladores).
+  muestran de un estudiante (los usa Estudiantes; no duplicar en controladores).
+- **Grupo cerrado** (`Curso::cerrado()` / `motivoCerrado()`): finalizado **o con sus clases ya terminadas por fecha**
+  (el estado lo cambia la secretaría a mano). Es la regla de matricular, cambiar de grupo o de programa y reintegrar
+  (`abierto()` en `matriculas.js`).
+- **Grupo en curso** (decidido con el usuario el 26-11-2026, `MatriculaService::noAlcanza`, revisada con el grupo
+  bloqueado en matricular, cambiarGrupo, reintegro y cambiarPrograma): **nadie empieza una carrera en un grupo que ya
+  empezó** (matrícula nueva y cambio de carrera: solo grupos con inicio hoy o después; `paraEmpezar()` en `matriculas.js`).
+  Quien ya venía estudiando entra a uno en curso solo si no le hace perder módulos: **reintegro** = el grupo todavía no
+  empezó el primer módulo que le falta (lo aprobado se conserva); **cambio de grupo** = el grupo nuevo no empezó ese módulo
+  antes que el suyo (dos grupos al mismo ritmo sí). Matrículas recibe `no_alcanza` (grupo → motivo) de cada matrícula
+  vigente y solo muestra los grupos que sirven (`sirveA()`). En pruebas se matricula con `alIniciar()` de
+  `DatosAcademicos`. Pruebas en `tests/Feature/Admin/GrupoEnCursoTest.php`.
+- **Grupos: fechas y finalizados** (revisión del Administrativo, 27-11-2026, `GrupoRequest` + `cursos.js`): un grupo nuevo, o uno
+  que corre su inicio, no empieza antes de hoy (antes se podía mover al pasado un grupo con estudiantes y el derecho quedaba
+  descuadrado). Un grupo **finalizado no se edita** (ni su docente: es historia); primero se reabre con el botón de su ficha.
+  Un grupo **activo que ya empezó no vuelve a planificación** (decidido con el usuario el 27-11-2026); si todavía no empieza, sí.
+  Departamento y ciudad de estudiantes y docentes se revisan también en el servidor con `CiudadDeColombia` en las Form
+  Requests de la secretaría (el panel general las hereda). Pruebas en `HistorialGruposTest`, `EstudiantesTest` y `AuditoriaLogicaTest`.
+- **Nacido en otro país** (decidido con el usuario el 27-11-2026, migración `2026_11_27_000001`): `users.pais_nacimiento` (null =
+  Colombia). Solo con cédula de extranjería o PPT (`EstudianteRequest::DOCUMENTOS_EXTRANJERO`): país de `public/assets/data/paises.json`
+  (`EstudianteRequest::paises()`, sin Colombia) y la ciudad escrita en `lugar_nacimiento`, sin departamento. Los formularios de la
+  secretaría y del Admin general preguntan "¿Dónde nació?" solo con esos documentos.
+- **Historial de grupos de la matrícula** (decidido con el usuario el 27-11-2026, tabla `matricula_grupos`, modelo
+  `Academico/MatriculaGrupo`): cada paso por un grupo con `desde` (incluido) y `hasta` (sin incluir). Lo abren y cierran
+  `MatriculaService` al matricular, cambiar de grupo (el viejo hasta hoy, el nuevo desde hoy), aplazar, retirar, graduar,
+  anular, reintegrar (en el mismo grupo o en otro: desde el reintegro) y cambiar de carrera; `asegurarHistorial` crea el
+  paso de una matrícula anterior a la tabla (las de la BD se llenaron con SQL). **La regla única** de en qué fechas cuenta un
+  estudiante en un grupo es `Matricula::ventanasEn($curso)` (+ `Matricula::enVentanas`): la usan la lista de cada clase y
+  las notas del docente (`PanelDocenteService::estudiantes/planilla`, `datos.js` `enVentana`), Admin › Asistencia y
+  Calificaciones, el % de las fichas (`EstudianteService::porcentajeAsistencia` con la matrícula), el panel del estudiante
+  (sus clases de todos los grupos) y Reportes (`pasos` de cada matrícula). Las matrículas de un grupo, también las que ya
+  se cambiaron: `Curso::matriculasEnGrupo()` (cargar `matriculas` y `matriculasDelHistorial` con `grupos`). Quien se cambió
+  aparece en el grupo viejo como **"trasladado"** ("Cambió de grupo", solo consulta); su docente viejo solo califica los
+  módulos que terminó antes de irse (`NotasRequest`). Pruebas en `tests/Feature/Admin/HistorialGruposMatriculaTest.php`.
+- **Festivos y "No hubo clase"** (decidido con el usuario el 27-11-2026): `App\Support\Festivos` calcula los festivos de
+  Colombia (ley Emiliani, Pascua por Meeus); `config('academico.festivos')` los apaga (las pruebas de fechas fijas lo hacen).
+  El docente marca "No hubo clase" con motivo (`POST docente/asistencia/{curso}/sin-clase` y `/con-clase` para deshacer,
+  `SinClaseRequest`, tabla `clases_suspendidas`; no en días con asistencia tomada; también una clase que viene). **La regla
+  de si hubo clase un día es `Curso::claseEn($d)`**: día del horario (`sesionEn`), sin "No hubo clase" y, si es festivo,
+  solo con asistencia tomada (algunos grupos sí estudian en festivos). La usan `fechasDictadas`, `fechasModulos`, el panel
+  del estudiante y la clase de hoy del Admin; el docente recibe `festivos` y `sinClase` y `datos.js` les da los estados
+  `festivo` y `sin_clase` (no son pendientes). Al agregar un cálculo de clases, usar `claseEn` (no `sesionEn`). Pruebas en
+  `tests/Feature/Docente/FestivosTest.php`.
+- **Cuotas y fecha de inicio**: al pasar a otro grupo o correr el inicio del suyo, las cuotas que debe vuelven a contar desde
+  `primeraCuota` del grupo (`PagoService::reprogramarCuotas`; las pagadas conservan su fecha; no después de un aplazamiento).
+  Al reintegrarse, las cuotas cuentan desde el reintegro o desde que empieza el grupo al que vuelve, lo que sea después.
+  Una cuota que queda en $ 0 (beca del 100 % sin cuota del sistema) queda **pagada sin dinero**; si se quita la beca,
+  vuelve a deberse.
+- **Cuenta del estudiante** (`PATCH admin/estudiantes/{id}/estado`): la secretaría la desactiva solo sin matrícula vigente
+  (retirado, graduado o nunca matriculado); matricularlo de nuevo la reactiva. Marcar un documento recibe cómo debe quedar
+  (`entregado`), no "cambiar". Quien se registró con TI y cumplió 18 se sigue pudiendo editar.
 - **Cupos**: solo las matrículas activas ocupan cupo → usar `Curso::estudiantesActivos()`
   / `cuposLibres()`, nunca `estudiantes()->count()`. Un grupo con estudiantes no
   puede cambiar de programa.
@@ -420,7 +485,8 @@ Cada **página** dentro de un rol tiene su propio archivo, no solo cada rol:
   si no, se reemplaza. `Curso::sesiones()` es el vigente (pantallas, tope, cruces); todo lo que calcula fechas de clase usa
   `historialSesiones` + `Curso::sesionEn($dia)` (Asistencia, Calificaciones, PanelDocente y `docente/datos.js`, Reportes):
   al agregar un cálculo de fechas, cargar `historialSesiones` y usar `sesionEn`. Un grupo que ya empezó no cambia su
-  fecha de inicio, y antes de su fin solo se finaliza sin matrículas vigentes (`Curso::impedimentoParaFinalizar`, A8);
+  fecha de inicio (salvo uno en planificación sin asistencia ni notas: corre su inicio a hoy o después; el Inicio avisa de
+  los que siguen en planificación con la fecha ya pasada), y antes de su fin solo se finaliza sin matrículas vigentes (`Curso::impedimentoParaFinalizar`, A8);
   graduar exige que haya terminado por fecha. "Nuevo horario" solo ofrece
   grupos sin sesiones; los finalizados no se listan ni se editan.
 - **Lo definido arriba se respeta abajo** (Programa → Grupo → Horario): la
@@ -439,7 +505,7 @@ y lo que las protege desde Grupos/Docentes/Programas) están en
 `tests/Feature/Admin/HorariosTest.php`: al cambiar una regla, correrlas; al
 agregar una regla nueva, agregar su prueba. `UserFactory` usa nombres/apellidos
 (no hay columna `name`). Las demás reglas del Admin están en
-`tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Acudientes,Asistencia,Calificaciones}Test.php`
+`tests/Feature/Admin/{Matriculas,Pagos,Contabilidad,Comunicados,Foro,Reportes,Inicio,Estudiantes,Asistencia,Calificaciones}Test.php`
 (datos de apoyo en `DatosAcademicos.php`). Superadmin: `tests/Feature/Superadmin/AdministradoresTest.php`
 (Sedes todavía sin pruebas). Sesión y cuentas desactivadas: `tests/Feature/Auth/CuentaHabilitadaTest.php`.
 Dos envíos a la vez, transacción por petición y choques de índice único: `tests/Feature/Admin/ConcurrenciaTest.php`.
@@ -449,8 +515,13 @@ Caja, recibos de anuladas, doble devolución, plan por periodo, total de cuotas,
 recuperar la clave de una cuenta desactivada (B21–B23): `tests/Feature/Auth/SesionesYClavesTest.php`.
 Historial de horarios, fecha de inicio y finalizar a tiempo (A7, A8): `tests/Feature/Admin/HistorialGruposTest.php`.
 Instalación nueva y protección de migraciones (A11, A12): `tests/Feature/InstalacionTest.php`.
+Auditoría de lógica de Secretaría y Admin (24-11-2026: grupo cerrado por fecha, cuotas que siguen al grupo, sacar un programa
+de activo, bloqueo temporal, cuenta del estudiante y foro, malla con Aula, beca completa, paz y salvo de todas las sedes,
+envíos del panel general, pasaporte, TI a los 18, documentos): `tests/Feature/Admin/AuditoriaLogicaTest.php`.
 Panel Admin general: `tests/Feature/AdminGeneral/`. Panel Docente: acceso por rol y redirección en `tests/Feature/Docente/PanelDocenteTest.php`; lo que ve y lo que
-guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`.
+guarda (asistencia y notas, con sus reglas y lo que luego consulta el Admin) en `tests/Feature/Docente/RegistroDocenteTest.php`;
+sus comunicados, foro y perfil en `tests/Feature/Docente/ComunicacionDocenteTest.php`; guía de actividades, material de clase,
+el Aula en Notas y lo que imprime en `tests/Feature/Docente/AulaMaterialTest.php`.
 Panel Estudiante: acceso por rol, redirección y su perfil en `tests/Feature/Estudiante/PanelEstudianteTest.php`; lo
 que ve y lo que guarda (plan de pago —también el que elige la Secretaría—, comunicados leídos, foro, evaluaciones,
 entregas y lo que crea y califica el docente en su Aula virtual) en `tests/Feature/Estudiante/BackendEstudianteTest.php`.
@@ -458,8 +529,15 @@ Sitio público (una página por programa y escuela, rutas de siempre, cierre del
 `tests/Feature/Sitio/PaginasTest.php`.
 
 Las pruebas necesitan `pdo_sqlite`, que está desactivado en `C:\php\php.ini`:
-sin él fallan casi todas (casi todas las 343 actuales). Activarlo en el `php.ini` o correr
+sin él fallan casi todas (casi todas las 372 actuales). Activarlo en el `php.ini` o correr
 `php -d extension=pdo_sqlite vendor/bin/phpunit`.
+
+## Páginas de error
+
+`resources/views/errors/` (403, 404, 419, 429, 500, 503 sobre `errors/layout.blade.php`, CSS en
+`public/assets/css/errores.css`): en español, sin consultar la base (un 500 puede venir de ahí); con sesión el botón lleva a
+`panelUrl()`, sin sesión al inicio del sitio; el 419 lleva al login. Con `APP_DEBUG=true` un 500 muestra la pantalla de
+depuración de Laravel en vez de la página: en producción va en `false`. Pruebas en `tests/Feature/PaginasErrorTest.php`.
 
 ## Bug recurrente a tener en cuenta
 
@@ -483,7 +561,7 @@ debe ignorar la tecla mientras haya un `.app-combobox.is-open` (como en
 
 **Escapar todo lo que venga de la BD antes de pintarlo con `innerHTML`** (`esc()`
 de cada archivo), incluidos teléfonos y valores "que siempre son números". En
-Estudiantes, Acudientes y Matrículas, `fmtTel()` formatea solo si son 10 dígitos y
+Estudiantes y Matrículas, `fmtTel()` formatea solo si son 10 dígitos y
 escapa todo lo demás, y `waLink()`/`tel:` usan solo dígitos (`digitos()`). Al copiar
 esas funciones a otra pantalla, copiar esta versión (HALLAZGOS C1).
 
@@ -496,7 +574,7 @@ no salirse del viewport) usando un dataset real de departamentos/ciudades
 de Colombia vendido en `public/assets/data/co-departamentos-ciudades.json`
 (32 departamentos, cientos de municipios reales). Las copias del Admin abren
 hacia arriba solo si abajo no cabe y arriba hay más espacio (`haciaArriba`).
-Con departamento/ciudad está en `admin/estudiantes.js`, `admin/acudientes.js`,
+Con departamento/ciudad está en `admin/estudiantes.js`,
 `admin/docentes.js` y en los dos del Superadmin (`sedes-programas.js`,
 `administradores.js`). **Copiar desde uno del Admin**: los del Superadmin todavía
 no tienen `alScroll` (HALLAZGOS M3). Copiar el patrón (`initCombobox` +
@@ -504,18 +582,17 @@ no tienen `alScroll` (HALLAZGOS M3). Copiar el patrón (`initCombobox` +
 
 ## Patrón de fila clicable
 
-En las tablas de solo-editar/ver (Sedes, Administradores, Estudiantes,
+En las tablas de solo-editar/ver (Sedes, Estudiantes,
 Auditoría), toda la fila abre el modal/asistente correspondiente, no solo
 el ícono. Cuidado: si una fila tiene además un control propio (como el
-interruptor activo/inactivo en Administradores), ese control debe llamar
+interruptor activo/inactivo), ese control debe llamar
 `e.stopPropagation()` para no disparar también el click de la fila.
 
 ## Estado actual del panel Superadmin
 
-Sedes y Administradores tienen backend real (`SedeController`,
-`AdministradorController`, `fetch` con CSRF), todavía sin Form Requests ni
-auditoría (HALLAZGOS M9). Editar y activar/desactivar en Administradores solo
-aceptan cuentas con rol admin (`asegurarAdmin`, 404 para cualquier otra). Inicio, Estudiantes, Auditoría y Configuración siguen
+Sedes y Admin de ESAT tienen backend real (`SedeController`,
+`AdministradorController`, `fetch` con CSRF). Sedes todavía sin Form Request ni
+auditoría (HALLAZGOS M9). Inicio, Estudiantes, Auditoría y Configuración siguen
 siendo maqueta con datos fijos en el Blade (rutas closure en `routes/web.php`),
 aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarlas.
 
@@ -527,12 +604,14 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   editar sedes, sin eliminar ni desactivar (nombre, departamento, ciudad, dirección) con buscador +
   paginación + modal crear/editar. Las 4 sedes reales: Bogotá, Sasaima,
   Guaduas, La Dorada.
-- **Administradores** (`administradores.blade.php`): tabla + asistente de
-  4 pasos (Datos personales → Identificación → Contacto → Sede y
-  confirmación), con edad calculada en vivo desde la fecha de nacimiento
-  (nunca guardada como número fijo), validación por paso, resumen final.
-  Los administradores salen de la BD. La alerta "La Dorada sin admin" del
-  Inicio sigue siendo fija.
+- **Admin de ESAT** (`administradores.blade.php`, ruta `/superadmin/administradores`; decidido con el usuario el
+  24-11-2026): el Superadmin crea y maneja **la cuenta del Admin** (rol `admin_general`, **una sola**, sin sede); las
+  secretarías las crea el Admin desde su panel. Tarjeta del Admin (documento, correo, celular, último ingreso) con
+  Editar, Restablecer clave (también desbloquea) y Activar/Desactivar con confirmación; sin Admin, el botón para crearlo
+  (`store` responde 422 si ya hay uno). Asistente de 3 pasos (Datos personales → Identificación y contacto →
+  Confirmación), edad en vivo, mayor de edad, celular `^3\d{9}$`, pasaporte con letras. `Requests/Superadmin/
+  Administradores/AdminRequest` + auditoría; las rutas solo tocan cuentas `admin_general` (`asegurarAdmin`, 404 para
+  cualquier otra). La alerta "La Dorada sin admin" del Inicio sigue siendo fija.
 - **Estudiantes** (`estudiantes.blade.php`): **solo consulta**, sin
   crear/editar. Resumen (total/al día/pendiente/vencido) + tabla con
   filtros (sede/programa/estado de pago) + detalle de historial de pagos
@@ -576,7 +655,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     datos, secretarías y programas.
   - **Secretarías** (`secretarias/index`, `sec-`): cuentas rol admin; asistente de 3 pasos (clave = documento, correo y
     documento únicos, celular `^3\d{9}$`), activar/desactivar con confirmación (avisa si la sede queda sin secretaría)
-    y restablecer clave.
+    y restablecer clave. El pasaporte admite letras.
   - **Programas** (`programas/index`, `prg-`): catálogo real; crear/editar en 3 pasos (datos y jornadas, duración y
     precio, malla editable), activar/desactivar (no con grupos vigentes), y en el detalle a qué sedes se ofrece
     (interruptor; no se quita de una sede con grupos vigentes). Editar no invalida grupos vigentes (cupo ≥ estudiantes
@@ -585,9 +664,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
     sede (la elige en el formulario). Matricular, cobrar, grupos y horarios siguen por "Entrar a la sede".
   - **Estudiantes** (`estudiantes/index`, `est-`): todas las sedes (filtros sede/programa/matrícula/pagos, ficha con
     datos, matrícula y pagos, exportar) + registrar y editar a la persona en 2 pasos (correo obligatorio, clave =
-    documento, TI solo si es menor, acudiente obligatorio si es menor; no cambia de sede con matrícula vigente).
-  - **Acudientes** (`acudientes/index`, `acu-`): crear/editar en 3 pasos (con sede y, opcional, estudiantes a cargo),
-    vincular (reemplaza al acudiente anterior) y desvincular (nunca a un menor), activar/desactivar cuenta, restablecer clave.
+    documento, TI solo si es menor, contacto de emergencia obligatorio; no cambia de sede con matrícula vigente).
   - **Docentes** (`docentes/index`, `dcn-`): crear/editar en 3 pasos (sede, escuela, título, especialidad, vinculación),
     activar/desactivar (no con grupos vigentes), restablecer clave; no cambia de sede con grupos vigentes allá.
   - En los tres, documento y correo no se repiten entre ninguna cuenta: lo revisa el servidor (el navegador ya no recibe
@@ -597,7 +674,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - **Foro** (`foro/index`, `for-`): foros de todas las sedes; modera (ocultar con motivo —el primer mensaje oculta el
     tema—, restaurar, descartar reportes, fijar, cerrar/reabrir) y participa como Admin (responder, abrir temas).
   - **Finanzas** (`finanzas/index`, `fin-`): sede + mes; pestañas Recaudo (recibo imprimible), Cartera (a hoy, por
-    edades, WhatsApp al acudiente si es menor), Contabilidad (ingresos − egresos) y Devoluciones. Solo consulta.
+    edades, WhatsApp al contacto de emergencia si es menor), Contabilidad (ingresos − egresos) y Devoluciones. Solo consulta.
   - **Comunicados** (`comunicados/index`, `com-`): publicar a todas o algunas sedes por rol (ahora, programar,
     borrador); un publicado no cambia de destinatarios; archivar con motivo; eliminar solo borradores propios.
   - **Reportes** (`reportes/index`, `rep-`): por mes y sede: matriculados, novedades, recaudo, ingresos y egresos,
@@ -618,12 +695,13 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   **Pestañas en sedes distintas**: el layout de la secretaría (solo para el Admin) envuelve `fetch` y manda la sede con la
   que se abrió la pestaña en `X-Sede-Trabajo`; si en otra pestaña ya entró a otra sede, `EnsureSedeDeTrabajo` responde 409
   ("Recarga la página…") en vez de guardar en la sede equivocada.
-- El Superadmin todavía conserva Sedes, Administradores y sus maquetas: quitarle lo que pasó al Admin queda pendiente.
+- El Superadmin ya no crea secretarías: crea la cuenta del Admin (Superadmin › Admin de ESAT). Todavía conserva Sedes y
+  sus maquetas (Inicio, Estudiantes, Auditoría, Configuración): quitarle lo que pasó al Admin queda pendiente.
 - **Datos (backend real, 2026-11-10)**: cada controlador pasa lo de su pantalla con `window.GEN_DATOS = @json($datos)`
   (la forma que leen los JS; ya no hay datos de ejemplo). Servicios en `app/Services/General/`: `EstructuraService` (sedes
   con sus cifras de hoy y del cierre del mes anterior —activos, grupos, cupos, ingresos de 6 meses, mora con
   `InicioService::mora`—, secretarías, escuelas, programas con malla y `con_notas`), `PersonasService` (estudiantes con
-  su matrícula, pagos de `PagoService::resumen`, asistencia y promedio; recibos con quién los registró; acudientes;
+  su matrícula, pagos de `PagoService::resumen`, asistencia y promedio; recibos con quién los registró; su contacto de emergencia;
   docentes con sus grupos), `AcademicoService` (grupos con los resúmenes de `AsistenciaService`/`CalificacionService` de
   cada sede), `FinanzasService` (Finanzas y Reportes: recibos, egresos sin anular y devoluciones del último año),
   `ComunicacionService` (comunicados agrupados por lote) y `SupervisionService` (auditoría del último año).
@@ -632,18 +710,22 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   Requests del panel general **extienden** las de `Admin/` y solo cambian la sede (las de personas leen la sede de
   `sedeId()`, que el general sobrescribe con la elegida) o agregan lo propio (malla del programa, sedes de un comunicado).
   Todo queda en la auditoría con la sede afectada (`Auditoria::registrar(..., $sedeId)`).
-  - Programas: la malla se guarda en orden (conserva ids), las horas del programa = suma de módulos, y con notas puestas la
-    malla no cambia. **La duración (meses y división) no cambia con matrículas vigentes** (activas o aplazadas) en el
+  - Programas: la malla se guarda en orden (conserva ids), las horas del programa = suma de módulos, y con notas **o
+    evaluaciones/actividades del Aula virtual** en sus módulos la malla no cambia (`Programa::mallaEnUso`). Un programa no
+    se desactiva, ni sale de "activo" desde el formulario, ni deja de ofrecerse en una sede (Admin o secretaría) con
+    grupos vigentes **o estudiantes aplazados** (`Programa::impedimentoParaRetirar`). **La duración (meses y división) no cambia con matrículas vigentes** (activas o aplazadas) en el
     programa: sus cuotas y su grado dependen de ella; el formulario la muestra bloqueada (`vigentes`) y lo valida
     `ProgramaRequest`. **Paso 4 "Sedes"** (al crear y al editar): todas / algunas / ninguna por ahora, con las reglas del
     interruptor de la ficha (no se quita de una sede con grupos vigentes; un inactivo no se ofrece en sedes nuevas); cada
     sede que entra o sale va a la auditoría de esa sede (`ProgramaController::ofrecerEn`). Sin `sedes` en la petición, al
     crear no se ofrece en ninguna y al editar no cambian. Los cruces de horario solo se revisan si cambian las horas o la
     duración. Escuelas: sigla automática y fija (`siglaLibre`), no se eliminan con programas ni docentes.
-  - Estudiantes: el formulario pide lo mismo que la secretaría (nacimiento, residencia con el listado de Colombia —regla
-    `App\Rules\CiudadDeColombia`—); un menor puede registrarse con un acudiente nuevo en el mismo formulario.
-  - Comunicados a varias sedes: **una fila por sede con el mismo `comunicados.lote`** (migración `2026_11_10_000002`);
-    el Admin los ve, edita, archiva y elimina como uno solo. Destinos: todos (= sede), estudiantes, docentes, acudientes
+  - Estudiantes: no cambia de sede con matrícula vigente ni **con deudas** en cualquiera de sus matrículas.
+    El formulario pide lo mismo que la secretaría (nacimiento, residencia con el listado de Colombia —regla
+    `App\Rules\CiudadDeColombia`— y el contacto de emergencia).
+  - Comunicados a varias sedes: **una fila por sede con el mismo `comunicados.lote`**; una fila con lote no se edita ni
+    elimina desde las pantallas de la secretaría (tampoco el Admin al entrar a la sede: `solo_general` en `comunicados.js`) (migración `2026_11_10_000002`);
+    el Admin los ve, edita, archiva y elimina como uno solo. Destinos: todos (= sede), estudiantes, docentes
     (no hay destino "secretarías"). Sin adjunto. La secretaría no edita ni elimina los del Admin (sí los archiva en su sede).
     Una copia archivada por la secretaría se respeta: editar el envío no la revive, archivarlo conserva su motivo, y el
     estado del envío sale de las copias vivas (`archivado_en_sedes` dice dónde lo archivó la secretaría).
@@ -651,7 +733,10 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - Configuración: datos de la institución en `configuraciones` (`institucion_*`, por defecto los reales de
     `Configuracion::INSTITUCION`) y salen en el encabezado de los documentos impresos de la secretaría; cuota del sistema;
     reglas de acceso (`seguridad_intentos_maximos`, `seguridad_dias_inactividad`). **Bloqueo de cuentas real**
-    (`Sistema/BloqueoService`): intentos fallidos seguidos (`LoginRequest`) e inactividad (solo cuentas que ya ingresaron);
+    (`Sistema/BloqueoService`): intentos fallidos seguidos (`LoginRequest`; se levanta solo a los 15 minutos,
+    `MINUTOS_INTENTOS`, para que nadie deje por fuera a otra persona escribiendo mal su clave) e inactividad (solo cuentas
+    que ya ingresaron); `bloqueada()` es la única regla de si está bloqueada ahora. Restablecer la clave (secretaría o
+    Admin) también desbloquea;
     `EnsureAccountIsEnabled::motivo` no deja entrar a una bloqueada (el aviso solo sale con la clave correcta); el Admin y el
     superadmin nunca se bloquean; el Admin desbloquea. Restablecer clave (`Sistema/SesionesService`) también cierra sus sesiones.
 - Pruebas: `tests/Feature/AdminGeneral/{PanelGeneral,EntrarSede,Estructura,Personas,ComunicacionConfiguracion}Test.php`.
@@ -661,7 +746,7 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
 
 ## Panel Docente (datos reales)
 
-- Rutas `/docente` (`role:docente`) a un controlador por pantalla en `Docente/{Inicio,Grupos,Asistencia,Notas,Aula}/`, y
+- Rutas `/docente` (`role:docente`) a un controlador por pantalla en `Docente/{Inicio,Grupos,Asistencia,Notas,Aula,Comunicados,Foro}/`, y
   `User::panelUrl()` → `docente.dashboard`. Layout propio: `docente/layout.blade.php` +
   `partials/{sidebar,topbar}`, `docente/layout.css` (el del Admin sin los menús flotantes;
   la animación de entrada se llama `.app-anim`) y `layout.js`.
@@ -669,19 +754,52 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   - **Inicio** (`dashboard`, `ini-`): clases de hoy, pendientes (asistencia sin registrar,
     notas por poner, habilitaciones), estudiantes bajo el 80 % y su horario semanal.
   - **Mis grupos** (`grupos/index`, `grp-`): tarjetas por grupo (Activo · Por iniciar · Finalizado) y ficha con
-    Estudiantes, Malla y Horario.
+    Estudiantes, Malla y Horario. **Imprimir lista** (27-11-2026): lista de clase con 6 casillas para firmar
+    (`docente/documento.js` + `documento.css`, copiados del Estudiante: hoja con el encabezado legal de Admin › Configuración;
+    también en grupos finalizados).
   - **Asistencia** (`asistencia/index`, `tas-`): calendario de clases del grupo y planilla
     P/T/A/E (excusa con motivo obligatorio), con "Todos presentes".
   - **Notas** (`notas/index`, `not-`): por módulo, de 1.0 a 5.0 con un decimal (acepta coma),
     habilitación solo si la nota es menor a 3.0 y el módulo ya terminó, y "Planilla completa"
-    (estudiantes × módulos).
+    (estudiantes × módulos) con **Imprimir planilla**. Bajo cada estudiante, "En el Aula": el promedio de lo calificado en el
+    Aula virtual de ese módulo (`AulaService::notasPorModulo`, `datos.aula`), solo como referencia (decidido con el usuario el
+    27-11-2026: la nota del módulo la sigue poniendo el docente).
   - **Aula virtual** (`aula/index`, `dau-`, `Docente/Aula/AulaController` + `Academico/AulaService`, 24-11-2026): por
     grupo (chips, `?grupo=ID`) crea evaluaciones de selección múltiple (1–30 preguntas, 2–6 opciones, una sola correcta,
     cierre futuro) y actividades con fecha límite, cada una de un módulo de la malla; ve quién respondió (con sus aciertos)
     y quién entregó, descarga el archivo y califica la entrega de 1,0 a 5,0 con un decimal (acepta coma) con comentario.
     Una evaluación se edita o elimina mientras nadie la responda; una actividad se elimina sin entregas; un grupo
     finalizado es solo consulta (`Requests/Docente/Aula/AulaRequest`: grupo suyo y sin finalizar). Ninguna calcula la nota
-    del módulo. Es lo que el estudiante ve en su Aula virtual.
+    del módulo. Es lo que el estudiante ve en su Aula virtual. **27-11-2026** (migración `2026_11_27_000002`): la actividad
+    lleva un **archivo de apoyo** opcional (`actividades.adjunto_*`) y cada grupo tiene **material de clase** (modelo
+    `Academico/Material`, tabla `materiales`: título, descripción y módulo opcionales —sin módulo = todo el grupo—, archivo,
+    enlace o los dos; `MaterialRequest`). Lo del docente acepta PDF, Word, PowerPoint, Excel, JPG o PNG ≤ 10 MB
+    (`AulaService::EXTENSIONES_DOCENTE`), va como FormData (el PUT como POST + `_method`), un archivo nuevo reemplaza al
+    anterior y el viejo se borra después de guardar. Lo descarga quien tiene (o tuvo) matrícula en el grupo
+    (`AulaService::estudioEn`) y su docente. Pruebas en `tests/Feature/Docente/AulaMaterialTest.php`.
+    **Evaluaciones (decidido con el usuario el 27-11-2026, migración `2026_11_27_000003`):** el docente elige un **tiempo
+    límite** (`evaluaciones.duracion_minutos`, `Evaluacion::DURACIONES` o sin límite). Con tiempo, el estudiante ve las
+    preguntas al pulsar Comenzar (`POST estudiante/aula/evaluaciones/{id}/iniciar`, tabla `evaluacion_intentos`: abrirla
+    otra vez no reinicia el reloj); su tiempo termina en `Evaluacion::terminaPara` (nunca después del cierre), el reloj usa
+    los segundos que da el servidor (`intento.restante`), lo marcado se guarda en `sessionStorage` y al llegar a cero se
+    envía solo: lo que falte queda con `respuestas_estudiante.opcion_id` null y cuenta como malo (60 s de gracia,
+    `GRACIA_SEGUNDOS`). Quien la comenzó y no envió a tiempo queda sin responder. Una evaluación **ya comenzada o
+    respondida se corrige** (textos, cierre —se puede conservar uno vencido— y la respuesta correcta, que recalcula
+    `es_correcta` de quienes ya respondieron) pero no se agregan ni quitan preguntas u opciones, no cambia el tiempo y no se
+    elimina. Pruebas en `tests/Feature/Docente/EvaluacionesTest.php`.
+  - **Comunicados** (`comunicados/index`, `com-`, `Docente/Comunicados/ComunicadoController` +
+    `Comunicacion/ComunicadoDocenteService`, decidido con el usuario el 24-11-2026): pestaña Recibidos (lo que la
+    secretaría o el Admin manda a toda la sede o a los docentes; lista + lector del Estudiante, abrir lo marca leído) y Mis
+    publicaciones: a **uno o varios de sus grupos** no finalizados (una fila por grupo con el mismo `lote`; cada fila con su
+    propia copia del adjunto), publicar ya, programar o borrador con adjunto PDF/JPG/PNG ≤ 5 MB (las reglas de
+    `ComunicadoService::guardar`; `Requests/Docente/Comunicados/*` extienden las de la secretaría). Publicado: cambia el
+    texto pero no los grupos; archivar con motivo (en todos sus grupos; la copia que archivó la secretaría conserva su
+    motivo); solo se eliminan borradores. Quién lo leyó por grupo y WhatsApp a quien falta (a su contacto de emergencia si es menor).
+    `?id=ID`, `?vista=mios`.
+  - **Foro** (`foro/index`, `for-`, `Docente/Foro/ForoController`): el foro del Estudiante (`ForoService::panel`) sin pedir
+    matrícula; **solo participa** (abre temas sin fijarlos, responde y reporta); moderar es de la secretaría. `?tema=ID`.
+  - **Mi perfil** (`perfil`, `prf-`, copiado del perfil del Estudiante): cambia correo, celular y dirección; nombre y
+    documento (no los acepta `ProfileUpdateRequest`), título, especialidad, escuela y vinculación son solo consulta.
 - Reglas acordadas con el usuario: el docente registra y **corrige** asistencia y notas
   mientras el grupo no esté finalizado; un grupo finalizado es solo consulta; no se registran
   clases futuras ni notas de módulos por iniciar.
@@ -713,7 +831,6 @@ aunque `auditorias`, `pagos` y `recaudos` ya tienen datos reales para conectarla
   excusa) y el conteo de la clase en la barra de guardar. Notas: la malla sin fechas (van en el encabezado del módulo) y
   el resumen del módulo en una línea. En Mis grupos el número de pendientes va dentro del botón, y solo el botón con algo
   pendiente es naranja. Al agregar algo, que diga algo que no esté ya en la pantalla.
-- Su perfil todavía es el de Breeze (roto, HALLAZGOS M7).
 
 ## Panel Estudiante (datos reales, 24-11-2026)
 
@@ -748,7 +865,8 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
     límite** o hasta que el docente la califique (PDF, Word, JPG o PNG, ≤ 10 MB, disco privado `aula/{sede}/actividad-{id}`;
     el archivo viejo se borra después de guardar); ninguna calcula la nota del módulo (la sigue poniendo el docente en
     Notas). Solo responde o entrega quien tiene la matrícula **activa** en el grupo. `?id=evaluacion-ID` o
-    `?id=actividad-ID` (evaluaciones y actividades son tablas distintas y repiten números), `?modulo=ID`.
+    `?id=actividad-ID` (evaluaciones y actividades son tablas distintas y repiten números), `?modulo=ID`. Pestaña
+    **Material** (27-11-2026) con lo que sube el docente, y la guía de cada actividad en su cajón.
   - **Mis pagos** (`pagos/index`, `pag-`): solo consulta (se paga en la sede): elegir el plan una vez (`POST
     estudiante/pagos/plan`, `PagoService::elegirPlan`, con aviso de las cuotas que ya vencieron y confirmación), estado de
     cuenta (a pagar este mes, próxima cuota, pagado), cobros y recibos imprimibles con la hoja del recibo de la secretaría.
@@ -756,13 +874,14 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
   - **Comunicados** (`comunicados/index`, `com-`): lista + lector; se marca leído al abrir
     (`comunicado_lecturas`, `insertOrIgnore`: la primera lectura no cambia); adjunto por `estudiante.comunicados.adjunto`.
     Uno que no le corresponde responde 404. `?id=ID`.
-  - **Foro** (`foro/index`, `for-`): el de su sede con `ForoService` y las Form Requests de la secretaría (las suyas las
+  - **Foro** (`foro/index`, `for-`): lo lee cualquiera; abre temas, responde y reporta **solo con matrícula vigente**
+    (`Requests/Estudiante/Foro/ExigeMatriculaVigente`, `participaForo`). El de su sede con `ForoService` y las Form Requests de la secretaría (las suyas las
     extienden: solo su sede, no fija temas); categorías, búsqueda, conversación en cajón, responder (no en temas cerrados ni
     ocultos), abrir tema y reportar con motivo (uno por mensaje, ni los propios ni los ocultos), con un adjunto PDF/JPG/PNG
     ≤ 5 MB. `?tema=ID`.
   - **Mi perfil** (`perfil`, `prf-`, el diseño del perfil de la secretaría y del Admin): cambia correo, celular y dirección;
-    nombre y documento los corrige la secretaría (`ProfileUpdateRequest` no los acepta de un estudiante). Su acudiente,
-    solo consulta. Cambio de clave.
+    nombre y documento los corrige la secretaría (`ProfileUpdateRequest` no los acepta de un estudiante). Su contacto de
+    emergencia, solo consulta (lo cambia la secretaría). Cambio de clave.
 - **Documentos imprimibles** (`documento.css` + `documento.js`, `EST_DOC.imprimir`): la hoja de los documentos de la
   secretaría (encabezado con NIT y licencia de Admin › Configuración) se arma al final del `<body>` y solo sale al imprimir.
 - **BD** (migración `2026_11_24_000001_completar_aula_virtual`): `evaluaciones.programa_modulo_id` + `descripcion`,
@@ -772,14 +891,9 @@ de la Secretaría (lo que ve el estudiante cuadra con Matrículas, Asistencia, C
 
 ## Pendiente
 
-- Panel Acudiente: sin construir.
-- Docente: su perfil.
 - Superadmin: conectar Inicio, Estudiantes, Auditoría y Configuración a la BD
   (al hacerlo, cambiar los `{!! !!}` de las maquetas por salida escapada).
-  Agregar Form Requests y auditoría a Sedes y Administradores.
-- Foro: leer, publicar y reportar desde los paneles Docente y Acudiente (el del Estudiante ya lo hace).
-- Comunicados: marcar como leído desde los paneles Acudiente y Docente (el del Estudiante ya lo hace), y que el docente
-  publique a sus grupos.
+  Agregar Form Request y auditoría a Sedes.
 - Aula virtual: si pierde la evaluación o la actividad no hay segundo intento (no se pidió); las notas del Aula no entran
   a ningún reporte de la Secretaría.
 - Errores y riesgos abiertos, por prioridad: ver `HALLAZGOS.md`.

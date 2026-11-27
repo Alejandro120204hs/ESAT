@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\Docentes;
 
 use App\Models\Academico\DocentePerfil;
 use App\Models\User;
+use App\Rules\CiudadDeColombia;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,14 +37,14 @@ class DocenteRequest extends FormRequest
         return [
             'nombres'                 => ['required', 'string', 'min:2', 'max:100'],
             'apellidos'               => ['required', 'string', 'min:2', 'max:100'],
-            'tipo_documento'          => ['required', Rule::in(['CC', 'CE', 'PA'])],
+            'tipo_documento'          => ['required', Rule::in(['CC', 'CE', 'PA', 'PPT'])],
             'numero_documento'        => ['required', 'string', 'min:5', 'max:15', Rule::unique('users')->ignore($docente)],
             'email'                   => ['required', 'email', 'max:255', Rule::unique('users')->ignore($docente)],
             'telefono'                => ['required', 'regex:/^3\d{9}$/'],
             'fecha_nacimiento'        => ['nullable', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
             'direccion'               => ['nullable', 'string', 'max:255'],
-            'departamento_residencia' => ['nullable', 'string', 'max:100'],
-            'ciudad_residencia'       => ['nullable', 'required_with:departamento_residencia', 'string', 'max:100'],
+            'departamento_residencia' => ['nullable', 'string', 'max:100', new CiudadDeColombia()],
+            'ciudad_residencia'       => ['nullable', 'required_with:departamento_residencia', 'string', 'max:100', new CiudadDeColombia((string) $this->input('departamento_residencia'))],
             'profesion'               => ['required', 'string', 'min:3', 'max:150'],
             'titulo_academico'        => ['required', 'string', 'min:3', 'max:150'],
             'escuela_id'              => ['required', 'exists:escuelas,id'],

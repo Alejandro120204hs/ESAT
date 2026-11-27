@@ -12,7 +12,7 @@ class SupervisionService
     /** Nombre en pantalla de cada entidad auditada (class_basename del modelo). */
     private const ENTIDADES = [
         'Matricula' => 'Matrícula', 'Pago' => 'Pago', 'Recaudo' => 'Pago', 'Devolucion' => 'Devolución', 'Egreso' => 'Egreso',
-        'Programa' => 'Programa', 'Escuela' => 'Escuela', 'Sede' => 'Sede', 'Curso' => 'Grupo', 'CursoSesion' => 'Horario',
+        'Programa' => 'Carrera', 'Escuela' => 'Escuela', 'Sede' => 'Sede', 'Curso' => 'Grupo', 'CursoSesion' => 'Horario',
         'Comunicado' => 'Comunicado', 'ForoTema' => 'Foro', 'ForoMensaje' => 'Foro', 'Configuracion' => 'Configuración',
         'Calificacion' => 'Nota', 'Asistencia' => 'Asistencia',
     ];
@@ -20,7 +20,7 @@ class SupervisionService
     /** Rol de quien actuó, como lo agrupa la pantalla. */
     private const ROLES = [
         'admin_general' => 'admin', 'superadmin' => 'admin', 'admin' => 'secretaria', 'docente' => 'docente',
-        'estudiante' => 'estudiante', 'acudiente' => 'acudiente',
+        'estudiante' => 'estudiante',
     ];
 
     /** Eventos del último año (los más recientes primero, hasta 5.000). */

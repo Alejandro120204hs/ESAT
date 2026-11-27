@@ -40,30 +40,55 @@ class GrupoRequest extends FormRequest
 
             $sedeId   = (int) $this->user()->sedeTrabajoId();
             $curso    = $this->route('curso');
+            // Un grupo finalizado es historia (quién lo dictó, en qué fechas): solo se consulta o se reabre desde su ficha
+            if ($curso && $curso->estado === 'finalizado') {
+                $v->errors()->add('estado', 'El grupo está finalizado: para cambiarlo, primero reábrelo con «Reabrir grupo» en su ficha.');
+                return;
+            }
             $programa = Programa::find($this->integer('programa_id'));
 
             if (! $programa->sedes()->where('sedes.id', $sedeId)->exists()) {
-                $v->errors()->add('programa_id', 'Ese programa no se ofrece en tu sede.');
+                $v->errors()->add('programa_id', 'Esa carrera no se ofrece en tu sede.');
                 return;
             }
             // Un grupo nuevo solo se abre en un programa activo
             if (! $curso && $programa->estado !== 'activo') {
-                $v->errors()->add('programa_id', 'Solo se pueden abrir grupos en programas activos.');
+                $v->errors()->add('programa_id', 'Solo se pueden abrir grupos en carreras activas.');
                 return;
             }
             if (! in_array($this->input('jornada'), $programa->jornadas ?? [], true)) {
-                $v->errors()->add('jornada', 'El programa solo se ofrece en jornada '.mb_strtolower(implode(', ', $programa->jornadas ?? [])).'.');
+                $v->errors()->add('jornada', 'La carrera solo se ofrece en jornada '.mb_strtolower(implode(', ', $programa->jornadas ?? [])).'.');
             }
             // Sus estudiantes están matriculados en el programa del grupo: con inscritos no se cambia de programa
             if ($curso && $programa->id !== $curso->programa_id && $curso->estudiantes()->exists()) {
-                $v->errors()->add('programa_id', 'El grupo ya tiene estudiantes inscritos en su programa: no se puede pasar a otro programa.');
+                $v->errors()->add('programa_id', 'El grupo ya tiene estudiantes inscritos en su carrera: no se puede pasar a otra carrera.');
             }
 
             [$inicio, $fin] = $this->fechas($programa);
 
-            // Un grupo que ya empezó no mueve su inicio: cambiaría sus clases, su asistencia y sus cobros (HALLAZGOS A7)
+            // Un grupo activo que ya empezó no vuelve a planificación (decidido con el usuario el 27-11-2026): así no se corre su
+            // inicio y se borran las clases que ya dictó aunque el docente no haya tomado asistencia. Si aún no empieza, sí vuelve
+            if ($curso && $curso->estado === 'activo' && $this->input('estado') === 'planificacion' && $curso->fecha_inicio->lte(today())) {
+                $v->errors()->add('estado', "El grupo ya empezó clases el {$curso->fecha_inicio->format('d/m/Y')}: no vuelve a planificación.");
+                return;
+            }
+            // Un grupo que ya empezó no mueve su inicio: cambiaría sus clases, su asistencia y sus cobros (HALLAZGOS A7). Uno que
+            // sigue en planificación sin asistencia ni notas nunca dictó clases: corre su inicio a hoy o después (auditoría 26-11-2026)
             if ($curso && $curso->fecha_inicio->lte(today()) && ! $inicio->equalTo($curso->fecha_inicio->copy()->startOfDay())) {
-                $v->errors()->add('fecha_inicio', "El grupo ya empezó el {$curso->fecha_inicio->format('d/m/Y')}: la fecha de inicio no se cambia.");
+                $sinClases = $curso->estado === 'planificacion' && ! $curso->conservaHorarioAnterior();
+                if (! $sinClases) {
+                    $v->errors()->add('fecha_inicio', "El grupo ya empezó el {$curso->fecha_inicio->format('d/m/Y')}: la fecha de inicio no se cambia.");
+                    return;
+                }
+                if ($inicio->lt(today())) {
+                    $v->errors()->add('fecha_inicio', 'El grupo no ha empezado clases: corre su fecha de inicio a hoy o a una fecha futura.');
+                    return;
+                }
+            }
+            // Un grupo nuevo, o uno que corre su inicio, no empieza en el pasado: nadie se matricula en un grupo que ya empezó, y
+            // sus estudiantes quedarían en un grupo que arrancó antes que su matrícula, con el derecho y las cuotas descuadrados
+            if ((! $curso || ! $inicio->equalTo($curso->fecha_inicio->copy()->startOfDay())) && $inicio->lt(today())) {
+                $v->errors()->add('fecha_inicio', 'La fecha de inicio no puede ser anterior a hoy.');
                 return;
             }
             // Finalizar a tiempo (HALLAZGOS A8): la misma regla del botón de estado

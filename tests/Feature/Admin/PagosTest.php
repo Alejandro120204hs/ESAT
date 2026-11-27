@@ -54,15 +54,16 @@ class PagosTest extends TestCase
     public function test_cobros_con_lo_pagado_y_estado_actual(): void
     {
         $m = $this->matriculaConPlan('1070000001');
-        // El grupo empezó el 1 de septiembre: lo más viejo es la cuota 1 (vence el 10 de septiembre, $ 302.000)
+        // Se matriculó cuando empezó el grupo (1 de septiembre): lo más viejo es el derecho ($ 200.000, vence ese día) y
+        // después la cuota 1 (vence el 10 de septiembre, $ 302.000)
         app(PagoService::class)->registrarPago($m, 300000, ['fecha_pago' => '2026-10-21', 'metodo_pago' => 'Nequi', 'referencia' => 'N1']);
 
         $cobros = collect(app(CarteraService::class)->datosSede($this->sede->id)['matriculas']->firstWhere('id', $m->id)['cobros']);
         $cuota1 = $cobros->firstWhere(2, 'Cuota 1 de 10');
 
-        $this->assertSame(['mensual', '2026-09-10', 302000, 300000, 'vencido'], [$cuota1[1], $cuota1[3], $cuota1[4], $cuota1[5], $cuota1[6]],
-            'Queda abonada con 300.000 y sigue vencida por los 2.000 que faltan');
-        $this->assertSame('pendiente', $cobros->firstWhere(1, 'matricula')[6]);
+        $this->assertSame(['mensual', '2026-09-10', 302000, 100000, 'vencido'], [$cuota1[1], $cuota1[3], $cuota1[4], $cuota1[5], $cuota1[6]],
+            'Queda abonada con los 100.000 que sobraron del derecho y sigue vencida por lo que falta');
+        $this->assertSame('pagado', $cobros->firstWhere(1, 'matricula')[6]);
         $this->assertSame(['2026-09-10', '2026-10-10'], $cobros->where(1, 'mensual')->take(2)->pluck(3)->values()->all(), 'En orden de vencimiento');
     }
 
@@ -72,7 +73,7 @@ class PagosTest extends TestCase
         $r = app(PagoService::class)->registrarPago($m, 200000, ['fecha_pago' => '2026-10-21', 'metodo_pago' => 'Efectivo']);
 
         $recibo = app(CarteraService::class)->datosSede($this->sede->id)['recaudos']->firstWhere('id', $r->id);
-        $this->assertSame([[$m->pagos()->where('numero_cuota', 1)->value('id'), 'Cuota 1 de 10', 200000]], $recibo['cubre']);
+        $this->assertSame([[$m->pagos()->where('tipo', 'matricula')->value('id'), 'Derecho de matrícula', 200000]], $recibo['cubre'], 'Lo más viejo primero: el derecho vence al empezar el grupo');
         $this->assertTrue($recibo['anulable']);
         $this->assertNull($recibo['anulado']);
 
@@ -117,7 +118,7 @@ class PagosTest extends TestCase
             ]);
         }
 
-        $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $grupo->id])->assertOk();
+        $this->alIniciar($grupo, fn () => $this->actingAs($this->admin)->postJson('/admin/matriculas', ['estudiante_id' => $e->id, 'curso_id' => $grupo->id])->assertOk());
         $m = $e->matriculas()->first();
         $m->update(['plan_pago' => 'mensual']);
         app(PagoService::class)->generarCuotas($m, $grupo->fecha_inicio);

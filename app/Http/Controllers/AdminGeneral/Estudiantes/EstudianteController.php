@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminGeneral\Estudiantes;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminGeneral\Estudiantes\EstudianteRequest;
+use App\Models\Academico\ContactoEmergencia;
 use App\Models\Institucional\Sede;
 use App\Models\Sistema\Auditoria;
 use App\Models\User;
@@ -31,15 +32,15 @@ class EstudianteController extends Controller
             'programas'   => collect($estructura->programas())->map(fn ($p) => collect($p)->only(['id', 'nombre']))->all(),
             'estudiantes' => $estudiantes,
             'recaudos'    => $recibos,
-            'acudientes'  => collect($personas->acudientes())->map(fn ($a) => collect($a)->only(['id', 'sede_id', 'nombres', 'apellidos', 'tipo_documento', 'numero_documento']))->all(),
-            'opciones'    => ['parentescos' => EstudianteService::PARENTESCOS, 'tipos' => EstudianteRequest::TIPOS_DOCUMENTO],
+            'opciones'    => ['parentescos' => ContactoEmergencia::PARENTESCOS, 'tipos' => EstudianteRequest::TIPOS_DOCUMENTO,
+                              'extranjero' => EstudianteRequest::DOCUMENTOS_EXTRANJERO],
         ]]);
     }
 
     public function store(EstudianteRequest $request): JsonResponse
     {
         $sede = Sede::findOrFail($request->integer('sede_id'));
-        $e = $this->estudiantes->registrar($request->datosEstudiante(), $request->input('acudiente'), $request->input('parentesco'), $sede->id);
+        $e = $this->estudiantes->registrar($request->datosEstudiante(), $request->datosContacto(), $sede->id);
         Auditoria::registrar('crear', $e, "Registró al estudiante {$e->name} en la sede {$sede->nombre}.", $sede->id);
 
         return response()->json(['mensaje' => "Se registró a {$e->name}. Su clave inicial es su número de documento. Para matricularlo, entra a la sede {$sede->nombre}.", 'id' => $e->id], 201);
@@ -48,14 +49,9 @@ class EstudianteController extends Controller
     public function update(EstudianteRequest $request, User $estudiante): JsonResponse
     {
         $sedeId = $request->integer('sede_id');
-        $acudienteId = $request->input('acudiente_id');
-        DB::transaction(function () use ($request, $estudiante, $sedeId, $acudienteId) {
+        DB::transaction(function () use ($request, $estudiante, $sedeId) {
             $estudiante->update($request->datosEstudiante() + ['sede_id' => $sedeId]);
-            if ($acudienteId) {
-                $this->estudiantes->vincularAcudiente($estudiante, ['id' => $acudienteId], $request->input('parentesco'), $sedeId);
-            } else {
-                $estudiante->acudientes()->detach();   // solo llega vacío si es mayor de edad (EstudianteRequest)
-            }
+            $this->estudiantes->guardarContacto($estudiante, $request->datosContacto());
         });
         Auditoria::registrar('editar', $estudiante, "Editó los datos del estudiante {$estudiante->name}.", $sedeId);
 

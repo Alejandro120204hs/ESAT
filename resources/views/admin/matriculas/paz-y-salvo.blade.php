@@ -1,5 +1,5 @@
 {{-- Panel Admin › Matrículas › Paz y salvo (DocumentoController::pazYSalvo): solo se expide si la persona
-     no debe nada en ninguna de sus matrículas de la sede. Lista las matrículas que cubre. --}}
+     no debe nada en ninguna de sus matrículas (de cualquier sede). Lista las matrículas que cubre. --}}
 @extends('admin.matriculas.documento')
 
 @php
@@ -26,7 +26,7 @@
         <p>
             <strong>{{ $e->name }}</strong>, identificad{{ $a }} con {{ $tipoDoc }}
             n.º <strong>{{ $doc }}</strong>, se encuentra <strong>a paz y salvo</strong> por concepto de derechos de
-            matrícula y cuotas de los programas en los que ha estado matriculad{{ $a }} en esta institución{{ $m->sede ? ', sede '.$m->sede->nombre : '' }},
+            matrícula y cuotas de los programas en los que ha estado matriculad{{ $a }} en esta institución{{ $m->sede && $matriculas->pluck('sede_id')->unique()->count() === 1 ? ', sede '.$m->sede->nombre : '' }},
             a la fecha de expedición de este documento.
         </p>
     </section>
@@ -52,7 +52,7 @@
     </section>
 
     <footer class="rc-pie">
-        <div class="rc-firma"><span></span>Firma y sello · Secretaría de la sede</div>
+        <div class="rc-firma"><span></span>Firma y sello · Administración de la sede</div>
         <p>Documento válido con firma y sello de la institución.</p>
     </footer>
 @endsection

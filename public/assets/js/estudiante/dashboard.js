@@ -193,8 +193,8 @@
         var tN = tonoNota(D.promedio), tA = tonoAsis(A.pct);
         $('ini-avance-body').innerHTML =
             '<div class="ini-avance-fila">' +
-                '<div class="ini-barra" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Avance del programa"><span style="width:' + pct + '%"></span></div>' +
-                '<span class="ini-avance-pct">' + pct + NB + '% del programa</span>' +
+                '<div class="ini-barra" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Avance de la carrera"><span style="width:' + pct + '%"></span></div>' +
+                '<span class="ini-avance-pct">' + pct + NB + '% de la carrera</span>' +
             '</div>' + modTxt +
             '<div class="ini-datos">' +
                 '<div class="ini-dato"><span class="ini-dato-lbl">Promedio</span><span class="ini-dato-val ini-tono-' + tN + '">' + esc(nota(D.promedio)) + '</span>' +
@@ -394,8 +394,8 @@
             '<div class="ini-empty-icono ini-empty-calma" aria-hidden="true">' + ICON.notas + '</div>' +
             '<p class="ini-empty-titulo">' + (M ? 'Tu matrícula todavía no tiene grupo' : 'No tienes una matrícula vigente') + '</p>' +
             '<p class="ini-empty-txt">' + (M
-                ? 'Cuando la secretaría te asigne un grupo, aquí verás tu horario, tus clases y tu avance.'
-                : 'Cuando la secretaría de tu sede te matricule en un programa, aquí verás tus clases, tus notas, tu Aula virtual y tus pagos. Mientras tanto puedes participar en el foro de tu sede.') + '</p>' +
+                ? 'Cuando el administrativo te asigne un grupo, aquí verás tu horario, tus clases y tu avance.'
+                : 'Cuando el administrativo de tu sede te matricule en una carrera, aquí verás tus clases, tus notas, tu Aula virtual y tus pagos. Mientras tanto puedes participar en el foro de tu sede.') + '</p>' +
         '</div>';
         app.appendChild(sec);
     }

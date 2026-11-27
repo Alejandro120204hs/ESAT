@@ -158,9 +158,9 @@
 
     /* ── Datos ──────────────────────────────────── */
     var HOY = Date.now();
-    var DESTINO = { todos: 'Todos', estudiantes: 'Estudiantes', docentes: 'Docentes', acudientes: 'Acudientes', grupo: 'Un grupo' };
+    var DESTINO = { todos: 'Todos', estudiantes: 'Estudiantes', docentes: 'Docentes', grupo: 'Un grupo' };
     var ESTADO = { borrador: ['Borrador', 'muted'], programado: ['Programado', 'info'], publicado: ['Publicado', 'active'], archivado: ['Archivado', 'warn'] };
-    var AUTOR = { admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente' };
+    var AUTOR = { admin: 'Admin', secretaria: 'Administrativo', docente: 'Docente' };
     function sedePorId(id) { return D.sedes.find(function (s) { return s.id === +id; }); }
     function vivos() { return D.comunicados; }
     /* Un programado sale solo cuando llega su hora */
@@ -170,11 +170,11 @@
         var sedes = c.sedes === 'todas' ? 'Todas las sedes' : c.sedes.map(function (id) { var s = sedePorId(id); return s ? s.nombre : ''; }).join(', ');
         return { sedes: sedes, a: c.destino === 'grupo' ? c.grupo : DESTINO[c.destino] };
     }
-    /* Cuántos lo recibirían hoy: estudiantes con matrícula vigente, docentes y acudientes activos de cada sede (lo calcula el servidor) */
+    /* Cuántos lo recibirían hoy: estudiantes con matrícula vigente y docentes activos de cada sede (lo calcula el servidor) */
     function alcance(ids, destino) {
         return ids.reduce(function (n, id) {
             var a = D.alcance[id]; if (!a) return n;
-            return n + (destino === 'todos' ? a.estudiantes + a.docentes + a.acudientes : (a[destino] || 0));
+            return n + (destino === 'todos' ? a.estudiantes + a.docentes : (a[destino] || 0));
         }, 0);
     }
     function pct(c) { return c.destinatarios ? Math.round(c.leidos / c.destinatarios * 100) : 0; }
@@ -198,7 +198,7 @@
     [cbSede, cbEstado, cbAutor].forEach(initCombobox);
     cbSede.setOptions([{ value: '', label: 'Todas las sedes' }].concat(D.sedes.map(function (s) { return { value: String(s.id), label: s.nombre }; })));
     cbEstado.setOptions([{ value: '', label: 'Todos los estados' }, { value: 'publicado', label: 'Publicados' }, { value: 'programado', label: 'Programados' }, { value: 'borrador', label: 'Borradores' }, { value: 'archivado', label: 'Archivados' }]);
-    cbAutor.setOptions([{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Admin' }, { value: 'secretaria', label: 'Secretarías' }, { value: 'docente', label: 'Docentes' }]);
+    cbAutor.setOptions([{ value: '', label: 'Todos los autores' }, { value: 'admin', label: 'Admin' }, { value: 'secretaria', label: 'Administrativos' }, { value: 'docente', label: 'Docentes' }]);
     cbSede.setValue('', 'Todas las sedes', { silent: true }); cbEstado.setValue('', 'Todos los estados', { silent: true }); cbAutor.setValue('', 'Todos los autores', { silent: true });
 
     var pagina = 1, filtrados = [];
@@ -252,7 +252,7 @@
         $('com-dw-sub').innerHTML = tag(e) + ' <span class="com-dw-autor">' + esc(AUTOR[c.autor.tipo] + ' · ' + c.autor.nombre) + '</span>';
         var filas = [['Sedes', p.sedes], ['Para', p.a]];
         var archivadas = (c.archivado_en_sedes || []).map(function (id) { var s = sedePorId(id); return s ? s.nombre : ''; }).filter(Boolean);
-        if (archivadas.length) filas.push(['Archivado por la secretaría en', archivadas.join(', ')]);
+        if (archivadas.length) filas.push(['Archivado por el administrativo en', archivadas.join(', ')]);
         if (e === 'programado') filas.push(['Sale el', fechaHora(c.publicado_en)]);
         else if (e !== 'borrador') filas.push(['Publicado', fechaHora(c.publicado_en)]);
         filas.push(['Creado', fechaLarga(c.creado)]);

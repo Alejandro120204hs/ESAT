@@ -12,12 +12,14 @@ use Illuminate\Validation\Validator;
  */
 class ReporteRequest extends FormRequest
 {
+    use ExigeMatriculaVigente;
+
     public function authorize(): bool
     {
         $m = $this->route('mensaje');
         $m?->loadMissing('tema');
 
-        return $m && $m->tema->sede_id === (int) $this->user()->sede_id;
+        return $m && $m->tema->sede_id === (int) $this->user()->sede_id && $this->exigirMatriculaVigente();
     }
 
     protected function prepareForValidation(): void
@@ -37,7 +39,7 @@ class ReporteRequest extends FormRequest
             if ($m->autor_id === $this->user()->id) {
                 $v->errors()->add('motivo', 'No puedes reportar tu propio mensaje.');
             } elseif ($m->oculto() || $m->tema->oculto()) {
-                $v->errors()->add('motivo', 'La secretaría ya ocultó este mensaje.');
+                $v->errors()->add('motivo', 'El administrativo ya ocultó este mensaje.');
             } elseif (ForoReporte::where('mensaje_id', $m->id)->where('user_id', $this->user()->id)->exists()) {
                 $v->errors()->add('motivo', 'Ya reportaste este mensaje.');
             }
@@ -47,8 +49,8 @@ class ReporteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'motivo.required' => 'Cuéntale a la secretaría por qué lo reportas.',
-            'motivo.min'      => 'Cuéntale a la secretaría por qué lo reportas (al menos 5 letras).',
+            'motivo.required' => 'Cuéntale al administrativo por qué lo reportas.',
+            'motivo.min'      => 'Cuéntale al administrativo por qué lo reportas (al menos 5 letras).',
             'motivo.max'      => 'El motivo puede tener hasta 255 caracteres.',
         ];
     }

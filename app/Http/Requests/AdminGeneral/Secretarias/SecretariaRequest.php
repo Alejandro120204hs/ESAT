@@ -21,7 +21,10 @@ class SecretariaRequest extends FormRequest
         $this->merge([
             'nombres'          => $limpio('nombres'),
             'apellidos'        => $limpio('apellidos'),
-            'numero_documento' => preg_replace('/\D/', '', (string) $this->input('numero_documento')),
+            // El pasaporte admite letras (como en Docentes); los demás documentos, solo dígitos
+            'numero_documento' => $this->input('tipo_documento') === 'PA'
+                ? mb_strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $this->input('numero_documento')))
+                : preg_replace('/\D/', '', (string) $this->input('numero_documento')),
             'telefono'         => preg_replace('/\D/', '', (string) $this->input('telefono')),
             'email'            => mb_strtolower(trim((string) $this->input('email'))),
         ]);
@@ -37,7 +40,7 @@ class SecretariaRequest extends FormRequest
             'genero'           => ['required', Rule::in(['femenino', 'masculino', 'otro'])],
             'fecha_nacimiento' => ['required', 'date', 'before:today'],
             'tipo_documento'   => ['required', Rule::in(['CC', 'CE', 'PA', 'PPT'])],
-            'numero_documento' => ['required', 'digits_between:6,12', Rule::unique('users')->ignore($id)],
+            'numero_documento' => ['required', $this->input('tipo_documento') === 'PA' ? 'regex:/^[A-Z0-9]{5,15}$/' : 'digits_between:6,12', Rule::unique('users')->ignore($id)],
             'telefono'         => ['required', 'regex:/^3\d{9}$/'],
             'email'            => ['required', 'email', 'max:120', Rule::unique('users')->ignore($id)],
             'sede_id'          => ['required', 'integer', Rule::exists('sedes', 'id')],
@@ -52,7 +55,7 @@ class SecretariaRequest extends FormRequest
             }
             $edad = Carbon::parse($this->input('fecha_nacimiento'))->age;
             if ($edad < 18) {
-                $v->errors()->add('fecha_nacimiento', 'La secretaría debe ser mayor de edad.');
+                $v->errors()->add('fecha_nacimiento', 'El administrativo debe ser mayor de edad.');
             } elseif ($edad > 90) {
                 $v->errors()->add('fecha_nacimiento', 'Revisa la fecha de nacimiento.');
             }
@@ -71,6 +74,7 @@ class SecretariaRequest extends FormRequest
     {
         return [
             'numero_documento.unique' => 'Ya hay una cuenta con ese número de documento.',
+            'numero_documento.regex'  => 'El pasaporte lleva solo letras y números (de 5 a 15).',
             'email.unique'            => 'Ya hay una cuenta con ese correo.',
             'telefono.regex'          => 'Escribe un celular de 10 dígitos que empiece por 3.',
         ];

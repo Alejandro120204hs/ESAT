@@ -1,6 +1,6 @@
 /* =========================================================
    ESAT — Panel Estudiante: Foro de la sede
-   Mensajes, roles (punto y avatar: estudiante azul, docente naranja, acudiente verde, secretaría gris), categorías
+   Mensajes, roles (punto y avatar: estudiante azul, docente naranja, secretaría gris), categorías
    neutras y adjuntos con el mismo formato que Secretaría › Foro (admin/foro.css). Cajón lateral del panel.
    ========================================================= */
 
@@ -19,6 +19,7 @@
     transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
 }
 .for-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.for-btn[hidden] { display: none; }
 .for-btn:active { transform: scale(0.97); }
 .for-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .for-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
@@ -85,7 +86,6 @@
 .for-rol i { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; flex-shrink: 0; }
 .for-rol i.r-e { background: var(--navy-2); }
 .for-rol i.r-d { background: var(--orange); }
-.for-rol i.r-a { background: #2D7A3A; }
 .for-rol i.r-x { background: #475569; }
 .for-av {
     width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -94,7 +94,6 @@
 .for-tema .for-av { width: 40px; height: 40px; }
 .for-av.r-e { background: var(--navy-2); }
 .for-av.r-d { background: var(--orange); }
-.for-av.r-a { background: #2D7A3A; }
 .for-av.r-x { background: #475569; }
 
 .for-vacio { padding: 40px 20px; text-align: center; background: var(--white); border: 1.5px dashed #CBD5E1; border-radius: var(--radius-lg); }

@@ -142,7 +142,7 @@
 
     /* ── Datos ──────────────────────────────────── */
     var DIA = 86400000;
-    var ROL = { admin: 'Admin', secretaria: 'Secretaría', docente: 'Docente', estudiante: 'Estudiante', acudiente: 'Acudiente' };
+    var ROL = { admin: 'Admin', secretaria: 'Administrativo', docente: 'Docente', estudiante: 'Estudiante' };
     function rol(a) { return ROL[a.rol] || a.rol; }
     var TIPO = { crear: 'Creó', editar: 'Editó', anular: 'Anuló', activar: 'Activó', desactivar: 'Desactivó', eliminar: 'Eliminó' };
     function sedePorId(id) { return D.sedes.find(function (s) { return s.id === +id; }); }

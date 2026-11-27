@@ -26,7 +26,7 @@ class ConfiguracionController extends Controller
     public function index(BloqueoService $bloqueos): View
     {
         $bloqueadas = User::whereNotNull('bloqueado_en')->orderByDesc('bloqueado_en')->get()
-            ->filter(fn (User $u) => $bloqueos->seBloquea($u))
+            ->filter(fn (User $u) => $bloqueos->seBloquea($u) && $bloqueos->bloqueada($u))
             ->map(fn (User $u) => [
                 'id' => $u->id, 'nombre' => trim($u->nombres.' '.$u->apellidos), 'rol' => $u->role->label(),
                 'sede_id' => $u->sede_id, 'motivo' => $u->motivo_bloqueo, 'desde' => $u->bloqueado_en->toIso8601String(),
@@ -121,7 +121,7 @@ class ConfiguracionController extends Controller
 
     public function desbloquear(User $usuario, BloqueoService $bloqueos): JsonResponse
     {
-        abort_unless($usuario->bloqueado_en && $bloqueos->seBloquea($usuario), 404);
+        abort_unless($bloqueos->seBloquea($usuario) && $bloqueos->bloqueada($usuario), 404);
         $bloqueos->desbloquear($usuario);
         $rol = mb_strtolower($usuario->role->label());
         Auditoria::registrar('activar', $usuario, "Desbloqueó la cuenta de {$usuario->name} ({$rol}).", $usuario->sede_id);

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin\Estudiantes;
 
 use App\Enums\RolUsuario;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Estudiantes\AcudienteRequest;
 use App\Http\Requests\Admin\Estudiantes\EstudianteRequest;
+use App\Models\Academico\ContactoEmergencia;
 use App\Models\Academico\Curso;
 use App\Models\Academico\EstudianteDocumento;
 use App\Models\Finanzas\Matricula;
@@ -14,10 +14,12 @@ use App\Models\User;
 use App\Services\Academico\EstudianteService;
 use App\Services\Sistema\SesionesService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
- * Panel Admin › Estudiantes: registrar y editar a la persona (datos, contacto, acudiente),
+ * Panel Admin › Estudiantes: registrar y editar a la persona (datos, contacto de emergencia),
  * restablecer su clave y su lista de documentos. NO matricula: programa, grupo, estado
  * de la matrícula y pagos son de Matrículas; aquí solo se consultan.
  */
@@ -40,36 +42,25 @@ class EstudianteController extends Controller
             ->get();
 
         $estudiantes = User::where('role', RolUsuario::Estudiante)->where('sede_id', $sedeId)
-            ->with(['documentos', 'acudientes', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos', 'recaudos', 'curso'])])
+            ->with(['documentos', 'contactoEmergencia', 'asistencias', 'cursosComoEstudiante', 'matriculas' => fn ($q) => $q->with(['programa', 'pagos', 'recaudos', 'curso'])])
             ->latest('id')
             ->get();
-
-        $acudientes = User::where('role', RolUsuario::Acudiente)->where('sede_id', $sedeId)
-            ->orderBy('nombres')->get()
-            ->map(fn (User $a) => [
-                'id'        => $a->id,
-                'nombres'   => $a->nombres,
-                'apellidos' => $a->apellidos,
-                'documento' => $a->numero_documento,
-                'telefono'  => $a->telefono,
-                'email'     => $a->email,
-            ]);
 
         return view('admin.estudiantes.index', [
             'estudiantes' => $estudiantes->map(fn (User $e) => $this->paraVista($e))->values(),
             'grupos'      => $grupos->map(fn (Curso $c) => $this->grupoParaVista($c))->values(),
-            'acudientes'  => $acudientes,
             'opciones'    => [
                 'generos'     => EstudianteRequest::GENEROS,
                 'tipos'       => EstudianteRequest::TIPOS_DOCUMENTO,
-                'parentescos' => EstudianteService::PARENTESCOS,
+                'parentescos' => ContactoEmergencia::PARENTESCOS,
+                'extranjero'  => EstudianteRequest::DOCUMENTOS_EXTRANJERO,
             ],
         ]);
     }
 
     public function store(EstudianteRequest $request): JsonResponse
     {
-        $e = $this->estudiantes->registrar($request->datosEstudiante(), $request->input('acudiente'), $request->input('parentesco'), $this->sedeId());
+        $e = $this->estudiantes->registrar($request->datosEstudiante(), $request->datosContacto(), $this->sedeId());
 
         Auditoria::registrar('crear', $e, "Registró al estudiante {$e->name}.");
 
@@ -78,13 +69,16 @@ class EstudianteController extends Controller
         return response()->json([
             'ok'      => true,
             'id'      => $e->id,
-            'mensaje' => "{$e->name} quedó {$verbo}. Usuario: {$e->email} · contraseña inicial: {$e->numero_documento}. Para darle programa y grupo, matricúlalo en Matrículas.",
+            'mensaje' => "{$e->name} quedó {$verbo}. Usuario: {$e->email} · contraseña inicial: {$e->numero_documento}. Para darle carrera y grupo, matricúlalo en Matrículas.",
         ]);
     }
 
     public function update(EstudianteRequest $request, User $estudiante): JsonResponse
     {
-        $estudiante->update($request->datosEstudiante());
+        DB::transaction(function () use ($request, $estudiante) {
+            $estudiante->update($request->datosEstudiante());
+            $this->estudiantes->guardarContacto($estudiante, $request->datosContacto());
+        });
 
         Auditoria::registrar('editar', $estudiante, "Editó los datos del estudiante {$estudiante->name}.");
 
@@ -102,23 +96,40 @@ class EstudianteController extends Controller
         return response()->json(['ok' => true, 'mensaje' => "La contraseña de {$estudiante->name} volvió a ser su número de documento."]);
     }
 
-    public function acudiente(AcudienteRequest $request, User $estudiante): JsonResponse
+    /**
+     * Activa o desactiva la cuenta (una desactivada pierde la sesión en su siguiente petición: EnsureAccountIsEnabled).
+     * Con matrícula vigente no se desactiva: mientras estudia necesita su panel. Matricularlo otra vez la reactiva.
+     */
+    public function cambiarEstado(User $estudiante): JsonResponse
     {
-        $acudiente = $this->estudiantes->vincularAcudiente($estudiante, $request->input('acudiente'), $request->input('parentesco'), $this->sedeId());
+        $this->asegurarEstudiante($estudiante);
+        if ($estudiante->activo && $vigente = $estudiante->matriculas()->whereIn('estado', Matricula::VIGENTES)->first()) {
+            return response()->json(['ok' => false, 'message' => "{$estudiante->name} tiene la matrícula {$vigente->codigo} vigente: su cuenta sigue activa mientras estudia. Si se va, primero retíralo en Matrículas."], 422);
+        }
+        $estudiante->update(['activo' => ! $estudiante->activo]);
+        $verbo = $estudiante->activo ? 'Activó' : 'Desactivó';
+        Auditoria::registrar($estudiante->activo ? 'activar' : 'desactivar', $estudiante, "{$verbo} la cuenta del estudiante {$estudiante->name}.");
 
-        Auditoria::registrar('editar', $estudiante, "Dejó a {$acudiente->name} como acudiente de {$estudiante->name}.");
-
-        return response()->json(['ok' => true, 'mensaje' => "{$acudiente->name} quedó como acudiente de {$estudiante->nombres}."]);
+        return response()->json(['ok' => true, 'mensaje' => $estudiante->activo
+            ? "La cuenta de {$estudiante->name} quedó activa: ya puede ingresar."
+            : "La cuenta de {$estudiante->name} quedó inactiva: ya no puede ingresar."]);
     }
 
-    /** Marca o desmarca un documento de la lista de chequeo. */
-    public function documento(User $estudiante, EstudianteDocumento $documento): JsonResponse
+    /**
+     * Marca o desmarca un documento de la lista de chequeo. Llega cómo debe quedar (`entregado`), no "cambiar": dos
+     * envíos a la vez lo dejan igual en vez de devolverlo a como estaba. Si ya estaba así, no se toca ni se audita.
+     */
+    public function documento(Request $request, User $estudiante, EstudianteDocumento $documento): JsonResponse
     {
         $this->asegurarEstudiante($estudiante);
         abort_unless($documento->estudiante_id === $estudiante->id, 404);
+        $entregado = $request->validate(['entregado' => ['required', 'boolean']], ['entregado.*' => 'Recarga la página e intenta de nuevo.'])['entregado'];
+        $entregado = filter_var($entregado, FILTER_VALIDATE_BOOLEAN);
 
-        $documento->update(['entregado_en' => $documento->entregado_en ? null : now()]);
-        $entregado = (bool) $documento->entregado_en;
+        if ($entregado === (bool) $documento->entregado_en) {
+            return response()->json(['ok' => true, 'entregado' => $entregado]);
+        }
+        $documento->update(['entregado_en' => $entregado ? now() : null]);
 
         Auditoria::registrar('editar', $estudiante, ($entregado ? 'Recibió' : 'Marcó como pendiente')." «{$documento->documento}» de {$estudiante->name}.");
 
@@ -146,7 +157,6 @@ class EstudianteController extends Controller
     {
         $m     = $this->estudiantes->matriculaVigente($e);
         $grupo = $this->estudiantes->grupoDeMatricula($e, $m);
-        $acudiente = $e->acudientes->first();
 
         $pagos = $m ? $this->estudiantes->resumenPagos($m)
             : ['plan_pago' => null, 'pago' => 'al_dia', 'cuotas_total' => null, 'cuotas_pagadas' => 0, 'saldo' => 0, 'ultimo_pago' => null];
@@ -162,6 +172,7 @@ class EstudianteController extends Controller
             'tipo_periodo'  => $m?->programa->tipo_periodo,
             'depto_nac'     => $e->departamento_nacimiento,
             'ciudad_nac'    => $e->lugar_nacimiento,
+            'pais_nac'      => $e->pais_nacimiento,
             'genero'        => EstudianteRequest::GENEROS[$e->genero] ?? 'Otro',
             'genero_valor'  => $e->genero,
             'telefono'      => $e->telefono,
@@ -172,12 +183,12 @@ class EstudianteController extends Controller
             // De su matrícula (solo consulta): sin matrícula el estado es 'sin_matricula'
             'grupo_id'      => $grupo?->id,
             'estado'        => $m?->estado ?? 'sin_matricula',
+            'cuenta_activa' => (bool) $e->activo,
             'estado_fecha'  => $m?->estado_fecha?->format('Y-m-d'),
             'estado_motivo' => $m?->estado_motivo,
             'fecha_ingreso' => $e->created_at->format('Y-m-d'),
-            'acudiente_id'  => $acudiente?->id,
-            'parentesco'    => $acudiente?->pivot->parentesco,
-            'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $grupo),
+            'contacto'      => $e->contactoEmergencia?->paraVista(),
+            'asistencia'    => $this->estudiantes->porcentajeAsistencia($e, $grupo, $m),
             'documentos'    => $e->documentos->map(fn ($d) => ['id' => $d->id, 'nombre' => $d->documento, 'entregado' => (bool) $d->entregado_en])->values(),
             'documentos_pendientes' => $e->documentos->whereNull('entregado_en')->pluck('documento')->values(),
             'trayectoria'   => $this->estudiantes->trayectoria($e),

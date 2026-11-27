@@ -88,7 +88,7 @@ class InstalacionTest extends TestCase
         $this->prepararSede();
         $this->actingAs($this->admin);
         $grupo = $this->grupo($this->programa(['Mañana']), 'Mañana');
-        app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null);
+        $this->alIniciar($grupo, fn () => app(MatriculaService::class)->matricular(User::factory()->create(['role' => 'estudiante', 'sede_id' => $this->sede->id]), $grupo, null));
         $this->assertTrue(DB::table('pagos')->exists());
     }
 

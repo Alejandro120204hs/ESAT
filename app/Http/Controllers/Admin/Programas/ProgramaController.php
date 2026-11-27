@@ -55,20 +55,19 @@ class ProgramaController extends Controller
         $sede = Sede::findOrFail($this->sedeId());
         $corto = str_replace('Técnico Laboral en ', '', $programa->nombre);
         if ($programa->sedes()->where('sedes.id', $sede->id)->exists()) {
-            $n = $programa->cursos()->where('sede_id', $sede->id)->where('estado', '!=', 'finalizado')->count();
-            if ($n) {
-                return response()->json(['message' => "No se puede dejar de ofrecer: tiene {$n} ".($n === 1 ? 'grupo vigente' : 'grupos vigentes').' en la sede. Se quita cuando terminen.'], 422);
+            if ($error = $programa->impedimentoParaRetirar($sede->id)) {
+                return response()->json(['message' => "No se puede dejar de ofrecer: en la sede {$error}"], 422);
             }
             $programa->sedes()->detach($sede->id);
-            Auditoria::registrar('editar', $programa, "Dejó de ofrecer el programa {$programa->nombre} en la sede {$sede->nombre}.");
+            Auditoria::registrar('editar', $programa, "Dejó de ofrecer la carrera {$programa->nombre} en la sede {$sede->nombre}.");
 
             return response()->json(['ok' => true, 'mensaje' => "La sede ya no ofrece {$corto}."]);
         }
         if ($programa->estado === 'inactivo') {
-            return response()->json(['message' => 'Ese programa está inactivo en el catálogo: no se puede ofrecer.'], 422);
+            return response()->json(['message' => 'Esa carrera está inactiva en el catálogo: no se puede ofrecer.'], 422);
         }
         $programa->sedes()->attach($sede->id);
-        Auditoria::registrar('editar', $programa, "Empezó a ofrecer el programa {$programa->nombre} en la sede {$sede->nombre}.");
+        Auditoria::registrar('editar', $programa, "Empezó a ofrecer la carrera {$programa->nombre} en la sede {$sede->nombre}.");
 
         return response()->json(['ok' => true, 'mensaje' => "La sede ya ofrece {$corto}: puedes abrirle grupos."]);
     }

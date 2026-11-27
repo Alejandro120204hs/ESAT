@@ -67,6 +67,8 @@
                 <span><i class="tas-ley tas-ley-sin"></i>Sin registrar</span>
                 <span><i class="tas-ley tas-ley-hoy"></i>Hoy</span>
                 <span><i class="tas-ley tas-ley-fut"></i>Futura</span>
+                <span><i class="tas-ley tas-ley-festivo"></i>Festivo</span>
+                <span><i class="tas-ley tas-ley-sinclase"></i>No hubo clase</span>
             </div>
         </section>
 

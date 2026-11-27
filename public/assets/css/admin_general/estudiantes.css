@@ -163,6 +163,7 @@
 .est-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
 .est-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .est-field-full { grid-column: 1 / -1; }
+.est-field[hidden] { display: none; }
 .est-field label, .est-field .est-label { font-size: 0.8rem; font-weight: 600; color: var(--navy-3); }
 .est-field input {
     width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--white);
@@ -234,7 +235,4 @@
 .est-hint-acu { margin-top: 10px; }
 .est-seccion .est-muted { display: inline; text-transform: none; letter-spacing: 0; font-weight: 600; }
 
-/* Acudiente nuevo dentro del registro del estudiante */
-.est-acu-nuevo { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
-.est-acu-nuevo[hidden] { display: none; }
 .est-hint[hidden] { display: none; }

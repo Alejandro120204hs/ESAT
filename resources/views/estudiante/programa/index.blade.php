@@ -5,7 +5,7 @@
      y calendario de Asistencia (DESIGN-PANELES.md). --}}
 @extends('estudiante.layout')
 
-@section('title', 'Mi programa')
+@section('title', 'Mi carrera')
 @section('active', 'programa')
 
 @push('styles')
@@ -18,7 +18,7 @@
 
     <header class="mpr-header">
         <div class="mpr-header-txt">
-            <h2 class="mpr-title">Mi programa</h2>
+            <h2 class="mpr-title">Mi carrera</h2>
             <p class="mpr-sub" id="mpr-sub"></p>
         </div>
         <button type="button" class="mpr-btn mpr-btn-ghost" id="mpr-imprimir">
@@ -29,11 +29,11 @@
 
     <div class="mpr-vacio" id="mpr-vacio" hidden>
         <p class="mpr-vacio-ttl">No tienes una matrícula vigente</p>
-        <p class="mpr-vacio-sub">Cuando la secretaría de tu sede te matricule en un programa, aquí verás tus notas por módulo y tu asistencia.</p>
+        <p class="mpr-vacio-sub">Cuando el administrativo de tu sede te matricule en una carrera, aquí verás tus notas por módulo y tu asistencia.</p>
     </div>
 
     <div class="mpr-toolbar app-anim app-anim-d1">
-        <div class="mpr-vistas" role="tablist" aria-label="Mi programa">
+        <div class="mpr-vistas" role="tablist" aria-label="Mi carrera">
             <button type="button" class="mpr-vista-btn is-active" role="tab" id="mpr-tab-notas" aria-selected="true" aria-controls="mpr-panel-notas" data-vista="notas">Notas</button>
             <button type="button" class="mpr-vista-btn" role="tab" id="mpr-tab-asistencia" aria-selected="false" aria-controls="mpr-panel-asistencia" data-vista="asistencia" tabindex="-1">Asistencia</button>
         </div>

@@ -178,9 +178,9 @@
     });
     var cb = $('aca-cb-filtro'); initCombobox(cb);
     var FILTROS = {
-        grupos: { buscar: 'Buscar programa, grupo o docente...', ops: [{ value: 'vigentes', label: 'Grupos vigentes' }, { value: '', label: 'Todos' }, { value: 'en_clases', label: 'En clases' }, { value: 'por_iniciar', label: 'Por iniciar' }, { value: 'finalizado', label: 'Finalizados' }] },
-        asistencia: { buscar: 'Buscar programa, grupo o docente...', ops: [{ value: '', label: 'Todos los grupos en clases' }, { value: 'sin_registrar', label: 'Con clases sin registrar' }, { value: 'bajo', label: 'Con estudiantes bajo 80 %' }] },
-        notas: { buscar: 'Buscar programa, grupo o docente...', ops: [{ value: '', label: 'Todos los grupos en clases' }, { value: 'sin_nota', label: 'Con módulos sin nota' }, { value: 'habilitar', label: 'Con estudiantes por habilitar' }] }
+        grupos: { buscar: 'Buscar carrera, grupo o docente...', ops: [{ value: 'vigentes', label: 'Grupos vigentes' }, { value: '', label: 'Todos' }, { value: 'en_clases', label: 'En clases' }, { value: 'por_iniciar', label: 'Por iniciar' }, { value: 'finalizado', label: 'Finalizados' }] },
+        asistencia: { buscar: 'Buscar carrera, grupo o docente...', ops: [{ value: '', label: 'Todos los grupos en clases' }, { value: 'sin_registrar', label: 'Con clases sin registrar' }, { value: 'bajo', label: 'Con estudiantes bajo 80 %' }] },
+        notas: { buscar: 'Buscar carrera, grupo o docente...', ops: [{ value: '', label: 'Todos los grupos en clases' }, { value: 'sin_nota', label: 'Con módulos sin nota' }, { value: 'habilitar', label: 'Con estudiantes por habilitar' }] }
     };
     function prepararFiltro() {
         var f = FILTROS[ptab];
@@ -230,7 +230,7 @@
                     '<td class="aca-num">' + (g.estado === 'finalizado' ? '—' : g.estudiantes + ' / ' + g.cupo) + '</td><td>' + tag(EST_G[g.estado]) + '</td></tr>';
             },
             csv: function (g) { var p = programa(g.programa_id); return [p.nombre, g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), g.jornada, g.inicio, g.fin, EST_G[g.estado][0], g.estudiantes, g.cupo, g.estado === 'en_clases' && modulo(g) ? modulo(g).nombre : '']; },
-            csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Jornada', 'Inicio', 'Fin', 'Estado', 'Estudiantes', 'Cupo', 'Módulo actual']
+            csvCols: ['Carrera', 'Grupo', 'Sede', 'Docente', 'Jornada', 'Inicio', 'Fin', 'Estado', 'Estudiantes', 'Cupo', 'Módulo actual']
         },
         asistencia: {
             nota: 'La asistencia es informativa: no bloquea grados ni matrículas. El 80 % es solo una referencia.',
@@ -250,7 +250,7 @@
                     '<td class="aca-num' + (g.sin_registrar ? ' aca-mala' : '') + '">' + g.sin_registrar + '</td><td class="aca-num' + (b ? ' aca-mala' : '') + '">' + b + ' de ' + g.estudiantes + '</td></tr>';
             },
             csv: function (g) { return [corto(programa(g.programa_id).nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), pctTxt(asistenciaDe(g)), g.sin_registrar, bajo80(g), g.estudiantes]; },
-            csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Asistencia', 'Clases sin registrar', 'Estudiantes bajo 80 %', 'Estudiantes']
+            csvCols: ['Carrera', 'Grupo', 'Sede', 'Docente', 'Asistencia', 'Clases sin registrar', 'Estudiantes bajo 80 %', 'Estudiantes']
         },
         notas: {
             nota: 'Escala de 1,0 a 5,0; se aprueba con 3,0. Un módulo terminado sin nota es pendiente del docente.',
@@ -272,7 +272,7 @@
                     '<td class="aca-num' + (g.sin_nota ? ' aca-mala' : '') + '">' + g.sin_nota + '</td><td class="aca-num' + (h ? ' aca-mala' : '') + '">' + h + '</td></tr>';
             },
             csv: function (g) { var p = programa(g.programa_id); return [corto(p.nombre), g.nombre, sede(g.sede_id).nombre, nombreDoc(docente(g.docente_id)), modulo(g) ? (g.modulo_actual + 1) + ' de ' + p.modulos.length : '', nota(promedioDe(g)), g.sin_nota, porHabilitar(g)]; },
-            csvCols: ['Programa', 'Grupo', 'Sede', 'Docente', 'Módulo actual', 'Promedio', 'Módulos sin nota', 'Estudiantes por habilitar']
+            csvCols: ['Carrera', 'Grupo', 'Sede', 'Docente', 'Módulo actual', 'Promedio', 'Módulos sin nota', 'Estudiantes por habilitar']
         }
     };
     function pintarTabla() {

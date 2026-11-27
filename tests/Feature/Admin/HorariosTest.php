@@ -90,7 +90,7 @@ class HorariosTest extends TestCase
             $this->sesion('Lunes', '14:00', '18:00'), $this->sesion('Martes', '14:00', '18:00'), $this->sesion('Miércoles', '14:00', '18:00'),
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['sesiones' => 'el programa tiene 100 horas']);
+            ->assertJsonValidationErrors(['sesiones' => 'la carrera tiene 100 horas']);
     }
 
     /* ── Horarios: cruces de docente ── */

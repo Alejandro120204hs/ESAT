@@ -10,6 +10,7 @@
 @section('active', 'notas')
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/docente/documento.css') }}?v={{ filemtime(public_path('assets/css/docente/documento.css')) }}">
     <link rel="stylesheet" href="{{ asset('assets/css/docente/notas.css') }}?v={{ filemtime(public_path('assets/css/docente/notas.css')) }}">
 @endpush
 
@@ -112,6 +113,12 @@
 
         {{-- ═══════════ Planilla completa ═══════════ --}}
         <div class="not-vista" id="not-panel-completa" role="tabpanel" aria-labelledby="not-tab-completa" hidden>
+            <div class="not-completa-barra">
+                <button type="button" class="not-btn not-btn-ghost" id="not-imprimir">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Imprimir planilla
+                </button>
+            </div>
             <div class="not-avisos" id="not-completa-avisos"></div>
             <div class="not-matriz-wrap" id="not-matriz-wrap" tabindex="0" role="region" aria-label="Notas de todos los módulos"></div>
             <div class="not-leyenda" id="not-leyenda">
@@ -147,5 +154,6 @@
 
 @push('scripts')
 @include('docente.partials.datos')
+<script src="{{ asset('assets/js/docente/documento.js') }}?v={{ filemtime(public_path('assets/js/docente/documento.js')) }}" defer></script>
 <script src="{{ asset('assets/js/docente/notas.js') }}?v={{ filemtime(public_path('assets/js/docente/notas.js')) }}"></script>
 @endpush

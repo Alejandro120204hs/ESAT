@@ -58,7 +58,7 @@ class PanelEstudianteTest extends TestCase
 
     public function test_otros_roles_no_entran_al_panel_estudiante(): void
     {
-        foreach (['admin', 'admin_general', 'docente', 'acudiente', 'superadmin'] as $rol) {
+        foreach (['admin', 'admin_general', 'docente', 'superadmin'] as $rol) {
             $usuario = User::factory()->create(['role' => $rol]);
             foreach (self::PANTALLAS as $url) {
                 $this->actingAs($usuario)->get($url)->assertForbidden();

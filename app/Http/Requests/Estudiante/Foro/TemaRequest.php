@@ -10,9 +10,11 @@ use App\Http\Requests\Admin\Foro\TemaRequest as TemaSecretariaRequest;
  */
 class TemaRequest extends TemaSecretariaRequest
 {
+    use ExigeMatriculaVigente;
+
     public function authorize(): bool
     {
-        return (bool) $this->user()->sede_id;
+        return (bool) $this->user()->sede_id && $this->exigirMatriculaVigente();
     }
 
     protected function prepareForValidation(): void

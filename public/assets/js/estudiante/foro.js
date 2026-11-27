@@ -11,7 +11,7 @@
 
     var MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     var NB = ' ';   // espacio que no parte la línea
-    var ROL = { e: 'Estudiante', d: 'Docente', a: 'Acudiente', x: 'Secretaría' };
+    var ROL = { e: 'Estudiante', d: 'Docente', x: 'Administrativo' };
     var EXT = ['pdf', 'jpg', 'jpeg', 'png'];
     var ICON = {
         pin:     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76V6h6v4.76l2 3.24H7z"/><path d="M8 6h8"/></svg>',
@@ -127,8 +127,8 @@
             '<span>' + esc(plural(t.mensajes.length - 1, 'respuesta', 'respuestas')) + '</span>';
         $('for-dw-body').innerHTML = '<ol class="for-hilo">' + t.mensajes.map(function (m, i) {
             var pie = '';
-            if (!m.autor.yo) {
-                pie = m.reportado ? '<span class="for-reportado">Lo reportaste: la secretaría lo revisará</span>'
+            if (!m.autor.yo && D.participaForo) {
+                pie = m.reportado ? '<span class="for-reportado">Lo reportaste: el administrativo lo revisará</span>'
                     : '<button type="button" class="for-link-btn" data-reportar="' + m.id + '" aria-label="' + esc('Reportar el mensaje de ' + m.autor.nombre) + '">' + ICON.bandera + 'Reportar</button>';
             }
             return '<li class="for-msg' + (i === 0 ? ' is-primero' : '') + (m.autor.yo ? ' is-mio' : '') + '" id="for-msg-' + m.id + '">' +
@@ -144,7 +144,10 @@
         }).join('') + '</ol>';
 
         var r = $('for-responder');
-        if (t.cerrado) {
+        if (!D.participaForo) {
+            // Retirado o graduado: lee el foro, pero ya no escribe (ExigeMatriculaVigente)
+            r.innerHTML = '<p class="for-cerrado">' + ICON.candado + 'Solo participan en el foro los estudiantes con matrícula vigente.</p>';
+        } else if (t.cerrado) {
             r.innerHTML = '<p class="for-cerrado">' + ICON.candado + 'Este tema está cerrado: ya no recibe respuestas.</p>';
         } else {
             r.innerHTML = '<label class="sr-solo" for="for-resp-texto">Tu respuesta</label>' +
@@ -230,6 +233,7 @@
     // Al corregir un campo se quita la marca de error
     $('for-dlg-form').addEventListener('input', function (e) { if (e.target.classList) e.target.classList.remove('is-invalido'); });
 
+    $('for-nuevo').hidden = !D.participaForo;
     $('for-nuevo').addEventListener('click', function () {
         adjTema = null;
         var cats = D.foro.categorias.map(function (c, i) {
@@ -239,7 +243,7 @@
             '<div class="for-campo"><fieldset><legend>Categoría</legend><div class="for-chips">' + cats + '</div></fieldset></div>' +
             '<div class="for-campo"><label for="for-nt-titulo">Título</label><input class="for-input" id="for-nt-titulo" maxlength="120" autocomplete="off" placeholder="Ej.: ¿A qué hora es la práctica del sábado?"></div>' +
             '<div class="for-campo"><label for="for-nt-texto">Mensaje</label><textarea class="for-textarea" id="for-nt-texto" maxlength="3000" placeholder="Cuenta tu pregunta o lo que quieres compartir"></textarea>' +
-                '<span class="for-ayuda">Lo leen estudiantes, docentes, acudientes y la secretaría de tu sede. No publiques datos personales de otras personas.</span></div>' +
+                '<span class="for-ayuda">Lo leen estudiantes, docentes y el administrativo de tu sede. No publiques datos personales de otras personas.</span></div>' +
             '<div class="for-campo">' + adjuntoHtml('for-nt-adj') + '<span class="for-ayuda">Opcional: un PDF, JPG o PNG de hasta 5 MB.</span></div>',
             function () {
                 var cat = ($('for-dlg-cuerpo').querySelector('input[name=for-nt-cat]:checked') || {}).value;
@@ -264,11 +268,11 @@
 
     function dialogoReportar(mensajeId, origen) {
         abrirDialogo('Reportar el mensaje', 'Reportar',
-            '<p class="for-texto-dlg">La secretaría de tu sede lo revisará y decidirá si lo oculta. Quien lo escribió no sabrá que fuiste tú.</p>' +
+            '<p class="for-texto-dlg">El administrativo de tu sede lo revisará y decidirá si lo oculta. Quien lo escribió no sabrá que fuiste tú.</p>' +
             '<div class="for-campo"><label for="for-rep-motivo">¿Por qué lo reportas?</label><textarea class="for-textarea" id="for-rep-motivo" maxlength="500" placeholder="Ej.: es ofensivo, publica datos de otra persona, es publicidad"></textarea></div>',
             function () {
                 var m = $('for-rep-motivo');
-                if (m.value.trim().length < 5) { $('for-dlg-error').textContent = 'Cuéntale a la secretaría por qué lo reportas (al menos 5 caracteres).'; m.classList.add('is-invalido'); m.focus(); return; }
+                if (m.value.trim().length < 5) { $('for-dlg-error').textContent = 'Cuéntale al administrativo por qué lo reportas (al menos 5 caracteres).'; m.classList.add('is-invalido'); m.focus(); return; }
                 $('for-dlg-si').disabled = true;
                 API.reportar(mensajeId, m.value).then(function (r) {
                     if (!r.ok) { $('for-dlg-error').textContent = r.mensaje; $('for-dlg-si').disabled = false; return; }

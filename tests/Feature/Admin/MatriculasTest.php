@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /**
- * Panel Admin › Matrículas: matricular (cupo, una vigente por estudiante, menor con acudiente),
+ * Panel Admin › Matrículas: matricular (cupo, una vigente por estudiante, con contacto de emergencia),
  * cambio de grupo, estados (aplazar, retirar, graduar, reintegrar), plan de cuotas, pagos
  * con recibo y anulación. Más la regla de cupos con matrícula.curso_id.
  */
@@ -84,11 +84,16 @@ class MatriculasTest extends TestCase
         $this->matricular($e, $otro)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id']);
     }
 
-    public function test_un_menor_sin_acudiente_no_se_matricula(): void
+    public function test_sin_contacto_de_emergencia_no_se_matricula(): void
     {
-        $menor = $this->estudiante('1070000001', 16);
+        $e = $this->estudiante('1070000001');
+        $e->contactoEmergencia()->delete();
 
-        $this->matricular($menor, $this->grupoA)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id']);
+        $this->matricular($e, $this->grupoA)->assertUnprocessable()->assertJsonValidationErrors(['estudiante_id' => 'contacto de emergencia']);
+        $this->assertSame(0, $e->matriculas()->count());
+
+        $e->contactoEmergencia()->create(['nombre' => 'Rosa Patiño', 'celular' => '3104445566', 'parentesco' => 'Madre']);
+        $this->matricular($e, $this->grupoA)->assertOk();
     }
 
     public function test_sin_todos_los_documentos_no_se_matricula(): void
@@ -559,7 +564,7 @@ class MatriculasTest extends TestCase
         $vieja = $m->fresh();
         $nueva = Matricula::find($r->json('id'));
         $this->assertSame('retirado', $vieja->estado);
-        $this->assertStringContainsString('Cambio de programa', $vieja->estado_motivo);
+        $this->assertStringContainsString('Cambio de carrera', $vieja->estado_motivo);
         $this->assertSame($vieja->id, $nueva->origen_id);
         $this->assertSame('activo', $nueva->estado);
         $this->assertSame(0, $nueva->pagos()->where('tipo', 'matricula')->count(), 'Ya pagó el derecho');

@@ -17,6 +17,9 @@ class Actividad extends Model
         'programa_modulo_id',
         'titulo',
         'instrucciones',
+        'adjunto_path',
+        'adjunto_nombre',
+        'adjunto_tamano',
         'fecha_limite',
     ];
 
